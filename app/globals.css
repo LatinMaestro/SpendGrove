@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  --background: 150 36% 98%;
+  --foreground: 190 62% 15%;
+  --border: 164 25% 84%;
+  --brand-deep-teal: 188 71% 16%;
+  --brand-green: 147 55% 42%;
+  --brand-teal: 176 55% 38%;
+  --surface-base: 0 0% 100%;
+  --surface-mint: 150 56% 93%;
+  --warning-amber: 39 92% 56%;
+  --danger-red: 0 72% 52%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: hsl(var(--background));
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  color: hsl(var(--foreground));
+  background:
+    radial-gradient(circle at top left, rgba(75, 194, 126, 0.16), transparent 34rem),
+    hsl(var(--background));
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  color: white;
+  background: hsl(var(--brand-teal));
+}
