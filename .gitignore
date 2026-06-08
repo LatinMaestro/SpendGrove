@@ -32,8 +32,12 @@ Thumbs.db
 .idea/
 
 # SpendGrove private sample data
-sample-data/private-local/
-**/private-local/
+sample-data/private-local/*
+!sample-data/private-local/.gitkeep
+!sample-data/private-local/README.md
+**/private-local/*
+!**/private-local/.gitkeep
+!**/private-local/README.md
 
 # Real bank exports and sensitive parser dumps
 *.ofx
@@ -61,14 +65,8 @@ screenshots/private/
 tmp/
 .cache/
 
-
 # Vercel
 .vercel/
-
-# Local environment and secrets
-.env
-.env.*
-!.env.example
 
 # Private screenshots / exports
 private-screenshots/
