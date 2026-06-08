@@ -2,7 +2,11 @@
 
 SpendGrove is a privacy-first Australian personal finance app built around user-controlled CSV transaction import, review-before-commit, merchant categorisation, loan/property tracking and future web/mobile account sync.
 
-This repository is to be developed using the **SpendGrove v2.0.1 Master Specification** as the source of truth:
+This repository is to be developed using the **SpendGrove v2.0.1 Master Specification** as the source of truth for implementation decisions:
+
+- `docs/SpendGrove_v2_0_Master_Specification_Completeness_Checked.md`
+
+The formatted Word document remains the human-readable version:
 
 - `docs/SpendGrove_v2_0_Master_Specification_Completeness_Checked.docx`
 
@@ -58,7 +62,6 @@ sample-data/private-local/
 assets/brand/
 ```
 
-
 ## Visual review workflow
 
 When the app has a running UI, connect the GitHub repository to Vercel so pull requests can generate preview deployments. The preferred review workflow is:
@@ -78,14 +81,12 @@ Use `docs/VERCEL_VISUAL_REVIEW.md` with `docs/UI_FEEDBACK_PROCESS.md` for visual
 
 ## Development commands
 
-Codex should update this section after selecting the stack.
-
 ```bash
-# install dependencies
-# run development server
-# run tests
-# run lint
-# run typecheck
+npm install
+npm run dev
+npm run lint
+npm run typecheck
+npm run build
 ```
 
 ## First Codex task
