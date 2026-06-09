@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
 import { FeatureCard } from "@/components/feature-card";
+import { OnboardingPrompt } from "@/components/onboarding-prompt";
 import { formatAudFromCents } from "@/lib/money";
 
 const snapshotItems = [
@@ -12,11 +13,13 @@ const snapshotItems = [
 export default function HomePage() {
   return (
     <AppShell>
+      <OnboardingPrompt />
+
       <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
         <p className="text-sm font-semibold text-white/75">Privacy-first tracking</p>
         <h2 className="mt-3 text-3xl font-bold leading-tight">Track your money without handing over your bank login.</h2>
         <p className="mt-4 text-sm leading-6 text-white/75">
-          Phase 1 starts with manual transactions, Australian categories and a review-before-commit CSV import foundation.
+          Start with a manual transaction or explore a CSV workflow where private fields are excluded and every row is reviewed.
         </p>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link href="/transactions" className="rounded-full bg-brand-green px-5 py-3 text-center text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-white">
@@ -38,8 +41,8 @@ export default function HomePage() {
       </section>
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
-        <FeatureCard title="Phase 1 focus" body="Build the mobile-first app foundation, settings, manual transactions and privacy-safe CSV import scaffolding before advanced modules." />
-        <FeatureCard title="What stays off" body="Home loan import, property tax reports, recurring detection, Basiq, payments and production launch work are intentionally excluded." />
+        <FeatureCard title="Simple Mode first" body="Australian defaults and core transaction/import paths stay prominent, while unfinished advanced modules remain hidden or clearly disabled." />
+        <FeatureCard title="Privacy stays visible" body="No bank login is requested, raw CSVs are not stored by default and review-before-commit remains the import rule." />
       </div>
     </AppShell>
   );
