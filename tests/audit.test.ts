@@ -18,7 +18,16 @@ describe("audit validation", () => {
       userId: "user_1",
       entityType: "IMPORT_BATCH",
       action: "UPDATED",
-      metadata: { rawRow: "Account number 12345678" },
+      metadata: { note: "Account number 12345678" },
+    })).toThrow();
+  });
+
+  it("rejects raw row fields even when their example value looks harmless", () => {
+    expect(() => auditEventSchema.parse({
+      userId: "user_1",
+      entityType: "IMPORT_ROW",
+      action: "REVIEWED",
+      metadata: { rawRow: "synthetic-looking value" },
     })).toThrow();
   });
 });
