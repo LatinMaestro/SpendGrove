@@ -16,6 +16,29 @@ describe("transaction validation", () => {
     expect(transaction.status).toBe("ACTIVE");
   });
 
+  it("requires imported transactions to reference their import batch", () => {
+    expect(() => transactionCreateSchema.parse({
+      userId: "user_1",
+      type: "EXPENSE",
+      source: "IMPORTED",
+      amountCents: -2500,
+      date: "2026-06-09",
+      description: "Groceries",
+    })).toThrow();
+  });
+
+  it("preserves manual source by keeping merge links outside the transaction source", () => {
+    expect(() => transactionCreateSchema.parse({
+      userId: "user_1",
+      importBatchId: "batch_1",
+      type: "EXPENSE",
+      source: "MANUAL",
+      amountCents: -2500,
+      date: "2026-06-09",
+      description: "Groceries",
+    })).toThrow();
+  });
+
   it("requires split children to reference a parent", () => {
     expect(() => transactionCreateSchema.parse({
       userId: "user_1",
