@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { auditActionSchema, auditEntityTypeSchema } from "@/lib/validation/enums";
-import { assertSafeJson } from "@/lib/validation/privacy";
+import { assertSafeAuditMetadata } from "@/lib/validation/privacy";
 
 export const auditMetadataSchema = z.unknown().optional().transform((value) => {
   if (value === undefined) return undefined;
-  return assertSafeJson(value, "audit.metadata");
+  return assertSafeAuditMetadata(value);
 });
 
 export const auditEventSchema = z.object({
@@ -13,4 +13,4 @@ export const auditEventSchema = z.object({
   entityId: z.string().min(1).optional(),
   action: auditActionSchema,
   metadata: auditMetadataSchema,
-});
+}).strict();
