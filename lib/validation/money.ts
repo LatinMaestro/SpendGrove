@@ -1,6 +1,10 @@
 import { z } from "zod";
 
 export function parseMoneyToCents(input: string | number) {
+  if (typeof input === "number" && !Number.isFinite(input)) {
+    throw new Error("Money must be a finite AUD amount.");
+  }
+
   const rawValue = String(input).trim();
   const isParenthesizedNegative = /^\(.+\)$/.test(rawValue);
   const withoutCurrency = rawValue
@@ -16,15 +20,21 @@ export function parseMoneyToCents(input: string | number) {
     throw new Error("Money must be a valid AUD amount with no more than two decimal places.");
   }
 
-  const sign = normalized.startsWith("-") ? -1 : 1;
+  const sign = normalized.startsWith("-") ? -1n : 1n;
   const unsigned = normalized.replace("-", "");
   const [dollars, cents = ""] = unsigned.split(".");
-  const paddedCents = cents.padEnd(2, "0");
+  const totalCents = sign * (BigInt(dollars) * 100n + BigInt(cents.padEnd(2, "0")));
 
-  return sign * (Number.parseInt(dollars, 10) * 100 + Number.parseInt(paddedCents, 10));
+  if (totalCents > BigInt(Number.MAX_SAFE_INTEGER) || totalCents < BigInt(Number.MIN_SAFE_INTEGER)) {
+    throw new Error("Money amount exceeds the supported integer-cent range.");
+  }
+
+  return Number(totalCents);
 }
 
-export const centsSchema = z.number().int().finite();
+export const centsSchema = z.number().int().finite().refine(Number.isSafeInteger, {
+  message: "Amount must be a safe integer number of cents.",
+});
 
 export const nonZeroCentsSchema = centsSchema.refine((amountCents) => amountCents !== 0, {
   message: "Amount must not be zero cents.",
