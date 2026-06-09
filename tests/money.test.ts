@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { moneyInputToCentsSchema, parseMoneyToCents } from "@/lib/validation/money";
+import { centsSchema, moneyInputToCentsSchema, parseMoneyToCents } from "@/lib/validation/money";
 
 describe("money validation", () => {
   it("parses AUD input to integer cents", () => {
@@ -10,5 +10,10 @@ describe("money validation", () => {
 
   it("rejects more than two decimal places", () => {
     expect(() => parseMoneyToCents("10.999")).toThrow();
+  });
+
+  it("rejects values outside the safe integer-cent range", () => {
+    expect(() => parseMoneyToCents("90071992547409.92")).toThrow();
+    expect(() => centsSchema.parse(Number.MAX_SAFE_INTEGER + 1)).toThrow();
   });
 });
