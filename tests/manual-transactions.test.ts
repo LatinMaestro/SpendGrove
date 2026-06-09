@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { formatAudFromCents } from "@/lib/money";
 import { manualCategories } from "@/lib/manual-categories";
 import {
+  loadManualTransactionsFromStorage,
+  saveManualTransactionsToStorage,
+} from "@/lib/manual-transaction-storage";
+import {
   createManualTransaction,
   duplicateManualTransactionToDraft,
   findManualTransactionDuplicates,
@@ -108,6 +112,20 @@ describe("manual transaction domain", () => {
       transactions: [],
       recoveredFromCorruption: true,
     });
+  });
+
+  it("falls back safely when browser storage is unavailable", () => {
+    const unavailableStorage = {
+      getItem() { throw new Error("blocked"); },
+      setItem() { throw new Error("blocked"); },
+    };
+
+    expect(loadManualTransactionsFromStorage(unavailableStorage)).toEqual({
+      transactions: [],
+      recoveredFromCorruption: false,
+      storageAvailable: false,
+    });
+    expect(saveManualTransactionsToStorage(unavailableStorage, [])).toBe(false);
   });
 
   it("formats Australian dates and AUD currency", () => {
