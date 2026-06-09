@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   assessCsvColumns,
+  getSafeSelectedCsvLabel,
+  hasConfidentCsvHeader,
   parseAustralianCsvDate,
   parseCsvDocument,
   scanCsvDocument,
@@ -17,6 +19,7 @@ describe("CSV import foundation", () => {
     const document = parseCsvDocument(await fixture("commbank-everyday.csv"));
     const scan = scanCsvDocument(document);
 
+    expect(document.hasHeader).toBe(true);
     expect(scan.profile).toMatchObject({
       profileId: "commbank-everyday-v1",
       bankName: "Commonwealth Bank",
@@ -46,6 +49,7 @@ describe("CSV import foundation", () => {
     const document = parseCsvDocument(await fixture("unknown-manual-mapping.csv"));
     const initialScan = scanCsvDocument(document);
 
+    expect(document.hasHeader).toBe(true);
     expect(initialScan.profile).toMatchObject({
       profileId: null,
       requiresManualMapping: true,
@@ -65,6 +69,47 @@ describe("CSV import foundation", () => {
       amountCents: -1640,
       description: "Aldi groceries",
     });
+  });
+
+  it("preserves the first row of a headerless CSV and uses generic column labels", () => {
+    const firstSyntheticRow = ["05/06/2026", "-42.35", "Synthetic grocer", "1457.65"];
+    const csvText = [
+      firstSyntheticRow.join(","),
+      "06/06/2026,-4.80,Synthetic transport,1452.85",
+    ].join("\n");
+
+    expect(hasConfidentCsvHeader(firstSyntheticRow)).toBe(false);
+    const document = parseCsvDocument(csvText);
+    const initialScan = scanCsvDocument(document);
+
+    expect(document.hasHeader).toBe(false);
+    expect(document.headers).toEqual(["Column 1", "Column 2", "Column 3", "Column 4"]);
+    expect(document.rows).toHaveLength(2);
+    expect(document.rows[0]).toEqual(firstSyntheticRow);
+    expect(initialScan.columns.map((column) => column.safeLabel)).toEqual(document.headers);
+    expect(initialScan.profile).toMatchObject({
+      profileId: null,
+      requiresManualMapping: true,
+    });
+
+    const mappedScan = scanCsvDocument(document, {
+      0: "DATE",
+      1: "AMOUNT",
+      2: "DESCRIPTION",
+      3: "IGNORE",
+    });
+    expect(mappedScan.parsedRowCount).toBe(2);
+    expect(mappedScan.previewRows[0]).toMatchObject({
+      rowNumber: 1,
+      date: "2026-06-05",
+      amountCents: -4235,
+      description: "Synthetic grocer",
+    });
+  });
+
+  it("never exposes the original selected filename", () => {
+    expect(getSafeSelectedCsvLabel("Account-1234-private.csv")).toBe("Selected CSV file");
+    expect(getSafeSelectedCsvLabel("ordinary.csv")).toBe("Selected CSV file");
   });
 
   it("detects private value patterns even when the header looks harmless", () => {
