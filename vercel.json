@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "build": {
+    "env": {
+      "DATABASE_URL": "postgresql://build:build@127.0.0.1:5432/spendgrove_build?schema=public"
+    }
+  }
+}
