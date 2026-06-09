@@ -30,7 +30,7 @@ describe("CSV import foundation", () => {
     expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-05",
       amountCents: -4235,
-      description: "Woolworths Metro",
+      description: "Woolworths",
     });
     expect(JSON.stringify(scan)).not.toContain("SYNTHETIC-ONLY");
   });
@@ -67,15 +67,20 @@ describe("CSV import foundation", () => {
     expect(mappedScan.previewRows[0]).toMatchObject({
       date: "2026-06-01",
       amountCents: -1640,
-      description: "Aldi groceries",
+      description: "Aldi",
     });
   });
 
-  it("preserves every row in a headerless CSV and parses explicit positive amounts", () => {
-    const firstSyntheticRow = ["05/06/2026", "+42.35", "Synthetic refund", "+1457.65"];
+  it("preserves a headerless mixed narration column and sanitises its first row", () => {
+    const firstSyntheticRow = [
+      "05/06/2026",
+      "+42.35",
+      "OSKO transfer to Fictional Person account 12345678 reference 987654321",
+      "+1457.65",
+    ];
     const csvText = [
       firstSyntheticRow.join(","),
-      "06/06/2026,-4.80,Synthetic transport,+1452.85",
+      "06/06/2026,-4.80,Woolworths terminal 76543210 card xx4321,+1452.85",
     ].join("\n");
 
     expect(hasConfidentCsvHeader(firstSyntheticRow)).toBe(false);
@@ -86,7 +91,11 @@ describe("CSV import foundation", () => {
     expect(document.headers).toEqual(["Column 1", "Column 2", "Column 3", "Column 4"]);
     expect(document.rows).toHaveLength(2);
     expect(document.rows[0]).toEqual(firstSyntheticRow);
-    expect(initialScan.columns.map((column) => column.safeLabel)).toEqual(document.headers);
+    expect(initialScan.columns[2]).toMatchObject({
+      safeLabel: "Column 3",
+      isNarrative: true,
+      isPrivate: false,
+    });
     expect(initialScan.profile).toMatchObject({ profileId: null, requiresManualMapping: true });
 
     const mappedScan = scanCsvDocument(document, {
@@ -100,28 +109,71 @@ describe("CSV import foundation", () => {
       rowNumber: 1,
       date: "2026-06-05",
       amountCents: 4235,
-      description: "Synthetic refund",
+      description: "Bank transfer",
+    });
+    expect(mappedScan.previewRows[1].description).toBe("Woolworths");
+    expect(JSON.stringify(mappedScan)).not.toContain("Fictional Person");
+    expect(JSON.stringify(mappedScan)).not.toContain("12345678");
+    expect(JSON.stringify(mappedScan)).not.toContain("987654321");
+  });
+
+  it("sanitises mixed headered narrations instead of excluding the column", () => {
+    const document = parseCsvDocument([
+      "Date,Amount,Memo",
+      "09/06/2026,-12.50,Transfer to Fictional Recipient acct 87654321",
+      "10/06/2026,-18.75,Coles card xx6789 terminal 23456789",
+    ].join("\n"));
+    const scan = scanCsvDocument(document);
+
+    expect(scan.columns[2]).toMatchObject({
+      isNarrative: true,
+      isPrivate: false,
+      suggestedRole: "DESCRIPTION",
+    });
+    expect(scan.previewRows[0].description).toBe("Bank transfer");
+    expect(scan.previewRows[1].description).toBe("Coles");
+    expect(JSON.stringify(scan)).not.toContain("Fictional Recipient");
+    expect(JSON.stringify(scan)).not.toContain("87654321");
+    expect(JSON.stringify(scan)).not.toContain("23456789");
+  });
+
+  it("keeps genuine private identifier columns excluded", () => {
+    const document = parseCsvDocument([
+      "Date,Amount,Description,Account Number,BSB,Account Name,Card Number,Customer ID,Loan Reference",
+      "09/06/2026,-12.50,Synthetic purchase,12345678,000-000,Fictional Account Holder,4444333322221111,76543210,987654321",
+    ].join("\n"));
+    const columns = assessCsvColumns(document);
+    const scan = scanCsvDocument(document);
+
+    expect(columns.slice(3)).toHaveLength(6);
+    columns.slice(3).forEach((column) => {
+      expect(column.isPrivate).toBe(true);
+      expect(column.suggestedRole).toBe("PRIVATE");
+    });
+    expect(scan.privateColumnCount).toBe(6);
+    expect(JSON.stringify(scan)).not.toContain("Fictional Account Holder");
+    expect(JSON.stringify(scan)).not.toContain("4444333322221111");
+    expect(JSON.stringify(scan)).not.toContain("987654321");
+  });
+
+  it("excludes an identifier-only headerless column", () => {
+    const document = parseCsvDocument([
+      "09/06/2026,-12.50,Synthetic purchase,12345678",
+      "10/06/2026,-8.25,Synthetic transport,87654321",
+    ].join("\n"));
+    const columns = assessCsvColumns(document);
+
+    expect(columns[3]).toMatchObject({
+      isNarrative: false,
+      isPrivate: true,
+      privacyReason: "Private identifier-only column",
+      suggestedRole: "PRIVATE",
     });
   });
 
   it("never exposes the original selected filename", () => {
     expect(getSafeSelectedCsvLabel("Account-1234-private.csv")).toBe("Selected CSV file");
     expect(getSafeSelectedCsvLabel("ordinary.csv")).toBe("Selected CSV file");
-  });
-
-  it("detects private value patterns even when the header looks harmless", () => {
-    const document = parseCsvDocument([
-      "Date,Amount,Memo,Description",
-      "09/06/2026,-12.50,BSB 000-000,Coffee",
-    ].join("\n"));
-    const columns = assessCsvColumns(document);
-
-    expect(columns[2]).toMatchObject({
-      isPrivate: true,
-      privacyReason: "Private identifier pattern",
-      suggestedRole: "PRIVATE",
-    });
-    expect(JSON.stringify(scanCsvDocument(document))).not.toContain("000-000");
   });
 
   it("parses quoted fields, Australian dates and integer-cent amounts", () => {
