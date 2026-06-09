@@ -1,4 +1,5 @@
 import { BottomNav } from "@/components/bottom-nav";
+import { ModeBadge } from "@/components/mode-badge";
 
 export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -8,9 +9,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-teal">SpendGrove</p>
           <h1 className="mt-1 text-xl font-bold text-brand-deepTeal">Your money, your files</h1>
         </div>
-        <span className="rounded-full bg-surface-mint px-3 py-2 text-xs font-semibold text-brand-deepTeal">
-          Simple Mode
-        </span>
+        <ModeBadge />
       </header>
       <div className="flex-1">{children}</div>
       <BottomNav />
