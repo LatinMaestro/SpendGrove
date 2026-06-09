@@ -24,9 +24,9 @@ import {
 
 const roleOptions: Array<{ value: CsvColumnRole; label: string }> = [
   { value: "DATE", label: "Transaction date" },
-  { value: "AMOUNT", label: "Signed amount" },
-  { value: "DEBIT", label: "Debit / money out" },
-  { value: "CREDIT", label: "Credit / money in" },
+  { value: "AMOUNT", label: "Transaction amount" },
+  { value: "DEBIT", label: "Money out / Debit" },
+  { value: "CREDIT", label: "Money in / Credit" },
   { value: "DESCRIPTION", label: "Description" },
   { value: "MERCHANT", label: "Merchant / payee" },
   { value: "IGNORE", label: "Ignore column" },
@@ -205,7 +205,11 @@ export function CsvImportFoundation() {
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="column-mapping-heading">
             <div className="flex items-start gap-3">
               <TableProperties aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
-              <div><h2 id="column-mapping-heading" className="text-xl font-bold text-brand-deepTeal">Map safe columns</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Confirm how non-private columns should be interpreted. Headerless and unknown formats remain here until the required fields are mapped.</p></div>
+              <div>
+                <h2 id="column-mapping-heading" className="text-xl font-bold text-brand-deepTeal">Map safe columns</h2>
+                <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Confirm how non-private columns should be interpreted. Headerless and unknown formats remain here until the required fields are mapped.</p>
+                <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Choose the column that contains the transaction amount. Negative amounts are money out, and positive amounts are money in.</p>
+              </div>
             </div>
             <div className="mt-5 space-y-3">
               {scan.columns.filter((column) => !column.isPrivate).map((column) => (
