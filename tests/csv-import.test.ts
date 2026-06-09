@@ -71,11 +71,11 @@ describe("CSV import foundation", () => {
     });
   });
 
-  it("preserves the first row of a headerless CSV and uses generic column labels", () => {
-    const firstSyntheticRow = ["05/06/2026", "-42.35", "Synthetic grocer", "1457.65"];
+  it("preserves every row in a headerless CSV and parses explicit positive amounts", () => {
+    const firstSyntheticRow = ["05/06/2026", "+42.35", "Synthetic refund", "+1457.65"];
     const csvText = [
       firstSyntheticRow.join(","),
-      "06/06/2026,-4.80,Synthetic transport,1452.85",
+      "06/06/2026,-4.80,Synthetic transport,+1452.85",
     ].join("\n");
 
     expect(hasConfidentCsvHeader(firstSyntheticRow)).toBe(false);
@@ -87,10 +87,7 @@ describe("CSV import foundation", () => {
     expect(document.rows).toHaveLength(2);
     expect(document.rows[0]).toEqual(firstSyntheticRow);
     expect(initialScan.columns.map((column) => column.safeLabel)).toEqual(document.headers);
-    expect(initialScan.profile).toMatchObject({
-      profileId: null,
-      requiresManualMapping: true,
-    });
+    expect(initialScan.profile).toMatchObject({ profileId: null, requiresManualMapping: true });
 
     const mappedScan = scanCsvDocument(document, {
       0: "DATE",
@@ -102,8 +99,8 @@ describe("CSV import foundation", () => {
     expect(mappedScan.previewRows[0]).toMatchObject({
       rowNumber: 1,
       date: "2026-06-05",
-      amountCents: -4235,
-      description: "Synthetic grocer",
+      amountCents: 4235,
+      description: "Synthetic refund",
     });
   });
 
