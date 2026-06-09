@@ -2,6 +2,7 @@ import { parseMoneyToCents } from "@/lib/validation/money";
 import {
   containsPrivateBankIdentifier,
   normalizeSafeText,
+  sanitizeTransactionNarration,
 } from "@/lib/validation/privacy";
 
 export const MAX_CSV_FILE_SIZE_BYTES = 5 * 1024 * 1024;
@@ -39,6 +40,7 @@ export type CsvColumnAssessment = {
   index: number;
   safeLabel: string;
   isPrivate: boolean;
+  isNarrative: boolean;
   privacyReason?: string;
   suggestedRole: CsvColumnRole;
 };
@@ -108,7 +110,7 @@ const privateHeaderRules: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\baccount\s*(?:number|no|name|id)\b/i, reason: "Account identifier" },
   { pattern: /\b(?:card|credit card)\s*(?:number|no|fragment|ending)\b/i, reason: "Card identifier" },
   { pattern: /\b(?:customer|client|member)\s*(?:number|no|id)\b/i, reason: "Customer identifier" },
-  { pattern: /\bloan\s*(?:account)?\s*(?:number|no|id)\b/i, reason: "Loan identifier" },
+  { pattern: /\bloan\s*(?:account)?\s*(?:number|no|id|reference)\b/i, reason: "Loan identifier" },
 ];
 
 const headerRoleRules: Array<{ role: CsvColumnRole; patterns: RegExp[] }> = [
@@ -116,7 +118,7 @@ const headerRoleRules: Array<{ role: CsvColumnRole; patterns: RegExp[] }> = [
   { role: "AMOUNT", patterns: [/^amount$/i, /transaction\s*amount/i] },
   { role: "DEBIT", patterns: [/debit/i, /money\s*out/i, /withdrawal/i] },
   { role: "CREDIT", patterns: [/credit/i, /money\s*in/i, /deposit/i] },
-  { role: "DESCRIPTION", patterns: [/description/i, /details/i, /narrative/i, /transaction\s*details/i, /particulars/i] },
+  { role: "DESCRIPTION", patterns: [/description/i, /details/i, /narrative/i, /transaction\s*details/i, /particulars/i, /memo/i] },
   { role: "MERCHANT", patterns: [/merchant/i, /payee/i] },
 ];
 
@@ -276,13 +278,34 @@ export function detectCsvProfile(headers: string[]): CsvProfileDetection {
   };
 }
 
+function isLikelyNarrativeColumn(values: string[]) {
+  const nonEmptyValues = values.filter((value) => value.trim().length > 0);
+  if (nonEmptyValues.length === 0) return false;
+
+  const narrativeValues = nonEmptyValues.filter((value) =>
+    /[a-z]/i.test(value) && !parseAustralianCsvDate(value) && !isMoneyLike(value),
+  );
+  return narrativeValues.length / nonEmptyValues.length >= 0.5;
+}
+
+function isPrivateIdentifierOnlyColumn(values: string[], isNarrative: boolean) {
+  if (isNarrative) return false;
+  const nonEmptyValues = values.filter((value) => value.trim().length > 0);
+  if (nonEmptyValues.length === 0) return false;
+  const privateValueCount = nonEmptyValues.filter(containsPrivateBankIdentifier).length;
+  return privateValueCount > 0 && privateValueCount / nonEmptyValues.length >= 0.5;
+}
+
 export function assessCsvColumns(document: TransientCsvDocument) {
   return document.headers.map((header, index): CsvColumnAssessment => {
+    const values = document.rows.slice(0, 25).map((row) => row[index] ?? "");
+    const headerRole = document.hasHeader ? suggestColumnRole(header) : "IGNORE";
+    const isNarrative = headerRole === "DESCRIPTION" || headerRole === "MERCHANT" || isLikelyNarrativeColumn(values);
     const headerReason = document.hasHeader ? findPrivateHeaderReason(header) : undefined;
-    const hasPrivateValue = document.rows.slice(0, 25).some((row) =>
-      row[index] ? containsPrivateBankIdentifier(row[index]) : false,
-    );
-    const privacyReason = headerReason ?? (hasPrivateValue ? "Private identifier pattern" : undefined);
+    const privateValueReason = isPrivateIdentifierOnlyColumn(values, isNarrative)
+      ? "Private identifier-only column"
+      : undefined;
+    const privacyReason = headerReason ?? privateValueReason;
     const isPrivate = Boolean(privacyReason);
 
     return {
@@ -291,8 +314,9 @@ export function assessCsvColumns(document: TransientCsvDocument) {
         ? safeHeaderLabel(header, index, isPrivate)
         : `Column ${index + 1}`,
       isPrivate,
+      isNarrative,
       privacyReason,
-      suggestedRole: isPrivate ? "PRIVATE" : document.hasHeader ? suggestColumnRole(header) : "IGNORE",
+      suggestedRole: isPrivate ? "PRIVATE" : headerRole,
     };
   });
 }
@@ -380,8 +404,8 @@ export function buildSanitizedCsvPreview(
       warningCodes.push("AMOUNT_NEEDS_MAPPING");
     }
 
-    const description = normalizeSafeText(firstValueForRole(row, safeMapping, "DESCRIPTION"));
-    const merchantName = normalizeSafeText(firstValueForRole(row, safeMapping, "MERCHANT"));
+    const description = sanitizeTransactionNarration(firstValueForRole(row, safeMapping, "DESCRIPTION"));
+    const merchantName = sanitizeTransactionNarration(firstValueForRole(row, safeMapping, "MERCHANT"));
     if (!description && !merchantName) warningCodes.push("DESCRIPTION_NEEDS_MAPPING");
 
     return {
