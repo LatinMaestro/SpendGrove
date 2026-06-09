@@ -7,6 +7,7 @@ import {
 export const MAX_CSV_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 export const MAX_CSV_ROWS = 5000;
 export const CSV_PREVIEW_ROW_LIMIT = 8;
+export const SAFE_SELECTED_CSV_LABEL = "Selected CSV file";
 
 export type CsvColumnRole =
   | "DATE"
@@ -23,6 +24,7 @@ export type CsvMapping = Record<number, CsvColumnRole>;
 export type TransientCsvDocument = {
   headers: string[];
   rows: string[][];
+  hasHeader: boolean;
 };
 
 export type CsvProfileDetection = {
@@ -51,6 +53,7 @@ export type SanitizedCsvPreviewRow = {
 };
 
 export type CsvScanResult = {
+  hasHeader: boolean;
   profile: CsvProfileDetection;
   columns: CsvColumnAssessment[];
   mapping: CsvMapping;
@@ -117,6 +120,8 @@ const headerRoleRules: Array<{ role: CsvColumnRole; patterns: RegExp[] }> = [
   { role: "MERCHANT", patterns: [/merchant/i, /payee/i] },
 ];
 
+const supportingHeaderPatterns = [/^balance$/i, /^reference$/i, /^type$/i, /^status$/i, /^category$/i];
+
 function normalizeHeader(value: string) {
   return normalizeSafeText(value).toLocaleLowerCase("en-AU");
 }
@@ -136,6 +141,33 @@ function suggestColumnRole(header: string) {
     if (rule.patterns.some((pattern) => pattern.test(header))) return rule.role;
   }
   return "IGNORE";
+}
+
+function isMoneyLike(value: string) {
+  try {
+    parseMoneyToCents(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isRecognizedHeader(value: string) {
+  return Boolean(findPrivateHeaderReason(value)) ||
+    suggestColumnRole(value) !== "IGNORE" ||
+    supportingHeaderPatterns.some((pattern) => pattern.test(value));
+}
+
+export function hasConfidentCsvHeader(firstRecord: string[]) {
+  const normalizedRecord = firstRecord.map((value) => value.trim());
+  const dataLikeCount = normalizedRecord.filter((value) =>
+    Boolean(parseAustralianCsvDate(value)) || isMoneyLike(value),
+  ).length;
+  const recognizedHeaderCount = normalizedRecord.filter(isRecognizedHeader).length;
+
+  if (dataLikeCount >= 2) return false;
+  if (recognizedHeaderCount >= 2) return true;
+  return recognizedHeaderCount >= 1 && dataLikeCount === 0;
 }
 
 function parseCsvRecords(csvText: string) {
@@ -187,20 +219,29 @@ export function parseCsvDocument(csvText: string): TransientCsvDocument {
   if (!normalizedText.trim()) throw new Error("The selected CSV is empty.");
 
   const records = parseCsvRecords(normalizedText);
-  if (records.length < 2) throw new Error("The CSV needs a header row and at least one data row.");
-  if (records.length - 1 > MAX_CSV_ROWS) {
+  if (records.length === 0) throw new Error("The selected CSV is empty.");
+
+  const hasHeader = hasConfidentCsvHeader(records[0]);
+  if (hasHeader && records.length < 2) {
+    throw new Error("The CSV needs at least one data row after its header.");
+  }
+
+  const columnCount = Math.max(...records.map((record) => record.length));
+  if (columnCount < 2) throw new Error("The CSV needs at least two columns.");
+
+  const sourceRows = hasHeader ? records.slice(1) : records;
+  if (sourceRows.length > MAX_CSV_ROWS) {
     throw new Error(`This Phase 1 foundation supports up to ${MAX_CSV_ROWS.toLocaleString("en-AU")} rows per file.`);
   }
 
-  const headers = records[0].map((header) => header.trim());
-  if (headers.length < 2) throw new Error("The CSV needs at least two columns.");
-  if (headers.every((header) => !header)) throw new Error("The CSV header row is empty.");
-
-  const rows = records.slice(1).map((row) =>
-    Array.from({ length: headers.length }, (_, index) => row[index]?.trim() ?? ""),
+  const headers = hasHeader
+    ? Array.from({ length: columnCount }, (_, index) => records[0][index]?.trim() || `Column ${index + 1}`)
+    : Array.from({ length: columnCount }, (_, index) => `Column ${index + 1}`);
+  const rows = sourceRows.map((row) =>
+    Array.from({ length: columnCount }, (_, index) => row[index]?.trim() ?? ""),
   );
 
-  return { headers, rows };
+  return { headers, rows, hasHeader };
 }
 
 export function detectCsvProfile(headers: string[]): CsvProfileDetection {
@@ -237,7 +278,7 @@ export function detectCsvProfile(headers: string[]): CsvProfileDetection {
 
 export function assessCsvColumns(document: TransientCsvDocument) {
   return document.headers.map((header, index): CsvColumnAssessment => {
-    const headerReason = findPrivateHeaderReason(header);
+    const headerReason = document.hasHeader ? findPrivateHeaderReason(header) : undefined;
     const hasPrivateValue = document.rows.slice(0, 25).some((row) =>
       row[index] ? containsPrivateBankIdentifier(row[index]) : false,
     );
@@ -246,10 +287,12 @@ export function assessCsvColumns(document: TransientCsvDocument) {
 
     return {
       index,
-      safeLabel: safeHeaderLabel(header, index, isPrivate),
+      safeLabel: document.hasHeader
+        ? safeHeaderLabel(header, index, isPrivate)
+        : `Column ${index + 1}`,
       isPrivate,
       privacyReason,
-      suggestedRole: isPrivate ? "PRIVATE" : suggestColumnRole(header),
+      suggestedRole: isPrivate ? "PRIVATE" : document.hasHeader ? suggestColumnRole(header) : "IGNORE",
     };
   });
 }
@@ -342,7 +385,7 @@ export function buildSanitizedCsvPreview(
     if (!description && !merchantName) warningCodes.push("DESCRIPTION_NEEDS_MAPPING");
 
     return {
-      rowNumber: index + 2,
+      rowNumber: index + (document.hasHeader ? 2 : 1),
       date,
       amountCents,
       description,
@@ -355,17 +398,27 @@ export function buildSanitizedCsvPreview(
 }
 
 export function scanCsvDocument(document: TransientCsvDocument, mapping?: CsvMapping): CsvScanResult {
-  const profile = detectCsvProfile(document.headers);
+  const profile = document.hasHeader
+    ? detectCsvProfile(document.headers)
+    : {
+        profileId: null,
+        bankName: "Headerless or custom CSV",
+        displayName: "Manual mapping required",
+        confidence: 0,
+        requiresManualMapping: true,
+      };
   const columns = assessCsvColumns(document);
   const suggestedMapping = mapping ?? buildSuggestedCsvMapping(columns);
   const sanitized = buildSanitizedCsvPreview(document, columns, suggestedMapping);
   const warningCodes = [
+    ...(!document.hasHeader ? ["HEADER_NOT_DETECTED"] : []),
     ...(profile.requiresManualMapping ? ["MANUAL_MAPPING_REQUIRED"] : []),
     ...(sanitized.mappingIssues.length > 0 ? ["MAPPING_INCOMPLETE"] : []),
     ...(sanitized.previewRows.some((row) => row.warningCodes.length > 0) ? ["ROWS_NEED_REVIEW"] : []),
   ];
 
   return {
+    hasHeader: document.hasHeader,
     profile,
     columns,
     mapping: sanitized.mapping,
@@ -375,4 +428,8 @@ export function scanCsvDocument(document: TransientCsvDocument, mapping?: CsvMap
     mappingIssues: sanitized.mappingIssues,
     warningCodes,
   };
+}
+
+export function getSafeSelectedCsvLabel(_originalFileName?: string) {
+  return SAFE_SELECTED_CSV_LABEL;
 }
