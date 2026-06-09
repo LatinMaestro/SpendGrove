@@ -13,15 +13,15 @@ export function parseMoneyToCents(input: string | number) {
     .replace(/[()]/g, "");
 
   const normalized = isParenthesizedNegative && !withoutCurrency.startsWith("-")
-    ? `-${withoutCurrency}`
+    ? `-${withoutCurrency.replace(/^\+/, "")}`
     : withoutCurrency;
 
-  if (!/^-?\d+(\.\d{1,2})?$/.test(normalized)) {
+  if (!/^[+-]?\d+(\.\d{1,2})?$/.test(normalized)) {
     throw new Error("Money must be a valid AUD amount with no more than two decimal places.");
   }
 
   const sign = normalized.startsWith("-") ? BigInt(-1) : BigInt(1);
-  const unsigned = normalized.replace("-", "");
+  const unsigned = normalized.replace(/^[+-]/, "");
   const [dollars, cents = ""] = unsigned.split(".");
   const totalCents = sign * (BigInt(dollars) * BigInt(100) + BigInt(cents.padEnd(2, "0")));
 
