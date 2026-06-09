@@ -16,4 +16,8 @@ describe("category validation", () => {
   it("prevents a category from parenting itself", () => {
     expect(() => assertValidCategoryParent("cat_1", "cat_1")).toThrow();
   });
+
+  it("prevents a category from moving beneath its descendant", () => {
+    expect(() => assertValidCategoryParent("cat_parent", "cat_child", ["cat_parent"])).toThrow();
+  });
 });
