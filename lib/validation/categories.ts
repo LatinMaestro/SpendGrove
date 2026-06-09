@@ -13,17 +13,25 @@ export const categoryCreateSchema = z.object({
   isSeeded: z.boolean().default(false),
   isArchived: z.boolean().default(false),
   sortOrder: z.number().int().default(0),
-});
+}).strict();
 
-export const categoryUpdateSchema = categoryCreateSchema
-  .omit({ userId: true, isSeeded: true })
-  .partial()
-  .extend({
-    deletedAt: z.date().nullable().optional(),
-  });
+export const categoryUpdateSchema = z.object({
+  name: categoryNameSchema.optional(),
+  type: categoryTypeSchema.optional(),
+  parentId: z.string().min(1).nullable().optional(),
+  colour: z.string().trim().max(40).nullable().optional(),
+  icon: z.string().trim().max(40).nullable().optional(),
+  isArchived: z.boolean().optional(),
+  sortOrder: z.number().int().optional(),
+  deletedAt: z.coerce.date().nullable().optional(),
+}).strict();
 
-export function assertValidCategoryParent(categoryId: string, parentId?: string) {
+export function assertValidCategoryParent(categoryId: string, parentId?: string | null, proposedParentAncestorIds: string[] = []) {
   if (parentId && parentId === categoryId) {
     throw new Error("A category cannot be its own parent.");
+  }
+
+  if (proposedParentAncestorIds.includes(categoryId)) {
+    throw new Error("A category cannot be moved beneath one of its descendants.");
   }
 }
