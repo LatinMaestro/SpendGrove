@@ -1,0 +1,5 @@
+Date,Narrative,Debit Amount,Credit Amount,Balance,Customer ID
+01/06/2026,Coles,63.25,,2040.75,SYNTHETIC-ONLY
+02/06/2026,Credit interest,,2.45,2043.20,SYNTHETIC-ONLY
+03/06/2026,Telstra,79.00,,1964.20,SYNTHETIC-ONLY
+04/06/2026,OSKO payment,120.00,,1844.20,SYNTHETIC-ONLY

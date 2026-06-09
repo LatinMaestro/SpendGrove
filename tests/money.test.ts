@@ -5,6 +5,7 @@ describe("money validation", () => {
   it("parses AUD input to integer cents", () => {
     expect(parseMoneyToCents("$1,234.56")).toBe(123456);
     expect(parseMoneyToCents("AUD 12.30")).toBe(1230);
+    expect(parseMoneyToCents("+27.45")).toBe(2745);
     expect(moneyInputToCentsSchema.parse("(42.05)")).toBe(-4205);
   });
 
