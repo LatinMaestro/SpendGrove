@@ -1,8 +1,10 @@
 const privateBankPatterns = [
   /\bBSB\s*[:#-]?\s*\d{3}[-\s]?\d{3}\b/i,
+  /\b\d{3}-\d{3}\b/,
   /\b(?:account|acct|loan|customer|client|member)\s*(?:number|no|id)?\s*[:#-]?\s*\d{4,}\b/i,
   /\b(?:card)\s*(?:number|no)?\s*[:#-]?\s*(?:\d[\s-]?){8,}\b/i,
-  /\b(?:xx|x{2,})\d{3,6}\b/i,
+  /\b(?:xx|x{2,}|\*{2,})\d{3,6}\b/i,
+  /\b\d{7,}\b/,
 ];
 
 const rawPayloadKeys = new Set([
@@ -29,6 +31,17 @@ const forbiddenAuditKeys = new Set([
 
 const safeReplacement = "[private field removed]";
 
+const merchantNarrationRules: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\bwoolworths\b/i, label: "Woolworths" },
+  { pattern: /\bcoles\b/i, label: "Coles" },
+  { pattern: /\baldi\b/i, label: "Aldi" },
+  { pattern: /\biga\b/i, label: "IGA" },
+];
+
+const loanRepaymentPattern = /\bloan\b.*\b(?:repayment|payment)\b|\b(?:repayment|payment)\b.*\bloan\b/i;
+const transferNarrationPattern = /\b(?:osko|transfer|xfer|pay anyone|internet banking|bank transfer)\b/i;
+const paymentNarrationPattern = /\b(?:payment|direct debit|eftpos|card purchase)\b/i;
+
 function normalizeMetadataKey(key: string) {
   return key.replace(/[^a-z0-9]/gi, "").toLowerCase();
 }
@@ -49,6 +62,26 @@ export function assertNoPrivateBankIdentifiers(value: string, fieldName: string)
 
 export function normalizeSafeText(value: string) {
   return redactPrivateBankTokens(value).replace(/\s+/g, " ").trim();
+}
+
+export function sanitizeTransactionNarration(value: string) {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+
+  const merchantRule = merchantNarrationRules.find((rule) => rule.pattern.test(normalized));
+  if (merchantRule) return merchantRule.label;
+  if (loanRepaymentPattern.test(normalized)) return "Loan repayment";
+  if (transferNarrationPattern.test(normalized)) return "Bank transfer";
+  if (paymentNarrationPattern.test(normalized)) return "Payment";
+
+  const sanitized = normalizeSafeText(normalized)
+    .replaceAll(safeReplacement, " ")
+    .replace(/\b(?:ref(?:erence)?|receipt|trace|terminal|card|account|acct)\b\s*[:#-]?\s*[^,;|]*/gi, " ")
+    .replace(/[|;]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return sanitized && !containsPrivateBankIdentifier(sanitized) ? sanitized : "Payment";
 }
 
 function inspectSafeJson(input: unknown, path: string, forbiddenKeys: Set<string>): void {
