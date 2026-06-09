@@ -8,9 +8,16 @@ import {
 } from "@/lib/validation/enums";
 import { assertSafeJson, normalizeSafeText } from "@/lib/validation/privacy";
 
-const safeFileNameSchema = z.string().trim().max(160).regex(/^[\w .()\-]+$/).transform(normalizeSafeText).optional();
-const fileNameHashSchema = z.string().trim().min(16).max(128).optional();
+const safeFileNameSchema = z.string()
+  .trim()
+  .max(160)
+  .regex(/^[\w .()\-]+$/)
+  .transform(normalizeSafeText)
+  .optional();
+const fileNameHashSchema = z.string().trim().regex(/^[a-f0-9]{32,128}$/i).optional();
 const safeHeaderSchema = z.string().trim().max(120).transform(normalizeSafeText);
+const warningCodeSchema = z.string().trim().min(1).max(80).regex(/^[A-Z0-9_\-]+$/i);
+const optionalSafeDescriptionSchema = z.string().trim().min(1).max(300).transform(normalizeSafeText).optional();
 
 export const importBatchMetadataSchema = z.object({
   userId: z.string().min(1),
@@ -24,14 +31,17 @@ export const importBatchMetadataSchema = z.object({
   rowCount: z.number().int().nonnegative().default(0),
   parsedRowCount: z.number().int().nonnegative().default(0),
   privateFieldCount: z.number().int().nonnegative().default(0),
+  importedCount: z.number().int().nonnegative().default(0),
+  skippedCount: z.number().int().nonnegative().default(0),
+  mergedCount: z.number().int().nonnegative().default(0),
   detectedBankName: z.string().trim().max(120).transform(normalizeSafeText).optional(),
   detectedAccountType: z.string().trim().max(80).transform(normalizeSafeText).optional(),
   mappingSummary: z.unknown().optional().transform((value) => value === undefined ? undefined : assertSafeJson(value, "mappingSummary")),
   excludedPrivateHeaders: z.array(safeHeaderSchema).default([]),
-  warningCodes: z.array(z.string().trim().max(80)).default([]),
-});
+  warningCodes: z.array(warningCodeSchema).default([]),
+}).strict();
 
-export const importRowReviewSchema = z.object({
+const importRowReviewFields = z.object({
   userId: z.string().min(1),
   importBatchId: z.string().min(1),
   rowNumber: z.number().int().positive(),
@@ -39,14 +49,26 @@ export const importRowReviewSchema = z.object({
   status: importRowStatusSchema.default("NEEDS_REVIEW"),
   mappedDate: z.coerce.date().optional(),
   amountCents: centsSchema.optional(),
-  description: z.string().trim().max(300).transform(normalizeSafeText).optional(),
-  merchantName: z.string().trim().max(160).transform(normalizeSafeText).optional(),
+  description: optionalSafeDescriptionSchema,
+  merchantName: z.string().trim().min(1).max(160).transform(normalizeSafeText).optional(),
   categoryId: z.string().min(1).optional(),
   matchedTransactionId: z.string().min(1).optional(),
   committedTransactionId: z.string().min(1).optional(),
-  warningCodes: z.unknown().optional().transform((value) => value === undefined ? undefined : assertSafeJson(value, "warningCodes")),
+  warningCodes: z.array(warningCodeSchema).default([]),
   metadata: z.unknown().optional().transform((value) => value === undefined ? undefined : assertSafeJson(value, "metadata")),
-}).superRefine((value, context) => {
+}).strict();
+
+function validateImportRowAction(
+  value: {
+    action?: "UNDECIDED" | "IMPORT" | "SKIP" | "MERGE";
+    mappedDate?: Date;
+    amountCents?: number;
+    description?: string;
+    merchantName?: string;
+    matchedTransactionId?: string | null;
+  },
+  context: z.RefinementCtx,
+) {
   if (value.action === "IMPORT") {
     if (!value.mappedDate) context.addIssue({ code: "custom", path: ["mappedDate"], message: "Import rows require a mapped date before import." });
     if (value.amountCents === undefined) context.addIssue({ code: "custom", path: ["amountCents"], message: "Import rows require an amount before import." });
@@ -56,4 +78,20 @@ export const importRowReviewSchema = z.object({
   if (value.action === "MERGE" && !value.matchedTransactionId) {
     context.addIssue({ code: "custom", path: ["matchedTransactionId"], message: "Merge rows require a matched transaction." });
   }
-});
+}
+
+export const importRowReviewSchema = importRowReviewFields.superRefine(validateImportRowAction);
+
+export const importRowActionUpdateSchema = z.object({
+  action: importRowActionSchema.optional(),
+  status: importRowStatusSchema.optional(),
+  mappedDate: z.coerce.date().optional(),
+  amountCents: centsSchema.optional(),
+  description: optionalSafeDescriptionSchema,
+  merchantName: z.string().trim().min(1).max(160).transform(normalizeSafeText).nullable().optional(),
+  categoryId: z.string().min(1).nullable().optional(),
+  matchedTransactionId: z.string().min(1).nullable().optional(),
+  committedTransactionId: z.string().min(1).nullable().optional(),
+  warningCodes: z.array(warningCodeSchema).optional(),
+  metadata: z.unknown().optional().transform((value) => value === undefined ? undefined : assertSafeJson(value, "metadata")),
+}).strict().superRefine(validateImportRowAction);
