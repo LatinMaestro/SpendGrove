@@ -86,8 +86,23 @@ npm install
 npm run dev
 npm run lint
 npm run typecheck
+npm run test
 npm run build
 ```
+
+## Prisma commands
+
+Copy `.env.example` to a local `.env` and supply a development PostgreSQL connection before running database commands.
+
+```bash
+npm run db:format
+npm run db:validate
+npm run db:generate
+npm run db:migrate -- --name phase_1_data_model_foundation
+npm run db:seed
+```
+
+The normal Next.js build does not connect to a live database and does not run migrations or seeds. `DATABASE_URL` is required for Prisma validation, migrations, seeding and later runtime database access, not for the current static Vercel preview build.
 
 ## First Codex task
 
