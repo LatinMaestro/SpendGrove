@@ -20,10 +20,10 @@ export function parseMoneyToCents(input: string | number) {
     throw new Error("Money must be a valid AUD amount with no more than two decimal places.");
   }
 
-  const sign = normalized.startsWith("-") ? -1n : 1n;
+  const sign = normalized.startsWith("-") ? BigInt(-1) : BigInt(1);
   const unsigned = normalized.replace("-", "");
   const [dollars, cents = ""] = unsigned.split(".");
-  const totalCents = sign * (BigInt(dollars) * 100n + BigInt(cents.padEnd(2, "0")));
+  const totalCents = sign * (BigInt(dollars) * BigInt(100) + BigInt(cents.padEnd(2, "0")));
 
   if (totalCents > BigInt(Number.MAX_SAFE_INTEGER) || totalCents < BigInt(Number.MIN_SAFE_INTEGER)) {
     throw new Error("Money amount exceeds the supported integer-cent range.");
