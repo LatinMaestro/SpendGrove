@@ -64,7 +64,7 @@ function validateImportRowAction(
     mappedDate?: Date;
     amountCents?: number;
     description?: string;
-    merchantName?: string;
+    merchantName?: string | null;
     matchedTransactionId?: string | null;
   },
   context: z.RefinementCtx,
