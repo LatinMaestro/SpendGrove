@@ -74,7 +74,7 @@ describe("local merchant rule foundation", () => {
     });
   });
 
-  it("uses local keywords before a low-confidence review fallback", () => {
+  it("uses clear local keywords before a low-confidence review fallback", () => {
     expect(suggestMerchantCategory("Woolworths Metro", emptyLocalMerchantData())).toMatchObject({
       source: "KEYWORD",
       categoryId: categoryId("Groceries"),
@@ -85,6 +85,27 @@ describe("local merchant rule foundation", () => {
       confidence: "LOW",
       categoryId: categoryId("Needs review"),
       requiresReview: true,
+    });
+  });
+
+  it("does not over-categorise ambiguous payment or levy wording", () => {
+    expect(suggestMerchantCategory("BPAY levy", emptyLocalMerchantData())).toMatchObject({
+      source: "FALLBACK",
+      confidence: "LOW",
+      categoryId: categoryId("Needs review"),
+    });
+    expect(suggestMerchantCategory("Payment", emptyLocalMerchantData())).toMatchObject({
+      source: "FALLBACK",
+      categoryId: categoryId("Needs review"),
+    });
+    expect(suggestMerchantCategory("Internal account movement", emptyLocalMerchantData())).toMatchObject({
+      source: "FALLBACK",
+      categoryId: categoryId("Needs review"),
+    });
+    expect(suggestMerchantCategory("Bank transfer", emptyLocalMerchantData())).toMatchObject({
+      source: "KEYWORD",
+      confidence: "MEDIUM",
+      categoryId: categoryId("Transfer to review"),
     });
   });
 
@@ -150,26 +171,63 @@ describe("local merchant rule foundation", () => {
     expect(saveMerchantRulesToStorage(unavailableStorage, emptyLocalMerchantData())).toBe(false);
   });
 
-  it("applies a reviewed category to matching cleaned merchants only", () => {
+  it("tracks manual merchant edits without treating an unchosen category as confirmed", () => {
+    const { document, scan } = syntheticRows();
+    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
+    const edited = updateImportReviewDetails(initial, initial[2].id, {
+      merchantName: "Blue Lantern",
+      categoryId: initial[2].categoryId,
+      editType: "MERCHANT_EDIT",
+    });
+
+    expect(edited[2]).toMatchObject({
+      merchantName: "Blue Lantern",
+      merchantEdited: true,
+      categoryConfirmed: false,
+      reviewState: "MANUALLY_REVIEWED",
+    });
+  });
+
+  it("marks a category choice as manually reviewed and enables same-merchant application", () => {
     const { document, scan } = syntheticRows();
     const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
     const reviewed = updateImportReviewDetails(initial, initial[0].id, {
       merchantName: initial[0].merchantName,
       categoryId: categoryId("Groceries"),
+      editType: "CATEGORY_EDIT",
     });
     const applied = applyCategoryToSameMerchant(reviewed, reviewed[0].id);
 
+    expect(reviewed[0]).toMatchObject({ categoryConfirmed: true, reviewState: "MANUALLY_REVIEWED" });
     expect(applied[0]).toMatchObject({ categoryId: categoryId("Groceries"), categoryConfirmed: true });
     expect(applied[1]).toMatchObject({ categoryId: categoryId("Groceries"), categoryConfirmed: true });
     expect(applied[2]).toMatchObject({ categoryId: categoryId("Needs review"), categoryConfirmed: false });
   });
 
-  it("refreshes unconfirmed suggestions after a local rule save without overriding reviewed edits", () => {
+  it("marks a meaningful suggestion confirmation separately from a manual edit", () => {
+    const { document, scan } = syntheticRows();
+    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
+    const confirmed = updateImportReviewDetails(initial, initial[0].id, {
+      merchantName: initial[0].merchantName,
+      categoryId: initial[0].categoryId,
+      editType: "CONFIRM_SUGGESTION",
+    });
+
+    expect(confirmed[0]).toMatchObject({
+      suggestionSource: "KEYWORD",
+      categoryConfirmed: true,
+      merchantEdited: false,
+      reviewState: "CONFIRMED_SUGGESTION",
+    });
+  });
+
+  it("refreshes only untouched suggestions after a local rule save", () => {
     const { document, scan } = syntheticRows();
     const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
     const reviewed = updateImportReviewDetails(initial, initial[2].id, {
       merchantName: initial[2].merchantName,
       categoryId: categoryId("Coffee / takeaway"),
+      editType: "CATEGORY_EDIT",
     });
     const data = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
       merchantName: "Woolworths",
@@ -182,6 +240,7 @@ describe("local merchant rule foundation", () => {
     expect(refreshed[2]).toMatchObject({
       categoryId: categoryId("Coffee / takeaway"),
       categoryConfirmed: true,
+      reviewState: "MANUALLY_REVIEWED",
     });
   });
 });
