@@ -212,6 +212,10 @@ export function normalizeMerchantName(value: string) {
   return normalizedMerchantKeySchema.parse(sanitized);
 }
 
+function containsWholePhrase(value: string, phrase: string) {
+  return ` ${value} `.includes(` ${phrase} `);
+}
+
 function ruleMatches(rule: LocalMerchantRule, normalizedMerchant: string) {
   if (!rule.isActive) return false;
   if (rule.type === "EXACT") return normalizedMerchant === rule.normalizedPattern;
@@ -263,7 +267,7 @@ export function suggestMerchantCategory(
   }
 
   const keyword = keywordSuggestions.find((candidate) =>
-    candidate.keywords.some((value) => normalizedMerchant.includes(normalizeMerchantName(value))),
+    candidate.keywords.some((value) => containsWholePhrase(normalizedMerchant, normalizeMerchantName(value))),
   );
   if (keyword) {
     return {
@@ -271,7 +275,9 @@ export function suggestMerchantCategory(
       categoryId: categoryIdByName(keyword.categoryName),
       source: "KEYWORD",
       confidence: keyword.confidence,
-      reason: "Suggested by a local keyword. Please review before using it.",
+      reason: keyword.categoryName === "Transfer to review"
+        ? "Possible account movement. Review the transfer category before using it."
+        : "Suggested by a clear local keyword. Please review before using it.",
       requiresReview: true,
     };
   }
@@ -281,7 +287,7 @@ export function suggestMerchantCategory(
     categoryId: categoryIdByName("Needs review"),
     source: "FALLBACK",
     confidence: "LOW",
-    reason: "No confident local match. Category needs review.",
+    reason: "No confident local match. Choose a category manually.",
     requiresReview: true,
   };
 }
