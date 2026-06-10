@@ -42,6 +42,7 @@ export type ImportReviewRow = {
   suggestionConfidence: MerchantSuggestionConfidence;
   suggestionReason: string;
   categoryConfirmed: boolean;
+  merchantEdited: boolean;
   reviewState: ImportReviewDecisionState;
 };
 
@@ -94,6 +95,7 @@ const importReviewRowSchema = z.object({
   suggestionConfidence: suggestionConfidenceSchema,
   suggestionReason: z.string().min(1).max(160),
   categoryConfirmed: z.boolean(),
+  merchantEdited: z.boolean(),
   reviewState: reviewStateSchema,
 }).strict().superRefine((row, context) => {
   if (!getManualCategory(row.categoryId)) {
@@ -173,6 +175,7 @@ export function createTransientImportReviewRows(
         suggestionConfidence: suggestion.confidence,
         suggestionReason: suggestion.reason,
         categoryConfirmed: false,
+        merchantEdited: false,
         reviewState: "UNREVIEWED",
       }));
     });
@@ -209,6 +212,7 @@ export function updateImportReviewDetails(
         merchantName,
         categoryId: details.categoryId,
         categoryConfirmed: editType === "MERCHANT_EDIT" ? row.categoryConfirmed : true,
+        merchantEdited: editType === "MERCHANT_EDIT" ? true : row.merchantEdited,
         reviewState: editType === "CONFIRM_SUGGESTION" ? "CONFIRMED_SUGGESTION" : "MANUALLY_REVIEWED",
         suggestionReason: editType === "CONFIRM_SUGGESTION"
           ? "Suggestion confirmed for this transient review."
