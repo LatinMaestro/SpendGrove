@@ -25,6 +25,8 @@ export const IMPORT_HISTORY_STORAGE_VERSION = 1 as const;
 export const IMPORT_HISTORY_LIMIT = 20;
 
 export type ImportReviewAction = "IMPORT" | "SKIP" | "MERGE";
+export type ImportReviewDecisionState = "UNREVIEWED" | "CONFIRMED_SUGGESTION" | "MANUALLY_REVIEWED" | "APPLIED_TO_MATCH";
+export type ImportReviewEditType = "CONFIRM_SUGGESTION" | "MERCHANT_EDIT" | "CATEGORY_EDIT";
 
 export type ImportReviewRow = {
   id: string;
@@ -40,6 +42,7 @@ export type ImportReviewRow = {
   suggestionConfidence: MerchantSuggestionConfidence;
   suggestionReason: string;
   categoryConfirmed: boolean;
+  reviewState: ImportReviewDecisionState;
 };
 
 export type ImportReviewSummary = {
@@ -69,6 +72,8 @@ export type ImportHistoryStorage = {
 const reviewActionSchema = z.enum(["IMPORT", "SKIP", "MERGE"]);
 const suggestionSourceSchema = z.enum(["USER_RULE", "USER_ALIAS", "KEYWORD", "FALLBACK"]);
 const suggestionConfidenceSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
+const reviewStateSchema = z.enum(["UNREVIEWED", "CONFIRMED_SUGGESTION", "MANUALLY_REVIEWED", "APPLIED_TO_MATCH"]);
+const reviewEditTypeSchema = z.enum(["CONFIRM_SUGGESTION", "MERCHANT_EDIT", "CATEGORY_EDIT"]);
 
 const safeNarrationSchema = z.string().max(120).refine(
   (value) => !containsPrivateBankIdentifier(value),
@@ -89,6 +94,7 @@ const importReviewRowSchema = z.object({
   suggestionConfidence: suggestionConfidenceSchema,
   suggestionReason: z.string().min(1).max(160),
   categoryConfirmed: z.boolean(),
+  reviewState: reviewStateSchema,
 }).strict().superRefine((row, context) => {
   if (!getManualCategory(row.categoryId)) {
     context.addIssue({
@@ -167,6 +173,7 @@ export function createTransientImportReviewRows(
         suggestionConfidence: suggestion.confidence,
         suggestionReason: suggestion.reason,
         categoryConfirmed: false,
+        reviewState: "UNREVIEWED",
       }));
     });
   }
@@ -188,23 +195,31 @@ export function updateImportReviewAction(
 export function updateImportReviewDetails(
   rows: ImportReviewRow[],
   rowId: string,
-  details: { merchantName: string; categoryId: string },
+  details: {
+    merchantName: string;
+    categoryId: string;
+    editType?: ImportReviewEditType;
+  },
 ) {
   const merchantName = sanitizeTransactionNarration(details.merchantName) || "Payment";
+  const editType = reviewEditTypeSchema.parse(details.editType ?? "CATEGORY_EDIT");
   return rows.map((row) => row.id === rowId
     ? importReviewRowSchema.parse({
         ...row,
         merchantName,
         categoryId: details.categoryId,
-        categoryConfirmed: true,
-        suggestionReason: "Reviewed and edited in the current import review.",
+        categoryConfirmed: editType === "MERCHANT_EDIT" ? row.categoryConfirmed : true,
+        reviewState: editType === "CONFIRM_SUGGESTION" ? "CONFIRMED_SUGGESTION" : "MANUALLY_REVIEWED",
+        suggestionReason: editType === "CONFIRM_SUGGESTION"
+          ? "Suggestion confirmed for this transient review."
+          : "Manually reviewed in the current import review.",
       })
     : row);
 }
 
 export function applyCategoryToSameMerchant(rows: ImportReviewRow[], rowId: string) {
   const source = rows.find((row) => row.id === rowId);
-  if (!source) return rows;
+  if (!source || !source.categoryConfirmed) return rows;
   const sourceKey = normalizeMerchantName(source.merchantName);
 
   return rows.map((row) => normalizeMerchantName(row.merchantName) === sourceKey
@@ -212,6 +227,7 @@ export function applyCategoryToSameMerchant(rows: ImportReviewRow[], rowId: stri
         ...row,
         categoryId: source.categoryId,
         categoryConfirmed: true,
+        reviewState: "APPLIED_TO_MATCH",
         suggestionReason: "Applied to the same cleaned merchant in this review.",
       })
     : row);
@@ -222,7 +238,7 @@ export function applyMerchantSuggestionsToRows(
   merchantData: LocalMerchantData,
 ) {
   return rows.map((row) => {
-    if (row.categoryConfirmed) return row;
+    if (row.reviewState !== "UNREVIEWED") return row;
     const suggestion = suggestMerchantCategory(row.merchantName, merchantData);
     return importReviewRowSchema.parse({
       ...row,
