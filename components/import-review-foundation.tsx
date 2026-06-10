@@ -30,6 +30,7 @@ import {
   updateImportReviewDetails,
   type ImportHistoryEntry,
   type ImportReviewAction,
+  type ImportReviewEditType,
   type ImportReviewRow,
 } from "@/lib/import-review";
 import {
@@ -44,6 +45,7 @@ import {
 } from "@/lib/merchant-rules";
 
 const REVIEW_PAGE_SIZE = 20;
+const genericAliasKeys = new Set(["payment", "bank transfer", "transfer", "loan repayment", "salary", "refund"]);
 
 const reviewActions: Array<{
   value: ImportReviewAction;
@@ -59,7 +61,7 @@ const suggestionLabels: Record<MerchantSuggestionSource, string> = {
   USER_RULE: "Your local rule",
   USER_ALIAS: "Your local alias",
   KEYWORD: "Local keyword",
-  FALLBACK: "Needs review",
+  FALLBACK: "Manual review needed",
 };
 
 const categoryGroups = Array.from(new Set(manualCategories.map((category) => category.group))).map((group) => ({
@@ -86,11 +88,21 @@ function formatHistoryTimestamp(timestamp: string) {
 }
 
 function canSaveAlias(row: ImportReviewRow) {
+  if (!row.merchantEdited || !row.description) return false;
   try {
-    return normalizeMerchantName(row.description || "Payment") !== normalizeMerchantName(row.merchantName);
+    const aliasKey = normalizeMerchantName(row.description);
+    const canonicalKey = normalizeMerchantName(row.merchantName);
+    return aliasKey !== canonicalKey && !genericAliasKeys.has(aliasKey);
   } catch {
     return false;
   }
+}
+
+function reviewStatusText(row: ImportReviewRow) {
+  if (row.reviewState === "MANUALLY_REVIEWED") return "Manually reviewed in this transient import.";
+  if (row.reviewState === "CONFIRMED_SUGGESTION") return "Suggestion confirmed for this transient import.";
+  if (row.reviewState === "APPLIED_TO_MATCH") return "Category applied from the same cleaned merchant in this review.";
+  return "";
 }
 
 function ActionButton({
@@ -128,12 +140,14 @@ function ReviewRowCard({
 }: {
   row: ImportReviewRow;
   onAction(action: ImportReviewAction): void;
-  onDetails(details: { merchantName: string; categoryId: string }): void;
+  onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
   onApplySameMerchant(): void;
   onSaveRule(): void;
   onSaveAlias(): void;
 }) {
+  const meaningfulSuggestion = row.suggestionSource !== "FALLBACK" && row.suggestionConfidence !== "LOW";
   const aliasAvailable = canSaveAlias(row);
+  const statusText = reviewStatusText(row);
 
   return (
     <article className="rounded-3xl border border-border bg-white p-4 sm:p-5">
@@ -151,18 +165,24 @@ function ReviewRowCard({
       <div className="mt-4 rounded-2xl border border-brand-green/40 bg-surface-mint p-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-teal">
-            <Sparkles aria-hidden="true" className="h-3.5 w-3.5" /> Suggestion
+            <Sparkles aria-hidden="true" className="h-3.5 w-3.5" /> {meaningfulSuggestion ? "Suggestion" : "Review status"}
           </span>
           <span className="text-xs font-bold text-brand-deepTeal">{suggestionLabels[row.suggestionSource]}</span>
           <span className="text-xs text-brand-deepTeal/60">{row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</span>
         </div>
-        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/70">{row.suggestionReason} Suggestions are never final and can be changed below.</p>
-        {row.categoryConfirmed ? (
-          <p className="mt-2 text-xs font-bold text-brand-green">Reviewed in this transient import.</p>
-        ) : (
-          <button type="button" onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId })} className="mt-3 min-h-10 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/70">{row.suggestionReason}</p>
+        {statusText ? (
+          <p className="mt-2 text-xs font-bold text-brand-green">{statusText}</p>
+        ) : meaningfulSuggestion ? (
+          <button
+            type="button"
+            onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId, editType: "CONFIRM_SUGGESTION" })}
+            className="mt-3 min-h-10 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"
+          >
             Confirm this suggestion
           </button>
+        ) : (
+          <p className="mt-3 text-xs font-bold text-brand-deepTeal">Review manually by choosing a category below.</p>
         )}
       </div>
 
@@ -191,16 +211,16 @@ function ReviewRowCard({
           <input
             value={row.merchantName}
             maxLength={120}
-            onChange={(event) => onDetails({ merchantName: event.target.value, categoryId: row.categoryId })}
+            onChange={(event) => onDetails({ merchantName: event.target.value, categoryId: row.categoryId, editType: "MERCHANT_EDIT" })}
             className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
           />
-          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">Private-looking identifiers are removed before this transient value is accepted.</span>
+          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">A safe edit is marked as manually reviewed. Private-looking identifiers remain rejected.</span>
         </label>
         <label className="text-sm font-semibold text-brand-deepTeal">
           Category
           <select
             value={row.categoryId}
-            onChange={(event) => onDetails({ merchantName: row.merchantName, categoryId: event.target.value })}
+            onChange={(event) => onDetails({ merchantName: row.merchantName, categoryId: event.target.value, editType: "CATEGORY_EDIT" })}
             className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
           >
             {categoryGroups.map((group) => (
@@ -211,7 +231,7 @@ function ReviewRowCard({
               </optgroup>
             ))}
           </select>
-          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">This edit remains in the current browser review only.</span>
+          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">Choosing a category marks this row as manually reviewed in the current browser review.</span>
         </label>
       </div>
 
@@ -226,7 +246,13 @@ function ReviewRowCard({
           <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
         </button>
       </div>
-      <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Confirm or edit the suggestion before applying or saving it. Local rules speed up future reviews but remain suggestions.</p>
+      {!row.categoryConfirmed ? (
+        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Choose or confirm a category before applying it or saving a local rule.</p>
+      ) : !aliasAvailable ? (
+        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Same-merchant and rule actions are ready. Save alias becomes available only after a meaningful safe merchant rename with a distinct non-generic alias.</p>
+      ) : (
+        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">These local helpers speed up future reviews, but their results remain suggestions.</p>
+      )}
 
       {row.warningCodes.length > 0 && (
         <p className="mt-4 text-xs font-semibold text-warning-amber">
@@ -291,7 +317,7 @@ export function ImportReviewFoundation({
     setNotice("");
   }
 
-  function updateDetails(rowId: string, details: { merchantName: string; categoryId: string }) {
+  function updateDetails(rowId: string, details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }) {
     if (!reviewRows) return;
     try {
       setReviewRows(updateImportReviewDetails(reviewRows, rowId, details));
@@ -332,7 +358,7 @@ export function ImportReviewFoundation({
   function saveAlias(row: ImportReviewRow) {
     try {
       const nextData = saveMerchantAlias(merchantData, {
-        alias: row.description || "Payment",
+        alias: row.description,
         canonicalName: row.merchantName,
         categoryId: row.categoryId,
       });
