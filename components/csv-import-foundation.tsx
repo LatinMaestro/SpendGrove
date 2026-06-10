@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   TableProperties,
 } from "lucide-react";
+import { ImportReviewFoundation } from "@/components/import-review-foundation";
 import { formatAudFromCents } from "@/lib/money";
 import {
   getSafeSelectedCsvLabel,
@@ -108,10 +109,10 @@ export function CsvImportFoundation() {
             <ShieldCheck aria-hidden="true" className="h-6 w-6" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-brand-teal">CSV import foundation</p>
-            <h2 className="mt-2 text-2xl font-bold text-brand-deepTeal">Your file is checked locally first.</h2>
+            <p className="text-sm font-semibold text-brand-teal">CSV import review foundation</p>
+            <h2 className="mt-2 text-2xl font-bold text-brand-deepTeal">Check locally, map safely, review every row.</h2>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-brand-deepTeal/75">
-              SpendGrove reads the selected CSV inside this browser, excludes private banking fields and shows only sanitised mapped previews. The file is not uploaded, saved or sent to a third party.
+              SpendGrove reads the selected CSV inside this browser, excludes private banking fields and creates only sanitised transient review rows. Nothing is uploaded or committed as a transaction.
             </p>
           </div>
         </div>
@@ -134,7 +135,7 @@ export function CsvImportFoundation() {
           <p className="mt-3 text-xs font-semibold text-brand-teal">CSV only · maximum 5 MB · transient browser memory</p>
           {error && <p role="alert" className="mx-auto mt-5 max-w-xl rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
         </section>
-      ) : (
+      ) : document && (
         <>
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="scan-summary-heading">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
@@ -149,26 +150,10 @@ export function CsvImportFoundation() {
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="rounded-2xl bg-surface-mint p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Detected profile</p>
-                <p className="mt-2 font-bold text-brand-deepTeal">{scan.profile.bankName}</p>
-                <p className="mt-1 text-xs text-brand-deepTeal/65">{scan.profile.confidence}% structural confidence</p>
-              </div>
-              <div className="rounded-2xl bg-surface-mint p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Header row</p>
-                <p className="mt-2 font-bold text-brand-deepTeal">{scan.hasHeader ? "Detected" : "Not detected"}</p>
-                <p className="mt-1 text-xs text-brand-deepTeal/65">{scan.hasHeader ? "First row used as labels" : "First row preserved as data"}</p>
-              </div>
-              <div className="rounded-2xl bg-surface-mint p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Private columns</p>
-                <p className="mt-2 font-bold text-brand-deepTeal">{scan.privateColumnCount} excluded</p>
-                <p className="mt-1 text-xs text-brand-deepTeal/65">Never shown in row previews</p>
-              </div>
-              <div className="rounded-2xl bg-surface-mint p-4">
-                <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Next state</p>
-                <p className="mt-2 font-bold text-brand-deepTeal">{scan.mappingIssues.length > 0 || scan.profile.requiresManualMapping ? "Manual mapping" : "Mapping ready"}</p>
-                <p className="mt-1 text-xs text-brand-deepTeal/65">Nothing has been saved</p>
-              </div>
+              <div className="rounded-2xl bg-surface-mint p-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Detected profile</p><p className="mt-2 font-bold text-brand-deepTeal">{scan.profile.bankName}</p><p className="mt-1 text-xs text-brand-deepTeal/65">{scan.profile.confidence}% structural confidence</p></div>
+              <div className="rounded-2xl bg-surface-mint p-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Header row</p><p className="mt-2 font-bold text-brand-deepTeal">{scan.hasHeader ? "Detected" : "Not detected"}</p><p className="mt-1 text-xs text-brand-deepTeal/65">{scan.hasHeader ? "First row used as labels" : "First row preserved as data"}</p></div>
+              <div className="rounded-2xl bg-surface-mint p-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Private columns</p><p className="mt-2 font-bold text-brand-deepTeal">{scan.privateColumnCount} excluded</p><p className="mt-1 text-xs text-brand-deepTeal/65">Never shown in row previews</p></div>
+              <div className="rounded-2xl bg-surface-mint p-4"><p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Next state</p><p className="mt-2 font-bold text-brand-deepTeal">{scan.mappingIssues.length > 0 || scan.profile.requiresManualMapping ? "Manual mapping" : "Mapping ready"}</p><p className="mt-1 text-xs text-brand-deepTeal/65">Nothing has been saved</p></div>
             </div>
 
             {scan.profile.requiresManualMapping && (
@@ -182,10 +167,7 @@ export function CsvImportFoundation() {
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="privacy-columns-heading">
             <div className="flex items-start gap-3">
               <LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
-              <div>
-                <h2 id="privacy-columns-heading" className="text-xl font-bold text-brand-deepTeal">Private columns excluded</h2>
-                <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Header and sample-value patterns are checked locally. Excluded columns cannot be selected for mapping and their values never enter the preview.</p>
-              </div>
+              <div><h2 id="privacy-columns-heading" className="text-xl font-bold text-brand-deepTeal">Private columns excluded</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Identifier-only columns cannot be mapped. Mixed narration remains available only after cell-level sanitisation.</p></div>
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               {scan.columns.filter((column) => column.isPrivate).length > 0 ? scan.columns.filter((column) => column.isPrivate).map((column) => (
@@ -194,10 +176,7 @@ export function CsvImportFoundation() {
                   <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-danger-red">Excluded</span>
                 </div>
               )) : (
-                <div className="rounded-2xl bg-surface-mint p-4 sm:col-span-2">
-                  <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> No private columns detected in the checked sample.</p>
-                  <p className="mt-1 text-sm text-brand-deepTeal/65">You still review the mapped fields before any later commit step.</p>
-                </div>
+                <div className="rounded-2xl bg-surface-mint p-4 sm:col-span-2"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> No private-only columns detected in the checked sample.</p></div>
               )}
             </div>
           </section>
@@ -225,7 +204,7 @@ export function CsvImportFoundation() {
           </section>
 
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="sanitised-preview-heading">
-            <div><p className="text-sm font-semibold text-brand-teal">Sanitised mapped fields only</p><h2 id="sanitised-preview-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Row preview</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Private columns, balances, references and ignored fields are not shown. This preview is transient and does not create transactions.</p></div>
+            <div><p className="text-sm font-semibold text-brand-teal">Sanitised mapped fields only</p><h2 id="sanitised-preview-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Preview before row review</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Private columns, balances, references and ignored fields are not shown.</p></div>
             <div className="mt-5 space-y-3">
               {scan.previewRows.map((row) => (
                 <article key={row.rowNumber} className="rounded-2xl bg-surface-mint p-4">
@@ -239,20 +218,16 @@ export function CsvImportFoundation() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-border bg-surface-mint p-5">
-            <p className="font-bold text-brand-deepTeal">Review-before-commit boundary</p>
-            <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Task 1.5 stops after privacy scanning, profile detection and mapping. Import, Skip and Merge actions—and creating or changing transactions—belong to Task 1.6 and are not active here.</p>
-            <button type="button" disabled className="mt-4 min-h-12 cursor-not-allowed rounded-full bg-brand-deepTeal/20 px-5 text-sm font-bold text-brand-deepTeal/55">Continue to row review — Task 1.6</button>
-          </section>
+          <ImportReviewFoundation key={JSON.stringify(scan.mapping)} document={document} scan={scan} />
         </>
       )}
 
       <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
-        <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Local-only guarantees in this task</p>
+        <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Local-only guarantees</p>
         <ul className="mt-3 space-y-2 text-sm leading-6 text-brand-deepTeal/70">
           <li>• No raw CSV persistence, upload, server request or third-party processing.</li>
           <li>• No raw row logging, runtime database write or transaction creation.</li>
-          <li>• Closing or refreshing the page clears the selected file and transient scan.</li>
+          <li>• Only optional aggregate review-summary metadata can remain in this browser.</li>
         </ul>
       </section>
     </div>
