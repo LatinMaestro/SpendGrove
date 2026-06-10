@@ -7,14 +7,20 @@ import {
   ChevronLeft,
   ChevronRight,
   History,
+  Link2,
   RotateCcw,
+  Save,
   ShieldCheck,
+  Sparkles,
+  Trash2,
 } from "lucide-react";
 import { formatAudFromCents } from "@/lib/money";
 import { manualCategories } from "@/lib/manual-categories";
 import type { CsvScanResult, TransientCsvDocument } from "@/lib/csv-import";
 import {
   addImportHistoryEntry,
+  applyCategoryToSameMerchant,
+  applyMerchantSuggestionsToRows,
   createImportHistoryEntry,
   createTransientImportReviewRows,
   loadImportHistoryFromStorage,
@@ -26,6 +32,16 @@ import {
   type ImportReviewAction,
   type ImportReviewRow,
 } from "@/lib/import-review";
+import {
+  emptyLocalMerchantData,
+  loadMerchantRulesFromStorage,
+  normalizeMerchantName,
+  saveConfirmedMerchantRule,
+  saveMerchantAlias,
+  saveMerchantRulesToStorage,
+  type LocalMerchantData,
+  type MerchantSuggestionSource,
+} from "@/lib/merchant-rules";
 
 const REVIEW_PAGE_SIZE = 20;
 
@@ -38,6 +54,13 @@ const reviewActions: Array<{
   { value: "SKIP", label: "Skip", description: "Leave out later" },
   { value: "MERGE", label: "Merge", description: "Match later" },
 ];
+
+const suggestionLabels: Record<MerchantSuggestionSource, string> = {
+  USER_RULE: "Your local rule",
+  USER_ALIAS: "Your local alias",
+  KEYWORD: "Local keyword",
+  FALLBACK: "Needs review",
+};
 
 const categoryGroups = Array.from(new Set(manualCategories.map((category) => category.group))).map((group) => ({
   group,
@@ -60,6 +83,14 @@ function formatHistoryTimestamp(timestamp: string) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(timestamp));
+}
+
+function canSaveAlias(row: ImportReviewRow) {
+  try {
+    return normalizeMerchantName(row.description || "Payment") !== normalizeMerchantName(row.merchantName);
+  } catch {
+    return false;
+  }
 }
 
 function ActionButton({
@@ -91,11 +122,19 @@ function ReviewRowCard({
   row,
   onAction,
   onDetails,
+  onApplySameMerchant,
+  onSaveRule,
+  onSaveAlias,
 }: {
   row: ImportReviewRow;
   onAction(action: ImportReviewAction): void;
   onDetails(details: { merchantName: string; categoryId: string }): void;
+  onApplySameMerchant(): void;
+  onSaveRule(): void;
+  onSaveAlias(): void;
 }) {
+  const aliasAvailable = canSaveAlias(row);
+
   return (
     <article className="rounded-3xl border border-border bg-white p-4 sm:p-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -107,6 +146,24 @@ function ReviewRowCard({
         <p className="font-bold text-brand-deepTeal">
           {row.amountCents === null ? "Amount needs review" : formatAudFromCents(row.amountCents)}
         </p>
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-brand-green/40 bg-surface-mint p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-teal">
+            <Sparkles aria-hidden="true" className="h-3.5 w-3.5" /> Suggestion
+          </span>
+          <span className="text-xs font-bold text-brand-deepTeal">{suggestionLabels[row.suggestionSource]}</span>
+          <span className="text-xs text-brand-deepTeal/60">{row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</span>
+        </div>
+        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/70">{row.suggestionReason} Suggestions are never final and can be changed below.</p>
+        {row.categoryConfirmed ? (
+          <p className="mt-2 text-xs font-bold text-brand-green">Reviewed in this transient import.</p>
+        ) : (
+          <button type="button" onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId })} className="mt-3 min-h-10 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+            Confirm this suggestion
+          </button>
+        )}
       </div>
 
       <fieldset className="mt-4">
@@ -158,6 +215,19 @@ function ReviewRowCard({
         </label>
       </div>
 
+      <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <button type="button" disabled={!row.categoryConfirmed} onClick={onApplySameMerchant} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+          <Link2 aria-hidden="true" className="h-4 w-4" /> Apply to same merchant
+        </button>
+        <button type="button" disabled={!row.categoryConfirmed} onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+          <Save aria-hidden="true" className="h-4 w-4" /> Save local rule
+        </button>
+        <button type="button" disabled={!row.categoryConfirmed || !aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+          <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
+        </button>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Confirm or edit the suggestion before applying or saving it. Local rules speed up future reviews but remain suggestions.</p>
+
       {row.warningCodes.length > 0 && (
         <p className="mt-4 text-xs font-semibold text-warning-amber">
           Needs review: {row.warningCodes.join(", ").replaceAll("_", " ").toLocaleLowerCase("en-AU")}
@@ -176,16 +246,23 @@ export function ImportReviewFoundation({
 }) {
   const [reviewRows, setReviewRows] = useState<ImportReviewRow[] | null>(null);
   const [historyEntries, setHistoryEntries] = useState<ImportHistoryEntry[]>([]);
+  const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
   const [historyRecovered, setHistoryRecovered] = useState(false);
+  const [merchantRecovered, setMerchantRecovered] = useState(false);
   const [storageAvailable, setStorageAvailable] = useState(true);
+  const [merchantStorageAvailable, setMerchantStorageAvailable] = useState(true);
   const [page, setPage] = useState(0);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
-    const loaded = loadImportHistoryFromStorage(window.localStorage);
-    setHistoryEntries(loaded.entries);
-    setHistoryRecovered(loaded.recoveredFromCorruption);
-    setStorageAvailable(loaded.storageAvailable);
+    const history = loadImportHistoryFromStorage(window.localStorage);
+    const merchants = loadMerchantRulesFromStorage(window.localStorage);
+    setHistoryEntries(history.entries);
+    setHistoryRecovered(history.recoveredFromCorruption);
+    setStorageAvailable(history.storageAvailable);
+    setMerchantData(merchants.data);
+    setMerchantRecovered(merchants.recoveredFromCorruption);
+    setMerchantStorageAvailable(merchants.storageAvailable);
   }, []);
 
   const summary = useMemo(
@@ -197,28 +274,81 @@ export function ImportReviewFoundation({
   const canStartReview = scan.mappingIssues.length === 0;
 
   function startReview() {
-    setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping));
+    setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
     setPage(0);
     setNotice("");
   }
 
   function resetReview() {
-    startReview();
-    setNotice("Transient row choices and edits were reset. Browser-local history was not changed.");
+    setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
+    setPage(0);
+    setNotice("Transient row choices and edits were reset. Saved local rules and summary history were not changed.");
   }
 
   function updateAction(rowId: string, action: ImportReviewAction) {
-    setReviewRows((current) => current ? updateImportReviewAction(current, rowId, action) : current);
+    if (!reviewRows) return;
+    setReviewRows(updateImportReviewAction(reviewRows, rowId, action));
     setNotice("");
   }
 
   function updateDetails(rowId: string, details: { merchantName: string; categoryId: string }) {
+    if (!reviewRows) return;
     try {
-      setReviewRows((current) => current ? updateImportReviewDetails(current, rowId, details) : current);
+      setReviewRows(updateImportReviewDetails(reviewRows, rowId, details));
       setNotice("");
     } catch {
       setNotice("That merchant label contained private-looking information and was not accepted.");
     }
+  }
+
+  function applySameMerchant(rowId: string) {
+    if (!reviewRows) return;
+    setReviewRows(applyCategoryToSameMerchant(reviewRows, rowId));
+    setNotice("Category applied to matching cleaned merchants in this transient review only.");
+  }
+
+  function persistMerchantData(nextData: LocalMerchantData, successNotice: string) {
+    const saved = saveMerchantRulesToStorage(window.localStorage, nextData);
+    setMerchantStorageAvailable(saved);
+    setMerchantData(nextData);
+    setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, nextData) : current);
+    setNotice(saved
+      ? successNotice
+      : "Browser storage is unavailable. The merchant choice remains available only in this transient review.");
+  }
+
+  function saveRule(row: ImportReviewRow) {
+    try {
+      const nextData = saveConfirmedMerchantRule(merchantData, {
+        merchantName: row.merchantName,
+        categoryId: row.categoryId,
+      });
+      persistMerchantData(nextData, "Privacy-safe merchant rule saved in this browser. Future matches remain suggestions.");
+    } catch {
+      setNotice("This merchant rule could not be saved because it was unsafe or incomplete.");
+    }
+  }
+
+  function saveAlias(row: ImportReviewRow) {
+    try {
+      const nextData = saveMerchantAlias(merchantData, {
+        alias: row.description || "Payment",
+        canonicalName: row.merchantName,
+        categoryId: row.categoryId,
+      });
+      persistMerchantData(nextData, "Privacy-safe merchant alias saved in this browser. Future matches remain suggestions.");
+    } catch {
+      setNotice("This alias could not be saved because it matched the merchant name or contained unsafe information.");
+    }
+  }
+
+  function clearMerchantRules() {
+    const emptyData = emptyLocalMerchantData();
+    const saved = saveMerchantRulesToStorage(window.localStorage, emptyData);
+    setMerchantStorageAvailable(saved);
+    setMerchantData(emptyData);
+    setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, emptyData) : current);
+    setNotice(saved ? "Browser-local merchant rules and aliases cleared." : "Browser storage is unavailable.");
   }
 
   function saveSummaryOnly() {
@@ -253,7 +383,7 @@ export function ImportReviewFoundation({
             <div>
               <p className="font-bold text-brand-deepTeal">Review-before-commit foundation</p>
               <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-                Continue to review sanitised rows and choose intended Import, Skip or Merge actions. These choices do not create or change transactions.
+                Continue to review sanitised rows and choose intended Import, Skip or Merge actions. Local merchant suggestions may help, but every suggestion requires review and nothing creates transactions.
               </p>
             </div>
           </div>
@@ -274,7 +404,7 @@ export function ImportReviewFoundation({
                 <p className="text-sm font-semibold text-brand-teal">Non-committing prototype</p>
                 <h2 id="review-summary-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review intended row actions</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">
-                  All rows below contain sanitised mapped fields only. Import, Skip and Merge record your current intention in memory; they do not create transactions or write to a database.
+                  Sanitised rows can receive local merchant and category suggestions. Suggestions stay reviewable; Import, Skip and Merge remain intentions in memory only.
                 </p>
               </div>
               <button type="button" onClick={resetReview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
@@ -316,6 +446,9 @@ export function ImportReviewFoundation({
                   row={row}
                   onAction={(action) => updateAction(row.id, action)}
                   onDetails={(details) => updateDetails(row.id, details)}
+                  onApplySameMerchant={() => applySameMerchant(row.id)}
+                  onSaveRule={() => saveRule(row)}
+                  onSaveAlias={() => saveAlias(row)}
                 />
               ))}
             </div>
@@ -335,6 +468,25 @@ export function ImportReviewFoundation({
           </section>
         </>
       )}
+
+      <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="merchant-rules-heading">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
+            <div>
+              <h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local merchant helpers</h2>
+              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Stored locally as cleaned names and category choices only—never raw bank descriptions.</p>
+            </div>
+          </div>
+          {(merchantData.rules.length > 0 || merchantData.aliases.length > 0) && (
+            <button type="button" onClick={clearMerchantRules} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal">
+              <Trash2 aria-hidden="true" className="h-4 w-4" /> Clear local helpers
+            </button>
+          )}
+        </div>
+        {!merchantStorageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Merchant suggestions still work, but new rules cannot persist.</p>}
+        {merchantRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Invalid local merchant data was ignored and safely reset.</p>}
+      </section>
 
       <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="import-history-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -374,8 +526,8 @@ export function ImportReviewFoundation({
       </section>
 
       <section className="rounded-3xl border border-border bg-surface-mint p-5">
-        <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.6 safety boundary</p>
-        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">No row action commits, transaction creation, database writes, raw-row storage, server upload or third-party processing occur in this foundation.</p>
+        <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.7 safety boundary</p>
+        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Merchant cleanup, rules, aliases and category suggestions run locally. Suggestions require review; no row action commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p>
       </section>
     </div>
   );
