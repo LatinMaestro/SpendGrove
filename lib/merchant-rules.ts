@@ -68,12 +68,6 @@ export type MerchantRuleStorage = {
   setItem(key: string, value: string): void;
 };
 
-const emptyMerchantData: LocalMerchantData = {
-  profiles: [],
-  aliases: [],
-  rules: [],
-};
-
 const unsafeMerchantStoragePattern = /\b(?:bsb|account\s*(?:number|no|id)|customer\s*(?:number|no|id)|card\s*(?:number|no|ending)|loan\s*(?:number|no|id|reference))\b/i;
 
 const safeMerchantNameSchema = z.string()
@@ -191,9 +185,19 @@ function createLocalId(prefix: string) {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
+function assertSafeStoredMerchantInput(value: string) {
+  if (containsPrivateBankIdentifier(value) || unsafeMerchantStoragePattern.test(value)) {
+    throw new Error("Private banking identifiers are not permitted in saved merchant helpers.");
+  }
+}
+
 function safeCanonicalMerchantName(value: string) {
   const sanitized = sanitizeTransactionNarration(value);
   return safeMerchantNameSchema.parse(sanitized);
+}
+
+function toLocalMerchantData(input: z.infer<typeof merchantStorageSchema>): LocalMerchantData {
+  return { profiles: input.profiles, aliases: input.aliases, rules: input.rules };
 }
 
 export function normalizeMerchantName(value: string) {
@@ -221,7 +225,7 @@ function getProfile(data: LocalMerchantData, profileId: string) {
 
 export function suggestMerchantCategory(
   merchantValue: string,
-  data: LocalMerchantData = emptyMerchantData,
+  data: LocalMerchantData = emptyLocalMerchantData(),
 ): MerchantCategorySuggestion {
   const merchantName = safeCanonicalMerchantName(merchantValue || "Payment");
   const normalizedMerchant = normalizeMerchantName(merchantName);
@@ -285,7 +289,8 @@ export function suggestMerchantCategory(
 export function saveConfirmedMerchantRule(
   data: LocalMerchantData,
   input: { merchantName: string; categoryId: string; now?: Date },
-) {
+): LocalMerchantData {
+  assertSafeStoredMerchantInput(input.merchantName);
   const name = safeCanonicalMerchantName(input.merchantName);
   const normalizedName = normalizeMerchantName(name);
   if (!getManualCategory(input.categoryId)) throw new Error("Choose an approved category.");
@@ -323,13 +328,15 @@ export function saveConfirmedMerchantRule(
   const rules = existingRule
     ? data.rules.map((candidate) => candidate.id === rule.id ? rule : candidate)
     : [...data.rules, rule];
-  return merchantStorageSchema.parse({ version: 1, profiles, aliases: data.aliases, rules });
+  return toLocalMerchantData(merchantStorageSchema.parse({ version: 1, profiles, aliases: data.aliases, rules }));
 }
 
 export function saveMerchantAlias(
   data: LocalMerchantData,
   input: { alias: string; canonicalName: string; categoryId: string; now?: Date },
-) {
+): LocalMerchantData {
+  assertSafeStoredMerchantInput(input.alias);
+  assertSafeStoredMerchantInput(input.canonicalName);
   const withRule = saveConfirmedMerchantRule(data, {
     merchantName: input.canonicalName,
     categoryId: input.categoryId,
@@ -353,20 +360,17 @@ export function saveMerchantAlias(
   const aliases = existingAlias
     ? withRule.aliases.map((candidate) => candidate.id === alias.id ? alias : candidate)
     : [...withRule.aliases, alias];
-  return merchantStorageSchema.parse({ version: 1, profiles: withRule.profiles, aliases, rules: withRule.rules });
+  return toLocalMerchantData(merchantStorageSchema.parse({ version: 1, profiles: withRule.profiles, aliases, rules: withRule.rules }));
 }
 
 export function parseMerchantRuleStorage(rawValue: string | null): MerchantRuleStorageResult {
-  if (!rawValue) return { data: emptyMerchantData, recoveredFromCorruption: false };
+  if (!rawValue) return { data: emptyLocalMerchantData(), recoveredFromCorruption: false };
   try {
     const parsed = merchantStorageSchema.safeParse(JSON.parse(rawValue));
-    if (!parsed.success) return { data: emptyMerchantData, recoveredFromCorruption: true };
-    return {
-      data: { profiles: parsed.data.profiles, aliases: parsed.data.aliases, rules: parsed.data.rules },
-      recoveredFromCorruption: false,
-    };
+    if (!parsed.success) return { data: emptyLocalMerchantData(), recoveredFromCorruption: true };
+    return { data: toLocalMerchantData(parsed.data), recoveredFromCorruption: false };
   } catch {
-    return { data: emptyMerchantData, recoveredFromCorruption: true };
+    return { data: emptyLocalMerchantData(), recoveredFromCorruption: true };
   }
 }
 
@@ -381,7 +385,7 @@ export function loadMerchantRulesFromStorage(storage: MerchantRuleStorage) {
       storageAvailable: true,
     };
   } catch {
-    return { data: emptyMerchantData, recoveredFromCorruption: false, storageAvailable: false };
+    return { data: emptyLocalMerchantData(), recoveredFromCorruption: false, storageAvailable: false };
   }
 }
 
