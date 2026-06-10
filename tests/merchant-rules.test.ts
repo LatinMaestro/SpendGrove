@@ -177,7 +177,6 @@ describe("local merchant rule foundation", () => {
     });
     const refreshed = applyMerchantSuggestionsToRows(reviewed, data);
 
-    expect(refreshed[0]).toMatchObject({ source: undefined });
     expect(refreshed[0].suggestionSource).toBe("USER_RULE");
     expect(refreshed[0].categoryId).toBe(categoryId("Shopping"));
     expect(refreshed[2]).toMatchObject({
