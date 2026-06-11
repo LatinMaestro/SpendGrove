@@ -40,7 +40,7 @@ describe("transient import review metadata", () => {
     expect(canSaveLocalMerchantRule(row)).toBe(false);
   });
 
-  it("allows local rule learning only after an explicit category decision", () => {
+  it("allows local rule learning after a manual category decision", () => {
     const row = syntheticReviewRow();
     const training = manualCategories.find((category) => category.name === "Training / education")!;
     const reviewed = updateImportReviewDetails([row], row.id, {
@@ -51,5 +51,19 @@ describe("transient import review metadata", () => {
 
     expect(reviewed.categoryConfirmed).toBe(true);
     expect(canSaveLocalMerchantRule(reviewed)).toBe(true);
+  });
+
+  it("allows local rule learning after an explicit suggestion confirmation", () => {
+    const document = parseCsvDocument("01/06/2026,-20.00,Woolworths Fictional Suburb");
+    const scan = scanCsvDocument(document, { 0: "DATE", 1: "AMOUNT", 2: "DESCRIPTION" });
+    const row = createTransientImportReviewRows(document, scan.columns, scan.mapping)[0];
+    const confirmed = updateImportReviewDetails([row], row.id, {
+      merchantName: row.merchantName,
+      categoryId: row.categoryId,
+      editType: "CONFIRM_SUGGESTION",
+    })[0];
+
+    expect(confirmed.reviewState).toBe("CONFIRMED_SUGGESTION");
+    expect(canSaveLocalMerchantRule(confirmed)).toBe(true);
   });
 });
