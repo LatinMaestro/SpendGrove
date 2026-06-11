@@ -88,7 +88,7 @@ describe("local merchant rule foundation", () => {
     });
   });
 
-  it("does not over-categorise ambiguous payment or levy wording", () => {
+  it("keeps ambiguous payments conservative while routing clear account movements to review", () => {
     expect(suggestMerchantCategory("BPAY levy", emptyLocalMerchantData())).toMatchObject({
       source: "FALLBACK",
       confidence: "LOW",
@@ -99,8 +99,9 @@ describe("local merchant rule foundation", () => {
       categoryId: categoryId("Needs review"),
     });
     expect(suggestMerchantCategory("Internal account movement", emptyLocalMerchantData())).toMatchObject({
-      source: "FALLBACK",
-      categoryId: categoryId("Needs review"),
+      source: "KEYWORD",
+      confidence: "MEDIUM",
+      categoryId: categoryId("Transfer to review"),
     });
     expect(suggestMerchantCategory("Bank transfer", emptyLocalMerchantData())).toMatchObject({
       source: "KEYWORD",
