@@ -5,6 +5,7 @@ import {
   type MerchantCategorySuggestion,
   type MerchantSuggestionConfidence,
 } from "@/lib/merchant-rules";
+import { sanitizeTransactionNarration } from "@/lib/validation/privacy";
 
 const deterministicSuggestions: Array<{
   merchants: string[];
@@ -104,10 +105,29 @@ function categoryIdByName(name: string) {
   return category.id;
 }
 
+function suggestTransferCategory(merchantValue: string): MerchantCategorySuggestion | null {
+  const safeMerchant = sanitizeTransactionNarration(merchantValue);
+  const transferSignal = safeMerchant.toLocaleLowerCase("en-AU");
+  const isTransfer = transferSignal === "bank transfer" || transferSignal === "transfer";
+  if (!isTransfer) return null;
+
+  return {
+    merchantName: safeMerchant || "Bank transfer",
+    categoryId: categoryIdByName("Transfer"),
+    source: "KEYWORD",
+    confidence: "MEDIUM",
+    reason: "Suggested from a clear account movement. Please review before using it.",
+    requiresReview: true,
+  };
+}
+
 export function suggestImportReviewCategory(
   merchantValue: string,
   data: LocalMerchantData,
 ): MerchantCategorySuggestion {
+  const transferSuggestion = suggestTransferCategory(merchantValue);
+  if (transferSuggestion) return transferSuggestion;
+
   const baseSuggestion = suggestMerchantCategory(merchantValue, data);
   if (baseSuggestion.source !== "FALLBACK") return baseSuggestion;
 
