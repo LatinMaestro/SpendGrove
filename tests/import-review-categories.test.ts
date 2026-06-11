@@ -5,6 +5,7 @@ const requiredImportReviewCategories = [
   "Groceries",
   "Dining out",
   "Fuel",
+  "Public transport",
   "Electricity",
   "Internet",
   "Insurance",
@@ -14,6 +15,15 @@ const requiredImportReviewCategories = [
   "Transfer to review",
   "Salary / wages",
   "Refunds / rebates",
+  "Work travel",
+  "Uniforms / protective clothing",
+  "Training / education",
+  "Professional memberships",
+  "Home office",
+  "Tools / equipment",
+  "Donations",
+  "Tax agent fees",
+  "Other deductible expense",
   "Uncategorised",
   "Needs review",
 ];
@@ -27,11 +37,12 @@ describe("import review category catalogue", () => {
       "Everyday spending",
       "Bills and household",
       "Financial",
+      "Work and tax",
       "Review",
     ]));
   });
 
-  it("includes everyday, household, financial, transfer, income and review choices", () => {
+  it("includes everyday, household, financial, transfer, income, work/tax and review choices", () => {
     const names = new Set(manualCategories.map((category) => category.name));
 
     requiredImportReviewCategories.forEach((name) => {
