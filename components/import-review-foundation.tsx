@@ -59,10 +59,10 @@ const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [
 ];
 
 const suggestionLabels: Record<MerchantSuggestionSource, string> = {
-  USER_RULE: "Local rule",
-  USER_ALIAS: "Local alias",
-  KEYWORD: "Local suggestion",
-  FALLBACK: "Manual review",
+  USER_RULE: "Your saved choice",
+  USER_ALIAS: "Saved merchant match",
+  KEYWORD: "Suggested from the merchant",
+  FALLBACK: "Choose a category",
 };
 
 const importCategorySections = [
@@ -101,8 +101,8 @@ function canSaveAlias(row: ImportReviewRow) {
   if (!canSaveLocalMerchantRule(row) || !row.merchantEdited || !row.description) return false;
   try {
     const aliasKey = normalizeMerchantName(row.description);
-    const canonicalKey = normalizeMerchantName(row.merchantName);
-    return aliasKey !== canonicalKey && !genericAliasKeys.has(aliasKey);
+    const merchantKey = normalizeMerchantName(row.merchantName);
+    return aliasKey !== merchantKey && !genericAliasKeys.has(aliasKey);
   } catch {
     return false;
   }
@@ -111,7 +111,7 @@ function canSaveAlias(row: ImportReviewRow) {
 function reviewStatusText(row: ImportReviewRow) {
   if (row.reviewState === "MANUALLY_REVIEWED") return "Manually reviewed";
   if (row.reviewState === "CONFIRMED_SUGGESTION") return "Category checked";
-  if (row.reviewState === "APPLIED_TO_MATCH") return "Applied to matching merchant";
+  if (row.reviewState === "APPLIED_TO_MATCH") return "Applied to same merchant";
   return "";
 }
 
@@ -199,7 +199,7 @@ function ReviewRowCard({
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="truncate font-bold text-brand-deepTeal">{row.merchantName || "Payment"}</p>
-          <p className="mt-1 text-sm text-brand-deepTeal/60">{formatReviewDate(row.date)} · CSV row {row.rowNumber}</p>
+          <p className="mt-1 text-sm text-brand-deepTeal/60">{formatReviewDate(row.date)}</p>
         </div>
         <p className="shrink-0 font-bold text-brand-deepTeal">
           {row.amountCents === null ? "Review amount" : formatAudFromCents(row.amountCents)}
@@ -211,7 +211,7 @@ function ReviewRowCard({
           {meaningfulSuggestion ? `Suggested: ${currentCategory?.name ?? "Review category"}` : "Choose a category"}
         </span>
         {statusText && <span className="font-bold text-brand-green">{statusText}</span>}
-        {row.warningCodes.length > 0 && <span className="font-semibold text-warning-amber">Row needs review</span>}
+        {row.warningCodes.length > 0 && <span className="font-semibold text-warning-amber">Needs a quick check</span>}
       </div>
 
       <CategorySelector row={row} onDetails={onDetails} />
@@ -225,7 +225,7 @@ function ReviewRowCard({
         />
         <span>
           <span className="block text-sm font-bold text-brand-deepTeal">Potentially deductible?</span>
-          <span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">Record-keeping only—not tax advice. This review choice is not saved or committed.</span>
+          <span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">For record-keeping only—not tax advice. This choice is not saved as a transaction.</span>
         </span>
       </label>
 
@@ -240,7 +240,7 @@ function ReviewRowCard({
       )}
 
       <fieldset className="mt-4">
-        <legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Intended action</legend>
+        <legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">What should happen later?</legend>
         <div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">
           {reviewActions.map((action) => (
             <ActionButton
@@ -252,7 +252,7 @@ function ReviewRowCard({
           ))}
         </div>
         {row.action === "MERGE" && (
-          <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Merge is an intention only; no transaction is matched or changed.</p>
+          <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">This only records your choice for review. No transaction is matched or changed.</p>
         )}
       </fieldset>
 
@@ -269,7 +269,7 @@ function ReviewRowCard({
       {showMore && (
         <div className="mt-3 rounded-2xl border border-border bg-surface-mint/60 p-4">
           <label className="text-sm font-semibold text-brand-deepTeal">
-            Safe merchant label
+            Merchant name
             <input
               value={row.merchantName}
               maxLength={120}
@@ -279,11 +279,11 @@ function ReviewRowCard({
           </label>
 
           {hasDistinctDescription && (
-            <p className="mt-3 text-xs leading-5 text-brand-deepTeal/65"><span className="font-bold">Sanitised description:</span> {row.description}</p>
+            <p className="mt-3 text-xs leading-5 text-brand-deepTeal/65"><span className="font-bold">Description with private details removed:</span> {row.description}</p>
           )}
 
           <div className="mt-4 rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/70">
-            <p className="font-bold text-brand-deepTeal">Suggestion details</p>
+            <p className="font-bold text-brand-deepTeal">How we chose this</p>
             <p className="mt-1">{suggestionLabels[row.suggestionSource]} · {row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</p>
             <p className="mt-1">{row.suggestionReason}</p>
           </div>
@@ -294,15 +294,15 @@ function ReviewRowCard({
                 <Save aria-hidden="true" className="h-4 w-4" /> Save for next time
               </button>
             ) : (
-              <p className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before saving a local rule.</p>
+              <p className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before saving this choice.</p>
             )}
             <button type="button" disabled={!aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
-              <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
+              <Save aria-hidden="true" className="h-4 w-4" /> Remember merchant name
             </button>
           </div>
 
           <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">
-            Save for next time stores only the cleaned merchant and category in this browser. Raw descriptions and private banking identifiers remain excluded.
+            Saved choices keep only the cleaned merchant name and category on this device. Private account details and full bank descriptions stay excluded.
           </p>
         </div>
       )}
@@ -313,11 +313,17 @@ function ReviewRowCard({
 export function ImportReviewFoundation({
   document,
   scan,
+  autoStart = false,
 }: {
   document: TransientCsvDocument;
   scan: CsvScanResult;
+  autoStart?: boolean;
 }) {
-  const [reviewRows, setReviewRows] = useState<ImportReviewRow[] | null>(null);
+  const [reviewRows, setReviewRows] = useState<ImportReviewRow[] | null>(() => (
+    autoStart && scan.mappingIssues.length === 0
+      ? createTransientImportReviewRows(document, scan.columns, scan.mapping)
+      : null
+  ));
   const [taxMetadata, setTaxMetadata] = useState<ImportReviewTaxMetadata>({});
   const [historyEntries, setHistoryEntries] = useState<ImportHistoryEntry[]>([]);
   const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
@@ -336,6 +342,7 @@ export function ImportReviewFoundation({
     setMerchantData(merchants.data);
     setMerchantRecovered(merchants.recoveredFromCorruption);
     setMerchantStorageAvailable(merchants.storageAvailable);
+    setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, merchants.data) : current);
   }, []);
 
   const summary = useMemo(
@@ -353,7 +360,7 @@ export function ImportReviewFoundation({
   function resetReview() {
     setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
     setTaxMetadata({});
-    setNotice("Transient row choices, tax flags and edits were reset. Saved local rules and summary history were not changed.");
+    setNotice("Your current choices, tax flags and edits were reset. Saved suggestions and summary history were not changed.");
   }
 
   function updateAction(rowId: string, action: ImportReviewAction) {
@@ -368,7 +375,7 @@ export function ImportReviewFoundation({
       setReviewRows(updateImportReviewDetails(reviewRows, rowId, details));
       setNotice("");
     } catch {
-      setNotice("That merchant label contained private-looking information and was not accepted.");
+      setNotice("That merchant name looked like it contained private account information, so it was not accepted.");
     }
   }
 
@@ -380,7 +387,7 @@ export function ImportReviewFoundation({
   function applySameMerchant(rowId: string) {
     if (!reviewRows) return;
     setReviewRows(applyCategoryToSameMerchant(reviewRows, rowId));
-    setNotice("Category applied to every matching canonical merchant in this transient review.");
+    setNotice("Category applied to every matching merchant in this review.");
   }
 
   function persistMerchantData(nextData: LocalMerchantData, successNotice: string) {
@@ -390,12 +397,12 @@ export function ImportReviewFoundation({
     setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, nextData) : current);
     setNotice(saved
       ? successNotice
-      : "Browser storage is unavailable. The merchant choice remains available only in this transient review.");
+      : "Browser storage is unavailable. The merchant choice will last only while this review is open.");
   }
 
   function saveRule(row: ImportReviewRow) {
     if (!canSaveLocalMerchantRule(row)) {
-      setNotice("Check or change the category before saving a rule for next time.");
+      setNotice("Check or change the category before saving this choice for next time.");
       return;
     }
     try {
@@ -403,15 +410,15 @@ export function ImportReviewFoundation({
         merchantName: row.merchantName,
         categoryId: row.categoryId,
       });
-      persistMerchantData(nextData, "Privacy-safe merchant rule saved in this browser. Future matches remain suggestions.");
+      persistMerchantData(nextData, "Merchant and category saved on this device. Future matches will still be suggestions you can change.");
     } catch {
-      setNotice("This merchant rule could not be saved because it was unsafe or incomplete.");
+      setNotice("This choice could not be saved because the merchant name was unsafe or incomplete.");
     }
   }
 
   function saveAlias(row: ImportReviewRow) {
     if (!canSaveAlias(row)) {
-      setNotice("Edit to a meaningful safe merchant name and check the category before saving an alias.");
+      setNotice("Enter a meaningful safe merchant name and check the category before remembering it.");
       return;
     }
     try {
@@ -420,9 +427,9 @@ export function ImportReviewFoundation({
         canonicalName: row.merchantName,
         categoryId: row.categoryId,
       });
-      persistMerchantData(nextData, "Privacy-safe merchant alias saved in this browser. Future matches remain suggestions.");
+      persistMerchantData(nextData, "Merchant name saved on this device. Future matches will still be suggestions you can change.");
     } catch {
-      setNotice("This alias could not be saved because it matched the merchant name or contained unsafe information.");
+      setNotice("This merchant name could not be saved because it was unsafe or did not add a useful match.");
     }
   }
 
@@ -432,7 +439,7 @@ export function ImportReviewFoundation({
     setMerchantStorageAvailable(saved);
     setMerchantData(emptyData);
     setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, emptyData) : current);
-    setNotice(saved ? "Browser-local merchant rules and aliases cleared." : "Browser storage is unavailable.");
+    setNotice(saved ? "Saved merchant suggestions cleared from this device." : "Browser storage is unavailable.");
   }
 
   function saveSummaryOnly() {
@@ -443,9 +450,9 @@ export function ImportReviewFoundation({
     setStorageAvailable(saved);
     if (saved) {
       setHistoryEntries(nextEntries);
-      setNotice("Review summary saved locally. No CSV rows, tax flags or transactions were saved.");
+      setNotice("Review summary saved on this device. No file rows, tax flags or transactions were saved.");
     } else {
-      setNotice("Browser storage is unavailable. The review remains transient and no summary was saved.");
+      setNotice("Browser storage is unavailable. The review stays open, but no summary was saved.");
     }
   }
 
@@ -454,7 +461,7 @@ export function ImportReviewFoundation({
     setStorageAvailable(saved);
     if (saved) {
       setHistoryEntries([]);
-      setNotice("Browser-local review summaries cleared.");
+      setNotice("Review summaries cleared from this device.");
     }
   }
 
@@ -465,12 +472,12 @@ export function ImportReviewFoundation({
           <div className="flex items-start gap-3">
             <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
             <div>
-              <p className="font-bold text-brand-deepTeal">Review-before-commit foundation</p>
-              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check each sanitised row, choose a category, optionally mark it as potentially deductible and select Import, Skip or Merge. Nothing creates transactions.</p>
+              <p className="font-bold text-brand-deepTeal">Ready to review</p>
+              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check each transaction, choose a category, optionally mark it as potentially deductible and select Import, Skip or Merge. Nothing creates transactions.</p>
             </div>
           </div>
           <button type="button" onClick={startReview} disabled={!canStartReview} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:bg-brand-deepTeal/20 disabled:text-brand-deepTeal/55">
-            {canStartReview ? "Review sanitised rows" : "Complete mapping before review"}
+            {canStartReview ? "Check your transactions" : "Finish matching columns first"}
           </button>
         </section>
       ) : (
@@ -478,14 +485,14 @@ export function ImportReviewFoundation({
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="review-summary-heading">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-brand-teal">Non-committing prototype</p>
-                <h2 id="review-summary-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review intended row actions</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">Check category, optional tax record-keeping flag and intended action. All row choices remain transient.</p>
+                <p className="text-sm font-semibold text-brand-teal">Review before saving</p>
+                <h2 id="review-summary-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Check your transactions</h2>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">Check the category, optional tax record-keeping flag and intended action. Your choices are not saved as transactions.</p>
               </div>
               <button type="button" onClick={resetReview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset review</button>
             </div>
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              {[["Rows", summary.totalRows], ["Import", summary.importCount], ["Skip", summary.skipCount], ["Merge", summary.mergeCount], ["Warnings", summary.warningCount]].map(([label, value]) => (
+              {[["Transactions", summary.totalRows], ["Import", summary.importCount], ["Skip", summary.skipCount], ["Merge", summary.mergeCount], ["Check", summary.warningCount]].map(([label, value]) => (
                 <div key={label} className="rounded-2xl bg-surface-mint p-4"><p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{label}</p><p className="mt-1 text-2xl font-bold text-brand-deepTeal">{value}</p></div>
               ))}
             </div>
@@ -493,8 +500,8 @@ export function ImportReviewFoundation({
 
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="review-rows-heading">
             <div>
-              <h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Sanitised review rows</h2>
-              <p className="mt-2 text-sm text-brand-deepTeal/65">Scroll through all {reviewRows.length} row{reviewRows.length === 1 ? "" : "s"} in one continuous review list.</p>
+              <h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Transactions to review</h2>
+              <p className="mt-2 text-sm text-brand-deepTeal/65">Scroll through all {reviewRows.length} transaction{reviewRows.length === 1 ? "" : "s"} in one continuous list.</p>
             </div>
             <div className="mt-5 space-y-4">
               {reviewRows.map((row) => (
@@ -514,37 +521,37 @@ export function ImportReviewFoundation({
           </section>
 
           <section className="rounded-[2rem] border border-brand-green bg-surface-mint p-5 sm:p-6">
-            <div className="flex items-start gap-3"><Archive aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Save review summary only</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">This stores only timestamp, status and aggregate action counts in this browser—never rows, tax flags, descriptions, categories, amounts or private identifiers.</p></div></div>
-            <button type="button" onClick={saveSummaryOnly} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">Save local summary</button>
+            <div className="flex items-start gap-3"><Archive aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Save review summary only</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">This stores only the time, status and total action counts on this device—never transactions, tax flags, descriptions, categories, amounts or private account details.</p></div></div>
+            <button type="button" onClick={saveSummaryOnly} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">Save summary on this device</button>
           </section>
         </>
       )}
 
       <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="merchant-rules-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3"><Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local merchant helpers</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Rules save only after an explicit category decision.</p></div></div>
-          {(merchantData.rules.length > 0 || merchantData.aliases.length > 0) && <button type="button" onClick={clearMerchantRules} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal"><Trash2 aria-hidden="true" className="h-4 w-4" /> Clear local helpers</button>}
+          <div className="flex items-start gap-3"><Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Saved suggestions on this device</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} merchant choices and {merchantData.aliases.length} remembered names. Choices save only after you check or change a category.</p></div></div>
+          {(merchantData.rules.length > 0 || merchantData.aliases.length > 0) && <button type="button" onClick={clearMerchantRules} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal"><Trash2 aria-hidden="true" className="h-4 w-4" /> Clear saved suggestions</button>}
         </div>
-        {!merchantStorageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Merchant suggestions still work, but new rules cannot persist.</p>}
-        {merchantRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Invalid local merchant data was ignored and safely reset.</p>}
+        {!merchantStorageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Suggestions still work for this review, but new choices cannot be remembered.</p>}
+        {merchantRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Unreadable saved merchant choices were ignored and safely reset.</p>}
       </section>
 
       <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="import-history-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3"><History aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="import-history-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local review history</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Safe summary metadata only. This is not saved import history, cloud sync or account storage.</p></div></div>
+          <div className="flex items-start gap-3"><History aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="import-history-heading" className="text-xl font-bold text-brand-deepTeal">Recent review summaries</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Summary counts only. This is not saved import history, cloud sync or account storage.</p></div></div>
           {historyEntries.length > 0 && <button type="button" onClick={clearHistory} className="min-h-12 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal">Clear summaries</button>}
         </div>
-        {!storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Review rows still work transiently.</p>}
-        {historyRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Invalid local history was ignored and safely reset.</p>}
+        {!storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. You can still finish this review while the page is open.</p>}
+        {historyRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Unreadable saved summaries were ignored and safely reset.</p>}
         {notice && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{notice}</p>}
         <div className="mt-4 space-y-3">
-          {historyEntries.length === 0 ? <div className="rounded-2xl bg-surface-mint p-4"><p className="font-bold text-brand-deepTeal">No review summaries saved</p><p className="mt-1 text-sm text-brand-deepTeal/65">Complete a transient review, then optionally save aggregate counts only.</p></div> : historyEntries.map((entry) => (
-            <article key={entry.id} className="rounded-2xl border border-border p-4"><div className="flex items-start justify-between gap-4"><div><p className="font-bold text-brand-deepTeal">Review summary</p><p className="mt-1 text-xs text-brand-deepTeal/60">{formatHistoryTimestamp(entry.createdAt)}</p></div><span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-bold text-brand-teal">Summary saved</span></div><p className="mt-3 text-sm text-brand-deepTeal/70">{entry.totalRows} rows · {entry.importCount} Import · {entry.skipCount} Skip · {entry.mergeCount} Merge · {entry.warningCount} warnings</p></article>
+          {historyEntries.length === 0 ? <div className="rounded-2xl bg-surface-mint p-4"><p className="font-bold text-brand-deepTeal">No review summaries saved</p><p className="mt-1 text-sm text-brand-deepTeal/65">After checking your transactions, you can optionally save the total counts only.</p></div> : historyEntries.map((entry) => (
+            <article key={entry.id} className="rounded-2xl border border-border p-4"><div className="flex items-start justify-between gap-4"><div><p className="font-bold text-brand-deepTeal">Review summary</p><p className="mt-1 text-xs text-brand-deepTeal/60">{formatHistoryTimestamp(entry.createdAt)}</p></div><span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-bold text-brand-teal">Summary saved</span></div><p className="mt-3 text-sm text-brand-deepTeal/70">{entry.totalRows} transactions · {entry.importCount} Import · {entry.skipCount} Skip · {entry.mergeCount} Merge · {entry.warningCount} to check</p></article>
           ))}
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.7 safety boundary</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Tax flags remain transient record-keeping metadata. No tax reports, row commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p></section>
+      <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Your privacy</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Nothing is uploaded or saved as a transaction. Private account details stay hidden. Tax choices are for record-keeping only and no tax reports are created.</p></section>
     </div>
   );
 }
