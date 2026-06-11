@@ -9,10 +9,10 @@ const requiredImportReviewCategories = [
   "Electricity",
   "Internet",
   "Insurance",
+  "Transfer",
   "Savings transfer",
   "Credit card payment",
   "Loan repayment",
-  "Transfer to review",
   "Salary / wages",
   "Refunds / rebates",
   "Work travel",
@@ -48,5 +48,6 @@ describe("import review category catalogue", () => {
     requiredImportReviewCategories.forEach((name) => {
       expect(names.has(name), `Missing import review category: ${name}`).toBe(true);
     });
+    expect(names.has("Transfer to review")).toBe(false);
   });
 });
