@@ -63,6 +63,7 @@ const seedCategoryGroups = [
     name: "Financial",
     type: CategoryType.EXPENSE,
     children: [
+      ["Transfer", CategoryType.TRANSFER],
       ["Savings transfer", CategoryType.TRANSFER],
       ["Investment contribution", CategoryType.TRANSFER],
       ["Credit card payment", CategoryType.TRANSFER],
@@ -95,7 +96,6 @@ const seedCategoryGroups = [
       ["Uncategorised", CategoryType.EXPENSE],
       ["Needs review", CategoryType.EXPENSE],
       ["Possible duplicate", CategoryType.EXPENSE],
-      ["Transfer to review", CategoryType.TRANSFER],
     ],
   },
 ] as const;
