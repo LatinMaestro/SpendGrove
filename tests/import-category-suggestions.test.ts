@@ -6,7 +6,7 @@ import {
   createTransientImportReviewRows,
   updateImportReviewDetails,
 } from "@/lib/import-review";
-import { getManualCategory } from "@/lib/manual-categories";
+import { getManualCategory, manualCategories } from "@/lib/manual-categories";
 import { emptyLocalMerchantData } from "@/lib/merchant-rules";
 
 function categoryName(categoryId: string) {
@@ -56,7 +56,7 @@ describe("import category suggestions", () => {
       2: "DESCRIPTION",
     });
     const rows = createTransientImportReviewRows(document, scan.columns, scan.mapping);
-    const diningOut = getManualCategory("manual-dining-out")!;
+    const diningOut = manualCategories.find((category) => category.name === "Dining out")!;
 
     expect(rows.map((row) => row.merchantName)).toEqual(["Domino's", "Domino's", "Coles"]);
 
