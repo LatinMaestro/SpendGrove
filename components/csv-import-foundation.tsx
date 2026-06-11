@@ -29,6 +29,9 @@ import {
   resetImportFlow,
   type ImportFlowStep,
 } from "@/lib/import-flow";
+import { createImportMappingPreview } from "@/lib/import-mapping-preview";
+import { getManualCategory } from "@/lib/manual-categories";
+import { formatAudFromCents } from "@/lib/money";
 
 const roleOptions: Array<{ value: CsvColumnRole; label: string }> = [
   { value: "DATE", label: "Transaction date" },
@@ -43,6 +46,17 @@ const roleOptions: Array<{ value: CsvColumnRole; label: string }> = [
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} bytes`;
   return `${(bytes / 1024).toFixed(1)} KB`;
+}
+
+function formatPreviewDate(date: string | null) {
+  if (!date) return "Check date";
+  const [year, month, day] = date.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
 }
 
 function StepHeading({
@@ -178,6 +192,9 @@ export function CsvImportFoundation() {
 
   if (step === "MAPPING" && document && scan) {
     const privateColumns = scan.columns.filter((column) => column.isPrivate);
+    const previewRows = scan.mappingIssues.length === 0
+      ? createImportMappingPreview(document, scan.columns, scan.mapping)
+      : [];
 
     return (
       <div className="space-y-5">
@@ -248,6 +265,31 @@ export function CsvImportFoundation() {
             ))}
           </div>
           {scan.mappingIssues.length > 0 && <div role="status" className="mt-5 rounded-2xl bg-warning-amber/10 p-4"><p className="font-bold text-brand-deepTeal">Please finish matching the required columns</p><ul className="mt-2 space-y-1 text-sm text-brand-deepTeal/75">{scan.mappingIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul></div>}
+
+          <div className="mt-6 border-t border-border pt-6" aria-labelledby="mapping-preview-heading">
+            <h2 id="mapping-preview-heading" className="text-xl font-bold text-brand-deepTeal">Preview</h2>
+            <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check that these look right before reviewing all transactions. Private account details are hidden.</p>
+            {previewRows.length === 0 ? (
+              <p className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">Match the required columns to see a preview.</p>
+            ) : (
+              <div className="mt-4 grid gap-3 lg:grid-cols-3">
+                {previewRows.map((row) => {
+                  const category = getManualCategory(row.categoryId);
+                  return (
+                    <article key={row.id} className="rounded-2xl bg-surface-mint p-4">
+                      <dl className="space-y-3 text-sm">
+                        <div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Date</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{formatPreviewDate(row.date)}</dd></div>
+                        <div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Amount</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{row.amountCents === null ? "Check amount" : formatAudFromCents(row.amountCents)}</dd></div>
+                        <div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Description / merchant</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{row.merchantName || "Payment"}</dd></div>
+                        <div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Suggested category</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{category?.name ?? "Needs review"}</dd></div>
+                      </dl>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           {error && <p role="alert" className="mt-5 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button type="button" onClick={clearFile} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back to upload</button>
