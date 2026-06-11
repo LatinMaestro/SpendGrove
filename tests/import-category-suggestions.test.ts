@@ -23,7 +23,7 @@ describe("import category suggestions", () => {
     ["AGL electricity", "AGL", "Electricity"],
     ["Loan repayment", "Loan repayment", "Loan repayment"],
     ["Credit card payment", "Credit card payment", "Credit card payment"],
-    ["Bank transfer", "Bank transfer", "Transfer to review"],
+    ["Bank transfer", "Bank transfer", "Transfer"],
   ])("suggests a reviewable category for %s", (input, expectedMerchant, expectedCategory) => {
     const suggestion = suggestImportReviewCategory(input, emptyLocalMerchantData());
 
@@ -87,6 +87,7 @@ describe("import category suggestions", () => {
 
     expect(rows[0].merchantName).toBe("Domino's");
     expect(rows[1].merchantName).toBe("Bank transfer");
+    expect(categoryName(rows[1].categoryId)).toBe("Transfer");
     expect(serialized).not.toContain("76543210");
     expect(serialized).not.toContain("4321");
     expect(serialized).not.toContain("Fictional Person");
