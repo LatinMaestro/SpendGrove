@@ -6,11 +6,11 @@ import {
   type CsvMapping,
   type TransientCsvDocument,
 } from "@/lib/csv-import";
+import { suggestImportReviewCategory } from "@/lib/import-category-suggestions";
 import { getManualCategory } from "@/lib/manual-categories";
 import {
   emptyLocalMerchantData,
   normalizeMerchantName,
-  suggestMerchantCategory,
   type LocalMerchantData,
   type MerchantSuggestionConfidence,
   type MerchantSuggestionSource,
@@ -160,7 +160,7 @@ export function createTransientImportReviewRows(
       const adjustedRowNumber = row.rowNumber + offset;
       const description = sanitizeTransactionNarration(row.description);
       const initialMerchant = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
-      const suggestion = suggestMerchantCategory(initialMerchant, merchantData);
+      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData);
       rows.push(importReviewRowSchema.parse({
         id: `csv-row-${adjustedRowNumber}`,
         rowNumber: adjustedRowNumber,
@@ -243,7 +243,7 @@ export function applyMerchantSuggestionsToRows(
 ) {
   return rows.map((row) => {
     if (row.reviewState !== "UNREVIEWED") return row;
-    const suggestion = suggestMerchantCategory(row.merchantName, merchantData);
+    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData);
     return importReviewRowSchema.parse({
       ...row,
       merchantName: suggestion.merchantName,
