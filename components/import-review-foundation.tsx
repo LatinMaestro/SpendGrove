@@ -36,6 +36,12 @@ import {
   type ImportReviewRow,
 } from "@/lib/import-review";
 import {
+  canSaveLocalMerchantRule,
+  isRowPotentiallyDeductible,
+  updateTaxReviewMetadata,
+  type ImportReviewTaxMetadata,
+} from "@/lib/import-review-metadata";
+import {
   emptyLocalMerchantData,
   loadMerchantRulesFromStorage,
   normalizeMerchantName,
@@ -95,7 +101,7 @@ function formatHistoryTimestamp(timestamp: string) {
 }
 
 function canSaveAlias(row: ImportReviewRow) {
-  if (!row.merchantEdited || !row.description) return false;
+  if (!canSaveLocalMerchantRule(row) || !row.merchantEdited || !row.description) return false;
   try {
     const aliasKey = normalizeMerchantName(row.description);
     const canonicalKey = normalizeMerchantName(row.merchantName);
@@ -127,8 +133,8 @@ function ActionButton({
       onClick={onClick}
       aria-pressed={selected}
       className={`min-h-10 rounded-xl border px-3 py-2 text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-green ${selected
-        ? "border-brand-green bg-surface-mint text-brand-deepTeal"
-        : "border-border bg-white text-brand-deepTeal/70"
+        ? "border-brand-green bg-white text-brand-deepTeal"
+        : "border-transparent bg-transparent text-brand-deepTeal/70"
       }`}
     >
       {action.label}
@@ -143,22 +149,9 @@ function CategorySelector({
   row: ImportReviewRow;
   onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
 }) {
-  const meaningfulSuggestion = row.suggestionSource !== "FALLBACK" && row.suggestionConfidence !== "LOW";
-
   return (
     <div className="mt-4">
-      <div className="flex items-center justify-between gap-3">
-        <label htmlFor={`category-${row.id}`} className="text-sm font-bold text-brand-deepTeal">Category</label>
-        {meaningfulSuggestion && !row.categoryConfirmed && (
-          <button
-            type="button"
-            onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId, editType: "CONFIRM_SUGGESTION" })}
-            className="text-xs font-bold text-brand-teal underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-green"
-          >
-            Use this category
-          </button>
-        )}
-      </div>
+      <label htmlFor={`category-${row.id}`} className="text-sm font-bold text-brand-deepTeal">Category</label>
       <select
         id={`category-${row.id}`}
         value={row.categoryId}
@@ -173,28 +166,32 @@ function CategorySelector({
           </optgroup>
         ))}
       </select>
-      <p className="mt-1 text-xs text-brand-deepTeal/55">Full Phase 1 catalogue, including transfer, financial, income/refund and work/tax categories.</p>
     </div>
   );
 }
 
 function ReviewRowCard({
   row,
+  isPotentiallyDeductible,
   onAction,
   onDetails,
+  onTaxChange,
   onApplySameMerchant,
   onSaveRule,
   onSaveAlias,
 }: {
   row: ImportReviewRow;
+  isPotentiallyDeductible: boolean;
   onAction(action: ImportReviewAction): void;
   onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
+  onTaxChange(value: boolean): void;
   onApplySameMerchant(): void;
   onSaveRule(): void;
   onSaveAlias(): void;
 }) {
   const [showMore, setShowMore] = useState(false);
   const meaningfulSuggestion = row.suggestionSource !== "FALLBACK" && row.suggestionConfidence !== "LOW";
+  const ruleAvailable = canSaveLocalMerchantRule(row);
   const aliasAvailable = canSaveAlias(row);
   const statusText = reviewStatusText(row);
   const currentCategory = manualCategories.find((category) => category.id === row.categoryId);
@@ -214,13 +211,26 @@ function ReviewRowCard({
 
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
         <span className={`rounded-full px-3 py-1.5 font-bold ${meaningfulSuggestion ? "bg-surface-mint text-brand-teal" : "bg-warning-amber/10 text-brand-deepTeal"}`}>
-          {meaningfulSuggestion ? `${suggestionLabels[row.suggestionSource]}: ${currentCategory?.name ?? "Review category"}` : "Choose a category"}
+          {meaningfulSuggestion ? `Suggested: ${currentCategory?.name ?? "Review category"}` : "Choose a category"}
         </span>
         {statusText && <span className="font-bold text-brand-green">{statusText}</span>}
         {row.warningCodes.length > 0 && <span className="font-semibold text-warning-amber">Row needs review</span>}
       </div>
 
       <CategorySelector row={row} onDetails={onDetails} />
+
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3">
+        <input
+          type="checkbox"
+          checked={isPotentiallyDeductible}
+          onChange={(event) => onTaxChange(event.target.checked)}
+          className="mt-1 h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green"
+        />
+        <span>
+          <span className="block text-sm font-bold text-brand-deepTeal">Potentially deductible?</span>
+          <span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">Record-keeping only—not tax advice. This review choice is not saved or committed.</span>
+        </span>
+      </label>
 
       {row.categoryConfirmed && (
         <button
@@ -270,6 +280,7 @@ function ReviewRowCard({
               className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
             />
           </label>
+
           {hasDistinctDescription && (
             <p className="mt-3 text-xs leading-5 text-brand-deepTeal/65"><span className="font-bold">Sanitised description:</span> {row.description}</p>
           )}
@@ -281,20 +292,21 @@ function ReviewRowCard({
           </div>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
-            <button type="button" disabled={!row.categoryConfirmed} onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
-              <Save aria-hidden="true" className="h-4 w-4" /> Save local rule
-            </button>
-            <button type="button" disabled={!row.categoryConfirmed || !aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+            {ruleAvailable ? (
+              <button type="button" onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal">
+                <Save aria-hidden="true" className="h-4 w-4" /> Save for next time
+              </button>
+            ) : (
+              <p className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before saving a local rule.</p>
+            )}
+            <button type="button" disabled={!aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
               <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
             </button>
           </div>
 
-          {!row.categoryConfirmed ? (
-            <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before saving a local rule.</p>
-          ) : !aliasAvailable ? (
-            <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Save alias is available only after a meaningful safe merchant rename with a distinct non-generic alias.</p>
-          ) : null}
-          <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">Privacy note: only cleaned merchant helpers and category choices can be stored locally. Raw descriptions and private banking identifiers remain excluded.</p>
+          <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">
+            Save for next time stores only the cleaned merchant and category in this browser. Raw descriptions and private banking identifiers remain excluded.
+          </p>
         </div>
       )}
     </article>
@@ -309,6 +321,7 @@ export function ImportReviewFoundation({
   scan: CsvScanResult;
 }) {
   const [reviewRows, setReviewRows] = useState<ImportReviewRow[] | null>(null);
+  const [taxMetadata, setTaxMetadata] = useState<ImportReviewTaxMetadata>({});
   const [historyEntries, setHistoryEntries] = useState<ImportHistoryEntry[]>([]);
   const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
   const [historyRecovered, setHistoryRecovered] = useState(false);
@@ -339,14 +352,16 @@ export function ImportReviewFoundation({
 
   function startReview() {
     setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
+    setTaxMetadata({});
     setPage(0);
     setNotice("");
   }
 
   function resetReview() {
     setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
+    setTaxMetadata({});
     setPage(0);
-    setNotice("Transient row choices and edits were reset. Saved local rules and summary history were not changed.");
+    setNotice("Transient row choices, tax flags and edits were reset. Saved local rules and summary history were not changed.");
   }
 
   function updateAction(rowId: string, action: ImportReviewAction) {
@@ -363,6 +378,11 @@ export function ImportReviewFoundation({
     } catch {
       setNotice("That merchant label contained private-looking information and was not accepted.");
     }
+  }
+
+  function updateTaxFlag(rowId: string, isPotentiallyDeductible: boolean) {
+    setTaxMetadata((current) => updateTaxReviewMetadata(current, rowId, isPotentiallyDeductible));
+    setNotice("");
   }
 
   function applySameMerchant(rowId: string) {
@@ -382,6 +402,10 @@ export function ImportReviewFoundation({
   }
 
   function saveRule(row: ImportReviewRow) {
+    if (!canSaveLocalMerchantRule(row)) {
+      setNotice("Check or change the category before saving a rule for next time.");
+      return;
+    }
     try {
       const nextData = saveConfirmedMerchantRule(merchantData, {
         merchantName: row.merchantName,
@@ -394,6 +418,10 @@ export function ImportReviewFoundation({
   }
 
   function saveAlias(row: ImportReviewRow) {
+    if (!canSaveAlias(row)) {
+      setNotice("Edit to a meaningful safe merchant name and check the category before saving an alias.");
+      return;
+    }
     try {
       const nextData = saveMerchantAlias(merchantData, {
         alias: row.description,
@@ -423,7 +451,7 @@ export function ImportReviewFoundation({
     setStorageAvailable(saved);
     if (saved) {
       setHistoryEntries(nextEntries);
-      setNotice("Review summary saved locally. No CSV rows or transactions were saved.");
+      setNotice("Review summary saved locally. No CSV rows, tax flags or transactions were saved.");
     } else {
       setNotice("Browser storage is unavailable. The review remains transient and no summary was saved.");
     }
@@ -446,7 +474,7 @@ export function ImportReviewFoundation({
             <ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
             <div>
               <p className="font-bold text-brand-deepTeal">Review-before-commit foundation</p>
-              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Review each sanitised row, check its category and choose Import, Skip or Merge. Local merchant helpers stay optional and nothing creates transactions.</p>
+              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check each sanitised row, choose a category, optionally mark it as potentially deductible and select Import, Skip or Merge. Nothing creates transactions.</p>
             </div>
           </div>
           <button type="button" onClick={startReview} disabled={!canStartReview} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:bg-brand-deepTeal/20 disabled:text-brand-deepTeal/55">
@@ -460,7 +488,7 @@ export function ImportReviewFoundation({
               <div>
                 <p className="text-sm font-semibold text-brand-teal">Non-committing prototype</p>
                 <h2 id="review-summary-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review intended row actions</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">Check the merchant and category, choose Import, Skip or Merge, then move to the next row. All choices remain in this browser review only.</p>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">Check category, optional tax record-keeping flag and intended action. All row choices remain transient.</p>
               </div>
               <button type="button" onClick={resetReview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset review</button>
             </div>
@@ -480,12 +508,24 @@ export function ImportReviewFoundation({
               </div>
             </div>
             <div className="mt-5 space-y-4">
-              {visibleRows.map((row) => <ReviewRowCard key={row.id} row={row} onAction={(action) => updateAction(row.id, action)} onDetails={(details) => updateDetails(row.id, details)} onApplySameMerchant={() => applySameMerchant(row.id)} onSaveRule={() => saveRule(row)} onSaveAlias={() => saveAlias(row)} />)}
+              {visibleRows.map((row) => (
+                <ReviewRowCard
+                  key={row.id}
+                  row={row}
+                  isPotentiallyDeductible={isRowPotentiallyDeductible(taxMetadata, row.id)}
+                  onAction={(action) => updateAction(row.id, action)}
+                  onDetails={(details) => updateDetails(row.id, details)}
+                  onTaxChange={(value) => updateTaxFlag(row.id, value)}
+                  onApplySameMerchant={() => applySameMerchant(row.id)}
+                  onSaveRule={() => saveRule(row)}
+                  onSaveAlias={() => saveAlias(row)}
+                />
+              ))}
             </div>
           </section>
 
           <section className="rounded-[2rem] border border-brand-green bg-surface-mint p-5 sm:p-6">
-            <div className="flex items-start gap-3"><Archive aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Save review summary only</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">This stores only timestamp, status and aggregate action counts in this browser—never filenames, rows, descriptions, merchants, categories, amounts or private identifiers.</p></div></div>
+            <div className="flex items-start gap-3"><Archive aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Save review summary only</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">This stores only timestamp, status and aggregate action counts in this browser—never rows, tax flags, descriptions, categories, amounts or private identifiers.</p></div></div>
             <button type="button" onClick={saveSummaryOnly} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">Save local summary</button>
           </section>
         </>
@@ -493,7 +533,7 @@ export function ImportReviewFoundation({
 
       <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="merchant-rules-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="flex items-start gap-3"><Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local merchant helpers</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Optional helpers are stored as cleaned names and category choices only.</p></div></div>
+          <div className="flex items-start gap-3"><Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local merchant helpers</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Rules save only after an explicit category decision.</p></div></div>
           {(merchantData.rules.length > 0 || merchantData.aliases.length > 0) && <button type="button" onClick={clearMerchantRules} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal"><Trash2 aria-hidden="true" className="h-4 w-4" /> Clear local helpers</button>}
         </div>
         {!merchantStorageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Merchant suggestions still work, but new rules cannot persist.</p>}
@@ -515,7 +555,7 @@ export function ImportReviewFoundation({
         </div>
       </section>
 
-      <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.7 safety boundary</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Merchant helpers remain local and optional. No row action commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p></section>
+      <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.7 safety boundary</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Tax flags remain transient record-keeping metadata. No tax reports, row commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p></section>
     </div>
   );
 }
