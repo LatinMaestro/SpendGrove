@@ -68,6 +68,7 @@ const categoryGroups: CategoryGroupDefinition[] = [
   {
     name: "Financial",
     categories: [
+      ["Transfer", "TRANSFER"],
       ["Savings transfer", "TRANSFER"],
       ["Investment contribution", "TRANSFER"],
       ["Credit card payment", "TRANSFER"],
@@ -79,12 +80,25 @@ const categoryGroups: CategoryGroupDefinition[] = [
     ],
   },
   {
+    name: "Work and tax",
+    categories: [
+      ["Work travel", "EXPENSE"],
+      ["Uniforms / protective clothing", "EXPENSE"],
+      ["Training / education", "EXPENSE"],
+      ["Professional memberships", "EXPENSE"],
+      ["Home office", "EXPENSE"],
+      ["Tools / equipment", "EXPENSE"],
+      ["Donations", "EXPENSE"],
+      ["Tax agent fees", "EXPENSE"],
+      ["Other deductible expense", "EXPENSE"],
+    ],
+  },
+  {
     name: "Review",
     categories: [
       ["Uncategorised", "EXPENSE"],
       ["Needs review", "EXPENSE"],
       ["Possible duplicate", "EXPENSE"],
-      ["Transfer to review", "TRANSFER"],
     ],
   },
 ];

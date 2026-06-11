@@ -63,6 +63,7 @@ const seedCategoryGroups = [
     name: "Financial",
     type: CategoryType.EXPENSE,
     children: [
+      ["Transfer", CategoryType.TRANSFER],
       ["Savings transfer", CategoryType.TRANSFER],
       ["Investment contribution", CategoryType.TRANSFER],
       ["Credit card payment", CategoryType.TRANSFER],
@@ -74,13 +75,27 @@ const seedCategoryGroups = [
     ],
   },
   {
+    name: "Work and tax",
+    type: CategoryType.EXPENSE,
+    children: [
+      ["Work travel", CategoryType.EXPENSE],
+      ["Uniforms / protective clothing", CategoryType.EXPENSE],
+      ["Training / education", CategoryType.EXPENSE],
+      ["Professional memberships", CategoryType.EXPENSE],
+      ["Home office", CategoryType.EXPENSE],
+      ["Tools / equipment", CategoryType.EXPENSE],
+      ["Donations", CategoryType.EXPENSE],
+      ["Tax agent fees", CategoryType.EXPENSE],
+      ["Other deductible expense", CategoryType.EXPENSE],
+    ],
+  },
+  {
     name: "Review",
     type: CategoryType.EXPENSE,
     children: [
       ["Uncategorised", CategoryType.EXPENSE],
       ["Needs review", CategoryType.EXPENSE],
       ["Possible duplicate", CategoryType.EXPENSE],
-      ["Transfer to review", CategoryType.TRANSFER],
     ],
   },
 ] as const;

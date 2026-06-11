@@ -32,14 +32,29 @@ const forbiddenAuditKeys = new Set([
 const safeReplacement = "[private field removed]";
 
 const merchantNarrationRules: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\bdomino(?:'|’)?s\b/i, label: "Domino's" },
   { pattern: /\bwoolworths\b/i, label: "Woolworths" },
   { pattern: /\bcoles\b/i, label: "Coles" },
   { pattern: /\baldi\b/i, label: "Aldi" },
   { pattern: /\biga\b/i, label: "IGA" },
+  { pattern: /\bbunnings\b/i, label: "Bunnings" },
+  { pattern: /\buber\s+eats\b/i, label: "Uber Eats" },
+  { pattern: /\buber\b/i, label: "Uber" },
+  { pattern: /\btranslink\b|\bgo\s*card\b/i, label: "Translink" },
+  { pattern: /\bampol\b/i, label: "Ampol" },
+  { pattern: /\bcaltex\b/i, label: "Caltex" },
+  { pattern: /\bshell\b/i, label: "Shell" },
+  { pattern: /\bbp\b/i, label: "BP" },
+  { pattern: /\bagl\b/i, label: "AGL" },
+  { pattern: /\btelstra\b/i, label: "Telstra" },
+  { pattern: /\boptus\b/i, label: "Optus" },
+  { pattern: /\bvodafone\b/i, label: "Vodafone" },
 ];
 
 const loanRepaymentPattern = /\bloan\b.*\b(?:repayment|payment)\b|\b(?:repayment|payment)\b.*\bloan\b/i;
-const transferNarrationPattern = /\b(?:osko|transfer|xfer|pay anyone|internet banking|bank transfer)\b/i;
+const creditCardPaymentPattern = /\bcredit\s+card\b.*\b(?:repayment|payment)\b|\b(?:repayment|payment)\b.*\bcredit\s+card\b/i;
+const atoRefundPattern = /\bato\b.*\b(?:refund|credit)\b|\b(?:refund|credit)\b.*\bato\b/i;
+const transferNarrationPattern = /\b(?:osko|transfer|xfer|pay anyone|internet banking|bank transfer|account movement)\b/i;
 const paymentNarrationPattern = /\b(?:payment|direct debit|eftpos|card purchase)\b/i;
 
 function normalizeMetadataKey(key: string) {
@@ -71,6 +86,8 @@ export function sanitizeTransactionNarration(value: string) {
   const merchantRule = merchantNarrationRules.find((rule) => rule.pattern.test(normalized));
   if (merchantRule) return merchantRule.label;
   if (loanRepaymentPattern.test(normalized)) return "Loan repayment";
+  if (creditCardPaymentPattern.test(normalized)) return "Credit card payment";
+  if (atoRefundPattern.test(normalized)) return "ATO refund";
   if (transferNarrationPattern.test(normalized)) return "Bank transfer";
   if (paymentNarrationPattern.test(normalized)) return "Payment";
 

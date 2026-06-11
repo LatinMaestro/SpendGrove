@@ -6,7 +6,15 @@ import {
   type CsvMapping,
   type TransientCsvDocument,
 } from "@/lib/csv-import";
-import { getManualCategory, manualCategories } from "@/lib/manual-categories";
+import { suggestImportReviewCategory } from "@/lib/import-category-suggestions";
+import { getManualCategory } from "@/lib/manual-categories";
+import {
+  emptyLocalMerchantData,
+  normalizeMerchantName,
+  type LocalMerchantData,
+  type MerchantSuggestionConfidence,
+  type MerchantSuggestionSource,
+} from "@/lib/merchant-rules";
 import {
   containsPrivateBankIdentifier,
   sanitizeTransactionNarration,
@@ -17,6 +25,8 @@ export const IMPORT_HISTORY_STORAGE_VERSION = 1 as const;
 export const IMPORT_HISTORY_LIMIT = 20;
 
 export type ImportReviewAction = "IMPORT" | "SKIP" | "MERGE";
+export type ImportReviewDecisionState = "UNREVIEWED" | "CONFIRMED_SUGGESTION" | "MANUALLY_REVIEWED" | "APPLIED_TO_MATCH";
+export type ImportReviewEditType = "CONFIRM_SUGGESTION" | "MERCHANT_EDIT" | "CATEGORY_EDIT";
 
 export type ImportReviewRow = {
   id: string;
@@ -28,6 +38,12 @@ export type ImportReviewRow = {
   categoryId: string;
   action: ImportReviewAction;
   warningCodes: string[];
+  suggestionSource: MerchantSuggestionSource;
+  suggestionConfidence: MerchantSuggestionConfidence;
+  suggestionReason: string;
+  categoryConfirmed: boolean;
+  merchantEdited: boolean;
+  reviewState: ImportReviewDecisionState;
 };
 
 export type ImportReviewSummary = {
@@ -55,6 +71,10 @@ export type ImportHistoryStorage = {
 };
 
 const reviewActionSchema = z.enum(["IMPORT", "SKIP", "MERGE"]);
+const suggestionSourceSchema = z.enum(["USER_RULE", "USER_ALIAS", "KEYWORD", "FALLBACK"]);
+const suggestionConfidenceSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
+const reviewStateSchema = z.enum(["UNREVIEWED", "CONFIRMED_SUGGESTION", "MANUALLY_REVIEWED", "APPLIED_TO_MATCH"]);
+const reviewEditTypeSchema = z.enum(["CONFIRM_SUGGESTION", "MERCHANT_EDIT", "CATEGORY_EDIT"]);
 
 const safeNarrationSchema = z.string().max(120).refine(
   (value) => !containsPrivateBankIdentifier(value),
@@ -71,6 +91,12 @@ const importReviewRowSchema = z.object({
   categoryId: z.string().min(1),
   action: reviewActionSchema,
   warningCodes: z.array(z.string().regex(/^[A-Z0-9_]+$/)),
+  suggestionSource: suggestionSourceSchema,
+  suggestionConfidence: suggestionConfidenceSchema,
+  suggestionReason: z.string().min(1).max(160),
+  categoryConfirmed: z.boolean(),
+  merchantEdited: z.boolean(),
+  reviewState: reviewStateSchema,
 }).strict().superRefine((row, context) => {
   if (!getManualCategory(row.categoryId)) {
     context.addIssue({
@@ -105,18 +131,6 @@ const importHistoryEnvelopeSchema = z.object({
   entries: z.array(importHistoryEntrySchema).max(IMPORT_HISTORY_LIMIT),
 }).strict();
 
-function categoryIdByName(name: string) {
-  const category = manualCategories.find((candidate) => candidate.name === name);
-  if (!category) throw new Error(`Missing seeded category: ${name}`);
-  return category.id;
-}
-
-function defaultCategoryId(amountCents: number | null, description: string) {
-  if (/transfer/i.test(description)) return categoryIdByName("Transfer to review");
-  if ((amountCents ?? 0) > 0) return categoryIdByName("Other income");
-  return categoryIdByName("Uncategorised");
-}
-
 function createLocalId(prefix: string) {
   if (typeof globalThis.crypto !== "undefined" && "randomUUID" in globalThis.crypto) {
     return `${prefix}-${globalThis.crypto.randomUUID()}`;
@@ -128,6 +142,7 @@ export function createTransientImportReviewRows(
   document: TransientCsvDocument,
   columns: CsvColumnAssessment[],
   mapping: CsvMapping,
+  merchantData: LocalMerchantData = emptyLocalMerchantData(),
 ) {
   const rows: ImportReviewRow[] = [];
 
@@ -144,17 +159,24 @@ export function createTransientImportReviewRows(
     chunk.previewRows.forEach((row) => {
       const adjustedRowNumber = row.rowNumber + offset;
       const description = sanitizeTransactionNarration(row.description);
-      const merchantName = sanitizeTransactionNarration(row.merchantName || row.description);
+      const initialMerchant = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
+      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData);
       rows.push(importReviewRowSchema.parse({
         id: `csv-row-${adjustedRowNumber}`,
         rowNumber: adjustedRowNumber,
         date: row.date,
         amountCents: row.amountCents,
         description,
-        merchantName,
-        categoryId: defaultCategoryId(row.amountCents, description),
+        merchantName: suggestion.merchantName,
+        categoryId: suggestion.categoryId,
         action: "IMPORT",
         warningCodes: row.warningCodes,
+        suggestionSource: suggestion.source,
+        suggestionConfidence: suggestion.confidence,
+        suggestionReason: suggestion.reason,
+        categoryConfirmed: false,
+        merchantEdited: false,
+        reviewState: "UNREVIEWED",
       }));
     });
   }
@@ -176,12 +198,61 @@ export function updateImportReviewAction(
 export function updateImportReviewDetails(
   rows: ImportReviewRow[],
   rowId: string,
-  details: { merchantName: string; categoryId: string },
+  details: {
+    merchantName: string;
+    categoryId: string;
+    editType?: ImportReviewEditType;
+  },
 ) {
-  const merchantName = sanitizeTransactionNarration(details.merchantName);
+  const merchantName = sanitizeTransactionNarration(details.merchantName) || "Payment";
+  const editType = reviewEditTypeSchema.parse(details.editType ?? "CATEGORY_EDIT");
   return rows.map((row) => row.id === rowId
-    ? importReviewRowSchema.parse({ ...row, merchantName, categoryId: details.categoryId })
+    ? importReviewRowSchema.parse({
+        ...row,
+        merchantName,
+        categoryId: details.categoryId,
+        categoryConfirmed: editType === "MERCHANT_EDIT" ? row.categoryConfirmed : true,
+        merchantEdited: editType === "MERCHANT_EDIT" ? true : row.merchantEdited,
+        reviewState: editType === "CONFIRM_SUGGESTION" ? "CONFIRMED_SUGGESTION" : "MANUALLY_REVIEWED",
+        suggestionReason: editType === "CONFIRM_SUGGESTION"
+          ? "Suggestion confirmed for this transient review."
+          : "Manually reviewed in the current import review.",
+      })
     : row);
+}
+
+export function applyCategoryToSameMerchant(rows: ImportReviewRow[], rowId: string) {
+  const source = rows.find((row) => row.id === rowId);
+  if (!source || !source.categoryConfirmed) return rows;
+  const sourceKey = normalizeMerchantName(source.merchantName);
+
+  return rows.map((row) => normalizeMerchantName(row.merchantName) === sourceKey
+    ? importReviewRowSchema.parse({
+        ...row,
+        categoryId: source.categoryId,
+        categoryConfirmed: true,
+        reviewState: "APPLIED_TO_MATCH",
+        suggestionReason: "Applied to the same cleaned merchant in this review.",
+      })
+    : row);
+}
+
+export function applyMerchantSuggestionsToRows(
+  rows: ImportReviewRow[],
+  merchantData: LocalMerchantData,
+) {
+  return rows.map((row) => {
+    if (row.reviewState !== "UNREVIEWED") return row;
+    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData);
+    return importReviewRowSchema.parse({
+      ...row,
+      merchantName: suggestion.merchantName,
+      categoryId: suggestion.categoryId,
+      suggestionSource: suggestion.source,
+      suggestionConfidence: suggestion.confidence,
+      suggestionReason: suggestion.reason,
+    });
+  });
 }
 
 export function summarizeImportReview(rows: ImportReviewRow[]): ImportReviewSummary {
