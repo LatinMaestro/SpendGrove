@@ -5,8 +5,6 @@ import {
   Archive,
   CheckCircle2,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   ChevronUp,
   History,
   Link2,
@@ -52,7 +50,6 @@ import {
   type MerchantSuggestionSource,
 } from "@/lib/merchant-rules";
 
-const REVIEW_PAGE_SIZE = 20;
 const genericAliasKeys = new Set(["payment", "bank transfer", "transfer", "loan repayment", "salary", "refund"]);
 
 const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [
@@ -328,7 +325,6 @@ export function ImportReviewFoundation({
   const [merchantRecovered, setMerchantRecovered] = useState(false);
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [merchantStorageAvailable, setMerchantStorageAvailable] = useState(true);
-  const [page, setPage] = useState(0);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -346,21 +342,17 @@ export function ImportReviewFoundation({
     () => summarizeImportReview(reviewRows ?? []),
     [reviewRows],
   );
-  const pageCount = reviewRows ? Math.max(1, Math.ceil(reviewRows.length / REVIEW_PAGE_SIZE)) : 1;
-  const visibleRows = reviewRows?.slice(page * REVIEW_PAGE_SIZE, (page + 1) * REVIEW_PAGE_SIZE) ?? [];
   const canStartReview = scan.mappingIssues.length === 0;
 
   function startReview() {
     setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
     setTaxMetadata({});
-    setPage(0);
     setNotice("");
   }
 
   function resetReview() {
     setReviewRows(createTransientImportReviewRows(document, scan.columns, scan.mapping, merchantData));
     setTaxMetadata({});
-    setPage(0);
     setNotice("Transient row choices, tax flags and edits were reset. Saved local rules and summary history were not changed.");
   }
 
@@ -500,15 +492,12 @@ export function ImportReviewFoundation({
           </section>
 
           <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="review-rows-heading">
-            <div className="flex items-end justify-between gap-4">
-              <div><h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Sanitised review rows</h2><p className="mt-2 text-sm text-brand-deepTeal/65">Page {page + 1} of {pageCount} · up to {REVIEW_PAGE_SIZE} rows per page</p></div>
-              <div className="flex gap-2">
-                <button type="button" aria-label="Previous review page" disabled={page === 0} onClick={() => setPage((current) => Math.max(0, current - 1))} className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-teal text-brand-deepTeal disabled:opacity-30"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
-                <button type="button" aria-label="Next review page" disabled={page >= pageCount - 1} onClick={() => setPage((current) => Math.min(pageCount - 1, current + 1))} className="flex h-12 w-12 items-center justify-center rounded-full border border-brand-teal text-brand-deepTeal disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
-              </div>
+            <div>
+              <h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Sanitised review rows</h2>
+              <p className="mt-2 text-sm text-brand-deepTeal/65">Scroll through all {reviewRows.length} row{reviewRows.length === 1 ? "" : "s"} in one continuous review list.</p>
             </div>
             <div className="mt-5 space-y-4">
-              {visibleRows.map((row) => (
+              {reviewRows.map((row) => (
                 <ReviewRowCard
                   key={row.id}
                   row={row}
