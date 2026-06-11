@@ -168,7 +168,7 @@ const keywordSuggestions: KeywordSuggestion[] = [
   { keywords: ["agl", "energex", "energy australia"], categoryName: "Electricity", confidence: "MEDIUM" },
   { keywords: ["salary", "wages", "payroll"], categoryName: "Salary / wages", merchantName: "Salary", confidence: "MEDIUM" },
   { keywords: ["refund", "rebate"], categoryName: "Refunds / rebates", merchantName: "Refund", confidence: "MEDIUM" },
-  { keywords: ["bank transfer", "transfer", "osko"], categoryName: "Transfer to review", merchantName: "Bank transfer", confidence: "MEDIUM" },
+  { keywords: ["bank transfer", "transfer", "osko"], categoryName: "Transfer", merchantName: "Bank transfer", confidence: "MEDIUM" },
   { keywords: ["loan repayment"], categoryName: "Loan repayment", merchantName: "Loan repayment", confidence: "MEDIUM" },
 ];
 
@@ -275,8 +275,8 @@ export function suggestMerchantCategory(
       categoryId: categoryIdByName(keyword.categoryName),
       source: "KEYWORD",
       confidence: keyword.confidence,
-      reason: keyword.categoryName === "Transfer to review"
-        ? "Possible account movement. Review the transfer category before using it."
+      reason: keyword.categoryName === "Transfer"
+        ? "Possible account movement. Please review the transfer category before using it."
         : "Suggested by a clear local keyword. Please review before using it.",
       requiresReview: true,
     };
