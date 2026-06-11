@@ -4,8 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Archive,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   History,
   Link2,
   RotateCcw,
@@ -47,26 +49,30 @@ import {
 const REVIEW_PAGE_SIZE = 20;
 const genericAliasKeys = new Set(["payment", "bank transfer", "transfer", "loan repayment", "salary", "refund"]);
 
-const reviewActions: Array<{
-  value: ImportReviewAction;
-  label: string;
-  description: string;
-}> = [
-  { value: "IMPORT", label: "Import", description: "Intend to add later" },
-  { value: "SKIP", label: "Skip", description: "Leave out later" },
-  { value: "MERGE", label: "Merge", description: "Match later" },
+const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [
+  { value: "IMPORT", label: "Import" },
+  { value: "SKIP", label: "Skip" },
+  { value: "MERGE", label: "Merge" },
 ];
 
 const suggestionLabels: Record<MerchantSuggestionSource, string> = {
-  USER_RULE: "Your local rule",
-  USER_ALIAS: "Your local alias",
-  KEYWORD: "Local keyword",
-  FALLBACK: "Manual review needed",
+  USER_RULE: "Local rule",
+  USER_ALIAS: "Local alias",
+  KEYWORD: "Local suggestion",
+  FALLBACK: "Manual review",
 };
 
-const categoryGroups = Array.from(new Set(manualCategories.map((category) => category.group))).map((group) => ({
-  group,
-  categories: manualCategories.filter((category) => category.group === group),
+const importCategorySections = [
+  { sourceGroup: "Everyday spending", label: "Everyday" },
+  { sourceGroup: "Bills and household", label: "Bills and household" },
+  { sourceGroup: "Financial", label: "Financial / transfers" },
+  { sourceGroup: "Income", label: "Income / refunds" },
+  { sourceGroup: "Review", label: "Review" },
+] as const;
+
+const categoryGroups = importCategorySections.map((section) => ({
+  label: section.label,
+  categories: manualCategories.filter((category) => category.group === section.sourceGroup),
 }));
 
 function formatReviewDate(date: string | null) {
@@ -99,9 +105,9 @@ function canSaveAlias(row: ImportReviewRow) {
 }
 
 function reviewStatusText(row: ImportReviewRow) {
-  if (row.reviewState === "MANUALLY_REVIEWED") return "Manually reviewed in this transient import.";
-  if (row.reviewState === "CONFIRMED_SUGGESTION") return "Suggestion confirmed for this transient import.";
-  if (row.reviewState === "APPLIED_TO_MATCH") return "Category applied from the same cleaned merchant in this review.";
+  if (row.reviewState === "MANUALLY_REVIEWED") return "Manually reviewed";
+  if (row.reviewState === "CONFIRMED_SUGGESTION") return "Category checked";
+  if (row.reviewState === "APPLIED_TO_MATCH") return "Applied to matching merchant";
   return "";
 }
 
@@ -119,14 +125,55 @@ function ActionButton({
       type="button"
       onClick={onClick}
       aria-pressed={selected}
-      className={`min-h-12 rounded-2xl border px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-brand-green ${selected
+      className={`min-h-10 rounded-xl border px-3 py-2 text-center text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-green ${selected
         ? "border-brand-green bg-surface-mint text-brand-deepTeal"
         : "border-border bg-white text-brand-deepTeal/70"
       }`}
     >
-      <span className="block text-sm font-bold">{action.label}</span>
-      <span className="mt-0.5 block text-[11px]">{action.description}</span>
+      {action.label}
     </button>
+  );
+}
+
+function CategorySelector({
+  row,
+  onDetails,
+}: {
+  row: ImportReviewRow;
+  onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
+}) {
+  const meaningfulSuggestion = row.suggestionSource !== "FALLBACK" && row.suggestionConfidence !== "LOW";
+
+  return (
+    <div className="mt-4">
+      <div className="flex items-center justify-between gap-3">
+        <label htmlFor={`category-${row.id}`} className="text-sm font-bold text-brand-deepTeal">Category</label>
+        {meaningfulSuggestion && !row.categoryConfirmed && (
+          <button
+            type="button"
+            onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId, editType: "CONFIRM_SUGGESTION" })}
+            className="text-xs font-bold text-brand-teal underline-offset-4 hover:underline focus:outline-none focus:ring-2 focus:ring-brand-green"
+          >
+            Use this category
+          </button>
+        )}
+      </div>
+      <select
+        id={`category-${row.id}`}
+        value={row.categoryId}
+        onChange={(event) => onDetails({ merchantName: row.merchantName, categoryId: event.target.value, editType: "CATEGORY_EDIT" })}
+        className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+      >
+        {categoryGroups.map((group) => (
+          <optgroup key={group.label} label={group.label}>
+            {group.categories.map((category) => (
+              <option key={category.id} value={category.id}>{category.name}</option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <p className="mt-1 text-xs text-brand-deepTeal/55">Full Phase 1 catalogue, including income, refunds, financial and transfer categories.</p>
+    </div>
   );
 }
 
@@ -145,50 +192,37 @@ function ReviewRowCard({
   onSaveRule(): void;
   onSaveAlias(): void;
 }) {
+  const [showMore, setShowMore] = useState(false);
   const meaningfulSuggestion = row.suggestionSource !== "FALLBACK" && row.suggestionConfidence !== "LOW";
   const aliasAvailable = canSaveAlias(row);
   const statusText = reviewStatusText(row);
+  const currentCategory = manualCategories.find((category) => category.id === row.categoryId);
 
   return (
     <article className="rounded-3xl border border-border bg-white p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">CSV row {row.rowNumber}</p>
-          <p className="mt-1 font-bold text-brand-deepTeal">{row.description || "Payment"}</p>
-          <p className="mt-1 text-sm text-brand-deepTeal/65">{formatReviewDate(row.date)}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="truncate font-bold text-brand-deepTeal">{row.description || "Payment"}</p>
+          <p className="mt-1 text-sm text-brand-deepTeal/60">{formatReviewDate(row.date)} · CSV row {row.rowNumber}</p>
         </div>
-        <p className="font-bold text-brand-deepTeal">
-          {row.amountCents === null ? "Amount needs review" : formatAudFromCents(row.amountCents)}
+        <p className="shrink-0 font-bold text-brand-deepTeal">
+          {row.amountCents === null ? "Review amount" : formatAudFromCents(row.amountCents)}
         </p>
       </div>
 
-      <div className="mt-4 rounded-2xl border border-brand-green/40 bg-surface-mint p-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1 text-xs font-bold text-brand-teal">
-            <Sparkles aria-hidden="true" className="h-3.5 w-3.5" /> {meaningfulSuggestion ? "Suggestion" : "Review status"}
-          </span>
-          <span className="text-xs font-bold text-brand-deepTeal">{suggestionLabels[row.suggestionSource]}</span>
-          <span className="text-xs text-brand-deepTeal/60">{row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</span>
-        </div>
-        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/70">{row.suggestionReason}</p>
-        {statusText ? (
-          <p className="mt-2 text-xs font-bold text-brand-green">{statusText}</p>
-        ) : meaningfulSuggestion ? (
-          <button
-            type="button"
-            onClick={() => onDetails({ merchantName: row.merchantName, categoryId: row.categoryId, editType: "CONFIRM_SUGGESTION" })}
-            className="mt-3 min-h-10 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"
-          >
-            Confirm this suggestion
-          </button>
-        ) : (
-          <p className="mt-3 text-xs font-bold text-brand-deepTeal">Review manually by choosing a category below.</p>
-        )}
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+        <span className={`rounded-full px-3 py-1.5 font-bold ${meaningfulSuggestion ? "bg-surface-mint text-brand-teal" : "bg-warning-amber/10 text-brand-deepTeal"}`}>
+          {meaningfulSuggestion ? `${suggestionLabels[row.suggestionSource]}: ${currentCategory?.name ?? "Review category"}` : "Choose a category"}
+        </span>
+        {statusText && <span className="font-bold text-brand-green">{statusText}</span>}
+        {row.warningCodes.length > 0 && <span className="font-semibold text-warning-amber">Row needs review</span>}
       </div>
 
+      <CategorySelector row={row} onDetails={onDetails} />
+
       <fieldset className="mt-4">
-        <legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Intended action only</legend>
-        <div className="mt-2 grid grid-cols-3 gap-2">
+        <legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Intended action</legend>
+        <div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">
           {reviewActions.map((action) => (
             <ActionButton
               key={action.value}
@@ -199,65 +233,57 @@ function ReviewRowCard({
           ))}
         </div>
         {row.action === "MERGE" && (
-          <p className="mt-2 rounded-2xl bg-warning-amber/10 p-3 text-xs leading-5 text-brand-deepTeal/75">
-            Merge is a review intention only. No match is selected and no transaction is changed in this task.
-          </p>
+          <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Merge is an intention only; no transaction is matched or changed.</p>
         )}
       </fieldset>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-        <label className="text-sm font-semibold text-brand-deepTeal">
-          Safe merchant label
-          <input
-            value={row.merchantName}
-            maxLength={120}
-            onChange={(event) => onDetails({ merchantName: event.target.value, categoryId: row.categoryId, editType: "MERCHANT_EDIT" })}
-            className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
-          />
-          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">A safe edit is marked as manually reviewed. Private-looking identifiers remain rejected.</span>
-        </label>
-        <label className="text-sm font-semibold text-brand-deepTeal">
-          Category
-          <select
-            value={row.categoryId}
-            onChange={(event) => onDetails({ merchantName: row.merchantName, categoryId: event.target.value, editType: "CATEGORY_EDIT" })}
-            className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
-          >
-            {categoryGroups.map((group) => (
-              <optgroup key={group.group} label={group.group}>
-                {group.categories.map((category) => (
-                  <option key={category.id} value={category.id}>{category.name}</option>
-                ))}
-              </optgroup>
-            ))}
-          </select>
-          <span className="mt-1 block text-xs font-normal text-brand-deepTeal/60">Choosing a category marks this row as manually reviewed in the current browser review.</span>
-        </label>
-      </div>
+      <button
+        type="button"
+        onClick={() => setShowMore((current) => !current)}
+        aria-expanded={showMore}
+        className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"
+      >
+        {showMore ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
+        {showMore ? "Hide options" : "More options"}
+      </button>
 
-      <div className="mt-4 grid gap-2 sm:grid-cols-3">
-        <button type="button" disabled={!row.categoryConfirmed} onClick={onApplySameMerchant} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
-          <Link2 aria-hidden="true" className="h-4 w-4" /> Apply to same merchant
-        </button>
-        <button type="button" disabled={!row.categoryConfirmed} onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
-          <Save aria-hidden="true" className="h-4 w-4" /> Save local rule
-        </button>
-        <button type="button" disabled={!row.categoryConfirmed || !aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
-          <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
-        </button>
-      </div>
-      {!row.categoryConfirmed ? (
-        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Choose or confirm a category before applying it or saving a local rule.</p>
-      ) : !aliasAvailable ? (
-        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Same-merchant and rule actions are ready. Save alias becomes available only after a meaningful safe merchant rename with a distinct non-generic alias.</p>
-      ) : (
-        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">These local helpers speed up future reviews, but their results remain suggestions.</p>
-      )}
+      {showMore && (
+        <div className="mt-3 rounded-2xl border border-border bg-surface-mint/60 p-4">
+          <label className="text-sm font-semibold text-brand-deepTeal">
+            Safe merchant label
+            <input
+              value={row.merchantName}
+              maxLength={120}
+              onChange={(event) => onDetails({ merchantName: event.target.value, categoryId: row.categoryId, editType: "MERCHANT_EDIT" })}
+              className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+            />
+          </label>
 
-      {row.warningCodes.length > 0 && (
-        <p className="mt-4 text-xs font-semibold text-warning-amber">
-          Needs review: {row.warningCodes.join(", ").replaceAll("_", " ").toLocaleLowerCase("en-AU")}
-        </p>
+          <div className="mt-4 rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/70">
+            <p className="font-bold text-brand-deepTeal">Suggestion details</p>
+            <p className="mt-1">{suggestionLabels[row.suggestionSource]} · {row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</p>
+            <p className="mt-1">{row.suggestionReason}</p>
+          </div>
+
+          <div className="mt-4 grid gap-2 sm:grid-cols-3">
+            <button type="button" disabled={!row.categoryConfirmed} onClick={onApplySameMerchant} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+              <Link2 aria-hidden="true" className="h-4 w-4" /> Apply to same merchant
+            </button>
+            <button type="button" disabled={!row.categoryConfirmed} onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+              <Save aria-hidden="true" className="h-4 w-4" /> Save local rule
+            </button>
+            <button type="button" disabled={!row.categoryConfirmed || !aliasAvailable} onClick={onSaveAlias} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-40">
+              <Save aria-hidden="true" className="h-4 w-4" /> Save local alias
+            </button>
+          </div>
+
+          {!row.categoryConfirmed ? (
+            <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before applying it or saving a local rule.</p>
+          ) : !aliasAvailable ? (
+            <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Save alias is available only after a meaningful safe merchant rename with a distinct non-generic alias.</p>
+          ) : null}
+          <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">Privacy note: only cleaned merchant helpers and category choices can be stored locally. Raw descriptions and private banking identifiers remain excluded.</p>
+        </div>
       )}
     </article>
   );
@@ -409,7 +435,7 @@ export function ImportReviewFoundation({
             <div>
               <p className="font-bold text-brand-deepTeal">Review-before-commit foundation</p>
               <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-                Continue to review sanitised rows and choose intended Import, Skip or Merge actions. Local merchant suggestions may help, but every suggestion requires review and nothing creates transactions.
+                Review each sanitised row, check its category and choose Import, Skip or Merge. Local merchant helpers stay optional and nothing creates transactions.
               </p>
             </div>
           </div>
@@ -429,9 +455,7 @@ export function ImportReviewFoundation({
               <div>
                 <p className="text-sm font-semibold text-brand-teal">Non-committing prototype</p>
                 <h2 id="review-summary-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review intended row actions</h2>
-                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">
-                  Sanitised rows can receive local merchant and category suggestions. Suggestions stay reviewable; Import, Skip and Merge remain intentions in memory only.
-                </p>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-brand-deepTeal/70">Check the merchant and category, choose Import, Skip or Merge, then move to the next row. All choices remain in this browser review only.</p>
               </div>
               <button type="button" onClick={resetReview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
                 <RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset review
@@ -485,9 +509,7 @@ export function ImportReviewFoundation({
               <Archive aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
               <div>
                 <h2 className="text-xl font-bold text-brand-deepTeal">Save review summary only</h2>
-                <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-                  This stores only the timestamp, status and aggregate action counts in this browser. It never stores filenames, rows, descriptions, merchants, categories, amounts or private identifiers.
-                </p>
+                <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">This stores only timestamp, status and aggregate action counts in this browser—never filenames, rows, descriptions, merchants, categories, amounts or private identifiers.</p>
               </div>
             </div>
             <button type="button" onClick={saveSummaryOnly} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">Save local summary</button>
@@ -501,7 +523,7 @@ export function ImportReviewFoundation({
             <Sparkles aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
             <div>
               <h2 id="merchant-rules-heading" className="text-xl font-bold text-brand-deepTeal">Browser-local merchant helpers</h2>
-              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Stored locally as cleaned names and category choices only—never raw bank descriptions.</p>
+              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{merchantData.rules.length} rules and {merchantData.aliases.length} aliases. Optional helpers are stored as cleaned names and category choices only.</p>
             </div>
           </div>
           {(merchantData.rules.length > 0 || merchantData.aliases.length > 0) && (
@@ -553,7 +575,7 @@ export function ImportReviewFoundation({
 
       <section className="rounded-3xl border border-border bg-surface-mint p-5">
         <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Task 1.7 safety boundary</p>
-        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Merchant cleanup, rules, aliases and category suggestions run locally. Suggestions require review; no row action commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p>
+        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Merchant helpers remain local and optional. No row action commits, transaction creation, database writes, raw-row storage, server upload, Basiq, AI or third-party processing occur.</p>
       </section>
     </div>
   );
