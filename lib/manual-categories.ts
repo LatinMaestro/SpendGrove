@@ -68,6 +68,7 @@ const categoryGroups: CategoryGroupDefinition[] = [
   {
     name: "Financial",
     categories: [
+      ["Transfer", "TRANSFER"],
       ["Savings transfer", "TRANSFER"],
       ["Investment contribution", "TRANSFER"],
       ["Credit card payment", "TRANSFER"],
@@ -98,7 +99,6 @@ const categoryGroups: CategoryGroupDefinition[] = [
       ["Uncategorised", "EXPENSE"],
       ["Needs review", "EXPENSE"],
       ["Possible duplicate", "EXPENSE"],
-      ["Transfer to review", "TRANSFER"],
     ],
   },
 ];
