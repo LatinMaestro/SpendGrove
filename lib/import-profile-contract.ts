@@ -30,7 +30,6 @@ const safeProfileLabelSchema = z.string()
   .trim()
   .min(1)
   .max(120)
-  .transform(normalizeSafeText)
   .superRefine((value, context) => {
     try {
       assertNoPrivateBankIdentifiers(value, "profile label");
@@ -40,7 +39,8 @@ const safeProfileLabelSchema = z.string()
         message: error instanceof Error ? error.message : "Profile labels must not contain private identifiers.",
       });
     }
-  });
+  })
+  .transform(normalizeSafeText);
 
 export const safeImportProfileContractSchema = z.object({
   version: z.literal(SAFE_IMPORT_PROFILE_VERSION),
