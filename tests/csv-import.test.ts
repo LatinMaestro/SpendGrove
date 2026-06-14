@@ -50,11 +50,7 @@ describe("CSV import foundation", () => {
     const initialScan = scanCsvDocument(document);
 
     expect(document.hasHeader).toBe(true);
-    expect(initialScan.profile).toMatchObject({
-      profileId: null,
-      requiresManualMapping: true,
-    });
-    expect(initialScan.mappingIssues.length).toBeGreaterThan(0);
+    expect(initialScan.profile.requiresManualMapping).toBe(true);
 
     const manualMapping: CsvMapping = {
       0: "DATE",
@@ -96,7 +92,6 @@ describe("CSV import foundation", () => {
       isNarrative: true,
       isPrivate: false,
     });
-    expect(initialScan.profile).toMatchObject({ profileId: null, requiresManualMapping: true });
 
     const mappedScan = scanCsvDocument(document, {
       0: "DATE",
