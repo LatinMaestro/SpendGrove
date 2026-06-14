@@ -2,11 +2,13 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   assessCsvColumns,
+  getCsvWarningMessages,
   getSafeSelectedCsvLabel,
   hasConfidentCsvHeader,
   parseAustralianCsvDate,
   parseCsvDocument,
   scanCsvDocument,
+  validateCsvMapping,
   type CsvMapping,
 } from "@/lib/csv-import";
 
@@ -26,6 +28,7 @@ describe("CSV import foundation", () => {
       requiresManualMapping: false,
     });
     expect(scan.privateColumnCount).toBe(1);
+    expect(scan.warningCodes).toContain("PRIVATE_COLUMNS_EXCLUDED");
     expect(scan.parsedRowCount).toBe(4);
     expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-05",
@@ -40,35 +43,105 @@ describe("CSV import foundation", () => {
     const scan = scanCsvDocument(document);
 
     expect(scan.profile.profileId).toBe("westpac-everyday-v1");
+    expect(scan.amountMode).toBe("DEBIT_CREDIT");
     expect(scan.previewRows[0].amountCents).toBe(-6325);
     expect(scan.previewRows[1].amountCents).toBe(245);
     expect(scan.privateColumnCount).toBe(1);
   });
 
-  it("routes unknown headers to manual mapping instead of failing silently", async () => {
-    const document = parseCsvDocument(await fixture("unknown-manual-mapping.csv"));
-    const initialScan = scanCsvDocument(document);
+  it("suggests a complete generic mapping while keeping it reviewable", async () => {
+    const document = parseCsvDocument(await fixture("generic-headered-signed.csv"));
+    const scan = scanCsvDocument(document);
 
     expect(document.hasHeader).toBe(true);
-    expect(initialScan.profile).toMatchObject({
-      profileId: null,
+    expect(scan.profile).toMatchObject({
+      profileId: "generic-transaction-v1",
+      bankName: "Generic or custom CSV",
       requiresManualMapping: true,
     });
-    expect(initialScan.mappingIssues.length).toBeGreaterThan(0);
+    expect(scan.mapping).toMatchObject({ 0: "DATE", 1: "AMOUNT", 2: "DESCRIPTION", 3: "IGNORE" });
+    expect(scan.mappingIssues).toEqual([]);
+    expect(scan.warningCodes).toContain("MANUAL_MAPPING_REQUIRED");
+    expect(scan.previewRows[0]).toMatchObject({
+      date: "2026-06-12",
+      amountCents: -3120,
+      description: "Bunnings",
+    });
+  });
 
-    const manualMapping: CsvMapping = {
+  it("recognises clear generic debit and credit headers", async () => {
+    const document = parseCsvDocument(await fixture("generic-headered-debit-credit.csv"));
+    const scan = scanCsvDocument(document);
+
+    expect(scan.mapping).toMatchObject({
       0: "DATE",
-      1: "AMOUNT",
-      2: "DESCRIPTION",
-      3: "IGNORE",
-    };
-    const mappedScan = scanCsvDocument(document, manualMapping);
-    expect(mappedScan.mappingIssues).toEqual([]);
-    expect(mappedScan.previewRows[0]).toMatchObject({
+      1: "DESCRIPTION",
+      2: "DEBIT",
+      3: "CREDIT",
+      4: "IGNORE",
+    });
+    expect(scan.amountMode).toBe("DEBIT_CREDIT");
+    expect(scan.mappingIssues).toEqual([]);
+    expect(scan.previewRows.map((row) => row.amountCents)).toEqual([-5430, 320, -8800]);
+  });
+
+  it("uses value structure to suggest unknown columns without silently accepting a bank profile", async () => {
+    const document = parseCsvDocument(await fixture("unknown-manual-mapping.csv"));
+    const scan = scanCsvDocument(document);
+
+    expect(document.hasHeader).toBe(true);
+    expect(scan.profile).toMatchObject({
+      profileId: "generic-transaction-v1",
+      requiresManualMapping: true,
+    });
+    expect(scan.mapping).toMatchObject({ 0: "DATE", 1: "AMOUNT", 2: "DESCRIPTION", 3: "IGNORE" });
+    expect(scan.mappingIssues).toEqual([]);
+    expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-01",
       amountCents: -1640,
       description: "Aldi",
     });
+  });
+
+  it("preserves every first row in a headerless fixture and suggests generic roles", async () => {
+    const document = parseCsvDocument(await fixture("headerless-signed-amount.csv"));
+    const scan = scanCsvDocument(document);
+
+    expect(document.hasHeader).toBe(false);
+    expect(document.rows).toHaveLength(3);
+    expect(document.headers).toEqual(["Column 1", "Column 2", "Column 3"]);
+    expect(scan.mapping).toMatchObject({ 0: "DATE", 1: "AMOUNT", 2: "DESCRIPTION" });
+    expect(scan.previewRows[0]).toMatchObject({
+      rowNumber: 1,
+      date: "2026-06-12",
+      amountCents: -2480,
+      description: "Woolworths",
+    });
+    expect(scan.warningCodes).toContain("HEADER_NOT_DETECTED");
+    expect(scan.warningCodes).toContain("MANUAL_MAPPING_REQUIRED");
+  });
+
+  it("reports inconsistent column counts without exposing row values", async () => {
+    const document = parseCsvDocument(await fixture("inconsistent-columns.csv"));
+    const scan = scanCsvDocument(document);
+
+    expect(document.structuralWarningCodes).toContain("INCONSISTENT_COLUMN_COUNT");
+    expect(scan.warningCodes).toContain("INCONSISTENT_COLUMN_COUNT");
+    expect(getCsvWarningMessages(scan.warningCodes)).toContain(
+      "Some lines contain a different number of columns. Those transactions need an extra check.",
+    );
+  });
+
+  it("flags unsupported structures for manual matching instead of guessing", async () => {
+    const document = parseCsvDocument(await fixture("unsupported-two-column.csv"));
+    const scan = scanCsvDocument(document);
+
+    expect(scan.mappingIssues).toEqual(expect.arrayContaining([
+      "Choose a date column.",
+      "Choose a transaction amount column, or both money-out and money-in columns.",
+    ]));
+    expect(scan.warningCodes).toContain("STRUCTURE_NOT_RECOGNIZED");
+    expect(scan.warningCodes).toContain("MAPPING_INCOMPLETE");
   });
 
   it("preserves a headerless mixed narration column and sanitises its first row", () => {
@@ -96,7 +169,6 @@ describe("CSV import foundation", () => {
       isNarrative: true,
       isPrivate: false,
     });
-    expect(initialScan.profile).toMatchObject({ profileId: null, requiresManualMapping: true });
 
     const mappedScan = scanCsvDocument(document, {
       0: "DATE",
@@ -171,6 +243,21 @@ describe("CSV import foundation", () => {
     });
   });
 
+  it("rejects conflicting or duplicate mappings", () => {
+    expect(validateCsvMapping({
+      0: "DATE",
+      1: "AMOUNT",
+      2: "DEBIT",
+      3: "DESCRIPTION",
+    })).toContain("Use either one transaction amount column or separate money-out and money-in columns.");
+
+    expect(validateCsvMapping({
+      0: "DATE",
+      1: "DEBIT",
+      2: "DESCRIPTION",
+    })).toContain("Choose both money-out and money-in columns for a split amount file.");
+  });
+
   it("never exposes the original selected filename", () => {
     expect(getSafeSelectedCsvLabel("Account-1234-private.csv")).toBe("Selected CSV file");
     expect(getSafeSelectedCsvLabel("ordinary.csv")).toBe("Selected CSV file");
@@ -185,6 +272,7 @@ describe("CSV import foundation", () => {
 
     expect(parseAustralianCsvDate("9/6/26")).toBe("2026-06-09");
     expect(parseAustralianCsvDate("31/02/2026")).toBeNull();
+    expect(scan.detectedDateFormats).toEqual(["DD/MM/YY"]);
     expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-09",
       amountCents: 123456,
