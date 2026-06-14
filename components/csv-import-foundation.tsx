@@ -14,6 +14,7 @@ import {
   TableProperties,
 } from "lucide-react";
 import { ImportReviewFoundation } from "@/components/import-review-foundation";
+import { SavedImportProfilesPanel } from "@/components/saved-import-profiles-panel";
 import {
   MAX_CSV_FILE_SIZE_BYTES,
   parseCsvDocument,
@@ -83,6 +84,7 @@ export function CsvImportFoundation() {
   const [document, setDocument] = useState<TransientCsvDocument | null>(null);
   const [scan, setScan] = useState<CsvScanResult | null>(null);
   const [selectedFileSize, setSelectedFileSize] = useState<number | null>(null);
+  const [mappingConfirmed, setMappingConfirmed] = useState(false);
   const [error, setError] = useState("");
   const [isReading, setIsReading] = useState(false);
 
@@ -90,6 +92,7 @@ export function CsvImportFoundation() {
     if (!file) return;
     setError("");
     setIsReading(true);
+    setMappingConfirmed(false);
 
     try {
       if (!file.name.toLocaleLowerCase("en-AU").endsWith(".csv")) {
@@ -120,6 +123,13 @@ export function CsvImportFoundation() {
   function updateMapping(columnIndex: number, role: CsvColumnRole) {
     if (!document || !scan) return;
     setScan(scanCsvDocument(document, { ...scan.mapping, [columnIndex]: role }));
+    setMappingConfirmed(false);
+    setError("");
+  }
+
+  function applySavedScan(nextScan: CsvScanResult) {
+    setScan(nextScan);
+    setMappingConfirmed(false);
     setError("");
   }
 
@@ -127,12 +137,26 @@ export function CsvImportFoundation() {
     setDocument(null);
     setScan(null);
     setSelectedFileSize(null);
+    setMappingConfirmed(false);
     setError("");
     setStep(resetImportFlow());
   }
 
+  function confirmMapping() {
+    if (!scan || scan.mappingIssues.length > 0) {
+      setError("Check the required column matches before confirming.");
+      return;
+    }
+    setMappingConfirmed(true);
+    setError("");
+  }
+
   function continueToReview() {
     if (!scan) return;
+    if (!mappingConfirmed) {
+      setError("Confirm the column mapping before continuing to review.");
+      return;
+    }
     try {
       setStep(moveToReviewStep(scan.mappingIssues));
       setError("");
@@ -225,6 +249,13 @@ export function CsvImportFoundation() {
           )}
         </section>
 
+        <SavedImportProfilesPanel
+          document={document}
+          scan={scan}
+          mappingConfirmed={mappingConfirmed}
+          onApplyScan={applySavedScan}
+        />
+
         <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="privacy-columns-heading">
           <div className="flex items-start gap-3">
             <LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
@@ -290,10 +321,15 @@ export function CsvImportFoundation() {
             )}
           </div>
 
+          {mappingConfirmed && <p role="status" className="mt-5 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">Columns confirmed. You can save this mapping above or continue to review.</p>}
           {error && <p role="alert" className="mt-5 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
           <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
             <button type="button" onClick={clearFile} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><ArrowLeft aria-hidden="true" className="h-4 w-4" /> Back to upload</button>
-            <button type="button" onClick={continueToReview} disabled={scan.mappingIssues.length > 0} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:bg-brand-deepTeal/20 disabled:text-brand-deepTeal/55">Continue to review <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+            {mappingConfirmed ? (
+              <button type="button" onClick={continueToReview} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">Continue to review <ArrowRight aria-hidden="true" className="h-4 w-4" /></button>
+            ) : (
+              <button type="button" onClick={confirmMapping} disabled={scan.mappingIssues.length > 0} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:bg-brand-deepTeal/20 disabled:text-brand-deepTeal/55"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> Confirm mapping</button>
+            )}
           </div>
         </section>
       </div>
