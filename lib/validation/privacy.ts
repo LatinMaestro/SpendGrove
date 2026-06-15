@@ -207,7 +207,7 @@ export function sanitizeTransactionNarration(value: string) {
   const safeDescription = sanitizeBankDescription(normalized);
   if (transferNarrationPattern.test(normalized)) return safeTransferName(safeDescription);
   if (paymentNarrationPattern.test(normalized)) return extractPaymentMerchant(safeDescription) ?? "Payment";
-  return extractShortCardMerchantTitle(safeDescription, normalized) ?? safeDescription || "Payment";
+  return extractShortCardMerchantTitle(safeDescription, normalized) ?? (safeDescription || "Payment");
 }
 
 function inspectSafeJson(input: unknown, path: string, forbiddenKeys: Set<string>): void {
