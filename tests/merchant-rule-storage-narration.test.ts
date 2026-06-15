@@ -39,7 +39,7 @@ describe("merchant helper storage for card narrations", () => {
     const rawNarration = "OPENAI *CHATGPT SUBSCR AU AUS Card Value Date: 27/05/2026";
     const saved = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
       merchantName: rawNarration,
-      categoryId: categoryId("Subscriptions"),
+      categoryId: categoryId("Streaming / subscriptions"),
       now: new Date("2026-06-16T00:00:00.000Z"),
     });
     const serialized = serializeMerchantRuleStorage(saved);
