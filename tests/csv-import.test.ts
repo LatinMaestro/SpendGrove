@@ -30,7 +30,7 @@ describe("CSV import foundation", () => {
     expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-05",
       amountCents: -4235,
-      description: "Woolworths",
+      description: "Woolworths Metro",
       merchantName: "Woolworths",
     });
     expect(JSON.stringify(scan)).not.toContain("SYNTHETIC-ONLY");
