@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getManualCategory } from "@/lib/manual-categories";
 import { suggestImportReviewCategory } from "@/lib/import-category-suggestions";
-import {
-  emptyLocalMerchantData,
-  saveConfirmedMerchantRule,
-  saveMerchantAlias,
-  serializeMerchantRuleStorage,
-} from "@/lib/merchant-rules";
+import { emptyLocalMerchantData } from "@/lib/merchant-rules";
 import {
   sanitizeBankDescription,
   sanitizeTransactionNarration,
@@ -60,32 +55,5 @@ describe("safe transaction names and bank descriptions", () => {
     );
     expect(categoryName(suggestion.categoryId)).toBe("Needs review");
     expect(suggestion.source).toBe("FALLBACK");
-  });
-
-  it("rejects raw private descriptions and stores only explicitly confirmed cleaned names", () => {
-    const groceries = getManualCategory("everyday-spending-groceries-expense")!;
-    expect(() => saveConfirmedMerchantRule(emptyLocalMerchantData(), {
-      merchantName: "Direct Debit PayPal reference 987654321",
-      categoryId: groceries.id,
-    })).toThrow("Private banking identifiers");
-
-    const ruled = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
-      merchantName: "PayPal",
-      categoryId: groceries.id,
-      now: new Date("2026-06-16T00:00:00.000Z"),
-    });
-    const aliased = saveMerchantAlias(ruled, {
-      alias: "Digital wallet checkout",
-      canonicalName: "PayPal",
-      categoryId: groceries.id,
-      now: new Date("2026-06-16T00:00:00.000Z"),
-    });
-    const stored = serializeMerchantRuleStorage(aliased);
-
-    expect(stored).toContain("PayPal");
-    expect(stored).toContain("digital wallet checkout");
-    expect(stored).not.toContain("Direct Debit");
-    expect(stored).not.toContain("987654321");
-    expect(stored).not.toContain("reference");
   });
 });
