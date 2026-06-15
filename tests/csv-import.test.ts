@@ -64,7 +64,7 @@ describe("CSV import foundation", () => {
     expect(mappedScan.previewRows[0]).toMatchObject({
       date: "2026-06-01",
       amountCents: -1640,
-      description: "Aldi",
+      description: "Aldi groceries",
       merchantName: "Aldi",
     });
   });
