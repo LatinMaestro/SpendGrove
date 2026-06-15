@@ -19,7 +19,7 @@ function syntheticReviewSource(rowCount = 3) {
     const day = String((index % 28) + 1).padStart(2, "0");
     const amount = index % 2 === 0 ? "-12.50" : "+25.00";
     const description = index === 0
-      ? "OSKO transfer to Fictional Person account 12345678 reference 987654321"
+      ? "OSKO transfer to Alex Recipient account 12345678 reference 987654321"
       : index === 1
         ? "Woolworths terminal 76543210 card xx4321"
         : `Synthetic purchase ${index + 1}`;
@@ -35,7 +35,7 @@ function syntheticReviewSource(rowCount = 3) {
 }
 
 describe("import review foundation", () => {
-  it("creates sanitised transient rows across multiple preview-sized chunks", () => {
+  it("creates safe transient rows across multiple preview-sized chunks", () => {
     const { document, scan } = syntheticReviewSource(21);
     const rows = createTransientImportReviewRows(document, scan.columns, scan.mapping);
 
@@ -44,12 +44,12 @@ describe("import review foundation", () => {
       id: "csv-row-1",
       rowNumber: 1,
       amountCents: -1250,
-      description: "Bank transfer",
-      merchantName: "Bank transfer",
+      description: "OSKO payment to Alex",
+      merchantName: "OSKO payment to Alex",
       action: "IMPORT",
     });
     expect(rows[20].rowNumber).toBe(21);
-    expect(JSON.stringify(rows)).not.toContain("Fictional Person");
+    expect(JSON.stringify(rows)).not.toContain("Alex Recipient");
     expect(JSON.stringify(rows)).not.toContain("12345678");
     expect(JSON.stringify(rows)).not.toContain("987654321");
   });
@@ -74,15 +74,15 @@ describe("import review foundation", () => {
     const rows = createTransientImportReviewRows(document, scan.columns, scan.mapping);
     const groceries = manualCategories.find((category) => category.name === "Groceries")!;
     const updated = updateImportReviewDetails(rows, rows[0].id, {
-      merchantName: "Transfer to Fictional Recipient account 87654321",
+      merchantName: "Transfer to Jordan Recipient account 87654321",
       categoryId: groceries.id,
     });
 
     expect(updated[0]).toMatchObject({
-      merchantName: "Bank transfer",
+      merchantName: "Bank transfer to Jordan",
       categoryId: groceries.id,
     });
-    expect(JSON.stringify(updated)).not.toContain("Fictional Recipient");
+    expect(JSON.stringify(updated)).not.toContain("Jordan Recipient");
     expect(JSON.stringify(updated)).not.toContain("87654321");
     expect(() => updateImportReviewDetails(rows, rows[0].id, {
       merchantName: "Safe merchant",
@@ -90,7 +90,7 @@ describe("import review foundation", () => {
     })).toThrow("Choose an approved category");
   });
 
-  it("resets transient actions and edits by rebuilding from sanitised source rows", () => {
+  it("resets transient actions and edits by rebuilding from safe source rows", () => {
     const { document, scan } = syntheticReviewSource();
     const initialRows = createTransientImportReviewRows(document, scan.columns, scan.mapping);
     const changed = updateImportReviewDetails(
@@ -101,7 +101,7 @@ describe("import review foundation", () => {
     const reset = createTransientImportReviewRows(document, scan.columns, scan.mapping);
 
     expect(changed[0]).toMatchObject({ action: "SKIP", merchantName: "Coles" });
-    expect(reset[0]).toMatchObject({ action: "IMPORT", merchantName: "Bank transfer" });
+    expect(reset[0]).toMatchObject({ action: "IMPORT", merchantName: "OSKO payment to Alex" });
   });
 
   it("stores only safe aggregate history metadata", () => {
