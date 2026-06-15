@@ -62,10 +62,15 @@ describe("safe transaction names and bank descriptions", () => {
     expect(suggestion.source).toBe("FALLBACK");
   });
 
-  it("stores only cleaned merchant names and safe keys after explicit confirmation", () => {
+  it("rejects raw private descriptions and stores only explicitly confirmed cleaned names", () => {
     const groceries = getManualCategory("everyday-spending-groceries-expense")!;
-    const ruled = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+    expect(() => saveConfirmedMerchantRule(emptyLocalMerchantData(), {
       merchantName: "Direct Debit PayPal reference 987654321",
+      categoryId: groceries.id,
+    })).toThrow("Private banking identifiers");
+
+    const ruled = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "PayPal",
       categoryId: groceries.id,
       now: new Date("2026-06-16T00:00:00.000Z"),
     });
