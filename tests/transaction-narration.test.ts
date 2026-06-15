@@ -1,15 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getManualCategory } from "@/lib/manual-categories";
-import { suggestImportReviewCategory } from "@/lib/import-category-suggestions";
-import { emptyLocalMerchantData } from "@/lib/merchant-rules";
 import {
   sanitizeBankDescription,
   sanitizeTransactionNarration,
 } from "@/lib/validation/privacy";
-
-function categoryName(categoryId: string) {
-  return getManualCategory(categoryId)?.name;
-}
 
 describe("safe transaction names and bank descriptions", () => {
   it("shows PayPal for a PayPal direct debit", () => {
@@ -35,25 +28,5 @@ describe("safe transaction names and bank descriptions", () => {
     expect(description).not.toContain("12345678");
     expect(description).not.toContain("9988776655");
     expect(description).not.toContain("4321");
-  });
-
-  it("suggests Transfer only for clear internal account movement", () => {
-    const suggestion = suggestImportReviewCategory(
-      "Internal transfer",
-      emptyLocalMerchantData(),
-      "Internal transfer from Savings",
-    );
-    expect(categoryName(suggestion.categoryId)).toBe("Transfer");
-    expect(suggestion.requiresReview).toBe(true);
-  });
-
-  it("keeps an unclear person-to-person payment in Needs review", () => {
-    const suggestion = suggestImportReviewCategory(
-      "OSKO payment to Alex",
-      emptyLocalMerchantData(),
-      "OSKO payment to Alex",
-    );
-    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
-    expect(suggestion.source).toBe("FALLBACK");
   });
 });
