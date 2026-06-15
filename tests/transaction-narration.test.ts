@@ -75,7 +75,7 @@ describe("safe transaction names and bank descriptions", () => {
       now: new Date("2026-06-16T00:00:00.000Z"),
     });
     const aliased = saveMerchantAlias(ruled, {
-      alias: "PayPal checkout",
+      alias: "Digital wallet checkout",
       canonicalName: "PayPal",
       categoryId: groceries.id,
       now: new Date("2026-06-16T00:00:00.000Z"),
@@ -83,7 +83,7 @@ describe("safe transaction names and bank descriptions", () => {
     const stored = serializeMerchantRuleStorage(aliased);
 
     expect(stored).toContain("PayPal");
-    expect(stored).toContain("paypal checkout");
+    expect(stored).toContain("digital wallet checkout");
     expect(stored).not.toContain("Direct Debit");
     expect(stored).not.toContain("987654321");
     expect(stored).not.toContain("reference");
