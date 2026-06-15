@@ -68,5 +68,18 @@ export function undoLastApplySameMerchant(
 ) {
   if (!undo) return rows;
   const previousById = new Map(undo.previousRows.map((row) => [row.id, row]));
-  return rows.map((row) => previousById.get(row.id) ?? row);
+  return rows.map((row) => {
+    const previous = previousById.get(row.id);
+    if (!previous) return row;
+    return {
+      ...row,
+      categoryId: previous.categoryId,
+      categoryConfirmed: previous.categoryConfirmed,
+      reviewState: previous.reviewState,
+      suggestionSource: previous.suggestionSource,
+      suggestionConfidence: previous.suggestionConfidence,
+      suggestionReason: previous.suggestionReason,
+      merchantEdited: previous.merchantEdited,
+    };
+  });
 }
