@@ -31,12 +31,12 @@ describe("import mapping preview", () => {
     expect(preview.map((row) => row.merchantName)).toEqual([
       "Woolworths",
       "Translink",
-      "Bank transfer",
+      "OSKO payment to Fictional",
     ]);
     expect(preview.map((row) => categoryName(row.categoryId))).toEqual([
       "Groceries",
       "Public transport",
-      "Transfer",
+      "Needs review",
     ]);
     expect(serialized).not.toContain("76543210");
     expect(serialized).not.toContain("4321");

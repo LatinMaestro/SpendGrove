@@ -2,6 +2,7 @@ import { parseMoneyToCents } from "@/lib/validation/money";
 import {
   containsPrivateBankIdentifier,
   normalizeSafeText,
+  sanitizeBankDescription,
   sanitizeTransactionNarration,
 } from "@/lib/validation/privacy";
 
@@ -561,8 +562,10 @@ export function buildSanitizedCsvPreview(
       warningCodes.push("AMOUNT_NEEDS_MAPPING");
     }
 
-    const description = sanitizeTransactionNarration(firstValueForRole(row, safeMapping, "DESCRIPTION"));
-    const merchantName = sanitizeTransactionNarration(firstValueForRole(row, safeMapping, "MERCHANT"));
+    const rawDescription = firstValueForRole(row, safeMapping, "DESCRIPTION");
+    const rawMerchant = firstValueForRole(row, safeMapping, "MERCHANT");
+    const description = sanitizeBankDescription(rawDescription || rawMerchant);
+    const merchantName = sanitizeTransactionNarration(rawMerchant || rawDescription);
     if (!description && !merchantName) warningCodes.push("DESCRIPTION_NEEDS_MAPPING");
 
     return {

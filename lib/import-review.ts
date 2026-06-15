@@ -17,6 +17,7 @@ import {
 } from "@/lib/merchant-rules";
 import {
   containsPrivateBankIdentifier,
+  sanitizeBankDescription,
   sanitizeTransactionNarration,
 } from "@/lib/validation/privacy";
 
@@ -158,9 +159,9 @@ export function createTransientImportReviewRows(
 
     chunk.previewRows.forEach((row) => {
       const adjustedRowNumber = row.rowNumber + offset;
-      const description = sanitizeTransactionNarration(row.description);
+      const description = sanitizeBankDescription(row.description);
       const initialMerchant = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
-      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData);
+      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData, description);
       rows.push(importReviewRowSchema.parse({
         id: `csv-row-${adjustedRowNumber}`,
         rowNumber: adjustedRowNumber,
@@ -243,7 +244,7 @@ export function applyMerchantSuggestionsToRows(
 ) {
   return rows.map((row) => {
     if (row.reviewState !== "UNREVIEWED") return row;
-    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData);
+    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData, row.description);
     return importReviewRowSchema.parse({
       ...row,
       merchantName: suggestion.merchantName,

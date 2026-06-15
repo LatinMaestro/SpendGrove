@@ -30,7 +30,8 @@ describe("CSV import foundation", () => {
     expect(scan.previewRows[0]).toMatchObject({
       date: "2026-06-05",
       amountCents: -4235,
-      description: "Woolworths",
+      description: "Woolworths Metro",
+      merchantName: "Woolworths",
     });
     expect(JSON.stringify(scan)).not.toContain("SYNTHETIC-ONLY");
   });
@@ -63,11 +64,12 @@ describe("CSV import foundation", () => {
     expect(mappedScan.previewRows[0]).toMatchObject({
       date: "2026-06-01",
       amountCents: -1640,
-      description: "Aldi",
+      description: "Aldi groceries",
+      merchantName: "Aldi",
     });
   });
 
-  it("preserves a headerless mixed narration column and sanitises its first row", () => {
+  it("preserves a headerless mixed narration column and keeps its first row useful", () => {
     const firstSyntheticRow = [
       "05/06/2026",
       "+42.35",
@@ -104,18 +106,22 @@ describe("CSV import foundation", () => {
       rowNumber: 1,
       date: "2026-06-05",
       amountCents: 4235,
-      description: "Bank transfer",
+      description: "OSKO payment to Fictional",
+      merchantName: "OSKO payment to Fictional",
     });
-    expect(mappedScan.previewRows[1].description).toBe("Woolworths");
+    expect(mappedScan.previewRows[1]).toMatchObject({
+      description: "Woolworths",
+      merchantName: "Woolworths",
+    });
     expect(JSON.stringify(mappedScan)).not.toContain("Fictional Person");
     expect(JSON.stringify(mappedScan)).not.toContain("12345678");
     expect(JSON.stringify(mappedScan)).not.toContain("987654321");
   });
 
-  it("sanitises mixed headered narrations instead of excluding the column", () => {
+  it("keeps useful mixed narrations instead of excluding the column", () => {
     const document = parseCsvDocument([
       "Date,Amount,Memo",
-      "09/06/2026,-12.50,Transfer to Fictional Recipient acct 87654321",
+      "09/06/2026,-12.50,Transfer to Alex Recipient acct 87654321 reference 9988776655",
       "10/06/2026,-18.75,Coles card xx6789 terminal 23456789",
     ].join("\n"));
     const scan = scanCsvDocument(document);
@@ -125,10 +131,17 @@ describe("CSV import foundation", () => {
       isPrivate: false,
       suggestedRole: "DESCRIPTION",
     });
-    expect(scan.previewRows[0].description).toBe("Bank transfer");
-    expect(scan.previewRows[1].description).toBe("Coles");
-    expect(JSON.stringify(scan)).not.toContain("Fictional Recipient");
+    expect(scan.previewRows[0]).toMatchObject({
+      description: "Bank transfer to Alex",
+      merchantName: "Bank transfer to Alex",
+    });
+    expect(scan.previewRows[1]).toMatchObject({
+      description: "Coles",
+      merchantName: "Coles",
+    });
+    expect(JSON.stringify(scan)).not.toContain("Alex Recipient");
     expect(JSON.stringify(scan)).not.toContain("87654321");
+    expect(JSON.stringify(scan)).not.toContain("9988776655");
     expect(JSON.stringify(scan)).not.toContain("23456789");
   });
 
@@ -184,6 +197,7 @@ describe("CSV import foundation", () => {
       date: "2026-06-09",
       amountCents: 123456,
       description: "Groceries, weekly",
+      merchantName: "Groceries, weekly",
     });
   });
 

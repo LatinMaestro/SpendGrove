@@ -23,7 +23,7 @@ describe("import category suggestions", () => {
     ["AGL electricity", "AGL", "Electricity"],
     ["Loan repayment", "Loan repayment", "Loan repayment"],
     ["Credit card payment", "Credit card payment", "Credit card payment"],
-    ["Bank transfer", "Bank transfer", "Transfer"],
+    ["Internal transfer", "Internal transfer", "Transfer"],
   ])("suggests a reviewable category for %s", (input, expectedMerchant, expectedCategory) => {
     const suggestion = suggestImportReviewCategory(input, emptyLocalMerchantData());
 
@@ -31,6 +31,37 @@ describe("import category suggestions", () => {
     expect(categoryName(suggestion.categoryId)).toBe(expectedCategory);
     expect(suggestion.requiresReview).toBe(true);
     expect(suggestion.source).not.toBe("FALLBACK");
+  });
+
+  it("keeps unclear recipient payments in Needs review", () => {
+    const suggestion = suggestImportReviewCategory(
+      "Bank transfer to Alex",
+      emptyLocalMerchantData(),
+      "Bank transfer to Alex",
+    );
+
+    expect(suggestion.merchantName).toBe("Bank transfer to Alex");
+    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
+    expect(suggestion).toMatchObject({
+      source: "FALLBACK",
+      confidence: "LOW",
+      requiresReview: true,
+    });
+  });
+
+  it("uses a strong safe context clue without silently finalising it", () => {
+    const suggestion = suggestImportReviewCategory(
+      "Bank transfer to Alex",
+      emptyLocalMerchantData(),
+      "Bank transfer to Alex · Gift",
+    );
+
+    expect(categoryName(suggestion.categoryId)).toBe("Gifts");
+    expect(suggestion).toMatchObject({
+      source: "KEYWORD",
+      confidence: "MEDIUM",
+      requiresReview: true,
+    });
   });
 
   it("keeps unknown merchants reviewable instead of silently finalising a category", () => {
@@ -72,10 +103,10 @@ describe("import category suggestions", () => {
     expect(applied[2].categoryId).not.toBe(diningOut.id);
   });
 
-  it("keeps canonical review rows free of synthetic private identifier fragments", () => {
+  it("keeps review rows free of synthetic private identifier fragments", () => {
     const document = parseCsvDocument([
       "01/06/2026,-12.50,Domino's Wynnum terminal 76543210 card xx4321",
-      "02/06/2026,-18.00,OSKO transfer to Fictional Person account 12345678 reference 987654321",
+      "02/06/2026,-18.00,OSKO transfer to Alex Recipient account 12345678 reference 987654321",
     ].join("\n"));
     const scan = scanCsvDocument(document, {
       0: "DATE",
@@ -86,11 +117,14 @@ describe("import category suggestions", () => {
     const serialized = JSON.stringify(rows);
 
     expect(rows[0].merchantName).toBe("Domino's");
-    expect(rows[1].merchantName).toBe("Bank transfer");
-    expect(categoryName(rows[1].categoryId)).toBe("Transfer");
+    expect(rows[1]).toMatchObject({
+      merchantName: "OSKO payment to Alex",
+      description: "OSKO payment to Alex",
+    });
+    expect(categoryName(rows[1].categoryId)).toBe("Needs review");
     expect(serialized).not.toContain("76543210");
     expect(serialized).not.toContain("4321");
-    expect(serialized).not.toContain("Fictional Person");
+    expect(serialized).not.toContain("Alex Recipient");
     expect(serialized).not.toContain("12345678");
     expect(serialized).not.toContain("987654321");
   });
