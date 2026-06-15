@@ -6,11 +6,27 @@ import {
 } from "@/lib/manual-categories";
 import { assertNoPrivateBankIdentifiers } from "@/lib/validation/privacy";
 
-export const CUSTOM_CATEGORY_STORAGE_KEY = "spendgrove.phase2.custom-categories.v1";
-export const CUSTOM_CATEGORY_STORAGE_VERSION = 1 as const;
+export const CUSTOM_CATEGORY_STORAGE_KEY = "spendgrove.phase2.custom-categories.v2";
+export const CUSTOM_CATEGORY_STORAGE_VERSION = 2 as const;
 export const CUSTOM_CATEGORY_LIMIT = 100;
 
+export const CUSTOM_CATEGORY_GROUPS = [
+  { value: "Everyday spending", label: "Everyday", defaultType: "EXPENSE" },
+  { value: "Bills and household", label: "Bills and household", defaultType: "EXPENSE" },
+  { value: "Financial", label: "Financial / transfers", defaultType: "TRANSFER" },
+  { value: "Income", label: "Income / refunds", defaultType: "INCOME" },
+  { value: "Work and tax", label: "Work / tax", defaultType: "EXPENSE" },
+  { value: "Review", label: "Review", defaultType: "EXPENSE" },
+] as const satisfies ReadonlyArray<{
+  value: string;
+  label: string;
+  defaultType: ManualCategoryType;
+}>;
+
+export type CustomCategoryGroup = (typeof CUSTOM_CATEGORY_GROUPS)[number]["value"];
+
 export type CustomCategory = ManualCategory & {
+  group: CustomCategoryGroup;
   isArchived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -30,6 +46,14 @@ export type CustomCategoryStorageResult = {
 };
 
 const categoryTypeSchema = z.enum(["INCOME", "EXPENSE", "TRANSFER"]);
+const categoryGroupSchema = z.enum([
+  "Everyday spending",
+  "Bills and household",
+  "Financial",
+  "Income",
+  "Work and tax",
+  "Review",
+]);
 const customCategoryIdSchema = z.string().regex(/^custom-category-[a-z0-9-]+$/i);
 
 const safeCategoryNameSchema = z.string()
@@ -52,16 +76,16 @@ const customCategorySchema = z.object({
   id: customCategoryIdSchema,
   name: safeCategoryNameSchema,
   type: categoryTypeSchema,
-  group: z.enum(["Custom income", "Custom expenses", "Custom transfers"]),
+  group: categoryGroupSchema,
   isArchived: z.boolean(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 }).strict().superRefine((category, context) => {
-  if (category.group !== groupForCategoryType(category.type)) {
+  if (category.group !== "Financial" && category.type !== defaultTypeForCategoryGroup(category.group)) {
     context.addIssue({
       code: "custom",
-      path: ["group"],
-      message: "Custom category group must match its category type.",
+      path: ["type"],
+      message: "Category type must match its selected group.",
     });
   }
 });
@@ -84,6 +108,21 @@ const customCategoryStorageSchema = z.object({
     names.add(normalizedName);
   });
 });
+
+const versionOneCategorySchema = z.object({
+  id: customCategoryIdSchema,
+  name: safeCategoryNameSchema,
+  type: categoryTypeSchema,
+  group: z.enum(["Custom income", "Custom expenses", "Custom transfers"]),
+  isArchived: z.boolean(),
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+}).strict();
+
+const versionOneStorageSchema = z.object({
+  version: z.literal(1),
+  categories: z.array(versionOneCategorySchema).max(CUSTOM_CATEGORY_LIMIT),
+}).strict();
 
 const legacyCustomCategoryStorageSchema = z.object({
   version: z.literal(0),
@@ -123,14 +162,42 @@ function assertUniqueCategoryName(
   }
 }
 
+function migratedGroupForType(type: ManualCategoryType): CustomCategoryGroup {
+  if (type === "INCOME") return "Income";
+  if (type === "TRANSFER") return "Financial";
+  return "Everyday spending";
+}
+
 export function normalizeCategoryName(value: string) {
   return value.normalize("NFKC").trim().replace(/\s+/g, " ").toLocaleLowerCase("en-AU");
 }
 
-export function groupForCategoryType(type: ManualCategoryType) {
-  if (type === "INCOME") return "Custom income" as const;
-  if (type === "TRANSFER") return "Custom transfers" as const;
-  return "Custom expenses" as const;
+export function getCategoryGroupLabel(group: CustomCategoryGroup) {
+  return CUSTOM_CATEGORY_GROUPS.find((option) => option.value === group)?.label ?? group;
+}
+
+export function defaultTypeForCategoryGroup(
+  group: CustomCategoryGroup,
+  financialType: ManualCategoryType = "TRANSFER",
+) {
+  if (group === "Financial") return financialType;
+  return CUSTOM_CATEGORY_GROUPS.find((option) => option.value === group)?.defaultType ?? "EXPENSE";
+}
+
+export function inferCustomCategoryGroup(input: {
+  amountCents: number | null;
+  merchantName: string;
+  currentCategoryGroup?: string;
+  currentCategoryType?: ManualCategoryType;
+}): CustomCategoryGroup {
+  const knownGroup = CUSTOM_CATEGORY_GROUPS.find((option) => option.value === input.currentCategoryGroup);
+  if (knownGroup) return knownGroup.value;
+  const merchant = input.merchantName.normalize("NFKC").toLocaleLowerCase("en-AU");
+  const transferStyle = input.currentCategoryType === "TRANSFER" ||
+    /\b(?:transfer|account movement|osko|credit card payment|savings transfer)\b/i.test(merchant);
+  if (transferStyle) return "Financial";
+  if ((input.amountCents ?? 0) > 0) return "Income";
+  return "Everyday spending";
 }
 
 export function isCustomCategoryId(categoryId: string) {
@@ -148,31 +215,47 @@ export function getReviewCategory(
   return manualCategories.find((category) => category.id === categoryId) ?? getCustomCategory(categories, categoryId);
 }
 
-export function inferCustomCategoryType(input: {
-  amountCents: number | null;
-  merchantName: string;
-  currentCategoryType?: ManualCategoryType;
-}): ManualCategoryType | null {
-  const merchant = input.merchantName.normalize("NFKC").toLocaleLowerCase("en-AU");
-  const transferStyle = input.currentCategoryType === "TRANSFER" ||
-    /\b(?:transfer|account movement|osko|credit card payment|savings transfer)\b/i.test(merchant);
-  if (transferStyle) return null;
-  if (input.amountCents === null || input.amountCents === 0) return null;
-  return input.amountCents > 0 ? "INCOME" : "EXPENSE";
+export function getSelectableCustomCategories(
+  categories: CustomCategory[],
+  selectedCategoryId?: string,
+) {
+  return categories.filter((category) => !category.isArchived || category.id === selectedCategoryId);
+}
+
+export function getCategoryCatalogueSections(
+  categories: CustomCategory[],
+  selectedCategoryId?: string,
+) {
+  const selectableCustom = getSelectableCustomCategories(categories, selectedCategoryId);
+  return CUSTOM_CATEGORY_GROUPS.map((section) => ({
+    value: section.value,
+    label: section.label,
+    categories: [
+      ...manualCategories.filter((category) => category.group === section.value),
+      ...selectableCustom.filter((category) => category.group === section.value),
+    ],
+  }));
 }
 
 export function createCustomCategory(
   categories: CustomCategory[],
-  input: { name: string; type: ManualCategoryType; id?: string; now?: Date },
+  input: {
+    name: string;
+    group: CustomCategoryGroup;
+    type?: ManualCategoryType;
+    id?: string;
+    now?: Date;
+  },
 ) {
   const name = safeCategoryNameSchema.parse(input.name);
+  const group = categoryGroupSchema.parse(input.group);
   assertUniqueCategoryName(name, categories);
   const timestamp = (input.now ?? new Date()).toISOString();
   const category = customCategorySchema.parse({
     id: input.id ?? createLocalId(),
     name,
-    type: input.type,
-    group: groupForCategoryType(input.type),
+    type: defaultTypeForCategoryGroup(group, input.type),
+    group,
     isArchived: false,
     createdAt: timestamp,
     updatedAt: timestamp,
@@ -208,13 +291,6 @@ export function setCustomCategoryArchived(
     : category));
 }
 
-export function getSelectableCustomCategories(
-  categories: CustomCategory[],
-  selectedCategoryId?: string,
-) {
-  return categories.filter((category) => !category.isArchived || category.id === selectedCategoryId);
-}
-
 export function parseCustomCategoryStorage(rawValue: string | null): CustomCategoryStorageResult {
   if (!rawValue) {
     return { categories: [], recoveredFromCorruption: false, migrated: false, unsupportedVersion: false };
@@ -231,6 +307,19 @@ export function parseCustomCategoryStorage(rawValue: string | null): CustomCateg
       };
     }
 
+    const versionOne = versionOneStorageSchema.safeParse(json);
+    if (versionOne.success) {
+      return {
+        categories: sortedCategories(versionOne.data.categories.map((category) => customCategorySchema.parse({
+          ...category,
+          group: migratedGroupForType(category.type),
+        }))),
+        recoveredFromCorruption: false,
+        migrated: true,
+        unsupportedVersion: false,
+      };
+    }
+
     const legacy = legacyCustomCategoryStorageSchema.safeParse(json);
     if (legacy.success) {
       return {
@@ -238,7 +327,7 @@ export function parseCustomCategoryStorage(rawValue: string | null): CustomCateg
           const { archived, ...safeCategory } = category;
           return customCategorySchema.parse({
             ...safeCategory,
-            group: groupForCategoryType(category.type),
+            group: migratedGroupForType(category.type),
             isArchived: archived ?? false,
           });
         })),
