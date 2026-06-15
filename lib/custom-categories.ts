@@ -234,11 +234,14 @@ export function parseCustomCategoryStorage(rawValue: string | null): CustomCateg
     const legacy = legacyCustomCategoryStorageSchema.safeParse(json);
     if (legacy.success) {
       return {
-        categories: sortedCategories(legacy.data.categories.map((category) => customCategorySchema.parse({
-          ...category,
-          group: groupForCategoryType(category.type),
-          isArchived: category.archived ?? false,
-        }))),
+        categories: sortedCategories(legacy.data.categories.map((category) => {
+          const { archived, ...safeCategory } = category;
+          return customCategorySchema.parse({
+            ...safeCategory,
+            group: groupForCategoryType(category.type),
+            isArchived: archived ?? false,
+          });
+        })),
         recoveredFromCorruption: false,
         migrated: true,
         unsupportedVersion: false,
