@@ -119,8 +119,19 @@ export const manualCategories: ManualCategory[] = categoryGroups.flatMap((group)
   })),
 );
 
+let runtimeCustomCategories: ManualCategory[] = [];
+
+export function setRuntimeCustomCategories(categories: ManualCategory[]) {
+  runtimeCustomCategories = categories.map((category) => ({ ...category }));
+}
+
+export function getRuntimeCustomCategories() {
+  return runtimeCustomCategories.map((category) => ({ ...category }));
+}
+
 export function getManualCategory(categoryId: string) {
-  return manualCategories.find((category) => category.id === categoryId);
+  return manualCategories.find((category) => category.id === categoryId) ??
+    runtimeCustomCategories.find((category) => category.id === categoryId);
 }
 
 export function getManualCategoryGroups(type: ManualCategoryType) {
