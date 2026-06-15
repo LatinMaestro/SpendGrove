@@ -110,6 +110,7 @@ function transferPurpose(value: string) {
 }
 
 function safeTransferName(value: string) {
+  if (/^\s*(?:transfer|xfer)\s*$/i.test(value)) return "Transfer";
   const direction = extractSafeDirection(value);
   if (direction) {
     if (/\bosko\b/i.test(value)) return `OSKO payment ${direction.direction} ${direction.party}`;
