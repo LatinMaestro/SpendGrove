@@ -34,4 +34,19 @@ describe("merchant helper storage for card narrations", () => {
     expect(serialized).not.toContain("Card Value Date");
     expect(serialized).not.toContain("27/05/2026");
   });
+
+  it("stores a short OpenAI merchant name instead of subscription narration", () => {
+    const rawNarration = "OPENAI *CHATGPT SUBSCR AU AUS Card Value Date: 27/05/2026";
+    const saved = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: rawNarration,
+      categoryId: categoryId("Subscriptions"),
+      now: new Date("2026-06-16T00:00:00.000Z"),
+    });
+    const serialized = serializeMerchantRuleStorage(saved);
+
+    expect(serialized).toContain("OpenAI / ChatGPT");
+    expect(serialized).not.toContain("SUBSCR");
+    expect(serialized).not.toContain("Card Value Date");
+    expect(serialized).not.toContain("27/05/2026");
+  });
 });
