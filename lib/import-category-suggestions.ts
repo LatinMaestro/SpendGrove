@@ -5,7 +5,10 @@ import {
   type MerchantCategorySuggestion,
   type MerchantSuggestionConfidence,
 } from "@/lib/merchant-rules";
-import { sanitizeTransactionNarration } from "@/lib/validation/privacy";
+import {
+  sanitizeBankDescription,
+  sanitizeTransactionNarration,
+} from "@/lib/validation/privacy";
 
 const deterministicSuggestions: Array<{
   merchants: string[];
@@ -99,33 +102,102 @@ const deterministicSuggestions: Array<{
   },
 ];
 
+const transferContextSuggestions: Array<{
+  pattern: RegExp;
+  categoryName: string;
+  confidence: MerchantSuggestionConfidence;
+  reason: string;
+}> = [
+  {
+    pattern: /\bloan repayment\b/i,
+    categoryName: "Loan repayment",
+    confidence: "HIGH",
+    reason: "Suggested from clear loan-repayment wording. Please review before using it.",
+  },
+  {
+    pattern: /\brent\b/i,
+    categoryName: "Rent",
+    confidence: "MEDIUM",
+    reason: "Suggested from clear rent wording. Please review before using it.",
+  },
+  {
+    pattern: /\bgift\b/i,
+    categoryName: "Gifts",
+    confidence: "MEDIUM",
+    reason: "Suggested from clear gift wording. Please review before using it.",
+  },
+  {
+    pattern: /\b(?:translink|public transport|go card)\b/i,
+    categoryName: "Public transport",
+    confidence: "HIGH",
+    reason: "Suggested from clear public-transport wording. Please review before using it.",
+  },
+];
+
+const transferStylePattern = /\b(?:osko|bank transfer|transfer|xfer|pay anyone|account movement|between accounts)\b/i;
+const internalTransferPattern = /\b(?:internal transfer|account movement|between accounts|own account|to savings|from savings|savings transfer)\b/i;
+
 function categoryIdByName(name: string) {
   const category = manualCategories.find((candidate) => candidate.name === name);
   if (!category) throw new Error(`Missing seeded category: ${name}`);
   return category.id;
 }
 
-function suggestTransferCategory(merchantValue: string): MerchantCategorySuggestion | null {
-  const safeMerchant = sanitizeTransactionNarration(merchantValue);
-  const transferSignal = safeMerchant.toLocaleLowerCase("en-AU");
-  const isTransfer = transferSignal === "bank transfer" || transferSignal === "transfer";
-  if (!isTransfer) return null;
-
+function needsReviewSuggestion(merchantName: string, reason: string): MerchantCategorySuggestion {
   return {
-    merchantName: safeMerchant || "Bank transfer",
-    categoryId: categoryIdByName("Transfer"),
-    source: "KEYWORD",
-    confidence: "MEDIUM",
-    reason: "Suggested from a clear account movement. Please review before using it.",
+    merchantName,
+    categoryId: categoryIdByName("Needs review"),
+    source: "FALLBACK",
+    confidence: "LOW",
+    reason,
     requiresReview: true,
   };
+}
+
+function suggestTransferCategory(
+  merchantValue: string,
+  bankDescription?: string,
+): MerchantCategorySuggestion | null {
+  const safeMerchant = sanitizeTransactionNarration(merchantValue) || "Payment";
+  const safeDescription = sanitizeBankDescription(bankDescription || merchantValue);
+  const context = `${safeMerchant} ${safeDescription}`.trim();
+  if (!transferStylePattern.test(context)) return null;
+
+  const contextual = transferContextSuggestions.find((candidate) => candidate.pattern.test(context));
+  if (contextual) {
+    return {
+      merchantName: safeMerchant,
+      categoryId: categoryIdByName(contextual.categoryName),
+      source: "KEYWORD",
+      confidence: contextual.confidence,
+      reason: contextual.reason,
+      requiresReview: true,
+    };
+  }
+
+  if (internalTransferPattern.test(context)) {
+    return {
+      merchantName: safeMerchant,
+      categoryId: categoryIdByName("Transfer"),
+      source: "KEYWORD",
+      confidence: "MEDIUM",
+      reason: "Suggested from a clear movement between accounts. Please review before using it.",
+      requiresReview: true,
+    };
+  }
+
+  return needsReviewSuggestion(
+    safeMerchant,
+    "This looks like a payment or transfer to another party. Choose the category that best describes it.",
+  );
 }
 
 export function suggestImportReviewCategory(
   merchantValue: string,
   data: LocalMerchantData,
+  bankDescription?: string,
 ): MerchantCategorySuggestion {
-  const transferSuggestion = suggestTransferCategory(merchantValue);
+  const transferSuggestion = suggestTransferCategory(merchantValue, bankDescription);
   if (transferSuggestion) return transferSuggestion;
 
   const baseSuggestion = suggestMerchantCategory(merchantValue, data);
