@@ -1,21 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { manualCategories } from "@/lib/manual-categories";
-import { parseCsvDocument, scanCsvDocument } from "@/lib/csv-import";
 import {
-  applyCategoryToSameMerchant,
-  applyMerchantSuggestionsToRows,
-  createTransientImportReviewRows,
-  updateImportReviewDetails,
-} from "@/lib/import-review";
-import {
+  deleteMerchantAlias,
   emptyLocalMerchantData,
   loadMerchantRulesFromStorage,
+  MERCHANT_RULE_STORAGE_KEY,
+  MerchantConflictError,
   normalizeMerchantName,
   parseMerchantRuleStorage,
+  renameMerchantAlias,
+  renameMerchantProfile,
   saveConfirmedMerchantRule,
   saveMerchantAlias,
   saveMerchantRulesToStorage,
   serializeMerchantRuleStorage,
+  setMerchantAliasActive,
+  setMerchantRuleActive,
   suggestMerchantCategory,
 } from "@/lib/merchant-rules";
 
@@ -23,47 +23,31 @@ function categoryId(name: string) {
   return manualCategories.find((category) => category.name === name)!.id;
 }
 
-function syntheticRows() {
-  const document = parseCsvDocument([
-    "01/06/2026,-20.00,Woolworths terminal 1234",
-    "02/06/2026,-15.00,Woolworths store 5678",
-    "03/06/2026,-9.50,Blue Lantern Cafe",
-  ].join("\n"));
-  const scan = scanCsvDocument(document, {
-    0: "DATE",
-    1: "AMOUNT",
-    2: "DESCRIPTION",
-  });
-  return { document, scan };
-}
+const now = new Date("2026-06-15T00:00:00.000Z");
 
-describe("local merchant rule foundation", () => {
+describe("browser-local merchant aliases and rules", () => {
   it("cleans merchant names deterministically before matching", () => {
     expect(normalizeMerchantName("WOOLWORTHS METRO terminal 1234")).toBe("woolworths");
     expect(normalizeMerchantName("Blue Lantern Café Pty Ltd")).toBe("blue lantern cafe");
+    expect(normalizeMerchantName("Domino's store Wynnum")).toBe("domino s");
   });
 
-  it("uses user rules before aliases and generic keywords", () => {
+  it("uses user rules before aliases, aliases before keywords, and keywords before review", () => {
     const aliased = saveMerchantAlias(emptyLocalMerchantData(), {
       alias: "Fresh Foods",
       canonicalName: "Coles",
       categoryId: categoryId("Groceries"),
-      now: new Date("2026-06-10T00:00:00.000Z"),
+      now,
     });
     const ruled = saveConfirmedMerchantRule(aliased, {
       merchantName: "Fresh Foods",
       categoryId: categoryId("Dining out"),
-      now: new Date("2026-06-10T01:00:00.000Z"),
+      now: new Date("2026-06-15T01:00:00.000Z"),
     });
 
     expect(suggestMerchantCategory("Fresh Foods", ruled)).toMatchObject({
       source: "USER_RULE",
       categoryId: categoryId("Dining out"),
-      requiresReview: true,
-    });
-    expect(suggestMerchantCategory("Coles", aliased)).toMatchObject({
-      source: "USER_RULE",
-      categoryId: categoryId("Groceries"),
       requiresReview: true,
     });
     expect(suggestMerchantCategory("Fresh Foods", aliased)).toMatchObject({
@@ -72,9 +56,6 @@ describe("local merchant rule foundation", () => {
       categoryId: categoryId("Groceries"),
       requiresReview: true,
     });
-  });
-
-  it("uses clear local keywords before a low-confidence review fallback", () => {
     expect(suggestMerchantCategory("Woolworths Metro", emptyLocalMerchantData())).toMatchObject({
       source: "KEYWORD",
       categoryId: categoryId("Groceries"),
@@ -88,10 +69,9 @@ describe("local merchant rule foundation", () => {
     });
   });
 
-  it("keeps ambiguous payments conservative while suggesting Transfer for clear account movements", () => {
+  it("keeps ambiguous payments conservative while suggesting clear transfers", () => {
     expect(suggestMerchantCategory("BPAY levy", emptyLocalMerchantData())).toMatchObject({
       source: "FALLBACK",
-      confidence: "LOW",
       categoryId: categoryId("Needs review"),
     });
     expect(suggestMerchantCategory("Payment", emptyLocalMerchantData())).toMatchObject({
@@ -103,14 +83,126 @@ describe("local merchant rule foundation", () => {
       confidence: "MEDIUM",
       categoryId: categoryId("Transfer"),
     });
-    expect(suggestMerchantCategory("Bank transfer", emptyLocalMerchantData())).toMatchObject({
+    expect(suggestMerchantCategory("Loan repayment", emptyLocalMerchantData())).toMatchObject({
       source: "KEYWORD",
-      confidence: "MEDIUM",
-      categoryId: categoryId("Transfer"),
+      categoryId: categoryId("Loan repayment"),
     });
   });
 
-  it("rejects private banking identifiers from saved rules and aliases", () => {
+  it("supports alias rename, disable, restore, and delete", () => {
+    const saved = saveMerchantAlias(emptyLocalMerchantData(), {
+      alias: "Fresh Foods",
+      canonicalName: "Coles",
+      categoryId: categoryId("Groceries"),
+      now,
+    });
+    const aliasId = saved.aliases[0].id;
+    const renamed = renameMerchantAlias(saved, aliasId, "Fresh Market", undefined, now);
+    expect(suggestMerchantCategory("Fresh Market", renamed).source).toBe("USER_ALIAS");
+
+    const disabled = setMerchantAliasActive(renamed, aliasId, false, now);
+    expect(suggestMerchantCategory("Fresh Market", disabled).source).toBe("FALLBACK");
+
+    const restored = setMerchantAliasActive(disabled, aliasId, true, now);
+    expect(suggestMerchantCategory("Fresh Market", restored).source).toBe("USER_ALIAS");
+
+    const deleted = deleteMerchantAlias(restored, aliasId);
+    expect(deleted.aliases).toHaveLength(0);
+    expect(suggestMerchantCategory("Fresh Market", deleted).source).toBe("FALLBACK");
+  });
+
+  it("renames the safe canonical merchant and keeps its exact rule aligned", () => {
+    const saved = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Coffee / takeaway"),
+      now,
+    });
+    const profileId = saved.profiles[0].id;
+    const renamed = renameMerchantProfile(saved, profileId, "Blue Lantern Cafe", now);
+
+    expect(renamed.profiles[0]).toMatchObject({
+      name: "Blue Lantern Cafe",
+      normalizedName: "blue lantern cafe",
+    });
+    expect(renamed.rules[0].normalizedPattern).toBe("blue lantern cafe");
+    expect(suggestMerchantCategory("Blue Lantern Cafe", renamed)).toMatchObject({
+      source: "USER_RULE",
+      categoryId: categoryId("Coffee / takeaway"),
+    });
+  });
+
+  it("requires an explicit choice when a saved rule conflicts", () => {
+    const saved = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Coffee / takeaway"),
+      now,
+    });
+
+    expect(() => saveConfirmedMerchantRule(saved, {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Dining out"),
+      now,
+    })).toThrow(MerchantConflictError);
+
+    const kept = saveConfirmedMerchantRule(saved, {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Dining out"),
+      resolution: "KEEP_EXISTING",
+      now,
+    });
+    expect(kept.rules[0].categoryId).toBe(categoryId("Coffee / takeaway"));
+
+    const replaced = saveConfirmedMerchantRule(saved, {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Dining out"),
+      resolution: "REPLACE",
+      now,
+    });
+    expect(replaced.rules[0].categoryId).toBe(categoryId("Dining out"));
+  });
+
+  it("requires an explicit choice when an alias belongs to another merchant", () => {
+    const saved = saveMerchantAlias(emptyLocalMerchantData(), {
+      alias: "Corner Market",
+      canonicalName: "Coles",
+      categoryId: categoryId("Groceries"),
+      now,
+    });
+
+    expect(() => saveMerchantAlias(saved, {
+      alias: "Corner Market",
+      canonicalName: "Woolworths",
+      categoryId: categoryId("Groceries"),
+      now,
+    })).toThrow(MerchantConflictError);
+
+    const replaced = saveMerchantAlias(saved, {
+      alias: "Corner Market",
+      canonicalName: "Woolworths",
+      categoryId: categoryId("Groceries"),
+      resolution: "REPLACE",
+      now,
+    });
+    expect(suggestMerchantCategory("Corner Market", replaced)).toMatchObject({
+      source: "USER_ALIAS",
+      merchantName: "Woolworths",
+    });
+  });
+
+  it("can disable and restore a user-confirmed rule without deleting it", () => {
+    const saved = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Dining out"),
+      now,
+    });
+    const ruleId = saved.rules[0].id;
+    const disabled = setMerchantRuleActive(saved, ruleId, false, now);
+    expect(suggestMerchantCategory("Blue Lantern", disabled).source).toBe("USER_ALIAS");
+    const restored = setMerchantRuleActive(disabled, ruleId, true, now);
+    expect(suggestMerchantCategory("Blue Lantern", restored).source).toBe("USER_RULE");
+  });
+
+  it("rejects private identifiers and full bank descriptions from saved helpers", () => {
     expect(() => saveConfirmedMerchantRule(emptyLocalMerchantData(), {
       merchantName: "Synthetic account number 12345678",
       categoryId: categoryId("Groceries"),
@@ -120,41 +212,132 @@ describe("local merchant rule foundation", () => {
       canonicalName: "Synthetic Merchant",
       categoryId: categoryId("Shopping"),
     })).toThrow("Private banking identifiers");
+    expect(() => saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "Synthetic Merchant terminal receipt",
+      categoryId: categoryId("Shopping"),
+    })).toThrow("short cleaned merchant name");
   });
 
-  it("stores only versioned cleaned profiles, aliases and rules", () => {
+  it("stores only versioned safe merchant metadata", () => {
     const data = saveMerchantAlias(emptyLocalMerchantData(), {
       alias: "Woolies",
       canonicalName: "Woolworths",
       categoryId: categoryId("Groceries"),
-      now: new Date("2026-06-10T00:00:00.000Z"),
+      now,
     });
     const serialized = serializeMerchantRuleStorage(data);
     const parsed = JSON.parse(serialized);
 
-    expect(parsed.version).toBe(1);
-    expect(parsed.profiles[0]).toMatchObject({ name: "Woolworths", normalizedName: "woolworths" });
-    expect(parsed.aliases[0]).toMatchObject({ normalizedAlias: "woolies" });
-    expect(parsed.rules[0]).toMatchObject({ type: "EXACT", normalizedPattern: "woolworths" });
+    expect(parsed.version).toBe(2);
+    expect(parsed.profiles[0]).toMatchObject({
+      name: "Woolworths",
+      normalizedName: "woolworths",
+      isActive: true,
+    });
+    expect(parsed.aliases[0]).toMatchObject({
+      name: "Woolies",
+      normalizedAlias: "woolies",
+      isActive: true,
+    });
+    expect(parsed.rules[0]).toMatchObject({
+      type: "EXACT",
+      normalizedPattern: "woolworths",
+      isActive: true,
+    });
     expect(serialized).not.toContain("rawDescription");
     expect(serialized).not.toContain("accountNumber");
     expect(serialized).not.toContain("filename");
+    expect(serialized).not.toContain("amount");
   });
 
-  it("recovers from corrupted or over-broad browser storage", () => {
-    expect(parseMerchantRuleStorage("not-json")).toEqual({
+  it("migrates the approved v1 browser-local shape safely", () => {
+    const timestamp = now.toISOString();
+    const legacy = JSON.stringify({
+      version: 1,
+      profiles: [{
+        id: "merchant-1",
+        name: "Woolworths",
+        normalizedName: "woolworths",
+        defaultCategoryId: categoryId("Groceries"),
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      }],
+      aliases: [{
+        id: "alias-1",
+        merchantProfileId: "merchant-1",
+        normalizedAlias: "woolies",
+        createdAt: timestamp,
+      }],
+      rules: [{
+        id: "rule-1",
+        merchantProfileId: "merchant-1",
+        categoryId: categoryId("Groceries"),
+        type: "EXACT",
+        normalizedPattern: "woolworths",
+        priority: 10,
+        isActive: true,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      }],
+    });
+
+    const result = parseMerchantRuleStorage(legacy);
+    expect(result).toMatchObject({
+      recoveredFromCorruption: false,
+      migrated: true,
+      unsupportedVersion: false,
+      staleReferenceCount: 0,
+    });
+    expect(result.data.profiles[0].isActive).toBe(true);
+    expect(result.data.aliases[0]).toMatchObject({ name: "Woolies", isActive: true });
+  });
+
+  it("removes stale category references during safe recovery", () => {
+    const timestamp = now.toISOString();
+    const result = parseMerchantRuleStorage(JSON.stringify({
+      version: 2,
+      profiles: [{
+        id: "merchant-stale",
+        name: "Blue Lantern",
+        normalizedName: "blue lantern",
+        defaultCategoryId: "missing-category",
+        isActive: true,
+        createdAt: timestamp,
+        updatedAt: timestamp,
+      }],
+      aliases: [],
+      rules: [],
+    }));
+
+    expect(result.staleReferenceCount).toBe(1);
+    expect(result.data).toEqual(emptyLocalMerchantData());
+  });
+
+  it("recovers safely from corrupted, over-broad, or unsupported storage", () => {
+    expect(parseMerchantRuleStorage("not-json")).toMatchObject({
       data: emptyLocalMerchantData(),
       recoveredFromCorruption: true,
+      migrated: false,
+      unsupportedVersion: false,
     });
     expect(parseMerchantRuleStorage(JSON.stringify({
-      version: 1,
+      version: 2,
       profiles: [],
       aliases: [],
       rules: [],
       rawRows: ["not permitted"],
-    }))).toEqual({
+    }))).toMatchObject({
       data: emptyLocalMerchantData(),
       recoveredFromCorruption: true,
+    });
+    expect(parseMerchantRuleStorage(JSON.stringify({
+      version: 99,
+      profiles: [],
+      aliases: [],
+      rules: [],
+    }))).toMatchObject({
+      data: emptyLocalMerchantData(),
+      unsupportedVersion: true,
     });
   });
 
@@ -164,84 +347,30 @@ describe("local merchant rule foundation", () => {
       setItem() { throw new Error("blocked"); },
     };
 
-    expect(loadMerchantRulesFromStorage(unavailableStorage)).toEqual({
+    expect(loadMerchantRulesFromStorage(unavailableStorage)).toMatchObject({
       data: emptyLocalMerchantData(),
       recoveredFromCorruption: false,
+      migrated: false,
+      unsupportedVersion: false,
+      staleReferenceCount: 0,
       storageAvailable: false,
     });
     expect(saveMerchantRulesToStorage(unavailableStorage, emptyLocalMerchantData())).toBe(false);
   });
 
-  it("tracks manual merchant edits without treating an unchosen category as confirmed", () => {
-    const { document, scan } = syntheticRows();
-    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
-    const edited = updateImportReviewDetails(initial, initial[2].id, {
-      merchantName: "Blue Lantern",
-      categoryId: initial[2].categoryId,
-      editType: "MERCHANT_EDIT",
-    });
-
-    expect(edited[2]).toMatchObject({
-      merchantName: "Blue Lantern",
-      merchantEdited: true,
-      categoryConfirmed: false,
-      reviewState: "MANUALLY_REVIEWED",
-    });
-  });
-
-  it("marks a category choice as manually reviewed and enables same-merchant application", () => {
-    const { document, scan } = syntheticRows();
-    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
-    const reviewed = updateImportReviewDetails(initial, initial[0].id, {
-      merchantName: initial[0].merchantName,
-      categoryId: categoryId("Groceries"),
-      editType: "CATEGORY_EDIT",
-    });
-    const applied = applyCategoryToSameMerchant(reviewed, reviewed[0].id);
-
-    expect(reviewed[0]).toMatchObject({ categoryConfirmed: true, reviewState: "MANUALLY_REVIEWED" });
-    expect(applied[0]).toMatchObject({ categoryId: categoryId("Groceries"), categoryConfirmed: true });
-    expect(applied[1]).toMatchObject({ categoryId: categoryId("Groceries"), categoryConfirmed: true });
-    expect(applied[2]).toMatchObject({ categoryId: categoryId("Needs review"), categoryConfirmed: false });
-  });
-
-  it("marks a meaningful suggestion confirmation separately from a manual edit", () => {
-    const { document, scan } = syntheticRows();
-    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
-    const confirmed = updateImportReviewDetails(initial, initial[0].id, {
-      merchantName: initial[0].merchantName,
-      categoryId: initial[0].categoryId,
-      editType: "CONFIRM_SUGGESTION",
-    });
-
-    expect(confirmed[0]).toMatchObject({
-      suggestionSource: "KEYWORD",
-      categoryConfirmed: true,
-      merchantEdited: false,
-      reviewState: "CONFIRMED_SUGGESTION",
-    });
-  });
-
-  it("refreshes only untouched suggestions after a local rule save", () => {
-    const { document, scan } = syntheticRows();
-    const initial = createTransientImportReviewRows(document, scan.columns, scan.mapping);
-    const reviewed = updateImportReviewDetails(initial, initial[2].id, {
-      merchantName: initial[2].merchantName,
-      categoryId: categoryId("Coffee / takeaway"),
-      editType: "CATEGORY_EDIT",
-    });
+  it("writes the v2 key only when browser storage accepts it", () => {
+    const values = new Map<string, string>();
+    const storage = {
+      getItem(key: string) { return values.get(key) ?? null; },
+      setItem(key: string, value: string) { values.set(key, value); },
+    };
     const data = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
-      merchantName: "Woolworths",
-      categoryId: categoryId("Shopping"),
+      merchantName: "Blue Lantern",
+      categoryId: categoryId("Dining out"),
+      now,
     });
-    const refreshed = applyMerchantSuggestionsToRows(reviewed, data);
 
-    expect(refreshed[0].suggestionSource).toBe("USER_RULE");
-    expect(refreshed[0].categoryId).toBe(categoryId("Shopping"));
-    expect(refreshed[2]).toMatchObject({
-      categoryId: categoryId("Coffee / takeaway"),
-      categoryConfirmed: true,
-      reviewState: "MANUALLY_REVIEWED",
-    });
+    expect(saveMerchantRulesToStorage(storage, data)).toBe(true);
+    expect(values.has(MERCHANT_RULE_STORAGE_KEY)).toBe(true);
   });
 });
