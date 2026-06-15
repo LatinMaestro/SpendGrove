@@ -36,10 +36,31 @@ describe("safe transaction names and bank descriptions", () => {
     expect(sanitizeTransactionNarration(dominos)).not.toContain("dominos.com.au");
   });
 
+  it("uses a short title for OpenAI and ChatGPT card narration", () => {
+    const input = "OPENAI *CHATGPT SUBSCR AU AUS Card Value Date: 27/05/2026";
+
+    expect(sanitizeTransactionNarration(input)).toBe("OpenAI / ChatGPT");
+    expect(sanitizeBankDescription(input)).toContain("OpenAI / ChatGPT");
+    expect(sanitizeTransactionNarration(input)).not.toContain("SUBSCR");
+    expect(sanitizeTransactionNarration(input)).not.toContain("Card Value Date");
+  });
+
+  it("uses a short title for international transaction fee narration", () => {
+    const input = "International Transaction Fee AUD 4.00 Value Date: 27/05/2026";
+    const title = sanitizeTransactionNarration(input);
+    const description = sanitizeBankDescription(input);
+
+    expect(title).toBe("International transaction fee");
+    expect(title).not.toContain("Value Date");
+    expect(description).toContain("International transaction fee");
+    expect(description).not.toContain("Value Date");
+  });
+
   it.each([
     ["Woolworths Metro Fictional Suburb QL AUS Card Value Date: 27/05/2026", "Woolworths"],
     ["Coles Fictional Store NSW AUS Card Value Date: 27/05/2026", "Coles"],
     ["Bunnings Warehouse Fictional Suburb AU AUS Card Value Date: 27/05/2026", "Bunnings"],
+    ["PAYPAL *SYNTHETIC STORE AU AUS Card Value Date: 27/05/2026", "PayPal"],
   ])("uses a short known merchant title for %s", (input, expected) => {
     const title = sanitizeTransactionNarration(input);
     expect(title).toBe(expected);
