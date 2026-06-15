@@ -10,26 +10,28 @@ import {
   type CustomCategoryStorage,
 } from "@/lib/custom-categories";
 
-function createMemoryStorage(initialValue: string | null = null): CustomCategoryStorage & { value: string | null } {
+function createMemoryStorage(initialValue: string | null = null): CustomCategoryStorage & { values: Map<string, string> } {
+  const values = new Map<string, string>();
+  if (initialValue !== null) values.set(CUSTOM_CATEGORY_STORAGE_KEY, initialValue);
   return {
-    value: initialValue,
-    getItem() {
-      return this.value;
+    values,
+    getItem(key) {
+      return this.values.get(key) ?? null;
     },
-    setItem(_key, value) {
-      this.value = value;
+    setItem(key, value) {
+      this.values.set(key, value);
     },
-    removeItem() {
-      this.value = null;
+    removeItem(key) {
+      this.values.delete(key);
     },
   };
 }
 
 function createSafeCategories() {
   return createCustomCategory([], {
-    id: "custom-category-weekend-markets",
-    name: "Weekend markets",
-    type: "EXPENSE",
+    id: "custom-category-work-parking",
+    name: "Work parking",
+    group: "Work and tax",
     now: new Date("2026-06-15T00:00:00.000Z"),
   });
 }
@@ -40,12 +42,12 @@ describe("custom category privacy and browser storage", () => {
     const parsed = JSON.parse(serialized) as Record<string, unknown>;
 
     expect(parsed).toEqual({
-      version: 1,
+      version: 2,
       categories: [{
-        id: "custom-category-weekend-markets",
-        name: "Weekend markets",
+        id: "custom-category-work-parking",
+        name: "Work parking",
         type: "EXPENSE",
-        group: "Custom expenses",
+        group: "Work and tax",
         isArchived: false,
         createdAt: "2026-06-15T00:00:00.000Z",
         updatedAt: "2026-06-15T00:00:00.000Z",
@@ -54,8 +56,8 @@ describe("custom category privacy and browser storage", () => {
     expect(serialized).not.toContain("rawRow");
     expect(serialized).not.toContain("fileName");
     expect(serialized).not.toContain("amountCents");
-    expect(() => createCustomCategory([], { name: "BSB 000-000", type: "EXPENSE" })).toThrow("private bank identifier");
-    expect(() => createCustomCategory([], { name: "Account 12345678", type: "EXPENSE" })).toThrow("private bank identifier");
+    expect(() => createCustomCategory([], { name: "BSB 000-000", group: "Everyday spending" })).toThrow("private bank identifier");
+    expect(() => createCustomCategory([], { name: "Account 12345678", group: "Financial" })).toThrow("private bank identifier");
   });
 
   it("recovers safely from corrupted or unsupported browser data", () => {
@@ -73,14 +75,15 @@ describe("custom category privacy and browser storage", () => {
     });
   });
 
-  it("migrates safe legacy categories without retaining obsolete fields", () => {
+  it("migrates the earlier custom-group format into normal category groups", () => {
     const result = parseCustomCategoryStorage(JSON.stringify({
-      version: 0,
+      version: 1,
       categories: [{
         id: "custom-category-weekend-markets",
         name: "Weekend markets",
         type: "EXPENSE",
-        archived: true,
+        group: "Custom expenses",
+        isArchived: true,
         createdAt: "2026-06-15T00:00:00.000Z",
         updatedAt: "2026-06-15T00:00:00.000Z",
       }],
@@ -91,7 +94,32 @@ describe("custom category privacy and browser storage", () => {
       id: "custom-category-weekend-markets",
       name: "Weekend markets",
       type: "EXPENSE",
-      group: "Custom expenses",
+      group: "Everyday spending",
+      isArchived: true,
+      createdAt: "2026-06-15T00:00:00.000Z",
+      updatedAt: "2026-06-15T00:00:00.000Z",
+    });
+  });
+
+  it("migrates safe legacy categories without retaining obsolete fields", () => {
+    const result = parseCustomCategoryStorage(JSON.stringify({
+      version: 0,
+      categories: [{
+        id: "custom-category-family-transfer",
+        name: "Family transfer",
+        type: "TRANSFER",
+        archived: true,
+        createdAt: "2026-06-15T00:00:00.000Z",
+        updatedAt: "2026-06-15T00:00:00.000Z",
+      }],
+    }));
+
+    expect(result).toMatchObject({ migrated: true, recoveredFromCorruption: false, unsupportedVersion: false });
+    expect(result.categories[0]).toEqual({
+      id: "custom-category-family-transfer",
+      name: "Family transfer",
+      type: "TRANSFER",
+      group: "Financial",
       isArchived: true,
       createdAt: "2026-06-15T00:00:00.000Z",
       updatedAt: "2026-06-15T00:00:00.000Z",
@@ -123,13 +151,13 @@ describe("custom category privacy and browser storage", () => {
   it("saves and resets the versioned browser-local value", () => {
     const storage = createMemoryStorage();
     expect(saveCustomCategoriesToStorage(storage, createSafeCategories())).toBe(true);
-    expect(storage.value).toContain("Weekend markets");
+    expect(storage.values.get(CUSTOM_CATEGORY_STORAGE_KEY)).toContain("Work parking");
     expect(loadCustomCategoriesFromStorage(storage)).toMatchObject({
       storageAvailable: true,
-      categories: [{ name: "Weekend markets" }],
+      categories: [{ name: "Work parking", group: "Work and tax" }],
     });
     expect(resetCustomCategoriesInStorage(storage)).toBe(true);
-    expect(storage.value).toBeNull();
+    expect(storage.values.has(CUSTOM_CATEGORY_STORAGE_KEY)).toBe(false);
     expect(storage.getItem(CUSTOM_CATEGORY_STORAGE_KEY)).toBeNull();
   });
 });
