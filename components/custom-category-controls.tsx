@@ -31,6 +31,12 @@ const financialTypeOptions: Array<{ value: ManualCategoryType; label: string }> 
   { value: "INCOME", label: "Refund or other money in" },
 ];
 
+function fallbackGroupForType(type: ManualCategoryType): CustomCategoryGroup {
+  if (type === "INCOME") return "Income";
+  if (type === "TRANSFER") return "Financial";
+  return "Everyday spending";
+}
+
 export function useCustomCategoryCatalogue() {
   const [categories, setCategories] = useState<CustomCategory[]>([]);
   const [storageAvailable, setStorageAvailable] = useState(true);
@@ -61,10 +67,13 @@ export function useCustomCategoryCatalogue() {
 
   function create(input: {
     name: string;
-    group: CustomCategoryGroup;
-    type?: ManualCategoryType;
+    type: ManualCategoryType;
+    group?: CustomCategoryGroup;
   }) {
-    const nextCategories = createCustomCategory(categories, input);
+    const nextCategories = createCustomCategory(categories, {
+      ...input,
+      group: input.group ?? fallbackGroupForType(input.type),
+    });
     const newCategory = nextCategories.find((category) =>
       !categories.some((existing) => existing.id === category.id),
     );
@@ -106,7 +115,7 @@ export function ReviewCategorySelector({
   row: ImportReviewRow;
   customCategories: CustomCategory[];
   onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
-  onCreate(input: { name: string; group: CustomCategoryGroup; type?: ManualCategoryType }): CustomCategory;
+  onCreate(input: { name: string; type: ManualCategoryType; group?: CustomCategoryGroup }): CustomCategory;
 }) {
   const currentCategory = getReviewCategory(customCategories, row.categoryId);
   const suggestedGroup = inferCustomCategoryGroup({
@@ -156,7 +165,7 @@ export function ReviewCategorySelector({
       const category = onCreate({
         name,
         group,
-        type: group === "Financial" ? financialType : undefined,
+        type: defaultTypeForCategoryGroup(group, financialType),
       });
       onDetails({ merchantName: row.merchantName, categoryId: category.id, editType: "CATEGORY_EDIT" });
       setName("");
