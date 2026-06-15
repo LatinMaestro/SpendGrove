@@ -33,6 +33,7 @@ const safeReplacement = "[private field removed]";
 const safeDescriptionLimit = 120;
 
 const merchantNarrationRules: Array<{ pattern: RegExp; label: string }> = [
+  { pattern: /\b7[-\s]?eleven\b/i, label: "7-ELEVEN" },
   { pattern: /\bpaypal\b/i, label: "PayPal" },
   { pattern: /\bdomino(?:'|’)?s\b/i, label: "Domino's" },
   { pattern: /\bwoolworths\b/i, label: "Woolworths" },
@@ -60,6 +61,7 @@ const transferNarrationPattern = /\b(?:osko|transfer|xfer|pay anyone|internet ba
 const internalTransferPattern = /\b(?:internal|account movement|between accounts|own account|to savings|from savings|savings transfer)\b/i;
 const paymentNarrationPattern = /\b(?:payment|direct debit|bpay|eftpos|card purchase)\b/i;
 const privateReferenceMarkerPattern = /\b(?:ref(?:erence)?|receipt|trace|terminal|transaction\s*id|payment\s*id|bank\s*reference)\b\s*[:#-]?\s*(?:[a-z0-9*-]{4,})?/gi;
+const cardValueDatePattern = /\bcard\s+value\s+date\s*:?\s*\d{1,2}[/-]\d{1,2}[/-]\d{2,4}\b/gi;
 const bankReferenceTokenPattern = /\b(?=[a-z0-9-]{8,}\b)(?=[a-z0-9-]*\d{4,})[a-z0-9-]+\b/gi;
 
 function normalizeMetadataKey(key: string) {
@@ -83,6 +85,7 @@ function cleanPrivateBankDescription(value: string) {
   return formatKnownMerchantNames(
     redactPrivateBankTokens(value)
       .replaceAll(safeReplacement, " ")
+      .replace(cardValueDatePattern, " ")
       .replace(privateReferenceMarkerPattern, " ")
       .replace(bankReferenceTokenPattern, " ")
       .replace(/\b(?:account|acct|card|customer|client|member|loan)\s*(?:number|no|id|ending)?\s*[:#-]?\s*$/gi, " ")
