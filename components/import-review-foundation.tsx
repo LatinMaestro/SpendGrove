@@ -14,8 +14,13 @@ import {
   Sparkles,
   Trash2,
 } from "lucide-react";
+import {
+  CustomCategoryManager,
+  ReviewCategorySelector,
+  useCustomCategoryCatalogue,
+} from "@/components/custom-category-controls";
+import { getReviewCategory, type CustomCategory } from "@/lib/custom-categories";
 import { formatAudFromCents } from "@/lib/money";
-import { manualCategories } from "@/lib/manual-categories";
 import type { CsvScanResult, TransientCsvDocument } from "@/lib/csv-import";
 import {
   addImportHistoryEntry,
@@ -49,6 +54,7 @@ import {
   type LocalMerchantData,
   type MerchantSuggestionSource,
 } from "@/lib/merchant-rules";
+import type { ManualCategoryType } from "@/lib/manual-categories";
 
 const genericAliasKeys = new Set(["payment", "bank transfer", "transfer", "loan repayment", "salary", "refund"]);
 
@@ -64,20 +70,6 @@ const suggestionLabels: Record<MerchantSuggestionSource, string> = {
   KEYWORD: "Suggested from the merchant",
   FALLBACK: "Choose a category",
 };
-
-const importCategorySections = [
-  { sourceGroup: "Everyday spending", label: "Everyday" },
-  { sourceGroup: "Bills and household", label: "Bills and household" },
-  { sourceGroup: "Financial", label: "Financial / transfers" },
-  { sourceGroup: "Income", label: "Income / refunds" },
-  { sourceGroup: "Work and tax", label: "Work / tax" },
-  { sourceGroup: "Review", label: "Review" },
-] as const;
-
-const categoryGroups = importCategorySections.map((section) => ({
-  label: section.label,
-  categories: manualCategories.filter((category) => category.group === section.sourceGroup),
-}));
 
 function formatReviewDate(date: string | null) {
   if (!date) return "Date needs review";
@@ -139,48 +131,24 @@ function ActionButton({
   );
 }
 
-function CategorySelector({
-  row,
-  onDetails,
-}: {
-  row: ImportReviewRow;
-  onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
-}) {
-  return (
-    <div className="mt-4">
-      <label htmlFor={`category-${row.id}`} className="text-sm font-bold text-brand-deepTeal">Category</label>
-      <select
-        id={`category-${row.id}`}
-        value={row.categoryId}
-        onChange={(event) => onDetails({ merchantName: row.merchantName, categoryId: event.target.value, editType: "CATEGORY_EDIT" })}
-        className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
-      >
-        {categoryGroups.map((group) => (
-          <optgroup key={group.label} label={group.label}>
-            {group.categories.map((category) => (
-              <option key={category.id} value={category.id}>{category.name}</option>
-            ))}
-          </optgroup>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 function ReviewRowCard({
   row,
+  customCategories,
   isPotentiallyDeductible,
   onAction,
   onDetails,
+  onCreateCategory,
   onTaxChange,
   onApplySameMerchant,
   onSaveRule,
   onSaveAlias,
 }: {
   row: ImportReviewRow;
+  customCategories: CustomCategory[];
   isPotentiallyDeductible: boolean;
   onAction(action: ImportReviewAction): void;
   onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void;
+  onCreateCategory(input: { name: string; type: ManualCategoryType }): CustomCategory;
   onTaxChange(value: boolean): void;
   onApplySameMerchant(): void;
   onSaveRule(): void;
@@ -191,7 +159,7 @@ function ReviewRowCard({
   const ruleAvailable = canSaveLocalMerchantRule(row);
   const aliasAvailable = canSaveAlias(row);
   const statusText = reviewStatusText(row);
-  const currentCategory = manualCategories.find((category) => category.id === row.categoryId);
+  const currentCategory = getReviewCategory(customCategories, row.categoryId);
   const hasDistinctDescription = row.description && row.description !== row.merchantName;
 
   return (
@@ -214,7 +182,12 @@ function ReviewRowCard({
         {row.warningCodes.length > 0 && <span className="font-semibold text-warning-amber">Needs a quick check</span>}
       </div>
 
-      <CategorySelector row={row} onDetails={onDetails} />
+      <ReviewCategorySelector
+        row={row}
+        customCategories={customCategories}
+        onDetails={onDetails}
+        onCreate={onCreateCategory}
+      />
 
       <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3">
         <input
@@ -319,6 +292,7 @@ export function ImportReviewFoundation({
   scan: CsvScanResult;
   autoStart?: boolean;
 }) {
+  const customCategoryCatalogue = useCustomCategoryCatalogue();
   const [reviewRows, setReviewRows] = useState<ImportReviewRow[] | null>(() => (
     autoStart && scan.mappingIssues.length === 0
       ? createTransientImportReviewRows(document, scan.columns, scan.mapping)
@@ -375,7 +349,7 @@ export function ImportReviewFoundation({
       setReviewRows(updateImportReviewDetails(reviewRows, rowId, details));
       setNotice("");
     } catch {
-      setNotice("That merchant name looked like it contained private account information, so it was not accepted.");
+      setNotice("That merchant or category choice was not accepted because it was unsafe or unavailable.");
     }
   }
 
@@ -412,7 +386,7 @@ export function ImportReviewFoundation({
       });
       persistMerchantData(nextData, "Merchant and category saved on this device. Future matches will still be suggestions you can change.");
     } catch {
-      setNotice("This choice could not be saved because the merchant name was unsafe or incomplete.");
+      setNotice("This choice could not be saved because the merchant or category was unsafe or incomplete.");
     }
   }
 
@@ -508,9 +482,11 @@ export function ImportReviewFoundation({
                 <ReviewRowCard
                   key={row.id}
                   row={row}
+                  customCategories={customCategoryCatalogue.categories}
                   isPotentiallyDeductible={isRowPotentiallyDeductible(taxMetadata, row.id)}
                   onAction={(action) => updateAction(row.id, action)}
                   onDetails={(details) => updateDetails(row.id, details)}
+                  onCreateCategory={customCategoryCatalogue.create}
                   onTaxChange={(value) => updateTaxFlag(row.id, value)}
                   onApplySameMerchant={() => applySameMerchant(row.id)}
                   onSaveRule={() => saveRule(row)}
@@ -526,6 +502,16 @@ export function ImportReviewFoundation({
           </section>
         </>
       )}
+
+      <CustomCategoryManager
+        categories={customCategoryCatalogue.categories}
+        storageAvailable={customCategoryCatalogue.storageAvailable}
+        recoveredFromCorruption={customCategoryCatalogue.recoveredFromCorruption}
+        unsupportedVersion={customCategoryCatalogue.unsupportedVersion}
+        notice={customCategoryCatalogue.notice}
+        onRename={customCategoryCatalogue.rename}
+        onArchiveChange={customCategoryCatalogue.setArchived}
+      />
 
       <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="merchant-rules-heading">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
