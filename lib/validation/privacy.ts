@@ -67,7 +67,7 @@ const valueDatePattern = /\b(?:card\s+)?value\s+date\s*:?\s*\d{1,2}[/-]\d{1,2}[/
 const valueDateSignalPattern = /\b(?:card\s+)?value\s+date\b/i;
 const websitePattern = /\b(?:https?:\/\/)?(?:www\.)?[a-z0-9-]+(?:\.[a-z0-9-]+)+\b/gi;
 const bankReferenceTokenPattern = /\b(?=[a-z0-9-]{8,}\b)(?=[a-z0-9-]*\d{4,})[a-z0-9-]+\b/gi;
-const cardTitleNoisePattern = /\b(?:estore|eftpos|terminal|card\s+purchase|pos|store|branch|warehouse|metro)\b|\b(?:qld?|nsw|vic|sa|wa|tas|act|nt|au|aus|australia)\b|\.com(?:\.au)?\b/i;
+const cardTitleNoisePattern = /\b(?:eftpos|terminal|card\s+purchase|pos)\b|\b(?:qld?|nsw|vic|sa|wa|tas|act|nt|au|aus|australia)\b|\.com(?:\.au)?\b/i;
 const titleLocationOrStorePattern = /\b\d{3,6}\b|\b(?:qld?|nsw|vic|sa|wa|tas|act|nt|au|aus|australia)\b|\b(?:estore|terminal|pos|store|branch|warehouse|metro)\b/gi;
 
 function normalizeMetadataKey(key: string) {
