@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { manualCategories } from "@/lib/manual-categories";
 import { createManualTransaction, type ManualTransaction } from "@/lib/manual-transactions";
-import { findImportDuplicateCandidates } from "@/lib/import-duplicate-scoring";
+import {
+  createMergeTargetReviewSelection,
+  findImportDuplicateCandidates,
+} from "@/lib/import-duplicate-scoring";
 import type { ImportReviewRow } from "@/lib/import-review";
 
 const groceries = manualCategories.find((category) => category.name === "Groceries")!;
@@ -61,6 +64,19 @@ describe("import duplicate scoring", () => {
     expect(candidates[0].reasons).toEqual(expect.arrayContaining(["Same amount", "Same day", "Similar merchant"]));
   });
 
+  it("creates review-only merge target selections for manual candidates", () => {
+    const row = reviewRow();
+    const [manualCandidate] = findImportDuplicateCandidates(row, [row], [manualTransaction()]);
+    const selection = createMergeTargetReviewSelection(row, manualCandidate, new Date("2026-06-16T00:00:00.000Z"));
+
+    expect(selection).toEqual({
+      rowId: "row-1",
+      targetTransactionId: "manual-1",
+      selectedAt: "2026-06-16T00:00:00.000Z",
+      status: "REVIEW_ONLY",
+    });
+  });
+
   it("downgrades four-to-seven-day matches to possible match at most", () => {
     const candidates = findImportDuplicateCandidates(
       reviewRow(),
@@ -103,6 +119,7 @@ describe("import duplicate scoring", () => {
       canMergeTarget: false,
       confidence: "LIKELY",
     });
+    expect(() => createMergeTargetReviewSelection(source, candidates[0])).toThrow("Only existing manual transactions can be selected as merge targets.");
   });
 
   it("does not treat same-import monthly billing rows as duplicates", () => {
