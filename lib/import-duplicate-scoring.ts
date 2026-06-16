@@ -33,6 +33,13 @@ export type DuplicateCandidate = {
   rowNumber?: number;
 };
 
+export type MergeTargetReviewSelection = {
+  rowId: string;
+  targetTransactionId: string;
+  selectedAt: string;
+  status: "REVIEW_ONLY";
+};
+
 type DuplicateScoringOptions = {
   userId?: string;
   limit?: number;
@@ -259,4 +266,21 @@ export function findImportDuplicateCandidates(
     .filter((candidate): candidate is DuplicateCandidate => Boolean(candidate))
     .sort((left, right) => right.score - left.score || left.source.localeCompare(right.source))
     .slice(0, options.limit ?? 5);
+}
+
+export function createMergeTargetReviewSelection(
+  row: ImportReviewRow,
+  candidate: DuplicateCandidate,
+  now = new Date(),
+): MergeTargetReviewSelection {
+  if (row.action === "SKIP") throw new Error("Skipped rows cannot choose a merge target.");
+  if (!candidate.canMergeTarget || candidate.source !== "MANUAL_TRANSACTION") {
+    throw new Error("Only existing manual transactions can be selected as merge targets.");
+  }
+  return {
+    rowId: row.id,
+    targetTransactionId: candidate.candidateId,
+    selectedAt: now.toISOString(),
+    status: "REVIEW_ONLY",
+  };
 }
