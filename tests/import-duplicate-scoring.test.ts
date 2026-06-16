@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { manualCategories } from "@/lib/manual-categories";
+import { loadManualTransactionsFromStorage } from "@/lib/manual-transaction-storage";
 import { createManualTransaction, type ManualTransaction } from "@/lib/manual-transactions";
 import {
   createMergeTargetReviewSelection,
@@ -66,7 +67,8 @@ describe("import duplicate scoring", () => {
 
   it("creates review-only merge target selections for manual candidates", () => {
     const row = reviewRow();
-    const [manualCandidate] = findImportDuplicateCandidates(row, [row], [manualTransaction()]);
+    const manual = manualTransaction();
+    const [manualCandidate] = findImportDuplicateCandidates(row, [row], [manual]);
     const selection = createMergeTargetReviewSelection(row, manualCandidate, new Date("2026-06-16T00:00:00.000Z"));
 
     expect(selection).toEqual({
@@ -75,6 +77,8 @@ describe("import duplicate scoring", () => {
       selectedAt: "2026-06-16T00:00:00.000Z",
       status: "REVIEW_ONLY",
     });
+    expect(row.action).toBe("IMPORT");
+    expect(manual.description).toBe("Woolworths Metro synthetic suburb");
   });
 
   it("downgrades four-to-seven-day matches to possible match at most", () => {
@@ -100,6 +104,14 @@ describe("import duplicate scoring", () => {
     );
 
     expect(candidates).toEqual([]);
+  });
+
+  it("does not warn for same merchant and amount twenty-five to thirty-five days apart", () => {
+    const source = reviewRow({ date: "2026-06-10", merchantName: "ChatGPT", description: "ChatGPT subscription" });
+    const twentyFiveDays = manualTransaction({ date: "2026-07-05", description: "ChatGPT subscription" });
+    const thirtyFiveDays = manualTransaction({ id: "manual-2", date: "2026-07-15", description: "ChatGPT subscription" });
+
+    expect(findImportDuplicateCandidates(source, [source], [twentyFiveDays, thirtyFiveDays])).toEqual([]);
   });
 
   it("shows same-import matches as duplicate warnings, not merge targets", () => {
@@ -155,5 +167,53 @@ describe("import duplicate scoring", () => {
     );
 
     expect(candidates).toEqual([]);
+  });
+
+  it("does not flag same amount and date with a different merchant as a likely false positive", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow({ merchantName: "Woolworths", description: "Woolworths Metro" }),
+      [reviewRow()],
+      [manualTransaction({ description: "Synthetic fuel station", categoryId: dining.id })],
+    );
+
+    expect(candidates).toEqual([]);
+  });
+
+  it("requires compatible money direction before suggesting a match", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow({ amountCents: -1299 }),
+      [reviewRow()],
+      [manualTransaction({ amountCents: 1299 })],
+    );
+
+    expect(candidates).toEqual([]);
+  });
+
+  it("keeps candidate output safe when source descriptions contain private-looking references", () => {
+    const unsafeManual = {
+      ...manualTransaction(),
+      description: "Woolworths account 12345678 reference 9988776655 synthetic suburb",
+    } as ManualTransaction;
+
+    const [candidate] = findImportDuplicateCandidates(reviewRow(), [reviewRow()], [unsafeManual]);
+    const candidateText = JSON.stringify(candidate);
+
+    expect(candidate).toBeDefined();
+    expect(candidateText).not.toContain("12345678");
+    expect(candidateText).not.toContain("9988776655");
+    expect(candidate.merchantName).toBe("Woolworths");
+  });
+
+  it("recovers safely when browser-local manual transaction storage is corrupted", () => {
+    const result = loadManualTransactionsFromStorage({
+      getItem: () => "not-json",
+      setItem: () => undefined,
+    });
+
+    expect(result).toEqual({
+      transactions: [],
+      recoveredFromCorruption: true,
+      storageAvailable: true,
+    });
   });
 });
