@@ -1,0 +1,142 @@
+import { describe, expect, it } from "vitest";
+import { manualCategories } from "@/lib/manual-categories";
+import { createManualTransaction, type ManualTransaction } from "@/lib/manual-transactions";
+import { findImportDuplicateCandidates } from "@/lib/import-duplicate-scoring";
+import type { ImportReviewRow } from "@/lib/import-review";
+
+const groceries = manualCategories.find((category) => category.name === "Groceries")!;
+const dining = manualCategories.find((category) => category.name === "Dining out")!;
+
+function reviewRow(overrides: Partial<ImportReviewRow> = {}): ImportReviewRow {
+  return {
+    id: "row-1",
+    rowNumber: 1,
+    date: "2026-06-10",
+    amountCents: -1299,
+    description: "Woolworths Metro synthetic suburb",
+    merchantName: "Woolworths",
+    categoryId: groceries.id,
+    action: "IMPORT",
+    warningCodes: [],
+    suggestionSource: "KEYWORD",
+    suggestionConfidence: "HIGH",
+    suggestionReason: "Synthetic local suggestion.",
+    categoryConfirmed: false,
+    merchantEdited: false,
+    reviewState: "UNREVIEWED",
+    ...overrides,
+  };
+}
+
+function manualTransaction(overrides: Partial<ManualTransaction> = {}) {
+  return createManualTransaction([], {
+    type: "EXPENSE",
+    amountInput: "12.99",
+    date: "2026-06-10",
+    description: "Woolworths Metro synthetic suburb",
+    categoryId: groceries.id,
+    notes: "",
+    csvMatchHint: true,
+  }, {
+    id: "manual-1",
+    now: new Date("2026-06-10T00:00:00.000Z"),
+  }).map((transaction) => ({ ...transaction, ...overrides }))[0];
+}
+
+describe("import duplicate scoring", () => {
+  it("shows existing browser-local manual transactions as likely merge targets", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow(),
+      [reviewRow()],
+      [manualTransaction()],
+    );
+
+    expect(candidates[0]).toMatchObject({
+      source: "MANUAL_TRANSACTION",
+      candidateId: "manual-1",
+      confidence: "LIKELY",
+      canMergeTarget: true,
+      score: 100,
+    });
+    expect(candidates[0].reasons).toEqual(expect.arrayContaining(["Same amount", "Same day", "Similar merchant"]));
+  });
+
+  it("downgrades four-to-seven-day matches to possible match at most", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow(),
+      [reviewRow()],
+      [manualTransaction({ date: "2026-06-15" })],
+    );
+
+    expect(candidates[0]).toMatchObject({
+      source: "MANUAL_TRANSACTION",
+      confidence: "POSSIBLE",
+      canMergeTarget: true,
+    });
+    expect(candidates[0].score).toBeLessThan(85);
+  });
+
+  it("does not warn for monthly recurring-style spacing", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow(),
+      [reviewRow()],
+      [manualTransaction({ date: "2026-07-10" })],
+    );
+
+    expect(candidates).toEqual([]);
+  });
+
+  it("shows same-import matches as duplicate warnings, not merge targets", () => {
+    const source = reviewRow();
+    const duplicateInImport = reviewRow({
+      id: "row-2",
+      rowNumber: 2,
+      description: "Woolworths Metro duplicate synthetic suburb",
+    });
+
+    const candidates = findImportDuplicateCandidates(source, [source, duplicateInImport], []);
+
+    expect(candidates[0]).toMatchObject({
+      source: "SAME_IMPORT",
+      candidateId: "row-2",
+      rowNumber: 2,
+      canMergeTarget: false,
+      confidence: "LIKELY",
+    });
+  });
+
+  it("does not treat same-import monthly billing rows as duplicates", () => {
+    const source = reviewRow({ date: "2026-06-10", merchantName: "ChatGPT", description: "ChatGPT subscription" });
+    const nextMonth = reviewRow({
+      id: "row-2",
+      rowNumber: 2,
+      date: "2026-07-10",
+      merchantName: "ChatGPT",
+      description: "ChatGPT subscription",
+    });
+
+    expect(findImportDuplicateCandidates(source, [source, nextMonth], [])).toEqual([]);
+  });
+
+  it("excludes skipped rows, invalid rows, deleted transactions and split parents", () => {
+    const source = reviewRow();
+    const skippedImportRow = reviewRow({ id: "row-2", rowNumber: 2, action: "SKIP" });
+    const deletedManual = manualTransaction({ deletedAt: "2026-06-11T00:00:00.000Z" });
+    const splitParentManual = { ...manualTransaction({ id: "manual-split" }), splitRole: "PARENT" } as ManualTransaction;
+
+    expect(findImportDuplicateCandidates(source, [source, skippedImportRow], [deletedManual, splitParentManual])).toEqual([]);
+    expect(findImportDuplicateCandidates(reviewRow({ date: null }), [source], [manualTransaction()])).toEqual([]);
+    expect(findImportDuplicateCandidates(reviewRow({ amountCents: null }), [source], [manualTransaction()])).toEqual([]);
+    expect(findImportDuplicateCandidates(reviewRow({ action: "SKIP" }), [source], [manualTransaction()])).toEqual([]);
+  });
+
+  it("avoids prominent warnings when merchant and description are weak", () => {
+    const candidates = findImportDuplicateCandidates(
+      reviewRow({ merchantName: "Woolworths", description: "Woolworths Metro" }),
+      [reviewRow()],
+      [manualTransaction({ description: "Synthetic restaurant", categoryId: dining.id })],
+    );
+
+    expect(candidates).toEqual([]);
+  });
+});
