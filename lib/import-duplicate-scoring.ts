@@ -4,7 +4,10 @@ import {
   type ManualTransaction,
 } from "@/lib/manual-transactions";
 import { normalizeMerchantName } from "@/lib/merchant-rules";
-import { sanitizeBankDescription } from "@/lib/validation/privacy";
+import {
+  sanitizeBankDescription,
+  sanitizeTransactionNarration,
+} from "@/lib/validation/privacy";
 
 export const DUPLICATE_SCORE_WEIGHTS = {
   amount: 35,
@@ -159,15 +162,25 @@ function isOwnedByCurrentUser(value: unknown, userId?: string) {
   return !candidate?.userId || candidate.userId === userId;
 }
 
+function safeDisplayDescription(value: string) {
+  return sanitizeBankDescription(value) || "Payment";
+}
+
+function safeDisplayMerchant(value: string) {
+  return sanitizeTransactionNarration(value) || safeDisplayDescription(value);
+}
+
 function toManualCandidate(transaction: ManualTransaction): ComparableCandidate {
+  const description = safeDisplayDescription(transaction.description);
+  const merchantName = safeDisplayMerchant(transaction.description);
   return {
     source: "MANUAL_TRANSACTION",
     candidateId: transaction.id,
-    label: transaction.description,
+    label: merchantName,
     date: transaction.date,
     amountCents: transaction.amountCents,
-    merchantName: transaction.description,
-    description: transaction.description,
+    merchantName,
+    description,
     categoryId: transaction.categoryId,
     type: transaction.type,
     canMergeTarget: true,
@@ -176,14 +189,16 @@ function toManualCandidate(transaction: ManualTransaction): ComparableCandidate 
 }
 
 function toSameImportCandidate(row: ImportReviewRow): ComparableCandidate {
+  const description = safeDisplayDescription(row.description);
+  const merchantName = safeDisplayMerchant(row.merchantName || row.description);
   return {
     source: "SAME_IMPORT",
     candidateId: row.id,
     label: `Row ${row.rowNumber}`,
     date: row.date,
     amountCents: row.amountCents,
-    merchantName: row.merchantName,
-    description: row.description,
+    merchantName,
+    description,
     categoryId: row.categoryId,
     canMergeTarget: false,
     rowNumber: row.rowNumber,
