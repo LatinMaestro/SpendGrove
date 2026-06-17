@@ -2,18 +2,21 @@
 
 ## Purpose
 
-SpendGrove should be reviewed visually at UI checkpoints, not only through code diffs. The preferred review workflow is:
+SpendGrove should be reviewed visually at appropriate UI checkpoints, not only through code diffs. Under Autonomous Phase Delivery Mode, Vercel previews support both agent self-review for routine PRs and client user testing at phase-level or major milestone checkpoints.
+
+Preferred phase-level review workflow:
 
 ```text
-Codex builds feature branch
-→ GitHub pull request opens
-→ Vercel creates preview deployment
-→ Client opens preview link
-→ Client leaves visual comments on the screen
-→ Agent implements approved changes in the same PR where practical
+Codex completes approved phase PR sequence
+→ checks and Vercel builds pass
+→ Phase Summary Report is created
+→ final Vercel app link is provided
+→ client tests as a user
+→ client provides UI/UX/workflow feedback
+→ Codex fixes accepted feedback or records deferrals
 ```
 
-This workflow supports the client/developer model: the coding agent acts like the app developer, and the client reviews the app interface and requests changes.
+For major new UI patterns, the agent may request earlier client review before continuing if the pattern would be risky to finalise without feedback.
 
 ## Required setup
 
@@ -27,17 +30,17 @@ When the project is ready for visual previews:
 
 ## Agent responsibilities
 
-For each PR involving user-facing UI, the agent should provide:
+For PRs involving user-facing UI, the agent should provide preview notes in the PR package. For phase-level client testing, the agent must provide:
 
-- GitHub PR link;
-- Vercel preview link, once available;
+- GitHub summary/report link;
+- Vercel final app or preview link;
 - list of screens/workflows to review;
-- iPhone-sized screenshot where practical;
-- desktop/web screenshot where relevant;
+- non-technical user-testing checklist;
 - known limitations;
-- specific UI areas where client feedback is requested.
+- specific questions for the client;
+- confirmation that preview data is synthetic/safe.
 
-If a Vercel preview is unavailable, the agent must state why and provide screenshots or local preview instructions instead.
+If a Vercel preview is unavailable, unclear or failed, the agent must stop before autonomous merge when the status affects safety, and explain why with next steps.
 
 ## Client visual comments
 
@@ -52,7 +55,7 @@ The client may comment directly on the preview, including feedback such as:
 - make mobile spacing more comfortable;
 - simplify this screen for beginner users.
 
-The agent should translate visual comments into implementation changes, update the same PR where practical and return an updated preview.
+The agent should translate visual comments into implementation changes, update the same PR or a focused stabilisation PR where practical, and return an updated preview.
 
 ## Privacy rules for previews
 
@@ -69,16 +72,16 @@ All preview data should be synthetic or explicitly safe demo data unless the cli
 
 ## Review package addition
 
-Where Vercel is used, the PR review package must include:
+Where Vercel is used, the PR or phase review package must include:
 
 | Item | Required content |
 |---|---|
-| Preview link | Vercel preview URL or reason unavailable |
+| Preview/final link | Vercel preview URL, final app URL or reason unavailable |
 | Visual review scope | Screens and flows the client should inspect |
 | Comment status | Summary of visual comments addressed, deferred or rejected |
 | Privacy confirmation | Confirmation no real CSV/private data appears in the preview |
 | Updated preview | Revised preview after change requests, where relevant |
 
-## Do not block Phase 1 on Vercel
+## Autonomous merge rule
 
-Vercel preview deployment is strongly recommended for UI review, but the agent may start Phase 1 before Vercel is configured. Once app shell/UI work exists, Vercel should be connected so subsequent PRs have visual previews.
+A routine PR inside an approved phase may be merged autonomously when Vercel is green, scope and privacy gates pass, and no stop condition is triggered. If Vercel status is missing, failed or unclear, the agent must stop unless the PR is explicitly non-deploying documentation and the exception is safe and documented.
