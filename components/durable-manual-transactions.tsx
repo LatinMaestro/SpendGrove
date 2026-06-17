@@ -15,12 +15,6 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import {
-  createManualTransactionAction,
-  deleteManualTransactionAction,
-  listManualTransactionsAction,
-  updateManualTransactionAction,
-} from "@/app/transactions/actions";
 import { formatAudFromCents } from "@/lib/money";
 import { getManualCategory, getManualCategoryGroups } from "@/lib/manual-categories";
 import {
@@ -40,6 +34,10 @@ const typeLabels: Record<ManualTransactionType, string> = {
   INCOME: "Income",
   TRANSFER: "Transfer",
 };
+
+type AccountTransactionResult =
+  | { ok: true; transactions: ManualTransaction[] }
+  | { ok: false; error: string };
 
 function localDateInputValue() {
   const today = new Date();
@@ -67,6 +65,45 @@ type EditorState = {
   transactionId?: string;
   draft: ManualTransactionDraft;
 };
+
+async function readAccountTransactionResponse(response: Response): Promise<AccountTransactionResult> {
+  try {
+    const payload = await response.json() as AccountTransactionResult;
+    if (payload.ok) return payload;
+    return { ok: false, error: payload.error || "We could not save that transaction safely. Please try again." };
+  } catch {
+    return { ok: false, error: "We could not read the account response safely. Please try again." };
+  }
+}
+
+async function listAccountManualTransactions() {
+  return readAccountTransactionResponse(await fetch("/api/account/manual-transactions", {
+    method: "GET",
+    cache: "no-store",
+  }));
+}
+
+async function createAccountManualTransaction(draft: ManualTransactionDraft) {
+  return readAccountTransactionResponse(await fetch("/api/account/manual-transactions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(draft),
+  }));
+}
+
+async function updateAccountManualTransaction(transactionId: string, draft: ManualTransactionDraft) {
+  return readAccountTransactionResponse(await fetch(`/api/account/manual-transactions/${encodeURIComponent(transactionId)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(draft),
+  }));
+}
+
+async function deleteAccountManualTransaction(transactionId: string) {
+  return readAccountTransactionResponse(await fetch(`/api/account/manual-transactions/${encodeURIComponent(transactionId)}`, {
+    method: "DELETE",
+  }));
+}
 
 function ModalFrame({
   title,
@@ -236,7 +273,7 @@ function DurableManualTransactionsExperience() {
     async function loadTransactions() {
       setIsReady(false);
       setAccountWarning("");
-      const result = await listManualTransactionsAction();
+      const result = await listAccountManualTransactions();
       if (cancelled) return;
 
       if (result.ok) {
@@ -292,8 +329,8 @@ function DurableManualTransactionsExperience() {
     setEditorError("");
 
     const result = editor.mode === "edit" && editor.transactionId
-      ? await updateManualTransactionAction(editor.transactionId, editor.draft)
-      : await createManualTransactionAction(editor.draft);
+      ? await updateAccountManualTransaction(editor.transactionId, editor.draft)
+      : await createAccountManualTransaction(editor.draft);
 
     setIsSaving(false);
 
@@ -310,7 +347,7 @@ function DurableManualTransactionsExperience() {
   async function confirmDelete() {
     if (!deleteId || isSaving) return;
     setIsSaving(true);
-    const result = await deleteManualTransactionAction(deleteId);
+    const result = await deleteAccountManualTransaction(deleteId);
     setIsSaving(false);
 
     if (result.ok) {
