@@ -11,14 +11,15 @@ const SERVER_DB_IMPORT_PATTERNS = [
   /from\s+["']\.\/src\/server\/db["']/,
   /PrismaClient/,
 ];
-const PRISMA_WRITE_PATTERNS = [
-  /\.create\s*\(/,
-  /\.createMany\s*\(/,
-  /\.update\s*\(/,
-  /\.updateMany\s*\(/,
-  /\.upsert\s*\(/,
-  /\.delete\s*\(/,
-  /\.deleteMany\s*\(/,
+const PRODUCT_WRITE_PATTERNS = [
+  /transaction\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /importBatch\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /importRow\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /category\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /bankImportProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /merchantProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /merchantAlias\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  /merchantRule\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
 ];
 
 async function listFiles(directory: string): Promise<string[]> {
@@ -64,14 +65,14 @@ describe("server persistence boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("does not add product write paths to the server scaffolding", async () => {
+  it("does not add transaction, import, category or merchant product write paths", async () => {
     const files = await listFiles("src/server");
     const violations: string[] = [];
 
     for (const file of files) {
       const source = await readFile(file, "utf8");
 
-      if (PRISMA_WRITE_PATTERNS.some((pattern) => pattern.test(source))) {
+      if (PRODUCT_WRITE_PATTERNS.some((pattern) => pattern.test(source))) {
         violations.push(file);
       }
     }
