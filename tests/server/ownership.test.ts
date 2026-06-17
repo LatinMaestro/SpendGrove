@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { createPhase3aStubUserContext } from "@/src/server/auth/current-user";
 import {
   assertUserOwnsRecord,
   assertUserScopedWhere,
@@ -8,9 +7,10 @@ import {
   OwnershipError,
   requireAuthenticatedUserContext,
 } from "@/src/server/auth/ownership";
+import { createTestUserContext } from "@/tests/server/auth-test-helpers";
 
 describe("server ownership helpers", () => {
-  const user = createPhase3aStubUserContext();
+  const user = createTestUserContext("user_1");
 
   it("requires authenticated user context before server data access", () => {
     expect(() => requireAuthenticatedUserContext(null)).toThrow(AuthenticationRequiredError);
