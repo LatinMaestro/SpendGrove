@@ -1,20 +1,35 @@
 import { describe, expect, it } from "vitest";
 import {
   EnvValidationError,
+  getBuildSafeClerkEnvStatus,
   getBuildSafeDatabaseEnvStatus,
+  getRequiredClerkRuntimeEnv,
   getRequiredDatabaseMigrationEnv,
   getRequiredDatabaseRuntimeEnv,
 } from "@/src/server/env";
 
 const VALID_DATABASE_URL = "postgresql://user:password@example.test:5432/spendgrove?schema=public";
 const VALID_DIRECT_DATABASE_URL = "postgresql://user:password@example-direct.test:5432/spendgrove?schema=public";
+const VALID_CLERK_ENV = {
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_SYNTHETIC",
+  CLERK_SECRET_KEY: "sk_test_SYNTHETIC",
+};
 
 describe("server environment validation", () => {
-  it("keeps build-safe validation optional when database variables are absent", () => {
+  it("keeps build-safe database validation optional when database variables are absent", () => {
     const status = getBuildSafeDatabaseEnvStatus({});
 
     expect(status.runtimeDatabaseConfigured).toBe(false);
     expect(status.migrationDatabaseConfigured).toBe(false);
+    expect(status.issues).toEqual([]);
+  });
+
+  it("keeps build-safe Clerk validation optional when Clerk variables are absent", () => {
+    const status = getBuildSafeClerkEnvStatus({});
+
+    expect(status.clerkConfigured).toBe(false);
+    expect(status.publishableKeyConfigured).toBe(false);
+    expect(status.secretKeyConfigured).toBe(false);
     expect(status.issues).toEqual([]);
   });
 
@@ -26,6 +41,11 @@ describe("server environment validation", () => {
     expect(() => getRequiredDatabaseMigrationEnv({ DATABASE_URL: VALID_DATABASE_URL })).toThrow(EnvValidationError);
   });
 
+  it("requires Clerk keys only when Clerk authentication is invoked", () => {
+    expect(() => getRequiredClerkRuntimeEnv({})).toThrow(EnvValidationError);
+    expect(getRequiredClerkRuntimeEnv(VALID_CLERK_ENV)).toEqual(VALID_CLERK_ENV);
+  });
+
   it("accepts the approved runtime and direct Neon/PostgreSQL variable names", () => {
     expect(getRequiredDatabaseRuntimeEnv({ DATABASE_URL: VALID_DATABASE_URL })).toEqual({
       DATABASE_URL: VALID_DATABASE_URL,
@@ -35,7 +55,7 @@ describe("server environment validation", () => {
     });
   });
 
-  it("reports invalid variable names without leaking secret values", () => {
+  it("reports invalid database values without leaking secret values", () => {
     const secretValue = "not-postgres://user:VERY_PRIVATE_PASSWORD@example.test/db";
 
     try {
@@ -45,6 +65,23 @@ describe("server environment validation", () => {
       expect(error).toBeInstanceOf(EnvValidationError);
       expect(String((error as Error).message)).toContain("DATABASE_URL");
       expect(String((error as Error).message)).not.toContain("VERY_PRIVATE_PASSWORD");
+      expect(String((error as Error).message)).not.toContain(secretValue);
+    }
+  });
+
+  it("reports invalid Clerk values without leaking secret keys", () => {
+    const secretValue = "sk_test_PRIVATE_SECRET_VALUE";
+
+    try {
+      getRequiredClerkRuntimeEnv({
+        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "not-a-publishable-key",
+        CLERK_SECRET_KEY: secretValue,
+      });
+      throw new Error("expected validation to fail");
+    } catch (error) {
+      expect(error).toBeInstanceOf(EnvValidationError);
+      expect(String((error as Error).message)).toContain("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY");
+      expect(String((error as Error).message)).not.toContain("PRIVATE_SECRET_VALUE");
       expect(String((error as Error).message)).not.toContain(secretValue);
     }
   });
