@@ -1,0 +1,67 @@
+name: Preview Prisma Migration
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: "Type RUN PREVIEW MIGRATION to confirm this targets the Preview database only"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-prisma-migration
+  cancel-in-progress: false
+
+jobs:
+  migrate-preview:
+    name: Apply Prisma migrations to Preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      DATABASE_URL: ${{ secrets.NEON_PREVIEW_DATABASE_URL }}
+      DIRECT_DATABASE_URL: ${{ secrets.NEON_PREVIEW_DIRECT_DATABASE_URL }}
+
+    steps:
+      - name: Confirm Preview-only migration request
+        run: |
+          if [ "${{ inputs.confirmation }}" != "RUN PREVIEW MIGRATION" ]; then
+            echo "Confirmation text did not match. No migration was run."
+            exit 1
+          fi
+          echo "Preview migration confirmed. Secret values will not be printed."
+
+      - name: Check required Preview secrets are present
+        run: |
+          if [ -z "$DATABASE_URL" ] || [ -z "$DIRECT_DATABASE_URL" ]; then
+            echo "Missing required Preview database secret(s). Check repository secrets."
+            exit 1
+          fi
+          echo "Required Preview database secrets are present. Values are hidden."
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate --schema prisma/schema.prisma
+
+      - name: Validate Prisma schema
+        run: npx prisma validate --schema prisma/schema.prisma
+
+      - name: Apply Preview migrations
+        run: npx prisma migrate deploy --schema prisma/schema.prisma
+
+      - name: Confirm Preview migration completed
+        run: echo "Preview Prisma migration completed successfully."
