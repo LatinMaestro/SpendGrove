@@ -1,6 +1,10 @@
 export type EnvSource = Record<string, string | undefined>;
 
-export type EnvIssueKey = "DATABASE_URL" | "DIRECT_DATABASE_URL";
+export type EnvIssueKey =
+  | "DATABASE_URL"
+  | "DIRECT_DATABASE_URL"
+  | "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY"
+  | "CLERK_SECRET_KEY";
 
 export type EnvIssue = {
   key: EnvIssueKey;
@@ -25,13 +29,27 @@ export type DatabaseMigrationEnv = {
   DIRECT_DATABASE_URL: string;
 };
 
+export type ClerkRuntimeEnv = {
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: string;
+  CLERK_SECRET_KEY: string;
+};
+
 export type BuildSafeDatabaseEnvStatus = {
   runtimeDatabaseConfigured: boolean;
   migrationDatabaseConfigured: boolean;
   issues: EnvIssue[];
 };
 
+export type BuildSafeClerkEnvStatus = {
+  clerkConfigured: boolean;
+  publishableKeyConfigured: boolean;
+  secretKeyConfigured: boolean;
+  issues: EnvIssue[];
+};
+
 const POSTGRES_URL_PATTERN = /^postgres(?:ql)?:\/\//i;
+const CLERK_PUBLISHABLE_KEY_PATTERN = /^pk_(test|live)_[A-Za-z0-9_-]+/;
+const CLERK_SECRET_KEY_PATTERN = /^sk_(test|live)_[A-Za-z0-9_-]+/;
 
 export class EnvValidationError extends Error {
   readonly issues: EnvIssue[];
@@ -59,6 +77,23 @@ function validatePostgresUrl(key: EnvIssueKey, value: string | undefined, requir
   return null;
 }
 
+function validateClerkKey(
+  key: EnvIssueKey,
+  value: string | undefined,
+  required: boolean,
+  pattern: RegExp,
+): EnvIssue | null {
+  if (!hasValue(value)) {
+    return required ? { key, reason: "is required when Clerk authentication is invoked" } : null;
+  }
+
+  if (!pattern.test(value.trim())) {
+    return { key, reason: "must use the expected Clerk key format" };
+  }
+
+  return null;
+}
+
 function formatIssues(issues: EnvIssue[]) {
   return issues.map((issue) => `${issue.key} ${issue.reason}`).join("; ");
 }
@@ -79,6 +114,26 @@ export function getBuildSafeDatabaseEnvStatus(env: EnvSource = process.env): Bui
   return {
     runtimeDatabaseConfigured: hasValue(env.DATABASE_URL) && runtimeIssue === null,
     migrationDatabaseConfigured: hasValue(env.DIRECT_DATABASE_URL) && migrationIssue === null,
+    issues,
+  };
+}
+
+export function getBuildSafeClerkEnvStatus(env: EnvSource = process.env): BuildSafeClerkEnvStatus {
+  const publishableIssue = validateClerkKey(
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    false,
+    CLERK_PUBLISHABLE_KEY_PATTERN,
+  );
+  const secretIssue = validateClerkKey("CLERK_SECRET_KEY", env.CLERK_SECRET_KEY, false, CLERK_SECRET_KEY_PATTERN);
+  const issues = [publishableIssue, secretIssue].filter((issue): issue is EnvIssue => issue !== null);
+  const publishableKeyConfigured = hasValue(env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) && publishableIssue === null;
+  const secretKeyConfigured = hasValue(env.CLERK_SECRET_KEY) && secretIssue === null;
+
+  return {
+    clerkConfigured: publishableKeyConfigured && secretKeyConfigured,
+    publishableKeyConfigured,
+    secretKeyConfigured,
     issues,
   };
 }
@@ -113,10 +168,37 @@ export function parseDatabaseMigrationEnv(env: EnvSource = process.env): EnvResu
   };
 }
 
+export function parseClerkRuntimeEnv(env: EnvSource = process.env): EnvResult<ClerkRuntimeEnv> {
+  const publishableIssue = validateClerkKey(
+    "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+    env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
+    true,
+    CLERK_PUBLISHABLE_KEY_PATTERN,
+  );
+  const secretIssue = validateClerkKey("CLERK_SECRET_KEY", env.CLERK_SECRET_KEY, true, CLERK_SECRET_KEY_PATTERN);
+  const issues = [publishableIssue, secretIssue].filter((issue): issue is EnvIssue => issue !== null);
+
+  if (issues.length > 0) {
+    return { ok: false, issues };
+  }
+
+  return {
+    ok: true,
+    value: {
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY!.trim(),
+      CLERK_SECRET_KEY: env.CLERK_SECRET_KEY!.trim(),
+    },
+  };
+}
+
 export function getRequiredDatabaseRuntimeEnv(env: EnvSource = process.env): DatabaseRuntimeEnv {
   return unwrapEnvResult(parseDatabaseRuntimeEnv(env), "Database runtime environment is not configured");
 }
 
 export function getRequiredDatabaseMigrationEnv(env: EnvSource = process.env): DatabaseMigrationEnv {
   return unwrapEnvResult(parseDatabaseMigrationEnv(env), "Database migration environment is not configured");
+}
+
+export function getRequiredClerkRuntimeEnv(env: EnvSource = process.env): ClerkRuntimeEnv {
+  return unwrapEnvResult(parseClerkRuntimeEnv(env), "Clerk runtime environment is not configured");
 }
