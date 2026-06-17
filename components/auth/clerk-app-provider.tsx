@@ -3,14 +3,11 @@ import { getBuildSafeClerkEnvStatus } from "@/src/server/env";
 
 export function ClerkAppProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const clerkStatus = getBuildSafeClerkEnvStatus();
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-  if (!clerkStatus.publishableKeyConfigured) {
+  if (!clerkStatus.publishableKeyConfigured || !publishableKey) {
     return <>{children}</>;
   }
 
-  return (
-    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
-      {children}
-    </ClerkProvider>
-  );
+  return <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>;
 }
