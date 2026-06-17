@@ -49,38 +49,44 @@ Always preserve the following:
 - Production payments/paywalls require explicit client approval.
 - Production App Store release decisions require explicit client approval.
 
-## Autonomous delivery mode
+## Autonomous Phase Delivery Mode
 
-The client authorises supervised autonomous development within the active approved phase.
+SpendGrove now uses **Autonomous Phase Delivery Mode**. Once the client approves a phase objective and PR sequence, the agent may create focused PRs, run tests/build/Vercel checks, self-review, merge passing routine PRs and continue through the approved phase without waiting for PR-by-PR client approval.
 
 The agent should:
 
-- Break the active phase into logical PR-sized tasks.
+- Confirm the active phase objective and approved PR sequence.
+- Break the phase into logical PR-sized tasks.
 - Make routine implementation decisions without over-questioning.
-- Create components, services, utilities, schemas, tests and internal helpers as needed.
+- Create components, services, utilities, schemas, tests and internal helpers as needed inside approved scope.
 - Improve code quality, accessibility, validation and maintainability where it does not change approved scope.
-- Continue to the next task in the active phase after approval unless instructed otherwise.
-- Keep the client involved at review gates and material decision points only.
+- Keep PRs focused and include a clear review package.
+- Self-review each PR against repository control docs, privacy/security gates and the master specification.
+- Merge green, in-scope, privacy-safe routine PRs autonomously.
+- Continue to the next approved PR in the active phase unless a stop condition is triggered.
 
-The agent must pause for approval before:
+The agent must pause for the client before:
 
-- Starting a new phase.
-- Closing a milestone.
+- Starting a new phase or closing a phase.
+- Expanding scope beyond the approved phase.
 - Changing core navigation or major UX direction.
-- Making material database/schema changes.
-- Changing privacy, logging or file-handling behaviour.
+- Making material database/schema changes not already approved.
+- Changing privacy, logging, retention or file-handling behaviour.
 - Changing financial calculation rules.
-- Introducing third-party services.
-- Implementing Basiq/enhanced lookup beyond sandbox planning.
+- Introducing new third-party providers, packages or services beyond approval.
+- Configuring real secrets, API keys, paid services or Vercel environment variables.
+- Implementing Basiq/enhanced lookup beyond approved planning.
 - Implementing payments, subscriptions or paywalls.
-- Using real CSV samples beyond temporary local testing.
+- Implementing loans, property/tax reports, recurring, budgets, AI or later-phase modules without explicit approval.
+- Using real CSV samples beyond temporary private-local structural testing.
+- Proceeding when Vercel/test/build status, PR diff, privacy posture or scope is unclear.
 - Proceeding with production launch or App Store submission work.
 
 ## Active phase rule
 
-The default active phase is **Phase 1 - MVP Foundation** until the client approves another phase.
+The current active approved phase is **Phase 3A - Persistence & Commit Foundation**.
 
-Do not implement Phase 2+ functionality except for harmless placeholders, disabled feature flags, route stubs or data-model foresight that directly supports Phase 1 and does not create incomplete user-facing functionality.
+Do not implement Phase 4+ functionality or later modules unless explicitly approved. Loans, property/tax reports, recurring, budgets, Basiq, enhanced merchant lookup, AI and payments remain excluded unless separately authorised.
 
 ## UI flexibility
 
@@ -94,11 +100,11 @@ The agent may make first-pass UI decisions for buttons, cards, spacing, forms, e
 - Apple-style polish
 - plain-English copy
 
-The UI is not final until the client reviews screenshots or a working preview and approves it.
+Client review is required at phase-level or major milestone user-testing checkpoints, and before finalising a major new UI pattern when the stop conditions require it.
 
 ## Testing expectations
 
-Before requesting review, run all available checks relevant to the chosen stack, such as:
+Before merging routine PRs or requesting phase review, run all available checks relevant to the chosen stack, such as:
 
 - typecheck
 - lint
@@ -106,9 +112,10 @@ Before requesting review, run all available checks relevant to the chosen stack,
 - parser tests
 - smoke tests
 - build check
-- mobile viewport check
+- Vercel preview/build check
+- mobile viewport check where practical
 
-If a check cannot be run, explain why in the review package.
+If a check cannot be run, explain why in the PR review package or phase summary.
 
 ## PR / review package requirements
 
@@ -119,29 +126,38 @@ Every PR or review package must include:
 3. Screenshots or preview notes for UI work.
 4. Vercel preview link when available for user-facing UI changes.
 5. Data/privacy impact.
-6. Testing evidence.
-7. Specification compliance statement.
-8. Known limitations.
-9. Change-request log, including visual comments if applicable.
-10. Next recommended task.
+6. Security impact where relevant.
+7. Testing evidence.
+8. Specification compliance statement.
+9. Known limitations.
+10. Change-request log, including visual comments if applicable.
+11. Next recommended task.
+
+Routine PRs inside an approved phase may be merged by the agent when green, in scope and privacy-safe.
+
+## Phase Summary Report requirement
+
+At the end of every approved phase, the agent must create a complete plain-English Phase Summary Report before recommending formal phase closure. Prefer a committed Markdown file such as `docs/PHASE_3A_SUMMARY.md`.
+
+The phase summary must include completed PRs, merge commits, features added, UI/workflow changes, schema/auth/database changes, privacy/security controls, testing/build/Vercel results, known limitations, deferred items, decisions made, client decisions required, final Vercel link, user-testing checklist, workflows to test, client questions and recommended next options.
 
 ## CSV sample handling
 
-- Real client CSVs are sensitive.
-- Store temporary real samples only in `sample-data/private-local/`.
+- Real client CSVs are sensitive private local test data only.
+- Store temporary real samples only in `sample-data/private-local/` when needed.
 - Never commit real CSVs or screenshots containing private transactions.
 - Never upload real CSVs to third-party services.
 - Never log raw rows.
-- Convert learnings into synthetic or redacted fixtures.
+- Never paste raw rows, filenames, balances, account identifiers, raw bank descriptions or private values into PRs, docs, comments or screenshots.
+- Convert learnings into fictional synthetic fixtures only.
 
 ## Decision log
 
 Update `docs/DECISION_LOG.md` when a material decision is approved. Include date, decision, reason, approved by and implementation impact.
 
-
 ## Visual preview workflow
 
-When the repository is connected to Vercel and a PR preview deployment is available, include the preview link in the PR review package. For user-facing UI work, request client review through the preview and address visual comments in the same PR where practical.
+When the repository is connected to Vercel and a PR preview deployment is available, include the preview link in the PR review package. For user-facing UI work, request client review at phase-level or major milestone checkpoints, and earlier only when a major UI pattern needs client feedback before proceeding.
 
 Do not expose real CSV files, real financial data, private screenshots, provider secrets or production data in preview deployments. Use synthetic/demo data only unless a separate private local testing process is approved.
 

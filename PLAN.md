@@ -23,8 +23,12 @@ Agents must also follow:
 
 Do not treat this file as a replacement for the master specification or the build plan.
 
-Current active phase until changed by the client:
+Current active approved phase until changed by the client:
 
-> Phase 1 - MVP Foundation
+> Phase 3A - Persistence & Commit Foundation
 
-The agent may work autonomously within the active phase, but must pause for review gates, user testing, material data/privacy decisions, schema decisions, third-party services, payment/paywall decisions and milestone approvals.
+SpendGrove now uses Autonomous Phase Delivery Mode. Within an approved phase, the agent may create focused PRs, run tests/build/Vercel checks, self-review, merge green in-scope routine PRs and continue to the next approved PR without waiting for PR-by-PR client approval.
+
+The agent must still pause for stop conditions, including scope expansion, unclear Vercel/test status, real secret/environment setup, paid services, material unapproved schema/privacy/security decisions, private data risk, major UI-pattern feedback needs and any work outside the approved phase.
+
+At the end of each approved phase, the agent must create a complete Phase Summary Report and a non-technical user-testing checklist before recommending formal closure.
