@@ -17,6 +17,7 @@
     "db:seed": "prisma db seed"
   },
   "dependencies": {
+    "@clerk/nextjs": "^7.5.3",
     "@prisma/client": "^5.16.1",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.0",
