@@ -25,10 +25,12 @@ function safeActionError(error: unknown) {
       return "That transaction could not be found for your account.";
     }
 
-    return error.message || "Something went wrong. Please try again.";
+    if (error.message === "Choose an approved category that matches the transaction type.") {
+      return error.message;
+    }
   }
 
-  return "Something went wrong. Please try again.";
+  return "We could not save that transaction safely. Please check the details and try again.";
 }
 
 async function getAuthenticatedUserContext() {
