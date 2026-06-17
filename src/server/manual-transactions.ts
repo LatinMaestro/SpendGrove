@@ -188,11 +188,10 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
         include: transactionInclude,
       }) as Promise<DbTransactionRecord>;
     },
-    async update(userId, transactionId, data) {
+    async update(_userId, transactionId, data) {
       return prisma.transaction.update({
         where: {
           id: transactionId,
-          userId,
         },
         data: {
           categoryId: data.categoryId,
@@ -206,11 +205,10 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
         include: transactionInclude,
       }) as Promise<DbTransactionRecord>;
     },
-    async softDelete(userId, transactionId, deletedAt) {
+    async softDelete(_userId, transactionId, deletedAt) {
       return prisma.transaction.update({
         where: {
           id: transactionId,
-          userId,
         },
         data: {
           status: "DELETED",
