@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 import { getManualCategory, manualCategories, type ManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
 import {
   validateManualTransactionDraft,
@@ -9,7 +9,7 @@ import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { assertUserOwnsRecord, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
 
-type DbCategoryRecord = {
+export type DbManualTransactionCategoryRecord = {
   id: string;
   name: string;
   type: ManualCategoryType | string;
@@ -18,7 +18,7 @@ type DbCategoryRecord = {
   } | null;
 };
 
-type DbTransactionRecord = {
+export type DbManualTransactionRecord = {
   id: string;
   userId: string;
   type: ManualCategoryType | string;
@@ -26,7 +26,7 @@ type DbTransactionRecord = {
   date: Date | string;
   description: string;
   categoryId?: string | null;
-  category?: DbCategoryRecord | null;
+  category?: DbManualTransactionCategoryRecord | null;
   notes?: string | null;
   csvMatchHint: boolean;
   createdAt: Date | string;
@@ -34,7 +34,7 @@ type DbTransactionRecord = {
   deletedAt?: Date | string | null;
 };
 
-type ManualTransactionCreateData = {
+export type ManualTransactionCreateData = {
   type: ManualCategoryType;
   amountCents: number;
   date: Date;
@@ -45,11 +45,11 @@ type ManualTransactionCreateData = {
 };
 
 export type ManualTransactionPersistenceStore = {
-  listActive(userId: string): Promise<DbTransactionRecord[]>;
-  findActiveById(userId: string, transactionId: string): Promise<DbTransactionRecord | null>;
-  create(userId: string, data: ManualTransactionCreateData): Promise<DbTransactionRecord>;
-  update(userId: string, transactionId: string, data: ManualTransactionCreateData): Promise<DbTransactionRecord>;
-  softDelete(userId: string, transactionId: string, deletedAt: Date): Promise<DbTransactionRecord>;
+  listActive(userId: string): Promise<DbManualTransactionRecord[]>;
+  findActiveById(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
+  create(userId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
+  update(userId: string, transactionId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
+  softDelete(userId: string, transactionId: string, deletedAt: Date): Promise<DbManualTransactionRecord>;
   resolveSeededCategoryId(userId: string, category: ManualCategory): Promise<string>;
 };
 
@@ -70,7 +70,7 @@ const transactionInclude = {
       parent: true,
     },
   },
-};
+} satisfies Prisma.TransactionInclude;
 
 function toIsoString(value: Date | string) {
   return value instanceof Date ? value.toISOString() : new Date(value).toISOString();
@@ -94,7 +94,7 @@ function getCategoryChildSortOrder(category: ManualCategory) {
   return index >= 0 ? index : 0;
 }
 
-function toManualCategoryId(category: DbCategoryRecord | null | undefined) {
+function toManualCategoryId(category: DbManualTransactionCategoryRecord | null | undefined) {
   if (!category) return "";
 
   const manualType = category.type as ManualCategoryType;
@@ -107,7 +107,7 @@ function toManualCategoryId(category: DbCategoryRecord | null | undefined) {
   return matchingCategory?.id ?? category.id;
 }
 
-function toManualTransaction(record: DbTransactionRecord): ManualTransaction {
+function toManualTransaction(record: DbManualTransactionRecord): ManualTransaction {
   return {
     id: record.id,
     type: record.type as ManualCategoryType,
@@ -153,7 +153,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           { date: "desc" },
           { updatedAt: "desc" },
         ],
-      }) as Promise<DbTransactionRecord[]>;
+      }) as unknown as Promise<DbManualTransactionRecord[]>;
     },
     async findActiveById(userId, transactionId) {
       return prisma.transaction.findFirst({
@@ -168,7 +168,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           },
         },
         include: transactionInclude,
-      }) as Promise<DbTransactionRecord | null>;
+      }) as unknown as Promise<DbManualTransactionRecord | null>;
     },
     async create(userId, data) {
       return prisma.transaction.create({
@@ -186,7 +186,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           csvMatchHint: data.csvMatchHint,
         },
         include: transactionInclude,
-      }) as Promise<DbTransactionRecord>;
+      }) as unknown as Promise<DbManualTransactionRecord>;
     },
     async update(_userId, transactionId, data) {
       return prisma.transaction.update({
@@ -203,7 +203,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           csvMatchHint: data.csvMatchHint,
         },
         include: transactionInclude,
-      }) as Promise<DbTransactionRecord>;
+      }) as unknown as Promise<DbManualTransactionRecord>;
     },
     async softDelete(_userId, transactionId, deletedAt) {
       return prisma.transaction.update({
@@ -215,7 +215,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           deletedAt,
         },
         include: transactionInclude,
-      }) as Promise<DbTransactionRecord>;
+      }) as unknown as Promise<DbManualTransactionRecord>;
     },
     async resolveSeededCategoryId(userId, category) {
       const parentType = categoryGroupTypes[category.group] ?? category.type;
