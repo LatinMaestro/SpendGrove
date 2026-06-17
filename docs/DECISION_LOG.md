@@ -26,6 +26,7 @@ Material decisions should be recorded here. This prevents future agents from re-
 | 2026-06-17 | Approve Phase 2 PR F QA and integration stabilisation as a documentation/report pass unless defects are found | Phase 2 needs a closure-readiness audit without beginning Phase 3 or expanding product scope | Client | Produce Phase 2 QA report; verify Vercel, tests, scope and privacy posture; fix only Phase 2 defects or documentation gaps; do not close Phase 2 or start Phase 3 without explicit client approval |
 | 2026-06-17 | Formally close Phase 2 Import Refinement and accept the Phase 2 QA report and documented limitations | Approved Phase 2 PRs A–F are merged, the final main Vercel build is green and no Phase 3 implementation has started | Client | Phase 2 is closed; preserve accepted browser-local/prototype limitations; do not begin Phase 3 implementation until the client approves a Phase 3 plan and authorises an implementation branch |
 | 2026-06-17 | Approve PR 3A.0 documentation-only auth/database decision record for Phase 3A Persistence & Commit Foundation | Phase 3A needs explicit provider, ownership, server-only data access, migration and privacy decisions before implementation begins | Client | Draft docs should recommend Clerk and Neon Postgres with Prisma, keep Vercel hosting, preserve browser-local raw CSV handling, and require no code/schema/auth/database writes until PR 3A.0 is reviewed and approved |
+| 2026-06-17 | Adopt Autonomous Phase Delivery Mode and require phase-end Phase Summary Reports | Client wants to review SpendGrove primarily as a user/tester at phase or major milestone checkpoints instead of approving every routine technical PR | Client | Agents may merge green, in-scope, privacy-safe routine PRs inside approved phases; stop only for documented blocker conditions; every phase must end with a complete plain-English Phase Summary Report and non-technical user-testing checklist before closure |
 
 ## Template
 
@@ -46,3 +47,4 @@ Material decisions should be recorded here. This prevents future agents from re-
 - Payment/subscription model.
 - Major navigation changes.
 - Privacy/security changes.
+- Delivery workflow changes.
