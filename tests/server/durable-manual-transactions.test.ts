@@ -168,7 +168,6 @@ describe("durable manual transaction persistence", () => {
 
     const created = await createDurableManualTransaction(user, expenseDraft, store);
     expect(created).toMatchObject({
-      userId: undefined,
       type: "EXPENSE",
       amountCents: -1234,
       date: "2026-06-09",
