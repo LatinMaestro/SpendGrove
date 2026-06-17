@@ -1,4 +1,5 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import type { NextFetchEvent, NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { CLERK_PROTECTED_ROUTE_PATTERNS } from "@/src/server/auth/route-policy";
 import { getBuildSafeClerkEnvStatus } from "@/src/server/env";
@@ -12,7 +13,7 @@ const clerkProtectedMiddleware = clerkMiddleware(async (auth, request) => {
   }
 });
 
-export default function middleware(request: Parameters<typeof clerkProtectedMiddleware>[0], event: Parameters<typeof clerkProtectedMiddleware>[1]) {
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
   if (!clerkEnvStatus.clerkConfigured) {
     return NextResponse.next();
   }
