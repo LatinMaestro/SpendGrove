@@ -7,6 +7,10 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AuthProvider {
+  CLERK
+}
+
 enum UserStatus {
   ACTIVE
   DISABLED
@@ -109,14 +113,16 @@ enum AuditAction {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String?    @unique
-  name      String?
-  status    UserStatus @default(ACTIVE)
-  country   String     @default("AU")
-  timezone  String     @default("Australia/Brisbane")
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id                 String        @id @default(cuid())
+  authProvider       AuthProvider?
+  authProviderUserId String?
+  email              String?       @unique
+  name               String?
+  status             UserStatus    @default(ACTIVE)
+  country            String        @default("AU")
+  timezone           String        @default("Australia/Brisbane")
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
 
   settings           UserSettings?
   categories         Category[]
@@ -128,6 +134,8 @@ model User {
   merchantAliases    MerchantAlias[]
   merchantRules      MerchantRule[]
   auditEvents        AuditEvent[]
+
+  @@unique([authProvider, authProviderUserId])
 }
 
 model UserSettings {

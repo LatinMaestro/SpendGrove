@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkAppProvider } from "@/components/auth/clerk-app-provider";
 import { SettingsProvider } from "@/components/settings-provider";
 import "./globals.css";
 
@@ -11,7 +12,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="en-AU">
       <body>
-        <SettingsProvider>{children}</SettingsProvider>
+        <ClerkAppProvider>
+          <SettingsProvider>{children}</SettingsProvider>
+        </ClerkAppProvider>
       </body>
     </html>
   );
