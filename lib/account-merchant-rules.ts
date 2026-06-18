@@ -34,6 +34,10 @@ export function listAccountMerchantData() {
   return jsonRequest("/api/account/merchant-rules", "GET");
 }
 
+export function replaceAccountMerchantData(data: LocalMerchantData) {
+  return jsonRequest("/api/account/merchant-rules", "PUT", { data });
+}
+
 export function saveAccountMerchantRule(input: {
   merchantName: string;
   categoryId: string;
