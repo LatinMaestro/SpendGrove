@@ -63,7 +63,7 @@ Status: closed and accepted by the client.
 ### Task 1.6 — Import review and history foundation
 
 - Add review-before-commit workflow.
-- Add row actions: Import, Skip, Merge.
+- Add row actions: Import, Skip and Merge.
 - Add editable category/merchant foundations.
 - Add import summary.
 - Add import history and batch detail foundation.
@@ -98,19 +98,19 @@ Scope:
 
 ## Phase 3A — Persistence & Commit Foundation
 
-Status: active approved phase.
+Status: implementation complete; ready for final client acceptance testing. Formal closure remains a client decision.
 
 Objective:
 
 Move SpendGrove from browser-local prototype storage toward secure account-based persistence, durable transactions, durable imports and safe audit history while preserving privacy-first CSV handling and review-before-commit.
 
-Approved delivery mode:
+Closure evidence:
 
-- Work autonomously through the approved PR sequence.
-- Keep each PR focused and self-reviewed.
-- Merge routine PRs only when green, in scope and privacy-safe.
-- Stop for client decisions when the stop conditions require it.
-- Do not begin loans, property/tax reports, recurring, budgets, Basiq, enhanced merchant lookup, AI, payments or later modules.
+- All approved implementation PRs 3A.0 through 3A.9 are merged.
+- Preview database migrations completed successfully.
+- Functional PRs passed the Vercel test and production-build gate.
+- `docs/PHASE_3A_SUMMARY.md` contains the full merge register, privacy evidence, limitations and non-technical testing checklist.
+- Do not begin a later phase until the client accepts or closes Phase 3A and explicitly approves the next scope.
 
 ### PR 3A.0 — Auth/database decision record
 
@@ -131,7 +131,7 @@ Status: merged.
 
 ### PR 3A.2 — Production auth and user provisioning
 
-Status: in progress.
+Status: merged.
 
 - Add Clerk auth foundation.
 - Add sign-in/sign-up routes and middleware.
@@ -141,19 +141,23 @@ Status: in progress.
 
 ### PR 3A.3 — Durable manual transactions
 
+Status: merged.
+
 - Persist manual transactions to PostgreSQL for authenticated users.
 - Preserve integer-cent money handling, soft delete and user ownership.
-- Keep browser-local prototype data available until migration is approved.
-- Do not implement CSV commit behaviour in this PR.
+- Preserve browser-local fallback.
 
 ### PR 3A.4 — Durable custom categories
+
+Status: merged.
 
 - Persist custom categories for authenticated users.
 - Keep seeded categories immutable.
 - Preserve archive/restore behaviour and duplicate-name safeguards.
-- Do not persist raw CSV or transaction rows.
 
 ### PR 3A.5 — Durable saved import profiles
+
+Status: merged.
 
 - Persist safe saved import profiles for authenticated users.
 - Store only safe structural mapping metadata.
@@ -161,29 +165,36 @@ Status: in progress.
 
 ### PR 3A.6 — Durable merchant rules and aliases
 
+Status: merged.
+
 - Persist safe merchant aliases and local rules for authenticated users.
 - Store only safe cleaned merchant names, alias keys, category IDs and safe metadata.
 - Do not store raw bank descriptions or private references.
 
 ### PR 3A.7 — Import commit execution
 
+Status: merged.
+
 - Commit reviewed Import / Skip / Merge decisions to durable storage.
 - Create transactions only from safe mapped/reviewed fields.
-- Preserve review-before-commit and user ownership.
-- Do not persist raw CSV files, raw rows, original filenames or raw bank descriptions.
+- Preserve review-before-commit, idempotency and user ownership.
 
 ### PR 3A.8 — Audit and history hardening
 
-- Persist safe import batch/history metadata.
-- Add safe audit events for user-owned changes.
-- Store safe metadata only; exclude raw CSV/private bank values.
+Status: merged.
+
+- Present safe import batch/history metadata.
+- Present safe aggregate audit events for user-owned changes.
+- Exclude raw CSV and private bank values.
 
 ### PR 3A.9 — Migration assistant and Phase 3A QA closure
 
-- Provide a safe browser-local to account-backed migration path.
+Status: implementation merged; final QA documentation ready for client review.
+
+- Provide explicit browser-local manual transaction migration to account storage.
+- Preserve the device copy on failure and prevent duplicate retry writes.
 - Verify full Phase 3A workflows.
-- Produce `docs/PHASE_3A_SUMMARY.md` and QA/closure notes.
-- Provide final Vercel link and non-technical user-testing checklist.
+- Produce `docs/PHASE_3A_SUMMARY.md` and the non-technical user-testing checklist.
 
 ## Phase 3 — Loans, Properties and Tax
 
@@ -253,4 +264,4 @@ Scope:
 
 ## Visual preview setup task
 
-Once the app shell can run, connect the GitHub repository to Vercel and enable preview deployments for pull requests. From that point, user-facing UI PRs should include preview links and follow `docs/VERCEL_VISUAL_REVIEW.md`.
+Vercel preview deployments are configured. User-facing PRs must include preview links and follow `docs/VERCEL_VISUAL_REVIEW.md`.
