@@ -238,21 +238,30 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             });
           }
 
-          const audit = auditEventSchema.parse({
+          const auditMetadata = {
+            totalCount: request.rows.length,
+            importedCount,
+            skippedCount,
+            mergedCount,
+            warningCount: warningCodes.length,
+            privateFieldCount: request.metadata.privateFieldCount,
+          } satisfies Prisma.InputJsonObject;
+          auditEventSchema.parse({
             userId,
             entityType: "IMPORT_BATCH",
             entityId: batch.id,
             action: "IMPORTED",
-            metadata: {
-              totalCount: request.rows.length,
-              importedCount,
-              skippedCount,
-              mergedCount,
-              warningCount: warningCodes.length,
-              privateFieldCount: request.metadata.privateFieldCount,
+            metadata: auditMetadata,
+          });
+          await tx.auditEvent.create({
+            data: {
+              userId,
+              entityType: "IMPORT_BATCH",
+              entityId: batch.id,
+              action: "IMPORTED",
+              metadata: auditMetadata,
             },
           });
-          await tx.auditEvent.create({ data: audit });
           return summaryFromBatch({ ...batch, warningCodes }, false);
         });
       } catch (error) {
