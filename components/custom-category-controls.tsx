@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Archive, Pencil, Plus, RotateCcw } from "lucide-react";
+import { Archive, Cloud, Pencil, Plus, RotateCcw } from "lucide-react";
+import {
+  createAccountCustomCategory,
+  listAccountCustomCategories,
+  migrateAccountCustomCategories,
+  updateAccountCustomCategory,
+} from "@/lib/account-custom-categories";
 import {
   CUSTOM_CATEGORY_GROUPS,
   createCustomCategory,
@@ -12,6 +18,7 @@ import {
   inferCustomCategoryGroup,
   loadCustomCategoriesFromStorage,
   renameCustomCategory,
+  resetCustomCategoriesInStorage,
   saveCustomCategoriesToStorage,
   setCustomCategoryArchived,
   type CustomCategory,
@@ -39,12 +46,14 @@ function fallbackGroupForType(type: ManualCategoryType): CustomCategoryGroup {
 
 export function useCustomCategoryCatalogue() {
   const [categories, setCategories] = useState<CustomCategory[]>([]);
+  const [storageMode, setStorageMode] = useState<"loading" | "account" | "device">("loading");
   const [storageAvailable, setStorageAvailable] = useState(true);
   const [recoveredFromCorruption, setRecoveredFromCorruption] = useState(false);
   const [unsupportedVersion, setUnsupportedVersion] = useState(false);
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
     const loaded = loadCustomCategoriesFromStorage(window.localStorage);
     setCategories(loaded.categories);
     setRuntimeCustomCategories(loaded.categories);
@@ -52,17 +61,56 @@ export function useCustomCategoryCatalogue() {
     setRecoveredFromCorruption(loaded.recoveredFromCorruption);
     setUnsupportedVersion(loaded.unsupportedVersion);
     if (loaded.migrated) saveCustomCategoriesToStorage(window.localStorage, loaded.categories);
+
+    async function loadAccountCategories() {
+      try {
+        const result = await listAccountCustomCategories();
+        if (cancelled) return;
+        if (!result.ok) {
+          setStorageMode("device");
+          return;
+        }
+
+        let accountCategories = result.categories;
+        if (loaded.categories.length > 0 && window.confirm(
+          `Move ${loaded.categories.length} categor${loaded.categories.length === 1 ? "y" : "ies"} saved on this device to your SpendGrove account? The device copy will be removed only after the move succeeds.`,
+        )) {
+          const migration = await migrateAccountCustomCategories(loaded.categories);
+          if (cancelled) return;
+          if (migration.ok) {
+            accountCategories = migration.categories;
+            const cleared = resetCustomCategoriesInStorage(window.localStorage);
+            setStorageAvailable(cleared);
+            setNotice(`Moved ${migration.importedCount ?? 0} categor${migration.importedCount === 1 ? "y" : "ies"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}.`);
+          } else {
+            setNotice(`${migration.error} Your device copy was kept.`);
+          }
+        }
+
+        setCategories(accountCategories);
+        setRuntimeCustomCategories(accountCategories);
+        setStorageMode("account");
+      } catch {
+        if (!cancelled) setStorageMode("device");
+      }
+    }
+
+    void loadAccountCategories();
+    return () => { cancelled = true; };
   }, []);
 
-  function persist(nextCategories: CustomCategory[], successNotice: string) {
+  function setCatalogue(nextCategories: CustomCategory[]) {
     setCategories(nextCategories);
     setRuntimeCustomCategories(nextCategories);
+  }
+
+  function persistDevice(nextCategories: CustomCategory[], successNotice: string) {
+    setCatalogue(nextCategories);
     const saved = saveCustomCategoriesToStorage(window.localStorage, nextCategories);
     setStorageAvailable(saved);
     setNotice(saved
       ? successNotice
       : "Browser storage is unavailable. This category will last only while this page is open.");
-    return nextCategories;
   }
 
   function create(input: {
@@ -78,23 +126,82 @@ export function useCustomCategoryCatalogue() {
       !categories.some((existing) => existing.id === category.id),
     );
     if (!newCategory) throw new Error("The category could not be created.");
-    persist(nextCategories, "Category created and saved on this device.");
+
+    if (storageMode !== "account") {
+      persistDevice(nextCategories, "Category created and saved on this device.");
+      return newCategory;
+    }
+
+    const previous = categories;
+    setCatalogue(nextCategories);
+    setNotice("Saving category to your account…");
+    void createAccountCustomCategory(newCategory).then((result) => {
+      if (result.ok) {
+        setCatalogue(result.categories);
+        setNotice("Category created and saved to your account.");
+      } else {
+        setCatalogue(previous);
+        setNotice(result.error);
+      }
+    }).catch(() => {
+      setCatalogue(previous);
+      setNotice("The category could not be saved to your account. Please try again.");
+    });
     return newCategory;
   }
 
   function rename(categoryId: string, name: string) {
-    persist(renameCustomCategory(categories, categoryId, name), "Category renamed on this device.");
+    const nextCategories = renameCustomCategory(categories, categoryId, name);
+    if (storageMode !== "account") {
+      persistDevice(nextCategories, "Category renamed on this device.");
+      return;
+    }
+
+    const previous = categories;
+    setCatalogue(nextCategories);
+    void updateAccountCustomCategory(categoryId, { name }).then((result) => {
+      if (result.ok) {
+        setCatalogue(result.categories);
+        setNotice("Category renamed in your account.");
+      } else {
+        setCatalogue(previous);
+        setNotice(result.error);
+      }
+    }).catch(() => {
+      setCatalogue(previous);
+      setNotice("The category name could not be saved to your account.");
+    });
   }
 
   function setArchived(categoryId: string, isArchived: boolean) {
-    persist(
-      setCustomCategoryArchived(categories, categoryId, isArchived),
-      isArchived ? "Category archived on this device." : "Category restored on this device.",
-    );
+    const nextCategories = setCustomCategoryArchived(categories, categoryId, isArchived);
+    if (storageMode !== "account") {
+      persistDevice(
+        nextCategories,
+        isArchived ? "Category archived on this device." : "Category restored on this device.",
+      );
+      return;
+    }
+
+    const previous = categories;
+    setCatalogue(nextCategories);
+    void updateAccountCustomCategory(categoryId, { isArchived }).then((result) => {
+      if (result.ok) {
+        setCatalogue(result.categories);
+        setNotice(isArchived ? "Category archived in your account." : "Category restored in your account.");
+      } else {
+        setCatalogue(previous);
+        setNotice(result.error);
+      }
+    }).catch(() => {
+      setCatalogue(previous);
+      setNotice("The category change could not be saved to your account.");
+    });
   }
 
   return {
     categories,
+    storageMode,
     storageAvailable,
     recoveredFromCorruption,
     unsupportedVersion,
@@ -200,7 +307,7 @@ export function ReviewCategorySelector({
       {showCreate && (
         <div className="mt-3 rounded-2xl border border-brand-green/30 bg-surface-mint p-4">
           <p className="font-bold text-brand-deepTeal">Create new category</p>
-          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Choose where it should appear. It is saved on this device only.</p>
+          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Choose where it should appear. Signed-in categories are saved to your account; otherwise they stay on this device.</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-bold text-brand-deepTeal">
               Category name
@@ -270,6 +377,15 @@ export function CustomCategoryManager({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
   const [error, setError] = useState("");
+  const [accountBacked, setAccountBacked] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void listAccountCustomCategories().then((result) => {
+      if (!cancelled) setAccountBacked(result.ok);
+    }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   function finishRename(categoryId: string) {
     try {
@@ -285,7 +401,7 @@ export function CustomCategoryManager({
   return (
     <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="saved-categories-heading">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Saved on this device</p>
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked && <Cloud aria-hidden="true" className="h-4 w-4" />}{accountBacked ? "Saved to your account" : "Saved on this device"}</p>
         <h2 id="saved-categories-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Your categories</h2>
         <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Categories you create appear in the normal category groups. SpendGrove’s included categories stay unchanged.</p>
       </div>
@@ -330,7 +446,7 @@ export function CustomCategoryManager({
         <p className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">No saved categories yet.</p>
       )}
 
-      {!storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. New categories last only while this page is open.</p>}
+      {!accountBacked && !storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. New categories last only while this page is open.</p>}
       {recoveredFromCorruption && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Unreadable saved categories were ignored and safely reset.</p>}
       {unsupportedVersion && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Saved categories from a newer app version were ignored for safety.</p>}
       {notice && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{notice}</p>}
