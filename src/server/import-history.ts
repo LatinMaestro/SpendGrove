@@ -63,7 +63,8 @@ function safeCount(value: unknown, maximum = 5000) {
 
 function safeMetadataCount(metadata: unknown, key: string, fallback: number) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return fallback;
-  return safeCount((metadata as Record<string, unknown>)[key]);
+  const value = (metadata as Record<string, unknown>)[key];
+  return value === undefined ? fallback : safeCount(value);
 }
 
 function mapOutcome(userId: string, row: StoredImportRow): SafeImportRowOutcome {
@@ -184,7 +185,7 @@ export async function listSafeImportHistory(
   return batches
     .map((batch) => {
       const outcomes = batch.importRows
-        .filter((row) => row.userId === user.userId)
+        .filter((row) => row.userId === user.userId && Number.isInteger(row.rowNumber) && row.rowNumber > 0)
         .slice(0, rowLimit)
         .map((row) => mapOutcome(user.userId, row));
       const totalCount = safeCount(batch.rowCount);
