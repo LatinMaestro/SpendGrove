@@ -9,6 +9,11 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const safeValidationMessages = new Set([
+  "A category with this name already exists.",
+  "Choose a category name that is different from the category group names.",
+]);
+
 function safeCategoryError(error: unknown) {
   if (error instanceof ZodError) {
     return error.issues[0]?.message ?? "Check the category details and try again.";
@@ -17,7 +22,7 @@ function safeCategoryError(error: unknown) {
     if (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError") {
       return "Sign in to save categories to your SpendGrove account.";
     }
-    if (error.message.includes("category") || error.message.includes("Category")) return error.message;
+    if (safeValidationMessages.has(error.message)) return error.message;
   }
   return "We could not save that category safely. Please check the details and try again.";
 }
