@@ -12,15 +12,37 @@ const SERVER_DB_IMPORT_PATTERNS = [
   /PrismaClient/,
 ];
 const PRODUCT_WRITE_PATTERNS = [
-  /transaction\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /importBatch\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /importRow\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /category\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /bankImportProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /merchantProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /merchantAlias\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
-  /merchantRule\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/,
+  { name: "transaction.create", pattern: /transaction\.create\s*\(/ },
+  { name: "transaction.createMany", pattern: /transaction\.createMany\s*\(/ },
+  { name: "transaction.update", pattern: /transaction\.update\s*\(/ },
+  { name: "transaction.updateMany", pattern: /transaction\.updateMany\s*\(/ },
+  { name: "transaction.upsert", pattern: /transaction\.upsert\s*\(/ },
+  { name: "transaction.delete", pattern: /transaction\.delete\s*\(/ },
+  { name: "transaction.deleteMany", pattern: /transaction\.deleteMany\s*\(/ },
+  { name: "importBatch.write", pattern: /importBatch\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "importRow.write", pattern: /importRow\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "category.create", pattern: /category\.create\s*\(/ },
+  { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
+  { name: "category.update", pattern: /category\.update\s*\(/ },
+  { name: "category.updateMany", pattern: /category\.updateMany\s*\(/ },
+  { name: "category.upsert", pattern: /category\.upsert\s*\(/ },
+  { name: "category.delete", pattern: /category\.delete\s*\(/ },
+  { name: "category.deleteMany", pattern: /category\.deleteMany\s*\(/ },
+  { name: "bankImportProfile.write", pattern: /bankImportProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "merchantProfile.write", pattern: /merchantProfile\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "merchantAlias.write", pattern: /merchantAlias\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "merchantRule.write", pattern: /merchantRule\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
 ];
+const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
+  [
+    "src/server/manual-transactions.ts",
+    new Set([
+      "transaction.create",
+      "transaction.update",
+      "category.upsert",
+    ]),
+  ],
+]);
 
 async function listFiles(directory: string): Promise<string[]> {
   try {
@@ -65,15 +87,19 @@ describe("server persistence boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("does not add transaction, import, category or merchant product write paths", async () => {
+  it("allows only approved durable manual transaction product write paths", async () => {
     const files = await listFiles("src/server");
     const violations: string[] = [];
 
     for (const file of files) {
       const source = await readFile(file, "utf8");
+      const repoPath = file.split(path.sep).join("/");
+      const approvedWrites = APPROVED_PRODUCT_WRITES.get(repoPath) ?? new Set<string>();
 
-      if (PRODUCT_WRITE_PATTERNS.some((pattern) => pattern.test(source))) {
-        violations.push(file);
+      for (const write of PRODUCT_WRITE_PATTERNS) {
+        if (write.pattern.test(source) && !approvedWrites.has(write.name)) {
+          violations.push(`${repoPath}: ${write.name}`);
+        }
       }
     }
 
