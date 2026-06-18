@@ -6,6 +6,7 @@ import { CheckCircle2, Cloud, LockKeyhole } from "lucide-react";
 import { commitReviewedImport } from "@/lib/account-import-commit";
 import { listAccountManualTransactions } from "@/lib/account-manual-transactions";
 import { createImportCommitRequest, type ImportCommitSummary } from "@/lib/import-commit";
+import { IMPORT_HISTORY_UPDATED_EVENT } from "@/lib/import-history";
 import type { MergeTargetReviewSelection } from "@/lib/import-duplicate-scoring";
 import type { ImportReviewRow } from "@/lib/import-review";
 import type { CsvScanResult } from "@/lib/csv-import";
@@ -74,6 +75,7 @@ export function ImportCommitPanel({
         return;
       }
       setSummary(result.summary);
+      window.dispatchEvent(new Event(IMPORT_HISTORY_UPDATED_EVENT));
       setMessage(result.summary.alreadyCommitted
         ? "This reviewed import was already saved. No duplicate transactions were created."
         : `Import saved: ${result.summary.importedCount} imported, ${result.summary.skippedCount} skipped and ${result.summary.mergedCount} merged.`);
