@@ -21,6 +21,7 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "transaction.deleteMany", pattern: /transaction\.deleteMany\s*\(/ },
   { name: "importBatch.write", pattern: /importBatch\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "importRow.write", pattern: /importRow\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "auditEvent.write", pattern: /auditEvent\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -74,6 +75,16 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "merchantRule.write",
     ]),
   ],
+  [
+    "src/server/import-commit.ts",
+    new Set([
+      "transaction.create",
+      "importBatch.write",
+      "importRow.write",
+      "auditEvent.write",
+      "category.upsert",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
@@ -81,24 +92,13 @@ async function listFiles(directory: string): Promise<string[]> {
     const entries = await readdir(directory, { withFileTypes: true });
     const files = await Promise.all(entries.map((entry) => {
       const entryPath = path.join(directory, entry.name);
-
-      if (entry.isDirectory()) {
-        return listFiles(entryPath);
-      }
-
-      if (CLIENT_FILE_EXTENSIONS.has(path.extname(entry.name))) {
-        return [entryPath];
-      }
-
+      if (entry.isDirectory()) return listFiles(entryPath);
+      if (CLIENT_FILE_EXTENSIONS.has(path.extname(entry.name))) return [entryPath];
       return [];
     }));
-
     return files.flat();
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      return [];
-    }
-
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return [];
     throw error;
   }
 }
@@ -107,34 +107,24 @@ describe("server persistence boundaries", () => {
   it("keeps Prisma and server db imports out of client-facing source folders", async () => {
     const files = (await Promise.all(CLIENT_FACING_DIRS.map(listFiles))).flat();
     const violations: string[] = [];
-
     for (const file of files) {
       const source = await readFile(file, "utf8");
-
-      if (SERVER_DB_IMPORT_PATTERNS.some((pattern) => pattern.test(source))) {
-        violations.push(file);
-      }
+      if (SERVER_DB_IMPORT_PATTERNS.some((pattern) => pattern.test(source))) violations.push(file);
     }
-
     expect(violations).toEqual([]);
   });
 
   it("allows only approved Phase 3A product write paths", async () => {
     const files = await listFiles("src/server");
     const violations: string[] = [];
-
     for (const file of files) {
       const source = await readFile(file, "utf8");
       const repoPath = file.split(path.sep).join("/");
       const approvedWrites = APPROVED_PRODUCT_WRITES.get(repoPath) ?? new Set<string>();
-
       for (const write of PRODUCT_WRITE_PATTERNS) {
-        if (write.pattern.test(source) && !approvedWrites.has(write.name)) {
-          violations.push(`${repoPath}: ${write.name}`);
-        }
+        if (write.pattern.test(source) && !approvedWrites.has(write.name)) violations.push(`${repoPath}: ${write.name}`);
       }
     }
-
     expect(violations).toEqual([]);
   });
 });
