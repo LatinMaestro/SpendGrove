@@ -97,17 +97,17 @@ describe("durable merchant aliases and rules", () => {
     const user = createTestUserContext("user_1");
     const store = createMemoryStore();
     let data = await saveDurableMerchantAlias(user, {
-      alias: "Woolies",
-      canonicalName: "Woolworths",
-      categoryId: groceries,
+      alias: "Lantern Coffee",
+      canonicalName: "Blue Lantern",
+      categoryId: dining,
     }, store);
     const profileId = data.profiles[0].id;
     const aliasId = data.aliases[0].id;
     const ruleId = data.rules[0].id;
 
-    data = await renameDurableMerchantProfile(user, profileId, "Woolworths Metro", store);
-    expect(data.profiles[0].normalizedName).toBe("woolworths metro");
-    expect(data.rules[0].normalizedPattern).toBe("woolworths metro");
+    data = await renameDurableMerchantProfile(user, profileId, "Blue Lantern Cafe", store);
+    expect(data.profiles[0].normalizedName).toBe("blue lantern cafe");
+    expect(data.rules[0].normalizedPattern).toBe("blue lantern cafe");
 
     data = await updateDurableMerchantAlias(user, aliasId, { isActive: false }, store);
     expect(data.aliases[0].isActive).toBe(false);
