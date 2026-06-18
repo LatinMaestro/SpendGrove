@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/app-shell";
 import { DurableManualTransactions } from "@/components/durable-manual-transactions";
+import { ManualTransactionMigrationPanel } from "@/components/manual-transaction-migration-panel";
 import { ManualTransactions } from "@/components/manual-transactions";
 import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
 
@@ -10,7 +11,12 @@ export default function TransactionsPage() {
 
   return (
     <AppShell>
-      {accountPersistenceAvailable ? <DurableManualTransactions /> : <ManualTransactions />}
+      {accountPersistenceAvailable ? (
+        <div className="space-y-5">
+          <ManualTransactionMigrationPanel />
+          <DurableManualTransactions />
+        </div>
+      ) : <ManualTransactions />}
     </AppShell>
   );
 }

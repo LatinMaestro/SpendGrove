@@ -1,5 +1,7 @@
+import { createHash } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { getManualCategory, manualCategories, type ManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
+import type { ManualTransactionMigrationItem } from "@/lib/manual-transaction-migration";
 import {
   validateManualTransactionDraft,
   type ManualTransaction,
@@ -35,6 +37,7 @@ export type DbManualTransactionRecord = {
 };
 
 export type ManualTransactionCreateData = {
+  id?: string;
   type: ManualCategoryType;
   amountCents: number;
   date: Date;
@@ -47,6 +50,7 @@ export type ManualTransactionCreateData = {
 export type ManualTransactionPersistenceStore = {
   listActive(userId: string): Promise<DbManualTransactionRecord[]>;
   findActiveById(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
+  findById?(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
   create(userId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
   update(userId: string, transactionId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
   softDelete(userId: string, transactionId: string, deletedAt: Date): Promise<DbManualTransactionRecord>;
@@ -135,6 +139,24 @@ function getValidatedCategory(draft: ManualTransactionDraft) {
   return { validated, category };
 }
 
+function migrationTransactionId(userId: string, localId: string) {
+  const digest = createHash("sha256").update(`${userId}:${localId}`).digest("hex").slice(0, 40);
+  return `migration_${digest}`;
+}
+
+function migrationItemToDraft(transaction: ManualTransactionMigrationItem): ManualTransactionDraft {
+  const amountCents = transaction.type === "TRANSFER" ? transaction.amountCents : Math.abs(transaction.amountCents);
+  return {
+    type: transaction.type,
+    amountInput: (amountCents / 100).toFixed(2),
+    date: transaction.date,
+    description: transaction.description,
+    categoryId: transaction.categoryId,
+    notes: transaction.notes,
+    csvMatchHint: transaction.csvMatchHint,
+  };
+}
+
 export function createPrismaManualTransactionStore(prisma: PrismaClient = getPrismaClient()): ManualTransactionPersistenceStore {
   return {
     async listActive(userId) {
@@ -170,9 +192,16 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
         include: transactionInclude,
       }) as unknown as Promise<DbManualTransactionRecord | null>;
     },
+    async findById(userId, transactionId) {
+      return prisma.transaction.findFirst({
+        where: { id: transactionId, userId, source: "MANUAL" },
+        include: transactionInclude,
+      }) as unknown as Promise<DbManualTransactionRecord | null>;
+    },
     async create(userId, data) {
       return prisma.transaction.create({
         data: {
+          id: data.id,
           userId,
           categoryId: data.categoryId,
           type: data.type,
@@ -342,4 +371,47 @@ export async function softDeleteDurableManualTransaction(
   const record = await store.softDelete(user.userId, transactionId, now);
   assertUserOwnsRecord(user, record, "transaction");
   return toManualTransaction(record);
+}
+
+export async function migrateDurableManualTransactions(
+  context: AuthenticatedUserContext | null | undefined,
+  localTransactions: ManualTransactionMigrationItem[],
+  store: ManualTransactionPersistenceStore = createPrismaManualTransactionStore(),
+) {
+  const user = requireAuthenticatedUserContext(context);
+  if (!store.findById) throw new Error("Manual transaction migration is unavailable.");
+  let importedCount = 0;
+  let skippedCount = 0;
+
+  for (const localTransaction of localTransactions) {
+    if (localTransaction.deletedAt) {
+      skippedCount += 1;
+      continue;
+    }
+    const transactionId = migrationTransactionId(user.userId, localTransaction.id);
+    if (await store.findById(user.userId, transactionId)) {
+      skippedCount += 1;
+      continue;
+    }
+    const { validated, category } = getValidatedCategory(migrationItemToDraft(localTransaction));
+    const categoryId = await store.resolveSeededCategoryId(user.userId, category);
+    const record = await store.create(user.userId, {
+      id: transactionId,
+      type: validated.type,
+      amountCents: validated.amountCents,
+      date: dateOnlyToUtcDate(validated.date),
+      description: validated.description,
+      categoryId,
+      notes: validated.notes,
+      csvMatchHint: validated.csvMatchHint,
+    });
+    assertUserOwnsRecord(user, record, "transaction");
+    importedCount += 1;
+  }
+
+  return {
+    transactions: await listDurableManualTransactions(user, store),
+    importedCount,
+    skippedCount,
+  };
 }
