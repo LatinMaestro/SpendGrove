@@ -65,6 +65,15 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "bankImportProfile.deleteMany",
     ]),
   ],
+  [
+    "src/server/merchant-rules.ts",
+    new Set([
+      "category.upsert",
+      "merchantProfile.write",
+      "merchantAlias.write",
+      "merchantRule.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
