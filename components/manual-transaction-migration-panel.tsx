@@ -3,8 +3,11 @@
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { CloudUpload, ShieldCheck } from "lucide-react";
-import { migrateAccountManualTransactions } from "@/lib/account-manual-transaction-migration";
-import { loadManualTransactionsFromStorage, saveManualTransactionsToStorage } from "@/lib/manual-transaction-storage";
+import {
+  clearDeviceManualTransactionsAfterMigration,
+  migrateAccountManualTransactions,
+} from "@/lib/account-manual-transaction-migration";
+import { loadManualTransactionsFromStorage } from "@/lib/manual-transaction-storage";
 import { listActiveManualTransactions, type ManualTransaction } from "@/lib/manual-transactions";
 
 export function ManualTransactionMigrationPanel() {
@@ -39,7 +42,7 @@ export function ManualTransactionMigrationPanel() {
       return;
     }
 
-    const cleared = saveManualTransactionsToStorage(window.localStorage, []);
+    const cleared = clearDeviceManualTransactionsAfterMigration(window.localStorage, result);
     setStorageAvailable(cleared);
     setLocalTransactions([]);
     setMigrationComplete(true);
