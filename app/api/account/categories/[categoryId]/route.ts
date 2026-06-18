@@ -14,6 +14,12 @@ type RouteContext = {
   };
 };
 
+const safeValidationMessages = new Set([
+  "A category with this name already exists.",
+  "Choose a category name that is different from the category group names.",
+  "Choose a category change before saving.",
+]);
+
 function safeCategoryError(error: unknown) {
   if (error instanceof ZodError) {
     return error.issues[0]?.message ?? "Check the category details and try again.";
@@ -23,7 +29,7 @@ function safeCategoryError(error: unknown) {
       return "Sign in to update account categories.";
     }
     if (error.name === "OwnershipError") return "That custom category could not be found for your account.";
-    if (error.message.includes("category") || error.message.includes("Category")) return error.message;
+    if (safeValidationMessages.has(error.message)) return error.message;
   }
   return "We could not update that category safely. Please try again.";
 }
