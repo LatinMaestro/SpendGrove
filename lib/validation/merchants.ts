@@ -14,6 +14,16 @@ const merchantNameSchema = z.string()
 
 const normalizedMerchantNameSchema = merchantNameSchema.transform((value) => value.toLocaleLowerCase("en-AU"));
 
+// Preserve the established MerchantRule behavior: private fragments are sanitised
+// by normalizeSafeText instead of rejecting the full rule input.
+const merchantRulePatternSchema = z.string()
+  .trim()
+  .min(1)
+  .max(160)
+  .transform(normalizeSafeText);
+
+const normalizedMerchantRulePatternSchema = merchantRulePatternSchema.transform((value) => value.toLowerCase());
+
 export const merchantProfileSchema = z.object({
   userId: z.string().min(1),
   name: merchantNameSchema,
@@ -54,14 +64,14 @@ const merchantRuleFields = z.object({
   merchantProfileId: z.string().min(1).optional(),
   categoryId: z.string().min(1).optional(),
   type: merchantRuleTypeSchema,
-  pattern: merchantNameSchema,
-  normalizedPattern: normalizedMerchantNameSchema,
+  pattern: merchantRulePatternSchema,
+  normalizedPattern: normalizedMerchantRulePatternSchema,
   priority: z.number().int().min(0).max(1000).default(100),
   isActive: z.boolean().default(true),
 }).strict();
 
 export const merchantRuleCreateSchema = merchantRuleFields.superRefine((value, context) => {
-  if (value.normalizedPattern !== value.pattern.toLocaleLowerCase("en-AU")) {
+  if (value.normalizedPattern !== value.pattern.toLowerCase()) {
     context.addIssue({ code: "custom", path: ["normalizedPattern"], message: "Normalised pattern must match the safe lower-case merchant pattern." });
   }
 });
@@ -70,8 +80,8 @@ export const merchantRuleUpdateSchema = z.object({
   merchantProfileId: z.string().min(1).nullable().optional(),
   categoryId: z.string().min(1).nullable().optional(),
   type: merchantRuleTypeSchema.optional(),
-  pattern: merchantNameSchema.optional(),
-  normalizedPattern: normalizedMerchantNameSchema.optional(),
+  pattern: merchantRulePatternSchema.optional(),
+  normalizedPattern: normalizedMerchantRulePatternSchema.optional(),
   priority: z.number().int().min(0).max(1000).optional(),
   isActive: z.boolean().optional(),
   deactivatedAt: z.coerce.date().nullable().optional(),
