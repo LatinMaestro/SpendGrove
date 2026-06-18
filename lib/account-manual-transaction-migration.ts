@@ -1,3 +1,5 @@
+import type { ManualTransactionStorage } from "@/lib/manual-transaction-storage";
+import { saveManualTransactionsToStorage } from "@/lib/manual-transaction-storage";
 import type { ManualTransaction } from "@/lib/manual-transactions";
 
 export type AccountManualTransactionMigrationResult =
@@ -19,4 +21,12 @@ export async function migrateAccountManualTransactions(
   } catch {
     return { ok: false, error: "Account storage is unavailable. Your device copy was not changed." };
   }
+}
+
+export function clearDeviceManualTransactionsAfterMigration(
+  storage: ManualTransactionStorage,
+  result: AccountManualTransactionMigrationResult,
+) {
+  if (!result.ok) return false;
+  return saveManualTransactionsToStorage(storage, []);
 }
