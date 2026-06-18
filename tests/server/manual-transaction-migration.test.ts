@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { clearDeviceManualTransactionsAfterMigration } from "@/lib/account-manual-transaction-migration";
 import { manualCategories, type ManualCategory } from "@/lib/manual-categories";
+import { MANUAL_TRANSACTION_STORAGE_KEY } from "@/lib/manual-transactions";
 import { manualTransactionMigrationRequestSchema, type ManualTransactionMigrationItem } from "@/lib/manual-transaction-migration";
 import { AuthenticationRequiredError } from "@/src/server/auth/ownership";
 import {
@@ -33,8 +35,17 @@ function migrationItem(overrides: Partial<ManualTransactionMigrationItem> = {}):
 function createMigrationStore() {
   const records: DbManualTransactionRecord[] = [];
   const categories = new Map<string, { id: string; name: string; type: string; parent: { name: string } }>();
-  const store: ManualTransactionPersistenceStore & { records: typeof records } = {
+  let failOnCreateNumber: number | null = null;
+  let createAttempts = 0;
+  const store: ManualTransactionPersistenceStore & {
+    records: typeof records;
+    setFailOnCreateNumber(value: number | null): void;
+  } = {
     records,
+    setFailOnCreateNumber(value) {
+      failOnCreateNumber = value;
+      createAttempts = 0;
+    },
     async listActive(userId) {
       return records.filter((record) => record.userId === userId && !record.deletedAt);
     },
@@ -45,6 +56,8 @@ function createMigrationStore() {
       return records.find((record) => record.userId === userId && record.id === transactionId) ?? null;
     },
     async create(userId, data) {
+      createAttempts += 1;
+      if (failOnCreateNumber === createAttempts) throw new Error("synthetic account write failure");
       const category = categories.get(`${userId}:${data.categoryId}`);
       if (!category) throw new Error("category not materialised");
       const record: DbManualTransactionRecord = {
@@ -93,6 +106,21 @@ describe("manual transaction migration assistant", () => {
     expect(store.records).toHaveLength(1);
   });
 
+  it("resumes safely after an interrupted account write without duplicating completed items", async () => {
+    const store = createMigrationStore();
+    const input = [migrationItem(), migrationItem({ id: "local-transaction-2", amountCents: -5678 })];
+    store.setFailOnCreateNumber(2);
+    await expect(migrateDurableManualTransactions(createTestUserContext("user_1"), input, store))
+      .rejects.toThrow("synthetic account write failure");
+    expect(store.records).toHaveLength(1);
+
+    store.setFailOnCreateNumber(null);
+    const retry = await migrateDurableManualTransactions(createTestUserContext("user_1"), input, store);
+    expect(retry).toMatchObject({ importedCount: 1, skippedCount: 1 });
+    expect(store.records).toHaveLength(2);
+    expect(new Set(store.records.map((record) => record.id)).size).toBe(2);
+  });
+
   it("keeps deterministic migration identities user-scoped", async () => {
     const store = createMigrationStore();
     await migrateDurableManualTransactions(createTestUserContext("user_1"), [migrationItem()], store);
@@ -106,6 +134,27 @@ describe("manual transaction migration assistant", () => {
     const store = createMigrationStore();
     await expect(migrateDurableManualTransactions(null, [migrationItem()], store)).rejects.toThrow(AuthenticationRequiredError);
     expect(store.records).toEqual([]);
+  });
+
+  it("never clears the device copy after a failed account migration", () => {
+    const writes: Array<{ key: string; value: string }> = [];
+    const storage = {
+      getItem: () => null,
+      setItem(key: string, value: string) {
+        writes.push({ key, value });
+      },
+    };
+    expect(clearDeviceManualTransactionsAfterMigration(storage, { ok: false, error: "synthetic failure" })).toBe(false);
+    expect(writes).toEqual([]);
+
+    expect(clearDeviceManualTransactionsAfterMigration(storage, {
+      ok: true,
+      transactions: [],
+      importedCount: 1,
+      skippedCount: 0,
+    })).toBe(true);
+    expect(writes).toHaveLength(1);
+    expect(writes[0].key).toBe(MANUAL_TRANSACTION_STORAGE_KEY);
   });
 
   it("rejects raw fields, private identifiers and invalid money direction", () => {
