@@ -42,6 +42,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "category.upsert",
     ]),
   ],
+  [
+    "src/server/custom-categories.ts",
+    new Set([
+      "category.create",
+      "category.update",
+      "category.upsert",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
@@ -87,7 +95,7 @@ describe("server persistence boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("allows only approved durable manual transaction product write paths", async () => {
+  it("allows only approved Phase 3A product write paths", async () => {
     const files = await listFiles("src/server");
     const violations: string[] = [];
 
