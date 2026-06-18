@@ -8,13 +8,18 @@ import {
 
 export const dynamic = "force-dynamic";
 
+const safeMigrationMessages = new Set([
+  "Choose valid saved categories before moving them to your account.",
+  "Choose category names that are different from the category group names.",
+]);
+
 function safeMigrationError(error: unknown) {
   if (error instanceof ZodError) return error.issues[0]?.message ?? "Check the saved categories and try again.";
   if (error instanceof Error) {
     if (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError") {
       return "Sign in before moving categories to your account.";
     }
-    if (error.message.includes("category") || error.message.includes("Category")) return error.message;
+    if (safeMigrationMessages.has(error.message)) return error.message;
   }
   return "We could not move those categories safely. Your device copy was not changed.";
 }
