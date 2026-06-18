@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import type { MerchantConflictResolution } from "@/lib/merchant-rules";
+import type { LocalMerchantData, MerchantConflictResolution } from "@/lib/merchant-rules";
 import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import {
   clearDurableMerchantData,
@@ -8,6 +8,7 @@ import {
   saveDurableMerchantRule,
 } from "@/src/server/merchant-rules";
 import { safeMerchantRouteError } from "@/src/server/merchant-route-errors";
+import { replaceDurableMerchantData } from "@/src/server/merchant-snapshot";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, data }, { status: 201 });
     }
     throw new Error("Check the merchant details and try again.");
+  } catch (error) {
+    const safe = safeMerchantRouteError(error);
+    return NextResponse.json(safe.body, { status: safe.status });
+  }
+}
+
+export async function PUT(request: Request) {
+  try {
+    const payload = await request.json() as { data?: LocalMerchantData };
+    if (!payload.data) throw new Error("Check the merchant details and try again.");
+    const data = await replaceDurableMerchantData(await getCurrentUserContext(), payload.data);
+    return NextResponse.json({ ok: true, data });
   } catch (error) {
     const safe = safeMerchantRouteError(error);
     return NextResponse.json(safe.body, { status: safe.status });
