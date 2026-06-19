@@ -9,7 +9,17 @@ const referenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transact
 const standaloneReferenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|member|policy)\b/gi;
 const referenceTokenPattern = /^(?=.{5,}$)(?:\d{4,}|(?=[a-z0-9-]*\d[a-z0-9-]*\d[a-z0-9-]*\d)[a-z0-9-]+)$/i;
 
-function baseWords(value: string) { return sanitizeTransactionNarration(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("en-AU").replace(/\b(?:pty|ltd|limited|australia|aus)\b/g, " ").replace(/[^a-z0-9-]+/g, " ").replace(/\s+/g, " ").trim(); }
+function baseWords(value: string) {
+  return sanitizeTransactionNarration(value)
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("en-AU")
+    .replace(/\b(?:pty|ltd|limited|australia|aus)\b/g, " ")
+    .replace(/\b(?:store|shop|branch)\s+[a-z0-9]+\b/g, " ")
+    .replace(/[^a-z0-9-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
 export function canonicalMerchantGroupingKey(value: string) {
   const original = baseWords(value);
