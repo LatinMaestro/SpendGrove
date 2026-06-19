@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportReviewRow } from "@/lib/import-review";
-import { countReadyImportRows, filterImportReviewRows, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
+import { countReadyImportRows, countRowsInNeedsReviewCategory, createImportReviewWorkingSet, filterImportReviewRows, filterImportReviewRowsByWorkingSet, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowHasHardBlocker, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
 import { manualCategories } from "@/lib/manual-categories";
 
 const categoryId = (name: string) => manualCategories.find((category) => category.name === name)!.id;
@@ -9,7 +9,7 @@ function row(overrides: Partial<ImportReviewRow> = {}): ImportReviewRow {
 }
 
 describe("import review readiness and filtering", () => {
-  it("removes Needs review after a valid category when no blocker remains", () => {
+  it("removes Needs review after a valid category when no warning remains", () => {
     const ready = row();
     expect(importReviewRowNeedsAttention(ready)).toBe(false);
     expect(importReviewRowBlockers(ready)).toEqual([]);
@@ -23,14 +23,38 @@ describe("import review readiness and filtering", () => {
     expect(importReviewBlockerMessage(blockers)).toContain("non-zero amount");
   });
 
-  it("filters unresolved rows without changing row objects", () => {
+  it("treats the approved Needs review category as a soft warning", () => {
+    const needsReview = row({ categoryId: categoryId("Needs review"), categoryConfirmed: false });
+    expect(importReviewRowHasHardBlocker(needsReview)).toBe(false);
+    expect(importReviewRowNeedsAttention(needsReview)).toBe(true);
+    expect(countRowsInNeedsReviewCategory([needsReview])).toBe(1);
+  });
+
+  it("keeps a captured filtered working set stable after category selection", () => {
+    const unresolved = row({ id: "unresolved", categoryId: categoryId("Needs review"), categoryConfirmed: false });
+    const alreadyReady = row({ id: "ready" });
+    const workingSet = createImportReviewWorkingSet([unresolved, alreadyReady]);
+    expect(workingSet).toEqual(["unresolved"]);
+
+    const resolved = row({ id: "unresolved", categoryId: categoryId("Groceries"), categoryConfirmed: true });
+    const visible = filterImportReviewRowsByWorkingSet([resolved, alreadyReady], workingSet);
+    expect(visible).toEqual([resolved]);
+    expect(importReviewRowNeedsAttention(visible[0])).toBe(false);
+  });
+
+  it("refreshes the filtered set only when intentionally recaptured", () => {
+    const unresolved = row({ id: "unresolved", categoryId: categoryId("Needs review"), categoryConfirmed: false });
+    const initial = createImportReviewWorkingSet([unresolved]);
+    const resolved = row({ id: "unresolved", categoryId: categoryId("Groceries"), categoryConfirmed: true });
+    expect(filterImportReviewRowsByWorkingSet([resolved], initial)).toHaveLength(1);
+    expect(filterImportReviewRowsByWorkingSet([resolved], createImportReviewWorkingSet([resolved]))).toHaveLength(0);
+  });
+
+  it("retains the dynamic filter helper for non-working-set callers", () => {
     const ready = row({ id: "ready" });
     const unresolved = row({ id: "unresolved", categoryId: categoryId("Needs review"), categoryConfirmed: false });
-    const rows = [ready, unresolved];
-    const filtered = filterImportReviewRows(rows, true);
-    expect(filtered).toEqual([unresolved]);
-    expect(filtered[0]).toBe(unresolved);
-    expect(filterImportReviewRows(rows, false)).toBe(rows);
+    expect(filterImportReviewRows([ready, unresolved], true)).toEqual([unresolved]);
+    expect(filterImportReviewRows([ready, unresolved], false)).toEqual([ready, unresolved]);
   });
 
   it("keeps unresolved Merge rows filtered until an eligible target is chosen", () => {
