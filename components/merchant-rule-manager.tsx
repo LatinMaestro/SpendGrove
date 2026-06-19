@@ -50,6 +50,7 @@ export function MerchantRuleManager({
   recoveredFromCorruption,
   migrated,
   staleReferenceCount,
+  onDataChange,
   onRenameProfile,
   onRenameAlias,
   onAliasActiveChange,
@@ -63,6 +64,7 @@ export function MerchantRuleManager({
   recoveredFromCorruption: boolean;
   migrated: boolean;
   staleReferenceCount: number;
+  onDataChange(data: LocalMerchantData): void;
   onRenameProfile(profileId: string, name: string): void;
   onRenameAlias(aliasId: string, name: string, resolution?: MerchantConflictResolution): void;
   onAliasActiveChange(aliasId: string, isActive: boolean): void;
@@ -112,19 +114,22 @@ export function MerchantRuleManager({
             return;
           }
           saveMerchantRulesToStorage(window.localStorage, migration.data);
+          onDataChange(migration.data);
           accountReadyRef.current = true;
           lastSyncedRef.current = JSON.stringify(migration.data);
           setAccountBacked(true);
-          setMessage(`Moved ${migration.importedCount ?? 0} merchant item${migration.importedCount === 1 ? "" : "s"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}.`);
-          window.location.reload();
+          setMessage(`Moved ${migration.importedCount ?? 0} merchant item${migration.importedCount === 1 ? "" : "s"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}. Your active import review was kept open.`);
           return;
         }
 
         saveMerchantRulesToStorage(window.localStorage, result.data);
+        onDataChange(result.data);
         accountReadyRef.current = true;
         lastSyncedRef.current = accountSerialized;
         setAccountBacked(true);
-        if (merchantItemCount(result.data) > 0) window.location.reload();
+        if (merchantItemCount(result.data) > 0) {
+          setMessage("Account merchant suggestions loaded. Your active import review was kept open.");
+        }
       } catch {
         if (!cancelled) setAccountBacked(false);
       }
@@ -145,19 +150,19 @@ export function MerchantRuleManager({
       if (!result.ok) {
         accountReadyRef.current = false;
         setAccountBacked(false);
-        setMessage(`${result.error} Your device copy was kept.`);
+        setMessage(`${result.error} Your device copy and active review were kept.`);
         return;
       }
       const accountSerialized = JSON.stringify(result.data);
       lastSyncedRef.current = accountSerialized;
       saveMerchantRulesToStorage(window.localStorage, result.data);
+      if (accountSerialized !== serialized) onDataChange(result.data);
       setAccountBacked(true);
-      setMessage("Merchant suggestions saved to your account.");
-      if (accountSerialized !== serialized) window.location.reload();
+      setMessage("Merchant suggestions saved to your account. Your active import review was kept open.");
     }).catch(() => {
       accountReadyRef.current = false;
       setAccountBacked(false);
-      setMessage("Account storage is unavailable right now. Your device copy was kept.");
+      setMessage("Account storage is unavailable right now. Your device copy and active review were kept.");
     }).finally(() => {
       syncInFlightRef.current = false;
     });
@@ -188,11 +193,8 @@ export function MerchantRuleManager({
         ? "The existing saved match was kept."
         : accountBacked ? "Saving matching name to your account…" : "Matching name updated on this device.");
     } catch (error) {
-      if (error instanceof MerchantConflictError) {
-        setAliasConflict(error.conflict);
-      } else {
-        setMessage(error instanceof Error ? error.message : "The matching name could not be updated.");
-      }
+      if (error instanceof MerchantConflictError) setAliasConflict(error.conflict);
+      else setMessage(error instanceof Error ? error.message : "The matching name could not be updated.");
     }
   }
 
