@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { MergeTargetReviewSelection } from "@/lib/import-duplicate-scoring";
 import type { ImportReviewRow } from "@/lib/import-review";
+import { getManualCategory } from "@/lib/manual-categories";
 import { nonZeroCentsSchema } from "@/lib/validation/money";
 import { containsPrivateBankIdentifier } from "@/lib/validation/privacy";
 
@@ -80,6 +81,14 @@ export type ImportCommitSummary = {
   alreadyCommitted: boolean;
 };
 
+function reviewedWarningCodes(row: ImportReviewRow) {
+  const category = getManualCategory(row.categoryId);
+  return Array.from(new Set([
+    ...row.warningCodes,
+    ...(category?.name === "Needs review" ? ["NEEDS_REVIEW_CATEGORY"] : []),
+  ]));
+}
+
 export function createImportCommitRequest(input: {
   requestId: string;
   rows: ImportReviewRow[];
@@ -92,9 +101,9 @@ export function createImportCommitRequest(input: {
       if (row.action === "SKIP") {
         return { rowNumber: row.rowNumber, action: "SKIP" as const, warningCodes: row.warningCodes };
       }
-      if (!row.date || row.amountCents === null) {
-        throw new Error(`Row ${row.rowNumber} needs a valid date and amount before it can be committed.`);
-      }
+      if (!row.date) throw new Error(`Row ${row.rowNumber}: invalid date.`);
+      if (row.amountCents === null || row.amountCents === 0) throw new Error(`Row ${row.rowNumber}: invalid amount.`);
+      if (!getManualCategory(row.categoryId)) throw new Error(`Row ${row.rowNumber}: category not recognised.`);
       const reviewed = {
         rowNumber: row.rowNumber,
         action: row.action,
@@ -103,12 +112,12 @@ export function createImportCommitRequest(input: {
         description: row.description || row.merchantName || "Payment",
         merchantName: row.merchantName || row.description || "Payment",
         categoryId: row.categoryId,
-        warningCodes: row.warningCodes,
+        warningCodes: reviewedWarningCodes(row),
       };
       if (row.action === "MERGE") {
         const selection = input.mergeSelections[row.id];
         if (!selection || selection.status !== "REVIEW_ONLY") {
-          throw new Error(`Row ${row.rowNumber} needs an existing manual transaction selected as its merge target.`);
+          throw new Error(`Row ${row.rowNumber}: merge target missing.`);
         }
         return { ...reviewed, action: "MERGE" as const, targetTransactionId: selection.targetTransactionId };
       }

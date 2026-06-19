@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient, type TransactionType } from "@prisma/client";
 import { getManualCategory, manualCategories, type ManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
 import { normalizeMerchantName } from "@/lib/merchant-rules";
@@ -72,19 +73,6 @@ async function resolveOwnedCategory(tx: Prisma.TransactionClient, userId: string
   return owned;
 }
 
-async function findMerchantProfileId(tx: Prisma.TransactionClient, userId: string, merchantName: string) {
-  try {
-    const normalizedName = normalizeMerchantName(merchantName);
-    const profile = await tx.merchantProfile.findFirst({
-      where: { userId, normalizedName, isActive: true, deletedAt: null },
-      select: { id: true },
-    });
-    return profile?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
 function summaryFromBatch(batch: {
   id: string;
   rowCount: number;
@@ -146,22 +134,58 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             },
           });
 
+          const reviewedRows = request.rows.filter((row) => row.action !== "SKIP");
+          const categoryByRequestedId = new Map<string, { id: string; type: string }>();
+          for (const categoryId of new Set(reviewedRows.map((row) => row.categoryId))) {
+            categoryByRequestedId.set(categoryId, await resolveOwnedCategory(tx, userId, categoryId));
+          }
+
+          const mergeTargetIds = request.rows.flatMap((row) => row.action === "MERGE" ? [row.targetTransactionId] : []);
+          const mergeTargets = mergeTargetIds.length === 0 ? [] : await tx.transaction.findMany({
+            where: {
+              id: { in: mergeTargetIds },
+              userId,
+              source: "MANUAL",
+              status: "ACTIVE",
+              deletedAt: null,
+              splitRole: { not: "PARENT" },
+            },
+            select: { id: true },
+          });
+          const availableMergeTargets = new Set(mergeTargets.map((target) => target.id));
+          if (mergeTargetIds.some((targetId) => !availableMergeTargets.has(targetId))) {
+            throw new OwnershipError("manual merge target");
+          }
+
+          const normalizedMerchantByRow = new Map<number, string>();
+          reviewedRows.forEach((row) => {
+            try { normalizedMerchantByRow.set(row.rowNumber, normalizeMerchantName(row.merchantName)); } catch { /* no profile link */ }
+          });
+          const normalizedMerchantNames = Array.from(new Set(normalizedMerchantByRow.values()));
+          const merchantProfiles = normalizedMerchantNames.length === 0 ? [] : await tx.merchantProfile.findMany({
+            where: { userId, normalizedName: { in: normalizedMerchantNames }, isActive: true, deletedAt: null },
+            select: { id: true, normalizedName: true },
+          });
+          const merchantProfileByNormalizedName = new Map(merchantProfiles.map((profile) => [profile.normalizedName, profile.id]));
+
+          const transactionCreates: Prisma.TransactionCreateManyInput[] = [];
+          const importRowCreates: Prisma.ImportRowCreateManyInput[] = [];
+
           for (const row of request.rows) {
             if (row.action === "SKIP") {
-              await tx.importRow.create({
-                data: {
-                  userId,
-                  importBatchId: batch.id,
-                  rowNumber: row.rowNumber,
-                  action: "SKIP",
-                  status: "SKIPPED",
-                  warningCodes: row.warningCodes,
-                },
+              importRowCreates.push({
+                userId,
+                importBatchId: batch.id,
+                rowNumber: row.rowNumber,
+                action: "SKIP",
+                status: "SKIPPED",
+                warningCodes: row.warningCodes,
               });
               continue;
             }
 
-            const category = await resolveOwnedCategory(tx, userId, row.categoryId);
+            const category = categoryByRequestedId.get(row.categoryId);
+            if (!category) throw new OwnershipError("approved category");
             const description = sanitizeBankDescription(row.description || row.merchantName) || "Payment";
             const merchantName = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
             assertNoPrivateBankIdentifiers(description, "Reviewed description");
@@ -169,74 +193,60 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             const mappedDate = dateOnlyToUtcDate(row.date);
 
             if (row.action === "MERGE") {
-              const target = await tx.transaction.findFirst({
-                where: {
-                  id: row.targetTransactionId,
-                  userId,
-                  source: "MANUAL",
-                  status: "ACTIVE",
-                  deletedAt: null,
-                  splitRole: { not: "PARENT" },
-                },
-                select: { id: true },
-              });
-              if (!target) throw new OwnershipError("manual merge target");
-              await tx.importRow.create({
-                data: {
-                  userId,
-                  importBatchId: batch.id,
-                  rowNumber: row.rowNumber,
-                  action: "MERGE",
-                  status: "MERGED",
-                  mappedDate,
-                  amountCents: row.amountCents,
-                  description,
-                  merchantName,
-                  categoryId: category.id,
-                  matchedTransactionId: target.id,
-                  warningCodes: row.warningCodes,
-                },
-              });
-              continue;
-            }
-
-            const merchantProfileId = await findMerchantProfileId(tx, userId, merchantName);
-            const transaction = await tx.transaction.create({
-              data: {
-                userId,
-                categoryId: category.id,
-                importBatchId: batch.id,
-                merchantProfileId,
-                type: transactionType(category.type),
-                source: "IMPORTED",
-                status: "ACTIVE",
-                splitRole: "NONE",
-                amountCents: row.amountCents,
-                date: mappedDate,
-                description,
-                importedDescriptionSanitized: description,
-                merchantName,
-                reviewedAt: now,
-              },
-              select: { id: true },
-            });
-            await tx.importRow.create({
-              data: {
+              importRowCreates.push({
                 userId,
                 importBatchId: batch.id,
                 rowNumber: row.rowNumber,
-                action: "IMPORT",
-                status: "COMMITTED",
+                action: "MERGE",
+                status: "MERGED",
                 mappedDate,
                 amountCents: row.amountCents,
                 description,
                 merchantName,
                 categoryId: category.id,
-                committedTransactionId: transaction.id,
+                matchedTransactionId: row.targetTransactionId,
                 warningCodes: row.warningCodes,
-              },
+              });
+              continue;
+            }
+
+            const transactionId = randomUUID();
+            const normalizedMerchantName = normalizedMerchantByRow.get(row.rowNumber);
+            transactionCreates.push({
+              id: transactionId,
+              userId,
+              categoryId: category.id,
+              importBatchId: batch.id,
+              merchantProfileId: normalizedMerchantName ? merchantProfileByNormalizedName.get(normalizedMerchantName) ?? null : null,
+              type: transactionType(category.type),
+              source: "IMPORTED",
+              status: "ACTIVE",
+              splitRole: "NONE",
+              amountCents: row.amountCents,
+              date: mappedDate,
+              description,
+              importedDescriptionSanitized: description,
+              merchantName,
+              reviewedAt: now,
+            });
+            importRowCreates.push({
+              userId,
+              importBatchId: batch.id,
+              rowNumber: row.rowNumber,
+              action: "IMPORT",
+              status: "COMMITTED",
+              mappedDate,
+              amountCents: row.amountCents,
+              description,
+              merchantName,
+              categoryId: category.id,
+              committedTransactionId: transactionId,
+              warningCodes: row.warningCodes,
             });
           }
+
+          if (transactionCreates.length > 0) await tx.transaction.createMany({ data: transactionCreates });
+          if (importRowCreates.length > 0) await tx.importRow.createMany({ data: importRowCreates });
 
           const auditMetadata = {
             totalCount: request.rows.length,
@@ -263,7 +273,7 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             },
           });
           return summaryFromBatch({ ...batch, warningCodes }, false);
-        });
+        }, { maxWait: 10_000, timeout: 30_000 });
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const committed = await prisma.importBatch.findFirst({
