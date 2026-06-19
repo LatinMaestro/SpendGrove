@@ -78,7 +78,7 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
   [
     "src/server/import-commit.ts",
     new Set([
-      "transaction.create",
+      "transaction.createMany",
       "importBatch.write",
       "importRow.write",
       "auditEvent.write",
