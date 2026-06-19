@@ -13,8 +13,8 @@ Last updated: 19 June 2026
 
 - Latest functional PR: [#33](https://github.com/LatinMaestro/SpendGrove/pull/33), merged into `main` on 19 June 2026.
 - Acceptance-fix merge commit: `2f86fa7a9e5528b654491f7993fd11ed0bf487d2`.
-- Documentation branch: `codex/phase-3a-context-handoff`; merge its green closeout PR, then treat it as complete.
-- After the documentation PR merges, there should be no implementation PR or branch requiring continuation.
+- Documentation closeout: [#34](https://github.com/LatinMaestro/SpendGrove/pull/34). If this file is on `main`, PR #34 has completed and there should be no implementation PR requiring continuation.
+- Post-PR #33 `main` deployment was Ready / green: https://vercel.com/latinmaestros-projects/spendgrove/57XMMdwUANHvWZs8z666FrPqnmTg
 
 ## Acceptance fixes completed
 
@@ -34,7 +34,7 @@ Last updated: 19 June 2026
 - PR #33 Vercel deployment: https://vercel.com/latinmaestros-projects/spendgrove/GZA2Ga6KsiwdFwVqh13o8G5PBFMQ
 - PR #33 preview: https://spendgrove-git-codex-phase-3a-acc-9c0995-latinmaestros-projects.vercel.app
 - PR #33 tests and production build passed through the Vercel project gate.
-- The post-merge `main` deployment must be confirmed green before this documentation closeout is merged.
+- The post-merge `main` deployment is confirmed green.
 - Automated signed-in browser retesting was not completed because the approved browser run was unavailable; do not describe the acceptance flow as manually verified.
 
 ## Database and environment status
