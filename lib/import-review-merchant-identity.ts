@@ -6,6 +6,7 @@ import { sanitizeTransactionNarration } from "@/lib/validation/privacy";
 const genericMerchantKeys = new Set(["bank transfer", "transfer", "payment", "deposit", "cba", "commonwealth bank"]);
 const ambiguousTransferKeyPattern = /\b(?:bank transfer|transfer to|transfer from|pay anyone|osko|payment)\b/i;
 const referenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|payment id|member|policy|account)\s*[:#-]?\s*[a-z0-9-]{4,}\b/gi;
+const standaloneReferenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|member|policy)\b/gi;
 const referenceTokenPattern = /^(?=.{5,}$)(?:\d{4,}|(?=[a-z0-9-]*\d[a-z0-9-]*\d[a-z0-9-]*\d)[a-z0-9-]+)$/i;
 
 function baseWords(value: string) { return sanitizeTransactionNarration(value).normalize("NFKD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("en-AU").replace(/\b(?:pty|ltd|limited|australia|aus)\b/g, " ").replace(/[^a-z0-9-]+/g, " ").replace(/\s+/g, " ").trim(); }
@@ -13,7 +14,7 @@ function baseWords(value: string) { return sanitizeTransactionNarration(value).n
 export function canonicalMerchantGroupingKey(value: string) {
   const original = baseWords(value);
   if (!original || genericMerchantKeys.has(original) || ambiguousTransferKeyPattern.test(original)) return original;
-  const withoutMarkedReferences = baseWords(value.replace(referenceMarkerPattern, " "));
+  const withoutMarkedReferences = baseWords(value.replace(referenceMarkerPattern, " ")).replace(standaloneReferenceMarkerPattern, " ").replace(/\s+/g, " ").trim();
   const filtered = withoutMarkedReferences.split(" ").filter((token) => !referenceTokenPattern.test(token)).join(" ").trim();
   if (filtered.length < 3 || genericMerchantKeys.has(filtered)) return original;
   return filtered;
