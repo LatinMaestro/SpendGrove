@@ -5,63 +5,65 @@ Last updated: 19 June 2026
 ## Current state
 
 - Active phase: Phase 3A — Persistence & Commit Foundation.
-- Formal status: implementation complete; pending client acceptance.
-- Current objective: stop implementation and support client retesting of the Phase 3A acceptance fixes.
-- Do not start Phase 4, Phase 3B or any later module without explicit client approval.
+- Formal status: implementation complete; pending client acceptance and signed-in retesting.
+- Current objective: stop implementation and support client retesting of the latest Phase 3A acceptance fixes.
+- Do not start Phase 3B, Phase 4, Production migration or any later module without explicit client approval.
 
 ## Repository truth at handoff
 
-- Latest functional PR: [#33](https://github.com/LatinMaestro/SpendGrove/pull/33), merged into `main` on 19 June 2026.
-- Acceptance-fix merge commit: `2f86fa7a9e5528b654491f7993fd11ed0bf487d2`.
-- Documentation closeout: [#34](https://github.com/LatinMaestro/SpendGrove/pull/34). If this file is on `main`, PR #34 has completed and there should be no implementation PR requiring continuation.
-- Post-PR #33 `main` deployment was Ready / green: https://vercel.com/latinmaestros-projects/spendgrove/57XMMdwUANHvWZs8z666FrPqnmTg
+- Latest functional PR: [#35](https://github.com/LatinMaestro/SpendGrove/pull/35), merged green on 19 June 2026.
+- Latest functional merge commit: `79cc223af8de322ca92d766890d570ed11a358e4`.
+- PR #35 preview: https://spendgrove-git-codex-phase-3a-mer-745726-latinmaestros-projects.vercel.app
+- PR #35 deployment: https://vercel.com/latinmaestros-projects/spendgrove/GJNsxAKJ9UtvTMBcjn5RyLqnEbLB
+- Post-merge `main` deployment: https://vercel.com/latinmaestros-projects/spendgrove/HB39xGzb8LujrqvUpEXTxkU6iCDZ
+- Tests and Next.js production build passed; post-merge `main` is Ready / green.
 
-## Acceptance fixes completed
+## Sign-in finding
 
-- Saving or syncing merchant aliases/rules no longer reloads the page or discards the active CSV review.
-- Large imports are paginated at 25 rows per page; a 600-row import presents 24 pages instead of rendering every row at once.
-- Expensive duplicate-candidate work is limited to visible review rows.
-- The summary reports actionable rows that still need review rather than only parser warning totals.
-- Commit remains blocked until actionable review items are resolved.
-- Saved mapping controls appear after column matching and confirmation.
-- Mapping changes no longer force an unnecessary review remount.
-- Review choices, category changes, tax flags and merge targets persist while moving between pages.
-- Mobile bottom spacing respects safe areas.
-- Synthetic tests cover pagination, review counting, merge targets and source-level acceptance guards.
+The client video reached Clerk’s password step, displayed an incorrect-password response, and then displayed provider rate limiting after repeated attempts. Repository inspection found the Clerk provider, middleware, public/protected route policy, modal controls and signed-in state handling present and consistent. No app-side auth code defect was identified.
 
-## Evidence
+Signed-in Phase 3A testing remains unverified. The client should wait for Clerk’s rate limit to clear, then use the modal’s password-reset path or create a fresh synthetic test account. Do not request or share passwords, Clerk keys, secrets, environment values or private screenshots.
 
-- PR #33 Vercel deployment: https://vercel.com/latinmaestros-projects/spendgrove/GZA2Ga6KsiwdFwVqh13o8G5PBFMQ
-- PR #33 preview: https://spendgrove-git-codex-phase-3a-acc-9c0995-latinmaestros-projects.vercel.app
-- PR #33 tests and production build passed through the Vercel project gate.
-- The post-merge `main` deployment is confirmed green.
-- Automated signed-in browser retesting was not completed because the approved browser run was unavailable; do not describe the acceptance flow as manually verified.
+## Latest acceptance fixes completed
 
-## Database and environment status
+- Choosing a valid category manually automatically saves the safe merchant/category rule.
+- Editing a cleaned merchant name is available outside More options and auto-saves when editing finishes.
+- Signed-out choices use safe browser-local storage; signed-in choices flow through the existing account-backed merchant synchronisation.
+- Only cleaned merchant names, safe aliases/normalised keys and category IDs are stored.
+- Rule/alias conflicts still require Replace, Keep existing or Cancel; unrelated choices are not silently overwritten.
+- The latest automatic merchant save has a one-click undo.
+- Success copy explains what will be suggested next time.
+- Category selection uses a mobile-safe in-app sheet above fixed bottom navigation.
+- Merge selection and target choice use SpendGrove inline UI rather than browser-native confirmation prompts.
+- Merge still requires an eligible existing, user-owned manual transaction before commit; same-import warnings remain ineligible.
+- Signed-out/signed-in account-save status appears near the review summary without interrupting browser-local review.
+
+Earlier PR #33 paging, readiness-count, state-preservation, mapping-order and safe-area fixes remain in place.
+
+## Database and privacy status
 
 - Preview Prisma migrations previously completed successfully.
 - No Production database migration has been run.
-- Preview and Production data must remain separate.
-- No secrets or private financial data belong in handoffs, PRs, screenshots or test fixtures.
+- No schema, package, provider, paid service, secret or environment change was included in PR #35.
+- Raw CSVs, rows, filenames, narration, amounts, account identifiers, BSBs, card fragments, customer IDs, loan references, balances and private identifiers remain excluded from merchant learning.
+- Automated signed-in browser testing was not completed; do not claim the account-backed journey is manually verified.
 
 ## Exact next action
 
-Ask the client to retest Phase 3A with synthetic data, focusing on:
+Ask the client to retest with synthetic data:
 
-1. A roughly 600-row CSV remains responsive and shows 25-row paging.
-2. Saved mapping controls appear after matching/confirmation.
-3. “Needs review” matches actionable unresolved rows.
-4. Row choices and edits persist across pages.
-5. Saving a merchant alias/rule keeps the user on the active review.
-6. A fully resolved small import can commit and appears in safe import history.
-7. Mobile controls are not obscured by bottom navigation.
+1. Wait for Clerk rate limiting to clear; reset the test password or create a fresh test account, then sign in.
+2. Confirm signed-in state is obvious near the review summary and in the header.
+3. Choose a category without opening More options; confirm the “Saved for next time” message and future suggestion.
+4. Edit a cleaned merchant name without opening More options; confirm future matching rows use it.
+5. Exercise Replace / Keep existing / Cancel on a fictional conflict and test Undo.
+6. Open the category picker at phone size; confirm it scrolls above bottom navigation and controls remain reachable.
+7. Select Merge; confirm SpendGrove inline guidance appears and only an eligible manual transaction can be selected.
+8. Resolve a small import, complete signed-in account commit, and confirm safe aggregate import history.
+9. Reconfirm roughly 600-row paging remains responsive and choices persist across pages.
 
-If the client reports a defect, diagnose and fix only that Phase 3A acceptance issue. Otherwise wait for explicit phase closure or separately scoped next-phase approval.
-
-## Stop conditions and exclusions
-
-Do not begin Production migration, release work, loans, properties, tax reports, recurring detection, budgets, insights, Basiq, enhanced lookup, AI, payments or Phase 4 work. Pause for any privacy change, financial-rule change, schema change, new service/package, failed gate or material scope ambiguity.
+If the client reports a defect, fix only that Phase 3A acceptance issue. Otherwise wait for explicit Phase 3A closure or separately scoped next-phase approval.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md` and this file; verify GitHub and Vercel; then perform only the exact next action above.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md` and this file; verify GitHub/Vercel; then perform only the exact next action above.
