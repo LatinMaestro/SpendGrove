@@ -29,8 +29,18 @@ describe("safe merchant grouping across reference tokens", () => {
     expect(applied.rows[1]).toMatchObject({ categoryId: categoryId("Training / education"), reviewState: "APPLIED_TO_MATCH" });
   });
 
-  it("does not collapse ambiguous generic transfers and payments", () => {
-    expect(canonicalMerchantGroupingKey("Bank transfer to CBA 123456")).not.toBe(canonicalMerchantGroupingKey("Bank transfer to CBA 987654"));
-    expect(canonicalMerchantGroupingKey("Payment 123456")).not.toBe(canonicalMerchantGroupingKey("Payment 987654"));
+  it("does not offer bulk grouping for ambiguous transfers and payments", () => {
+    const transfers = [
+      row("1", "Bank transfer to CBA", { categoryId: categoryId("Transfer"), categoryConfirmed: true }),
+      row("2", "Bank transfer to CBA"),
+    ];
+    expect(countApplySameMerchantMatches(transfers, "1")).toBe(0);
+    expect(applyCategoryToMatchingMerchants(transfers, "1")).toMatchObject({ affectedCount: 0, undo: null });
+
+    const payments = [
+      row("3", "Payment", { categoryId: categoryId("Shopping"), categoryConfirmed: true }),
+      row("4", "Payment"),
+    ];
+    expect(countApplySameMerchantMatches(payments, "3")).toBe(0);
   });
 });
