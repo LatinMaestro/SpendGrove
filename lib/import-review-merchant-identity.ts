@@ -1,4 +1,5 @@
 import { getManualCategory } from "@/lib/manual-categories";
+import type { ImportReviewRow } from "@/lib/import-review";
 import type { LocalMerchantData, MerchantCategorySuggestion } from "@/lib/merchant-rules";
 import { sanitizeTransactionNarration } from "@/lib/validation/privacy";
 
@@ -39,4 +40,14 @@ export function suggestGroupedMerchantCategory(value: string, data: LocalMerchan
 export function isAmbiguousTransferText(merchantName: string, description = "") {
   const safe = `${sanitizeTransactionNarration(merchantName)} ${sanitizeTransactionNarration(description)}`;
   return /\b(?:bank transfer|transfer to|transfer from|pay anyone|osko|to cba|from cba)\b/i.test(safe) && !/\b(?:internal transfer|between accounts|own account|to savings|from savings)\b/i.test(safe);
+}
+
+export function hasPossibleOppositeTransferPair(row: ImportReviewRow, rows: ImportReviewRow[]) {
+  if (!row.date || row.amountCents === null || row.amountCents === 0) return false;
+  const rowDate = new Date(`${row.date}T00:00:00.000Z`).getTime();
+  return rows.some((candidate) => {
+    if (candidate.id === row.id || !candidate.date || candidate.amountCents !== -row.amountCents) return false;
+    const candidateDate = new Date(`${candidate.date}T00:00:00.000Z`).getTime();
+    return Math.abs(candidateDate - rowDate) <= 2 * 24 * 60 * 60 * 1000 && isAmbiguousTransferText(candidate.merchantName, candidate.description);
+  });
 }
