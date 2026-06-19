@@ -4,10 +4,16 @@ import { canonicalMerchantGroupingKey, isAmbiguousTransferText } from "@/lib/imp
 export type ApplySameMerchantUndo = { sourceRowId: string; affectedRowIds: string[]; previousRows: ImportReviewRow[] };
 export type ApplySameMerchantResult = { rows: ImportReviewRow[]; affectedCount: number; undo: ApplySameMerchantUndo | null };
 
+const unsafeGroupingKeys = new Set(["payment", "bank transfer", "transfer", "deposit", "cba", "commonwealth bank"]);
+
+function isUnsafeForBulkGrouping(row: ImportReviewRow) {
+  return isAmbiguousTransferText(row.merchantName, row.description) || unsafeGroupingKeys.has(canonicalMerchantGroupingKey(row.merchantName));
+}
+
 function matchingEligibleRows(rows: ImportReviewRow[], source: ImportReviewRow) {
-  if (isAmbiguousTransferText(source.merchantName, source.description)) return [];
+  if (isUnsafeForBulkGrouping(source)) return [];
   const sourceKey = canonicalMerchantGroupingKey(source.merchantName);
-  return rows.filter((row) => row.id !== source.id && row.action !== "SKIP" && !isAmbiguousTransferText(row.merchantName, row.description) && canonicalMerchantGroupingKey(row.merchantName) === sourceKey);
+  return rows.filter((row) => row.id !== source.id && row.action !== "SKIP" && !isUnsafeForBulkGrouping(row) && canonicalMerchantGroupingKey(row.merchantName) === sourceKey);
 }
 
 export function countApplySameMerchantMatches(rows: ImportReviewRow[], rowId: string) {
