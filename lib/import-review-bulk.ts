@@ -1,25 +1,13 @@
 import type { ImportReviewRow } from "@/lib/import-review";
-import { canonicalMerchantGroupingKey } from "@/lib/import-review-merchant-identity";
+import { canonicalMerchantGroupingKey, isAmbiguousTransferText } from "@/lib/import-review-merchant-identity";
 
-export type ApplySameMerchantUndo = {
-  sourceRowId: string;
-  affectedRowIds: string[];
-  previousRows: ImportReviewRow[];
-};
-
-export type ApplySameMerchantResult = {
-  rows: ImportReviewRow[];
-  affectedCount: number;
-  undo: ApplySameMerchantUndo | null;
-};
+export type ApplySameMerchantUndo = { sourceRowId: string; affectedRowIds: string[]; previousRows: ImportReviewRow[] };
+export type ApplySameMerchantResult = { rows: ImportReviewRow[]; affectedCount: number; undo: ApplySameMerchantUndo | null };
 
 function matchingEligibleRows(rows: ImportReviewRow[], source: ImportReviewRow) {
+  if (isAmbiguousTransferText(source.merchantName, source.description)) return [];
   const sourceKey = canonicalMerchantGroupingKey(source.merchantName);
-  return rows.filter((row) =>
-    row.id !== source.id &&
-    row.action !== "SKIP" &&
-    canonicalMerchantGroupingKey(row.merchantName) === sourceKey,
-  );
+  return rows.filter((row) => row.id !== source.id && row.action !== "SKIP" && !isAmbiguousTransferText(row.merchantName, row.description) && canonicalMerchantGroupingKey(row.merchantName) === sourceKey);
 }
 
 export function countApplySameMerchantMatches(rows: ImportReviewRow[], rowId: string) {
@@ -36,13 +24,7 @@ export function applyCategoryToMatchingMerchants(rows: ImportReviewRow[], rowId:
   const affectedIds = new Set(matches.map((row) => row.id));
   const previousRows = matches.map((row) => ({ ...row, warningCodes: [...row.warningCodes] }));
   const nextRows = rows.map((row) => affectedIds.has(row.id)
-    ? {
-        ...row,
-        categoryId: source.categoryId,
-        categoryConfirmed: true,
-        reviewState: "APPLIED_TO_MATCH" as const,
-        suggestionReason: "Applied to the same safely grouped merchant in this review.",
-      }
+    ? { ...row, categoryId: source.categoryId, categoryConfirmed: true, reviewState: "APPLIED_TO_MATCH" as const, suggestionReason: "Applied to the same safely grouped merchant in this review." }
     : row);
   return { rows: nextRows, affectedCount: matches.length, undo: { sourceRowId: source.id, affectedRowIds: matches.map((row) => row.id), previousRows } };
 }
