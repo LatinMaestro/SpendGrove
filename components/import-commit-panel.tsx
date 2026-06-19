@@ -20,11 +20,13 @@ export function ImportCommitPanel({
   rows,
   mergeSelections,
   scan,
+  needsReviewCount,
   onAccountTransactions,
 }: {
   rows: ImportReviewRow[];
   mergeSelections: Record<string, MergeTargetReviewSelection>;
   scan: CsvScanResult;
+  needsReviewCount: number;
   onAccountTransactions(transactions: ManualTransaction[]): void;
 }) {
   const { isLoaded, isSignedIn } = useUser();
@@ -43,7 +45,7 @@ export function ImportCommitPanel({
   }, [isSignedIn, onAccountTransactions]);
 
   async function commitImport() {
-    if (summary || isCommitting) return;
+    if (summary || isCommitting || needsReviewCount > 0) return;
     const importCount = rows.filter((row) => row.action === "IMPORT").length;
     const skipCount = rows.filter((row) => row.action === "SKIP").length;
     const mergeCount = rows.filter((row) => row.action === "MERGE").length;
@@ -70,10 +72,7 @@ export function ImportCommitPanel({
         },
       });
       const result = await commitReviewedImport(request);
-      if (!result.ok) {
-        setMessage(result.error);
-        return;
-      }
+      if (!result.ok) { setMessage(result.error); return; }
       setSummary(result.summary);
       window.dispatchEvent(new Event(IMPORT_HISTORY_UPDATED_EVENT));
       setMessage(result.summary.alreadyCommitted
@@ -86,23 +85,16 @@ export function ImportCommitPanel({
     }
   }
 
-  if (!isLoaded) {
-    return <section className="rounded-[2rem] border border-border bg-surface-mint p-5 sm:p-6"><p className="text-sm font-semibold text-brand-deepTeal">Checking account access…</p></section>;
-  }
-
+  if (!isLoaded) return <section className="rounded-[2rem] border border-border bg-surface-mint p-5 sm:p-6"><p className="text-sm font-semibold text-brand-deepTeal">Checking account access…</p></section>;
   if (!isSignedIn) {
-    return (
-      <section className="rounded-[2rem] border border-brand-teal bg-surface-mint p-5 sm:p-6">
-        <div className="flex items-start gap-3"><LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Sign in to save this reviewed import</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Your browser-local review stays available, but SpendGrove will not silently write transactions without an authenticated account.</p></div></div>
-        <SignInButton mode="modal"><button type="button" className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white">Sign in to continue</button></SignInButton>
-      </section>
-    );
+    return <section className="rounded-[2rem] border border-brand-teal bg-surface-mint p-5 sm:p-6"><div className="flex items-start gap-3"><LockKeyhole aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 className="text-xl font-bold text-brand-deepTeal">Sign in to save this reviewed import</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Your browser-local review stays available, but SpendGrove will not silently write transactions without an authenticated account.</p></div></div><SignInButton mode="modal"><button type="button" className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white">Sign in to continue</button></SignInButton></section>;
   }
 
   return (
     <section className="rounded-[2rem] border border-brand-green bg-surface-mint p-5 sm:p-6" aria-labelledby="commit-import-heading">
       <div className="flex items-start gap-3">{summary ? <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /> : <Cloud aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />}<div><h2 id="commit-import-heading" className="text-xl font-bold text-brand-deepTeal">{summary ? "Reviewed import saved" : "Save reviewed transactions to your account"}</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Only safe reviewed fields, integer cents, action outcomes, warning codes and aggregate metadata are saved. The CSV, filename, raw rows and private bank details are never included.</p></div></div>
-      {!summary && <button type="button" disabled={isCommitting} onClick={commitImport} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:cursor-wait disabled:opacity-60">{isCommitting ? "Saving reviewed import…" : "Confirm and save import"}</button>}
+      {!summary && needsReviewCount > 0 && <p role="status" className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">{needsReviewCount} transaction{needsReviewCount === 1 ? " still needs" : "s still need"} review before this import is ready to save.</p>}
+      {!summary && <button type="button" disabled={isCommitting || needsReviewCount > 0} onClick={commitImport} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45">{isCommitting ? "Saving reviewed import…" : needsReviewCount > 0 ? "Finish reviewing first" : "Confirm and save import"}</button>}
       {message && <p role="status" className="mt-4 rounded-2xl bg-white p-4 text-sm font-semibold text-brand-deepTeal">{message}</p>}
     </section>
   );
