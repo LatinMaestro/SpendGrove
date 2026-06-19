@@ -31,7 +31,7 @@ describe("Needs review import commits", () => {
     const retry = await commitReviewedImport(createTestUserContext("user_1"), request, store);
     expect(first).toMatchObject({ importedCount: 1, warningCount: 1, alreadyCommitted: false });
     expect(retry).toMatchObject({ importedCount: 1, alreadyCommitted: true });
-    expect(summaries).toHaveLength(1);
+    expect(summaries.size).toBe(1);
   });
 
   it("still rejects invalid amounts, invalid dates and unrecognised categories before network save", () => {
