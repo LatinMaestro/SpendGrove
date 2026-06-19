@@ -53,8 +53,8 @@ describe("automatic merchant learning during import review", () => {
       categoryId: categoryId("Shopping"),
     })).toThrow("Private banking identifiers");
     expect(() => learnEditedMerchantName(emptyLocalMerchantData(), {
-      previousMerchantName: "Synthetic Merchant terminal receipt",
-      merchantName: "Synthetic Merchant",
+      previousMerchantName: "Synthetic Merchant",
+      merchantName: "Synthetic Merchant terminal receipt",
       categoryId: categoryId("Shopping"),
     })).toThrow("short cleaned merchant name");
   });
