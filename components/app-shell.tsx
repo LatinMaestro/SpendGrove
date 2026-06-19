@@ -7,7 +7,7 @@ export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) 
   const clerkStatus = getBuildSafeClerkEnvStatus();
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-28 pt-5 sm:max-w-2xl sm:px-6 lg:max-w-5xl">
+    <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-5 sm:max-w-2xl sm:px-6 lg:max-w-5xl">
       <header className="mb-5 flex items-center justify-between gap-3 rounded-3xl border border-border bg-surface-base/90 p-4 shadow-soft backdrop-blur">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.22em] text-brand-teal">SpendGrove</p>
