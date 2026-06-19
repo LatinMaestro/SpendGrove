@@ -47,6 +47,7 @@ export function isAmbiguousTransferText(merchantName: string, description = "") 
 
 export function hasPossibleOppositeTransferPair(row: ImportReviewRow, rows: ImportReviewRow[]) {
   if (!row.date || row.amountCents === null || row.amountCents === 0) return false;
+  const amountCents = row.amountCents;
   const rowDate = new Date(`${row.date}T00:00:00.000Z`).getTime();
-  return rows.some((candidate) => { if (candidate.id === row.id || !candidate.date || candidate.amountCents !== -row.amountCents) return false; const candidateDate = new Date(`${candidate.date}T00:00:00.000Z`).getTime(); return Math.abs(candidateDate - rowDate) <= 2 * 24 * 60 * 60 * 1000 && isAmbiguousTransferText(candidate.merchantName, candidate.description); });
+  return rows.some((candidate) => { if (candidate.id === row.id || !candidate.date || candidate.amountCents !== -amountCents) return false; const candidateDate = new Date(`${candidate.date}T00:00:00.000Z`).getTime(); return Math.abs(candidateDate - rowDate) <= 2 * 24 * 60 * 60 * 1000 && isAmbiguousTransferText(candidate.merchantName, candidate.description); });
 }
