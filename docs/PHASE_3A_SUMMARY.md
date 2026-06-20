@@ -1,6 +1,6 @@
 # Phase 3A Summary — Persistence & Commit Foundation
 
-Date updated: 19 June 2026
+Date updated: 20 June 2026
 
 ## Phase status
 
@@ -12,7 +12,7 @@ No Phase 4, Production migration or later module has started.
 
 ## Phase 3A delivery
 
-Phase 3A delivered Clerk authentication, Neon/Postgres and server-only Prisma foundations, Preview-only migrations, durable manual transactions/categories/import profiles/merchant suggestions, authenticated atomic and idempotent Import / Skip / Merge commit, safe aggregate history, explicit device-to-account migration and browser-local fallbacks. CSV parsing, private-field scanning, mapping and review remain browser-local.
+Phase 3A delivered Clerk authentication, Neon/Postgres and server-only Prisma foundations, Preview-only migrations, durable account transactions/categories/import profiles/merchant suggestions, authenticated atomic and idempotent Import / Skip / Merge commit, safe aggregate history, explicit device-to-account migration and browser-local fallbacks. CSV parsing, private-field scanning, mapping and source-detail review remain browser-local.
 
 ## Acceptance-hardening register
 
@@ -22,42 +22,45 @@ Phase 3A delivered Clerk authentication, Neon/Postgres and server-only Prisma fo
 | [#34](https://github.com/LatinMaestro/SpendGrove/pull/34) | Permanent Codex context/handoff protocol | `590c0390` |
 | [#35](https://github.com/LatinMaestro/SpendGrove/pull/35) | Automatic merchant learning, mobile category picker, styled Merge guidance and early account status | `79cc223a` |
 | [#36](https://github.com/LatinMaestro/SpendGrove/pull/36) | Phase 3A handoff update after PR #35 | `e6fa5a4c` |
-| [#37](https://github.com/LatinMaestro/SpendGrove/pull/37) | Review filtering/readiness, safe merchant grouping, transfer assistance and save blocker fix | `7d971519` |
+| [#37](https://github.com/LatinMaestro/SpendGrove/pull/37) | Review filtering/readiness, safe merchant grouping, transfer assistance and zero-value save blocker fix | `7d971519` |
+| [#38](https://github.com/LatinMaestro/SpendGrove/pull/38) | Phase 3A handoff update after PR #37 | `456b2eb6` |
+| [#39](https://github.com/LatinMaestro/SpendGrove/pull/39) | Stable filtered rows, browser-local source details, simplified save, Needs review soft warning and batched commit | `0a8583ed` |
+| [#40](https://github.com/LatinMaestro/SpendGrove/pull/40) | Imported transaction visibility/edit/delete and corrected Needs review badges | `918863fd` |
 
 Earlier functional PRs #16–#32 remain part of the complete Phase 3A persistence, commit, migration, history and QA record.
 
-## PR #37 changes
+## PR #39: review and save flow
 
-### Review summary and filtering
+- Captures a stable working set for `Only show items needing review`; resolved rows stay visible for follow-up edits until intentional refresh.
+- Removes the large transfer decision panel and uses normal category review.
+- Shows mapped source date/amount/narration in More options from active browser memory only.
+- Simplifies the active review footer to one primary import action.
+- Allows the approved `Needs review` category after a styled warning confirmation.
+- Keeps true date, amount, category and Merge-target blockers strict with safe row-level reasons.
+- Replaces hundreds of sequential 99-row database operations with cached category/profile lookups and bulk transaction/import-row writes inside one bounded atomic transaction.
+- Preserves request-ID idempotency and rollback safety.
 
-- Replaced redundant Import with Ready to import.
-- Summary now communicates Transactions, Needs review, Ready to import, Skip and Merge.
-- Row badges derive from date, non-zero amount, category, warning and Merge-target blockers.
-- The stale generic Needs review badge disappears after all blockers are resolved.
-- Added `Only show items needing review`; paging applies to filtered results without resetting row state.
-- Added a friendly complete-review empty state.
+## PR #40: imported transaction visibility and management
 
-### Merchant grouping
+### Root cause
 
-- Safe canonical grouping removes reference/invoice-style tokens and preserved store/branch cleanup.
-- Kindred Early/MetLife-style variants can share category application and future suggestions.
-- Generic Payment/Transfer descriptions and ambiguous transfer rows are deliberately excluded from bulk grouping.
-- Durable learning still stores only cleaned names, safe aliases/normalised keys and category IDs.
+The durable Transactions service filtered active list, edit and delete lookups to `source: MANUAL`. Its projection also hardcoded the source as manual. Imported transactions were successfully created by import commit but excluded from the Transactions tab and its mutation routes.
 
-### Ambiguous transfers
+### Fix
 
-- Transfer-like rows ask whether the movement is between the user’s accounts, an external payment, money received or not sure.
-- Own-account transfers use a Transfer category and are not treated as income/spending.
-- External payment/income choices require an appropriate category; Not sure remains blocked.
-- Nearby opposite-amount transfer-like rows show a cautious possible-pair suggestion, never automatic classification.
+- Active user-owned manual and imported transactions are returned by the same account transaction list.
+- Soft-deleted records and split-parent/container records remain excluded.
+- Imported rows show an `Imported` badge and remain visible after refresh.
+- User-owned imported transactions can be safely edited through the existing account editor.
+- Imported transactions can be soft-deleted without deleting ImportBatch, ImportRow or audit history.
+- Safe import history distinguishes active and later-deleted links without returning descriptions, amounts or raw row data.
+- Manual creation and Merge-target eligibility remain restricted to manual transactions.
 
-### Import-save error
+## Corrected Needs review semantics
 
-Root cause: review allowed zero-value rows to appear ready, while the strict commit schema correctly requires non-zero integer cents. The client could complete review and encounter validation only at final save.
+Root cause: readiness treated every unconfirmed suggestion and every row warning code as unresolved. Suggested and remembered categories therefore showed a stale generic Needs review badge even when the date, amount and category were valid.
 
-Fix: shared readiness rules now mark null and zero amounts as blockers before commit. Row messaging, global counts, filtered review and commit availability use the same blocker model. Server validation remains strict, atomic and idempotent.
-
-The final save confirmation is now SpendGrove UI instead of `window.confirm`. Failures preserve review state and provide safe retry guidance.
+Fix: a row now needs attention only when it has a true commit blocker or is explicitly assigned to the approved `Needs review` placeholder category. Valid keyword suggestions, remembered rules and manual selections show Ready. Non-critical parser warnings remain safe metadata rather than stale row-level blockers. Badges, global counts and the working-set filter use the same rule.
 
 ## Sign-in finding
 
@@ -65,37 +68,54 @@ Email-code sign-in works and is the recommended client testing path. Password fa
 
 ## Privacy and security
 
-- No raw CSV files/rows, filenames, raw bank narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, private identifiers, secrets or connection strings are added.
-- Authenticated ownership, Merge eligibility, strict schemas, integer cents and safe aggregate history remain intact.
-- No schema, migration, package, provider, paid service, secret or environment change was included.
+- Raw CSV files/rows, filenames, bank narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, secrets and connection strings remain excluded.
+- Browser-local source details never enter commit, transaction, mapping, merchant, history or audit payloads.
+- Account transaction list/edit/delete paths return and accept cleaned validated fields only.
+- Authenticated ownership, strict category/date/amount validation, split-parent exclusion and soft deletion remain intact.
+- Import history survives linked transaction deletion and returns aggregate/link state only.
+- No schema migration, package, provider, paid service, secret or environment change was included.
 - No Production migration was run.
 
 ## Test and deployment evidence
 
-Synthetic coverage includes 600-row paging, readiness counts, zero-amount blocking, filtered paging/state identity, Merge readiness, Kindred/MetLife grouping, generic-transfer non-grouping, transfer choices/pair suggestions, native-confirm removal, atomic rollback, retry idempotency, ownership and privacy rejection.
+Synthetic coverage now includes:
 
-- PR #37 preview: https://spendgrove-git-codex-phase-3a-rev-0f19bc-latinmaestros-projects.vercel.app
-- PR #37 deployment: https://vercel.com/latinmaestros-projects/spendgrove/CebNGpW8yKkxsqa34BWeAbqqUisn
-- PR #37 merge: `7d9715195e6da07ab93672760c0d53ee5bf2a102`
-- Post-merge main: https://vercel.com/latinmaestros-projects/spendgrove/4y2Xj8MwfUvtkXJihsH8wPqDdeTP
+- 600-row paging and stable filtered working sets;
+- valid suggested/remembered/manual category readiness;
+- explicit Needs review soft warnings and hard blocker enforcement;
+- browser-local source-detail privacy boundaries;
+- batched atomic import and retry idempotency;
+- imported/manual transaction list projection and source labels;
+- imported transaction edit and soft delete;
+- cross-user edit/delete rejection;
+- retained ImportBatch/ImportRow links and safe deleted history state;
+- signed-out browser-local fallback;
+- no raw/private values in account or history responses.
+
+PR #40 evidence:
+
+- Preview: https://spendgrove-git-codex-phase-3a-imp-d351d3-latinmaestros-projects.vercel.app
+- Deployment: https://vercel.com/latinmaestros-projects/spendgrove/6nMdDHPF2se4y3TLnHnYeVkhvofE
+- Merge: `918863fdc8e35ea4c909db24fa20128881d1e8d1`
+- Post-merge main: https://vercel.com/latinmaestros-projects/spendgrove/5aUtBAokZWqU6oDZR9A9D5FPGNbw
 - Full tests and Next.js production build: Ready / green.
 
-Automated signed-in browser retesting remains unavailable. The client must verify the complete account-backed flow.
+Automated signed-in browser retesting remains unavailable because previews are Vercel-authentication protected. The client must verify the complete account-backed flow.
 
 ## Client retesting checklist
 
 Use synthetic data only:
 
-1. Sign in via email code.
-2. Test summary counts and unresolved-only filtering.
-3. Confirm resolved rows lose the Needs review badge.
-4. Test fictional reference-bearing Kindred/MetLife variants.
-5. Confirm generic Payment/Transfer rows do not bulk-group.
-6. Test all transfer choices and a possible opposite-amount pair.
-7. Confirm zero-dollar rows cannot reach save readiness.
-8. Complete a styled account save and verify safe import history.
-9. Retry safely and confirm no duplicates.
-10. Recheck 600-row paging, mobile controls and preserved review state.
+1. Sign in via email code and commit a reviewed CSV.
+2. Open Transactions and confirm imported rows appear with `Imported` labels beside manual rows.
+3. Refresh and confirm imported rows remain.
+4. Edit an imported row and confirm the changed value survives refresh.
+5. Soft-delete an imported row and confirm it leaves the active list.
+6. Confirm committed import history remains and reports the linked row as deleted.
+7. Confirm valid suggested, remembered and manually selected categories show Ready.
+8. Confirm only explicit Needs review or true blockers appear in the Needs review count/filter.
+9. Recheck PR #39 stable filtering, source details, simplified save and 99-row commit.
+10. Recheck 600-row paging, mobile controls, merchant learning and safe retries.
 
 ## Exact next step
 
