@@ -48,15 +48,18 @@ export function importReviewRowIsInNeedsReviewCategory(row: ImportReviewRow) {
   return row.action !== "SKIP" && getManualCategory(row.categoryId)?.name === "Needs review";
 }
 
+/**
+ * Suggestion provenance and non-critical parser warning codes are informative,
+ * not unresolved row state. A row needs attention only when it has a true
+ * commit blocker or is intentionally left in the approved placeholder category.
+ */
 export function importReviewRowNeedsAttention(
   row: ImportReviewRow,
   mergeSelections: Record<string, MergeTargetReviewSelection> = {},
 ) {
   if (row.action === "SKIP") return false;
   return importReviewRowHasHardBlocker(row, mergeSelections)
-    || importReviewRowIsInNeedsReviewCategory(row)
-    || !row.categoryConfirmed
-    || row.warningCodes.length > 0;
+    || importReviewRowIsInNeedsReviewCategory(row);
 }
 
 export function listImportReviewBlockingRows(
