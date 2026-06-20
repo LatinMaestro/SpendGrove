@@ -2,7 +2,7 @@ export const IMPORT_HISTORY_UPDATED_EVENT = "spendgrove:import-history-updated";
 
 export type ImportHistoryOutcome = "IMPORTED" | "SKIPPED" | "MERGED" | "UNAVAILABLE";
 export type ImportHistoryLinkedTransaction = "IMPORTED" | "MANUAL" | "NONE";
-export type ImportHistoryLinkState = "ACTIVE" | "UNAVAILABLE" | "NOT_APPLICABLE";
+export type ImportHistoryLinkState = "ACTIVE" | "DELETED" | "UNAVAILABLE" | "NOT_APPLICABLE";
 
 export type SafeImportRowOutcome = {
   rowNumber: number;
