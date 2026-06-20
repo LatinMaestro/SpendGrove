@@ -26,6 +26,7 @@ Phase 3A delivered Clerk authentication, Neon/Postgres and server-only Prisma fo
 | [#38](https://github.com/LatinMaestro/SpendGrove/pull/38) | Phase 3A handoff update after PR #37 | `456b2eb6` |
 | [#39](https://github.com/LatinMaestro/SpendGrove/pull/39) | Stable filtered rows, browser-local source details, simplified save, Needs review soft warning and batched commit | `0a8583ed` |
 | [#40](https://github.com/LatinMaestro/SpendGrove/pull/40) | Imported transaction visibility/edit/delete and corrected Needs review badges | `918863fd` |
+| [#42](https://github.com/LatinMaestro/SpendGrove/pull/42) | Broader safe merchant grouping, simpler mapping/review UI, pagination scroll and Settings import history | `483647b6` |
 
 Earlier functional PRs #16–#32 remain part of the complete Phase 3A persistence, commit, migration, history and QA record.
 
@@ -62,6 +63,20 @@ Root cause: readiness treated every unconfirmed suggestion and every row warning
 
 Fix: a row now needs attention only when it has a true commit blocker or is explicitly assigned to the approved `Needs review` placeholder category. Valid keyword suggestions, remembered rules and manual selections show Ready. Non-critical parser warnings remain safe metadata rather than stale row-level blockers. Badges, global counts and the working-set filter use the same rule.
 
+## PR #42: merchant grouping and import-flow simplification
+
+- Canonical merchant grouping removes leading, trailing and embedded reference-like fragments, long number sequences and mixed alphanumeric transaction tokens while preserving stable merchant words.
+- Synthetic Kindred-like, MetLife-like and Superhero-like variants group safely.
+- Generic Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA labels remain excluded from bulk grouping.
+- Apply-to-same, grouped suggestions and automatic learning use the safer canonical key.
+- Automatic learning persists only the canonical cleaned merchant name and category ID.
+- More options now shows only `Source details from this CSV`; duplicate/Merge guidance remains outside it.
+- Review pagination scrolls to the top for Previous, Next and page-number navigation without remounting the review state.
+- Committed import history moved from the active Import route to Settings.
+- Saved/reuse mapping controls were removed from the active flow; per-file automatic mapping, confirmation and manual changes remain.
+- The visible private-details panel was removed while privacy scanning and exclusion remain active.
+- Home dashboard expense/income stats were not implemented and remain later-phase work.
+
 ## Sign-in finding
 
 Email-code sign-in works and is the recommended client testing path. Password failure appears account/password/rate-limit specific; no app-side Clerk provider, middleware, route or signed-state defect was identified. Passwords, keys and environment values must not be shared.
@@ -91,6 +106,15 @@ Synthetic coverage now includes:
 - retained ImportBatch/ImportRow links and safe deleted history state;
 - signed-out browser-local fallback;
 - no raw/private values in account or history responses.
+- leading, trailing and embedded merchant references;
+- mixed alphanumeric invoice/transaction tokens;
+- Kindred-like, MetLife-like and Superhero-like grouping;
+- generic transfer/payment/deposit/withdrawal labels not being over-grouped;
+- canonical merchant learning without reference persistence;
+- source-only More options;
+- mapping/privacy panel simplification;
+- pagination scroll-to-top without review remount;
+- committed import history placement in Settings.
 
 PR #40 evidence:
 
@@ -100,23 +124,37 @@ PR #40 evidence:
 - Post-merge main: https://vercel.com/latinmaestros-projects/spendgrove/5aUtBAokZWqU6oDZR9A9D5FPGNbw
 - Full tests and Next.js production build: Ready / green.
 
+PR #42 evidence:
+
+- PR: https://github.com/LatinMaestro/SpendGrove/pull/42
+- PR commit: `4ae5a7786120aac77b57442861a53e9361586bcf`
+- Merge: `483647b62b499f964688f89e1060e3e0486ea66a`
+- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/FzadChj22ECNippN9ErqxD9xm8xz
+- Post-merge main: https://vercel.com/latinmaestros-projects/spendgrove/F5NyN8gAeex1YVAtn6Utqumnj6bg
+- Focused tests: 73 passed.
+- Full tests: 55 files / 296 tests passed.
+- Next.js production build: passed.
+- Vercel preview and main deployment: Ready / green.
+
 Automated signed-in browser retesting remains unavailable because previews are Vercel-authentication protected. The client must verify the complete account-backed flow.
 
 ## Client retesting checklist
 
 Use synthetic data only:
 
-1. Sign in via email code and commit a reviewed CSV.
-2. Open Transactions and confirm imported rows appear with `Imported` labels beside manual rows.
-3. Refresh and confirm imported rows remain.
-4. Edit an imported row and confirm the changed value survives refresh.
-5. Soft-delete an imported row and confirm it leaves the active list.
-6. Confirm committed import history remains and reports the linked row as deleted.
-7. Confirm valid suggested, remembered and manually selected categories show Ready.
-8. Confirm only explicit Needs review or true blockers appear in the Needs review count/filter.
-9. Recheck PR #39 stable filtering, source details, simplified save and 99-row commit.
-10. Recheck 600-row paging, mobile controls, merchant learning and safe retries.
+1. Upload a CSV and confirm automatic column mapping runs on every file.
+2. Confirm mappings can be accepted or manually changed without saved/reuse mapping controls.
+3. Confirm the large private-details panel is absent while private columns remain excluded.
+4. Confirm safe repeated merchant variants with different reference tokens group together.
+5. Confirm generic transfer/payment/deposit/withdrawal labels are not over-grouped.
+6. Confirm More options contains only source CSV details and browser-memory privacy copy.
+7. Confirm Previous, Next and page-number navigation scrolls to the review top without losing choices.
+8. Confirm committed import history is absent from active import/review and available in Settings.
+9. Sign in via email code, commit an import and confirm imported rows appear with `Imported` labels.
+10. Edit and soft-delete an imported row, then confirm safe committed history remains.
+11. Confirm valid suggested, remembered and manually selected categories show Ready.
+12. Recheck stable filtering, Needs Review warning import, 600-row paging, mobile controls and safe retries.
 
 ## Exact next step
 
-Stop implementation and wait for client retesting. Fix only reported Phase 3A defects. Do not close Phase 3A or start a later phase without explicit approval.
+Stop implementation and wait for client retesting. Fix only reported Phase 3A defects. Home dashboard stats remain later-phase work. Do not close Phase 3A or start a later phase without explicit approval.
