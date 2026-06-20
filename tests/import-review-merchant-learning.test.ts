@@ -20,6 +20,19 @@ describe("automatic merchant learning during import review", () => {
     });
   });
 
+  it("stores only the canonical merchant when a safe review name contains a transaction reference", () => {
+    const learned = learnMerchantCategory(emptyLocalMerchantData(), {
+      merchantName: "Kindred Early INV-A93B772",
+      categoryId: categoryId("Training / education"),
+    });
+
+    expect(suggestMerchantCategory("Kindred Early", learned)).toMatchObject({
+      source: "USER_RULE",
+      categoryId: categoryId("Training / education"),
+    });
+    expect(JSON.stringify(learned)).not.toContain("A93B772");
+  });
+
   it("remembers a cleaned merchant name using only safe alias metadata", () => {
     const learned = learnEditedMerchantName(emptyLocalMerchantData(), {
       previousMerchantName: "Blue Lantern",

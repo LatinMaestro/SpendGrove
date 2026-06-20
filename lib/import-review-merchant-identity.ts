@@ -3,11 +3,67 @@ import type { ImportReviewRow } from "@/lib/import-review";
 import type { LocalMerchantData, MerchantCategorySuggestion } from "@/lib/merchant-rules";
 import { sanitizeTransactionNarration } from "@/lib/validation/privacy";
 
-const genericMerchantKeys = new Set(["bank transfer", "transfer", "payment", "deposit", "cba", "commonwealth bank"]);
-const ambiguousTransferKeyPattern = /\b(?:bank transfer|transfer to|transfer from|pay anyone|osko|payment)\b/i;
-const referenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|payment id|member|policy|account)\s*[:#-]?\s*[a-z0-9-]{4,}\b/gi;
-const standaloneReferenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|member|policy)\b/gi;
-const referenceTokenPattern = /^(?=.{5,}$)(?:\d{4,}|(?=[a-z0-9-]*\d[a-z0-9-]*\d[a-z0-9-]*\d)[a-z0-9-]+)$/i;
+const genericMerchantKeys = new Set([
+  "bank transfer",
+  "transfer",
+  "payment",
+  "payments",
+  "deposit",
+  "withdrawal",
+  "direct debit",
+  "credit",
+  "debit",
+  "refund",
+  "salary",
+  "cba",
+  "commonwealth bank",
+  "osko",
+  "pay anyone",
+]);
+const genericReferenceWords = new Set([
+  "account",
+  "acct",
+  "bill",
+  "billing",
+  "confirmation",
+  "customer",
+  "details",
+  "id",
+  "inv",
+  "invoice",
+  "member",
+  "no",
+  "number",
+  "order",
+  "payment",
+  "payments",
+  "policy",
+  "receipt",
+  "ref",
+  "reference",
+  "remittance",
+  "trace",
+  "transaction",
+  "txn",
+]);
+const genericTransferWords = new Set([
+  "bank",
+  "direct",
+  "from",
+  "internet",
+  "osko",
+  "pay",
+  "payment",
+  "to",
+  "transfer",
+  "via",
+  "xfer",
+]);
+const transferStylePattern = /\b(?:bank transfer|transfer|xfer|pay anyone|osko|internet banking)\b/i;
+const ownAccountTransferPattern = /\b(?:internal transfer|between accounts|own account|to savings|from savings)\b/i;
+const referenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|payment id|member|policy|account|order|confirmation|trace)\s*[:#./-]?\s*[a-z0-9][a-z0-9._/-]{2,}\b/gi;
+const dateLikeTokenPattern = /^(?:\d{1,2}[/-]){1,2}\d{2,4}$|^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/;
+const prefixedReferenceTokenPattern = /^(?:inv|invoice|ref|txn|trx|id|ord|order|receipt|policy|member)[-_]?[a-z0-9]{3,}$/i;
 
 function baseWords(value: string) {
   return sanitizeTransactionNarration(value)
@@ -21,12 +77,43 @@ function baseWords(value: string) {
     .trim();
 }
 
+function isReferenceLikeToken(token: string) {
+  const compact = token.replace(/[^a-z0-9]/gi, "");
+  if (!compact) return true;
+  if (dateLikeTokenPattern.test(token)) return true;
+  if (prefixedReferenceTokenPattern.test(token)) return true;
+  const digits = compact.match(/\d/g)?.length ?? 0;
+  const letters = compact.match(/[a-z]/gi)?.length ?? 0;
+  if (digits >= 4 && letters === 0) return true;
+  if (compact.length >= 5 && digits >= 2 && (digits >= letters || digits >= 3)) return true;
+  return false;
+}
+
+export function isSafeCanonicalMerchantGroupingKey(key: string) {
+  if (!key || genericMerchantKeys.has(key)) return false;
+  const meaningfulWords = key.split(" ").filter((token) =>
+    token.length >= 2 &&
+    !genericReferenceWords.has(token) &&
+    !genericTransferWords.has(token),
+  );
+  return meaningfulWords.length > 0;
+}
+
 export function canonicalMerchantGroupingKey(value: string) {
   const original = baseWords(value);
-  if (!original || genericMerchantKeys.has(original) || ambiguousTransferKeyPattern.test(original)) return original;
-  const withoutMarkedReferences = baseWords(value.replace(referenceMarkerPattern, " ")).replace(standaloneReferenceMarkerPattern, " ").replace(/\s+/g, " ").trim();
-  const filtered = withoutMarkedReferences.split(" ").filter((token) => !referenceTokenPattern.test(token)).join(" ").trim();
-  if (filtered.length < 3 || genericMerchantKeys.has(filtered)) return original;
+  if (!original) return original;
+  const withoutMarkedReferences = baseWords(value.replace(referenceMarkerPattern, " "));
+  const tokens = withoutMarkedReferences.split(" ").filter(Boolean);
+  const meaningfulTokens = tokens.filter((token) =>
+    !genericReferenceWords.has(token) &&
+    !isReferenceLikeToken(token),
+  );
+  const withoutTransferNoise = meaningfulTokens.filter((token) => !genericTransferWords.has(token));
+  const filtered = (withoutTransferNoise.length > 0 ? withoutTransferNoise : meaningfulTokens).join(" ").trim();
+  if (!filtered) {
+    return [...genericMerchantKeys].find((key) => original === key || original.startsWith(`${key} `)) ?? original;
+  }
+  if (genericMerchantKeys.has(filtered)) return filtered;
   return filtered;
 }
 
@@ -34,7 +121,7 @@ export function canonicalMerchantDisplayName(value: string) { const key = canoni
 
 export function suggestGroupedMerchantCategory(value: string, data: LocalMerchantData): MerchantCategorySuggestion | null {
   const key = canonicalMerchantGroupingKey(value);
-  if (!key || genericMerchantKeys.has(key) || ambiguousTransferKeyPattern.test(key)) return null;
+  if (!isSafeCanonicalMerchantGroupingKey(key) || isAmbiguousTransferText(value)) return null;
   const profile = data.profiles.find((candidate) => candidate.isActive && canonicalMerchantGroupingKey(candidate.name) === key);
   if (!profile) return null;
   const rule = data.rules.find((candidate) => candidate.isActive && candidate.merchantProfileId === profile.id && Boolean(getManualCategory(candidate.categoryId)));
@@ -43,7 +130,14 @@ export function suggestGroupedMerchantCategory(value: string, data: LocalMerchan
   return { merchantName: profile.name, categoryId, source: rule ? "USER_RULE" : "USER_ALIAS", confidence: "HIGH", reason: "Suggested from your safely grouped merchant choice.", requiresReview: true };
 }
 
-export function isAmbiguousTransferText(merchantName: string, description = "") { const safe = `${sanitizeTransactionNarration(merchantName)} ${sanitizeTransactionNarration(description)}`; return /\b(?:bank transfer|transfer to|transfer from|pay anyone|osko|to cba|from cba)\b/i.test(safe) && !/\b(?:internal transfer|between accounts|own account|to savings|from savings)\b/i.test(safe); }
+export function isAmbiguousTransferText(merchantName: string, description = "") {
+  const safe = `${sanitizeTransactionNarration(merchantName)} ${sanitizeTransactionNarration(description)}`;
+  if (!transferStylePattern.test(safe) || ownAccountTransferPattern.test(safe)) return false;
+  const key = canonicalMerchantGroupingKey(merchantName);
+  if (!isSafeCanonicalMerchantGroupingKey(key)) return true;
+  const meaningfulWords = key.split(" ");
+  return meaningfulWords.length === 1 && meaningfulWords[0].length < 8;
+}
 
 export function hasPossibleOppositeTransferPair(row: ImportReviewRow, rows: ImportReviewRow[]) {
   if (!row.date || row.amountCents === null || row.amountCents === 0) return false;

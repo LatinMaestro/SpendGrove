@@ -1,13 +1,14 @@
 import type { ImportReviewRow } from "@/lib/import-review";
-import { canonicalMerchantDisplayName, canonicalMerchantGroupingKey } from "@/lib/import-review-merchant-identity";
+import { canonicalMerchantDisplayName } from "@/lib/import-review-merchant-identity";
 import { normalizeMerchantName, saveConfirmedMerchantRule, saveMerchantAlias, type LocalMerchantData, type MerchantConflictResolution } from "@/lib/merchant-rules";
+import { containsPrivateBankIdentifier } from "@/lib/validation/privacy";
 
 export function learnMerchantCategory(data: LocalMerchantData, row: Pick<ImportReviewRow, "merchantName" | "categoryId">, resolution?: MerchantConflictResolution) {
-  const canonicalName = canonicalMerchantDisplayName(row.merchantName);
-  if (canonicalMerchantGroupingKey(row.merchantName) !== normalizeMerchantName(row.merchantName)) {
-    return saveMerchantAlias(data, { alias: row.merchantName, canonicalName, categoryId: row.categoryId, resolution });
+  if (containsPrivateBankIdentifier(row.merchantName)) {
+    throw new Error("Private banking identifiers are not permitted.");
   }
-  return saveConfirmedMerchantRule(data, { merchantName: row.merchantName, categoryId: row.categoryId, resolution });
+  const canonicalName = canonicalMerchantDisplayName(row.merchantName);
+  return saveConfirmedMerchantRule(data, { merchantName: canonicalName, categoryId: row.categoryId, resolution });
 }
 
 export function learnEditedMerchantName(data: LocalMerchantData, input: { previousMerchantName: string; merchantName: string; categoryId: string; resolution?: MerchantConflictResolution }) {

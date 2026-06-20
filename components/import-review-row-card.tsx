@@ -1,21 +1,17 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Link2, Pencil, Save } from "lucide-react";
+import { ChevronDown, ChevronUp, Link2, Pencil } from "lucide-react";
 import { ReviewCategoryPicker } from "@/components/review-category-picker";
 import type { CustomCategory } from "@/lib/custom-categories";
 import { getReviewCategory } from "@/lib/custom-categories";
 import type { DuplicateCandidate } from "@/lib/import-duplicate-scoring";
 import type { ImportReviewSourceDetails } from "@/lib/import-review-source-details";
 import type { ImportReviewAction, ImportReviewEditType, ImportReviewRow } from "@/lib/import-review";
-import { canSaveLocalMerchantRule } from "@/lib/import-review-metadata";
 import type { ManualCategoryType } from "@/lib/manual-categories";
 import { formatAudFromCents } from "@/lib/money";
-import { normalizeMerchantName, type MerchantSuggestionSource } from "@/lib/merchant-rules";
 
-const genericAliasKeys = new Set(["payment", "bank transfer", "transfer", "loan repayment", "salary", "refund"]);
 const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [{ value: "IMPORT", label: "Import" }, { value: "SKIP", label: "Skip" }, { value: "MERGE", label: "Merge" }];
-const suggestionLabels: Record<MerchantSuggestionSource, string> = { USER_RULE: "Your saved choice", USER_ALIAS: "Saved merchant match", KEYWORD: "Suggested from the merchant", FALLBACK: "Choose a category" };
 
 function formatReviewDate(date: string | null) {
   if (!date) return "Date needs review";
@@ -30,11 +26,6 @@ function reviewStatusText(row: ImportReviewRow) {
   return "";
 }
 
-function isUsefulAlias(row: ImportReviewRow, alias: string) {
-  if (!canSaveLocalMerchantRule(row)) return false;
-  try { const aliasKey = normalizeMerchantName(alias); return aliasKey !== normalizeMerchantName(row.merchantName) && !genericAliasKeys.has(aliasKey); } catch { return false; }
-}
-
 function duplicateChipText(candidate: DuplicateCandidate) {
   if (candidate.source === "SAME_IMPORT") return "Possible duplicate in this import";
   return `${candidate.confidence === "LIKELY" ? "Likely" : "Possible"} match · Already entered manually`;
@@ -44,13 +35,12 @@ function DuplicateCandidateDetails({ candidate, isSelected, onChoose }: { candid
   return <article className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/70"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-bold text-brand-deepTeal">{candidate.source === "SAME_IMPORT" ? "Possible duplicate in this import" : `${candidate.confidence === "LIKELY" ? "Likely" : "Possible"} match already entered manually`}</p><p className="mt-1">{candidate.source === "SAME_IMPORT" ? `Row ${candidate.rowNumber ?? "nearby"}` : candidate.merchantName} · {formatReviewDate(candidate.date)} · {formatAudFromCents(candidate.amountCents)}</p><p className="mt-1 font-semibold text-brand-teal">{candidate.reasons.join(" · ")}</p></div>{candidate.canMergeTarget ? <button type="button" onClick={() => onChoose(candidate)} disabled={isSelected} className="min-h-10 shrink-0 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:border-brand-green disabled:bg-surface-mint disabled:text-brand-green">{isSelected ? "Merge target selected" : "Choose this as the merge target"}</button> : <span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-bold text-brand-teal">Warning only</span>}</div>{candidate.source === "SAME_IMPORT" && <p className="mt-2 text-brand-deepTeal/60">Rows from the same CSV cannot be merge targets.</p>}{candidate.canMergeTarget && <p className="mt-2 text-brand-deepTeal/60">This only marks your review choice until you confirm the import.</p>}</article>;
 }
 
-export function ImportReviewRowCard({ row, customCategories, matchingRowCount, duplicateCandidates, selectedMergeTargetId, isPotentiallyDeductible, needsAttention, blockerMessage, ambiguousTransfer, sourceDetails, onAction, onDetails, onCreateCategory, onTaxChange, onApplySameMerchant, onChooseMergeTarget, onSaveRule, onSaveAlias, onMerchantNameCommit }: {
+export function ImportReviewRowCard({ row, customCategories, matchingRowCount, duplicateCandidates, selectedMergeTargetId, isPotentiallyDeductible, needsAttention, blockerMessage, ambiguousTransfer, sourceDetails, onAction, onDetails, onCreateCategory, onTaxChange, onApplySameMerchant, onChooseMergeTarget, onMerchantNameCommit }: {
   row: ImportReviewRow; customCategories: CustomCategory[]; matchingRowCount: number; duplicateCandidates: DuplicateCandidate[]; selectedMergeTargetId?: string; isPotentiallyDeductible: boolean; needsAttention: boolean; blockerMessage: string; ambiguousTransfer: boolean; sourceDetails?: ImportReviewSourceDetails;
-  onAction(action: ImportReviewAction): void; onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void; onCreateCategory(input: { name: string; type: ManualCategoryType }): CustomCategory; onTaxChange(value: boolean): void; onApplySameMerchant(): void; onChooseMergeTarget(candidate: DuplicateCandidate): void; onSaveRule(): void; onSaveAlias(alias: string): void; onMerchantNameCommit(previousMerchantName: string): void;
+  onAction(action: ImportReviewAction): void; onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void; onCreateCategory(input: { name: string; type: ManualCategoryType }): CustomCategory; onTaxChange(value: boolean): void; onApplySameMerchant(): void; onChooseMergeTarget(candidate: DuplicateCandidate): void; onMerchantNameCommit(previousMerchantName: string): void;
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showMerchantEdit, setShowMerchantEdit] = useState(false);
-  const [alias, setAlias] = useState("");
   const previousMerchantName = useRef(row.merchantName);
   const currentCategory = getReviewCategory(customCategories, row.categoryId);
   const topDuplicateCandidate = duplicateCandidates[0];
@@ -73,14 +63,8 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
     <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3"><input type="checkbox" checked={isPotentiallyDeductible} onChange={(event) => onTaxChange(event.target.checked)} className="mt-1 h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green" /><span><span className="block text-sm font-bold text-brand-deepTeal">Potentially deductible?</span><span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">For record-keeping only—not tax advice. This choice is not saved as a transaction.</span></span></label>
     {row.categoryConfirmed && row.action !== "SKIP" && matchingRowCount > 0 && <button type="button" onClick={onApplySameMerchant} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal"><Link2 aria-hidden="true" className="h-4 w-4" /> Apply to {matchingRowCount} matching transaction{matchingRowCount === 1 ? "" : "s"}</button>}
     <fieldset className="mt-4"><legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">What should happen?</legend><div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">{reviewActions.map((action) => <button key={action.value} type="button" onClick={() => onAction(action.value)} aria-pressed={row.action === action.value} className={`min-h-10 rounded-xl border px-3 py-2 text-sm font-bold ${row.action === action.value ? "border-brand-green bg-white text-brand-deepTeal" : "border-transparent text-brand-deepTeal/70"}`}>{action.label}</button>)}</div>{row.action === "MERGE" && <div role="status" className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal"><p className="font-bold">Merge selected</p><p className="mt-1">Choose an eligible existing manual transaction below before final account save. Rows from this CSV cannot be merge targets.</p></div>}</fieldset>
+    {duplicateCandidates.length > 0 && <div className="mt-4 space-y-3"><p className="text-sm font-bold text-brand-deepTeal">Duplicate check</p>{duplicateCandidates.map((candidate) => <DuplicateCandidateDetails key={`${candidate.source}-${candidate.candidateId}`} candidate={candidate} isSelected={selectedMergeTargetId === candidate.candidateId} onChoose={onChooseMergeTarget} />)}</div>}
     <button type="button" onClick={() => setShowMore((current) => !current)} aria-expanded={showMore} className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-brand-teal">{showMore ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}{showMore ? "Hide options" : "More options"}</button>
-    {showMore && <div className="mt-3 rounded-2xl border border-border bg-surface-mint/60 p-4">
-      <section aria-label="Source details from this CSV" className="rounded-2xl border border-border bg-white p-3"><p className="text-sm font-bold text-brand-deepTeal">Source details from this CSV</p><p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Shown only during this browser review to help you choose a category. These details are not saved to your account.</p>{sourceDetails && sourceDetails.fields.length > 0 ? <dl className="mt-3 grid gap-2 text-xs">{sourceDetails.fields.map((field, index) => <div key={`${field.label}-${index}`} className="grid gap-1 sm:grid-cols-[10rem_1fr]"><dt className="font-bold text-brand-teal">{field.label}</dt><dd className="break-words text-brand-deepTeal">{field.value}</dd></div>)}</dl> : <p className="mt-3 text-xs text-brand-deepTeal/60">No additional mapped source details are available for this row.</p>}</section>
-      {duplicateCandidates.length > 0 && <div className="mt-4 space-y-3"><p className="text-sm font-bold text-brand-deepTeal">Duplicate check</p>{duplicateCandidates.map((candidate) => <DuplicateCandidateDetails key={`${candidate.source}-${candidate.candidateId}`} candidate={candidate} isSelected={selectedMergeTargetId === candidate.candidateId} onChoose={onChooseMergeTarget} />)}</div>}
-      {row.description && row.description !== row.merchantName && <p className="mt-4 text-xs leading-5 text-brand-deepTeal/65"><span className="font-bold">Cleaned description used for saving:</span> {row.description}</p>}
-      <div className="mt-4 rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/70"><p className="font-bold text-brand-deepTeal">How we chose this</p><p className="mt-1">{suggestionLabels[row.suggestionSource]} · {row.suggestionConfidence.toLocaleLowerCase("en-AU")} confidence</p><p className="mt-1">{row.suggestionReason}</p></div>
-      <div className="mt-4 grid gap-3 sm:grid-cols-2">{canSaveLocalMerchantRule(row) ? <button type="button" onClick={onSaveRule} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-xs font-bold text-brand-deepTeal"><Save aria-hidden="true" className="h-4 w-4" /> Save again</button> : <p className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/60">Check or change the category before saving this choice.</p>}<div className="rounded-2xl bg-white p-3"><label className="text-xs font-bold text-brand-deepTeal">Also use this for matching merchants<input value={alias} onChange={(event) => setAlias(event.target.value)} maxLength={80} placeholder="e.g. Woolies" className="mt-2 min-h-10 w-full rounded-xl border border-border px-3 text-sm" /></label><button type="button" disabled={!isUsefulAlias(row, alias)} onClick={() => onSaveAlias(alias)} className="mt-2 min-h-10 w-full rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-40">Save matching name</button></div></div>
-      <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">Ordinary category and cleaned-name choices save automatically. Advanced choices keep only cleaned merchant names and category IDs.</p>
-    </div>}
+    {showMore && <section aria-label="Source details from this CSV" className="mt-3 rounded-2xl border border-border bg-white p-4"><p className="text-sm font-bold text-brand-deepTeal">Source details from this CSV</p><p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Shown only during this browser review to help you choose a category. These details are not saved to your account.</p>{sourceDetails && sourceDetails.fields.length > 0 ? <dl className="mt-3 grid gap-2 text-xs">{sourceDetails.fields.map((field, index) => <div key={`${field.label}-${index}`} className="grid gap-1 sm:grid-cols-[10rem_1fr]"><dt className="font-bold text-brand-teal">{field.label}</dt><dd className="break-words text-brand-deepTeal">{field.value}</dd></div>)}</dl> : <p className="mt-3 text-xs text-brand-deepTeal/60">No additional mapped source details are available for this row.</p>}</section>}
   </article>;
 }
