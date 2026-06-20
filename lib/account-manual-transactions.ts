@@ -8,7 +8,14 @@ export async function listAccountManualTransactions(): Promise<AccountManualTran
   try {
     const response = await fetch("/api/account/manual-transactions", { method: "GET", cache: "no-store" });
     const payload = await response.json() as AccountManualTransactionResult;
-    if (payload.ok) return payload;
+    if (payload.ok) {
+      return {
+        ok: true,
+        transactions: payload.transactions.filter((transaction) =>
+          (transaction as { source?: string }).source === "MANUAL",
+        ),
+      };
+    }
     return { ok: false, error: payload.error || "We could not load account transactions for duplicate review." };
   } catch {
     return { ok: false, error: "Account transactions are unavailable right now." };
