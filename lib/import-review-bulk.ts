@@ -1,13 +1,12 @@
 import type { ImportReviewRow } from "@/lib/import-review";
-import { canonicalMerchantGroupingKey, isAmbiguousTransferText } from "@/lib/import-review-merchant-identity";
+import { canonicalMerchantGroupingKey, isAmbiguousTransferText, isSafeCanonicalMerchantGroupingKey } from "@/lib/import-review-merchant-identity";
 
 export type ApplySameMerchantUndo = { sourceRowId: string; affectedRowIds: string[]; previousRows: ImportReviewRow[] };
 export type ApplySameMerchantResult = { rows: ImportReviewRow[]; affectedCount: number; undo: ApplySameMerchantUndo | null };
 
-const unsafeGroupingKeys = new Set(["payment", "bank transfer", "transfer", "deposit", "cba", "commonwealth bank"]);
-
 function isUnsafeForBulkGrouping(row: ImportReviewRow) {
-  return isAmbiguousTransferText(row.merchantName, row.description) || unsafeGroupingKeys.has(canonicalMerchantGroupingKey(row.merchantName));
+  const key = canonicalMerchantGroupingKey(row.merchantName);
+  return isAmbiguousTransferText(row.merchantName, row.description) || !isSafeCanonicalMerchantGroupingKey(key);
 }
 
 function matchingEligibleRows(rows: ImportReviewRow[], source: ImportReviewRow) {

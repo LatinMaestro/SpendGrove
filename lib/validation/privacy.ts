@@ -93,6 +93,7 @@ function cleanPrivateBankDescription(value: string) {
       .replaceAll(safeReplacement, " ")
       .replace(valueDatePattern, " ")
       .replace(privateReferenceMarkerPattern, " ")
+      .replace(/\b(?:inv|invoice|ref|txn|trx|id|ord|order|receipt|policy|member)(?:[-_][a-z0-9-]{3,}|\d[a-z0-9-]{2,})\b/gi, " ")
       .replace(bankReferenceTokenPattern, " ")
       .replace(/\b(?:account|acct|card|customer|client|member|loan)\s*(?:number|no|id|ending)?\s*[:#-]?\s*$/gi, " ")
       .replace(/[|;]+/g, " ")
@@ -126,6 +127,14 @@ function safeTransferName(value: string) {
     return `Bank transfer ${direction.direction} ${direction.party}`;
   }
   if (internalTransferPattern.test(value)) return "Internal transfer";
+  const namedMerchant = value
+    .replace(/\b(?:osko|bank transfer|transfer|xfer|pay anyone|internet banking|payment)\b/gi, " ")
+    .replace(/\b(?:to|from|via)\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (namedMerchant && !/^(?:bank|account|movement|deposit|withdrawal)$/i.test(namedMerchant)) {
+    return titleCaseSafeWords(namedMerchant.split(" ").slice(0, 4).join(" ")).slice(0, 60);
+  }
   return "Bank transfer";
 }
 

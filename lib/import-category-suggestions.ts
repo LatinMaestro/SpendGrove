@@ -52,10 +52,10 @@ function suggestTransferCategory(merchantValue: string, bankDescription?: string
 }
 
 export function suggestImportReviewCategory(merchantValue: string, data: LocalMerchantData, bankDescription?: string): MerchantCategorySuggestion {
-  const transferSuggestion = suggestTransferCategory(merchantValue, bankDescription);
-  if (transferSuggestion) return transferSuggestion;
   const grouped = suggestGroupedMerchantCategory(merchantValue, data);
   if (grouped) return grouped;
+  const transferSuggestion = suggestTransferCategory(merchantValue, bankDescription);
+  if (transferSuggestion) return transferSuggestion;
   const baseSuggestion = suggestMerchantCategory(merchantValue, data);
   if (baseSuggestion.source !== "FALLBACK") return baseSuggestion;
   const deterministic = deterministicSuggestions.find((candidate) => candidate.merchants.some((merchant) => merchant.toLocaleLowerCase("en-AU") === baseSuggestion.merchantName.toLocaleLowerCase("en-AU")));

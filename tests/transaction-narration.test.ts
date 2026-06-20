@@ -22,6 +22,14 @@ describe("safe transaction names and bank descriptions", () => {
     expect(sanitizeBankDescription(input)).toBe("Bank transfer to Alex");
   });
 
+  it("keeps a stable named merchant for transfer-style narration while removing references", () => {
+    const input = "Superhero transfer TRX-91A72 reference 9988776655";
+    expect(sanitizeTransactionNarration(input)).toBe("Superhero");
+    expect(sanitizeBankDescription(input)).toBe("Superhero");
+    expect(sanitizeTransactionNarration(input)).not.toContain("91A72");
+    expect(sanitizeTransactionNarration(input)).not.toContain("9988776655");
+  });
+
   it("keeps card merchant titles short while retaining safe bank detail separately", () => {
     const sevenEleven = "7-ELEVEN 4235 Fictional Suburb QL AUS Card Value Date: 27/05/2026";
     const dominos = "Domino's Estore Fictional Suburb dominos.com.au AU AUS Card Value Date: 27/05/2026";
