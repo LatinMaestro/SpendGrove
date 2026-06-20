@@ -11,6 +11,10 @@ import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { assertUserOwnsRecord, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
 
+export type AccountTransaction = Omit<ManualTransaction, "source"> & {
+  source: "MANUAL" | "IMPORTED";
+};
+
 export type DbManualTransactionCategoryRecord = {
   id: string;
   name: string;
@@ -24,6 +28,7 @@ export type DbManualTransactionRecord = {
   id: string;
   userId: string;
   type: ManualCategoryType | string;
+  source: "MANUAL" | "IMPORTED" | string;
   amountCents: number;
   date: Date | string;
   description: string;
@@ -111,11 +116,11 @@ function toManualCategoryId(category: DbManualTransactionCategoryRecord | null |
   return matchingCategory?.id ?? category.id;
 }
 
-function toManualTransaction(record: DbManualTransactionRecord): ManualTransaction {
+function toAccountTransaction(record: DbManualTransactionRecord): AccountTransaction {
   return {
     id: record.id,
     type: record.type as ManualCategoryType,
-    source: "MANUAL",
+    source: record.source === "IMPORTED" ? "IMPORTED" : "MANUAL",
     amountCents: record.amountCents,
     date: toDateOnly(record.date),
     description: record.description,
@@ -163,7 +168,6 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
       return prisma.transaction.findMany({
         where: {
           userId,
-          source: "MANUAL",
           status: "ACTIVE",
           deletedAt: null,
           splitRole: {
@@ -182,7 +186,6 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
         where: {
           id: transactionId,
           userId,
-          source: "MANUAL",
           status: "ACTIVE",
           deletedAt: null,
           splitRole: {
@@ -307,7 +310,7 @@ export async function listDurableManualTransactions(
 ) {
   const user = requireAuthenticatedUserContext(context);
   const records = await store.listActive(user.userId);
-  return records.map(toManualTransaction);
+  return records.map(toAccountTransaction);
 }
 
 export async function createDurableManualTransaction(
@@ -329,7 +332,7 @@ export async function createDurableManualTransaction(
   });
 
   assertUserOwnsRecord(user, record, "transaction");
-  return toManualTransaction(record);
+  return toAccountTransaction(record);
 }
 
 export async function updateDurableManualTransaction(
@@ -355,7 +358,7 @@ export async function updateDurableManualTransaction(
   });
 
   assertUserOwnsRecord(user, record, "transaction");
-  return toManualTransaction(record);
+  return toAccountTransaction(record);
 }
 
 export async function softDeleteDurableManualTransaction(
@@ -370,7 +373,7 @@ export async function softDeleteDurableManualTransaction(
 
   const record = await store.softDelete(user.userId, transactionId, now);
   assertUserOwnsRecord(user, record, "transaction");
-  return toManualTransaction(record);
+  return toAccountTransaction(record);
 }
 
 export async function migrateDurableManualTransactions(
