@@ -6,73 +6,70 @@ Last updated: 20 June 2026
 
 - Active phase: Phase 3A — Persistence & Commit Foundation.
 - Formal status: implementation complete; pending client acceptance and signed-in retesting.
-- Current objective: stop implementation and support client retesting of PR #40.
+- Current objective: stop implementation and support client retesting after PR #42.
 - Do not start Phase 3B, Phase 4, Production migration or later modules without explicit client approval.
 
 ## Repository truth
 
-- Latest functional PR: [#40](https://github.com/LatinMaestro/SpendGrove/pull/40), merged green on 20 June 2026.
-- Merge commit: `918863fdc8e35ea4c909db24fa20128881d1e8d1`.
-- PR preview: https://spendgrove-git-codex-phase-3a-imp-d351d3-latinmaestros-projects.vercel.app
-- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/6nMdDHPF2se4y3TLnHnYeVkhvofE
-- Post-merge main deployment: https://vercel.com/latinmaestros-projects/spendgrove/5aUtBAokZWqU6oDZR9A9D5FPGNbw
-- Full tests and Next.js production build passed; main is Ready / green.
+- Latest functional PR: [#42](https://github.com/LatinMaestro/SpendGrove/pull/42), merged green on 20 June 2026.
+- Merge commit: `483647b62b499f964688f89e1060e3e0486ea66a`.
+- PR commit: `4ae5a7786120aac77b57442861a53e9361586bcf`.
+- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/FzadChj22ECNippN9ErqxD9xm8xz
+- Post-merge main deployment: https://vercel.com/latinmaestros-projects/spendgrove/F5NyN8gAeex1YVAtn6Utqumnj6bg
+- Full tests: 55 files / 296 tests passed.
+- Next.js production build: passed.
+- Main Vercel deployment: Ready / green.
 
-## Sign-in finding
+## PR #42 acceptance fixes
 
-Email-code sign-in works and remains the recommended Phase 3A test path. Password failure remains consistent with the test account/password or Clerk rate limiting, not an identified app-side routing/provider defect. Do not request or share passwords, Clerk keys, secrets or environment values.
+- Merchant grouping now removes or de-weights leading, trailing and embedded reference-like fragments, including long numbers and mixed alphanumeric invoice/transaction tokens, while preserving stable merchant words.
+- Synthetic Kindred-like, MetLife-like and Superhero-like variants group safely.
+- Generic labels such as Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA remain excluded from bulk grouping.
+- `Apply to same merchant`, grouped category suggestions and automatic merchant/category learning use the safer canonical key.
+- Automatic learning stores only the canonical cleaned merchant name and category ID, never transaction-specific references or raw bank narration.
+- More options now contains only `Source details from this CSV` and the browser-memory privacy explanation.
+- Duplicate/Merge guidance remains available outside More options.
+- Previous, Next and page-number controls scroll to the top of the existing review list without remounting or resetting review state.
+- Committed import history was removed from the active Import route and is now available in Settings when account persistence is configured.
+- The active saved/reuse column mapping UI was removed. Each file is still automatically mapped, shown for confirmation and manually adjustable.
+- The visible `Private account details hidden` panel was removed. Privacy scanning and private-column exclusion remain active.
 
-## PR #39 save-flow acceptance fixes
+## Preserved working behaviour
 
-- `Only show items needing review` captures a stable working set. Rows stay visible after category selection until the user selects `Hide resolved items` or toggles the filter.
-- The large transfer decision panel was removed. Transfer-like rows use normal category review with a small hint.
-- More options shows mapped `Source details from this CSV` from active browser memory only.
-- The active review ends with one primary `Import reviewed transactions` panel.
-- The approved `Needs review` category is a soft warning with `Import anyway` / `Keep reviewing` confirmation.
-- True date, amount, category and Merge-target blockers remain strict and display safe row-level diagnostics.
-- The 99-row commit path now caches shared lookups and uses bulk transaction/import-row writes inside one bounded atomic, idempotent transaction.
-
-## PR #40 visibility and management fixes
-
-- Root cause of invisible imports: the Transactions service filtered list, edit and delete lookups to `source: MANUAL`, while its projection hardcoded every row as manual. Imported records existed durably but were excluded from the whole Transactions surface.
-- The signed-in Transactions tab now lists active user-owned manual and imported transactions together.
-- Imported rows display a clear `Imported` source badge; manual entries display `Manual`.
-- Imported transactions use the existing safe account editor for type, amount, date, cleaned description, category, notes and CSV-match hint.
-- Imported transactions can be soft-deleted. They disappear from the active list, while their ImportBatch, ImportRow and audit history remain intact.
-- Safe import history reports a deleted linked transaction as `DELETED` without returning financial or source-row content.
-- Manual creation remains manual-only. Import Merge candidates remain restricted to active manual transactions.
-
-## Review badge root cause and fix
-
-PR #39 counted every `categoryConfirmed === false` suggestion and every parser warning code as unresolved row state. Therefore valid suggested and remembered categories still showed the generic Needs review badge.
-
-Readiness now depends only on true commit blockers or the explicit approved `Needs review` category. Valid keyword suggestions, remembered merchant rules and manual category choices show `Ready`. Non-critical parser warning codes remain safe metadata and do not create a stale row-level blocker. Global counts, badges and the filter use this same rule.
+- Imported transactions remain visible, editable and soft-deletable in Transactions.
+- ImportBatch, ImportRow and safe audit/history evidence remain after transaction deletion.
+- Valid suggested, remembered and manually selected categories show Ready.
+- Only explicit Needs review or true blockers affect the review filter.
+- Stable filtered working sets, 600-row paging, mobile category controls and the simplified save flow remain.
+- Needs Review remains a soft-warning import choice; true blockers remain strict.
+- Batched, atomic and idempotent account commit remains.
+- Source details remain browser-memory-only.
 
 ## Privacy and database status
 
-- Source details remain browser-memory-only; private/ignored columns are excluded from the display projection.
-- Raw CSV files, rows, filenames, narration, balances and private identifiers are absent from account transaction APIs, commit payloads, saved mappings, merchant rules, history and audit responses.
-- Account transactions expose cleaned durable fields only and remain user-scoped.
-- Soft deletion updates only the linked transaction; it does not delete import batches, import rows or audit evidence.
-- No schema, package, provider, secret or environment change was included.
+- Raw CSV files, rows, original filenames, narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, secrets and connection strings remain excluded from durable account data, merchant learning, history, audit metadata, logs and documentation.
+- Source details never enter commit, transaction, mapping, merchant, history or audit payloads.
+- No schema migration, package, provider, secret or environment change was included.
+- No Preview database migration was required.
 - No Production migration has been run.
-- Automated signed-in browser retesting was not completed because previews are Vercel-authentication protected. Do not claim the full journey is manually verified.
+- Home dashboard expense/income stats remain later-phase work and were not implemented.
+- No Phase 4 or later work has started.
 
 ## Exact next action
 
 Ask the client to retest with synthetic data:
 
-1. Sign in using an email code.
-2. Commit a small reviewed CSV import, open Transactions and confirm imported rows appear beside manual entries after refresh.
-3. Confirm each row has the correct `Imported` or `Manual` source badge.
-4. Open an imported row, edit its cleaned description/category/date/amount or notes, save and confirm the edit survives refresh.
-5. Soft-delete an imported row and confirm it leaves the active Transactions list.
-6. Open committed import history and confirm the deleted linked row reports a safe deleted state while the batch/row history remains.
-7. Attempt cross-user access only through existing synthetic automated coverage; do not share accounts or private credentials.
-8. Review a CSV containing valid suggested, remembered and manually selected categories; confirm those rows show Ready rather than a generic Needs review badge.
-9. Leave one row explicitly in the `Needs review` category and confirm only that row remains in the count/filter.
-10. Reconfirm PR #39 stable filtering, source details, simplified save, Needs review import warning and successful 99-row commit.
-11. Reconfirm 600-row paging, mobile picker clearance, merchant learning and retry idempotency.
+1. Upload a CSV and confirm SpendGrove automatically attempts the column mapping.
+2. Confirm the detected mapping can be accepted or manually changed, with no saved/reuse mapping controls shown.
+3. Confirm the large private-details panel is absent while private columns still cannot be mapped or reviewed.
+4. Review repeated merchant variants containing different leading, trailing and embedded reference tokens.
+5. Confirm `Apply to same merchant` appears for safe Kindred-like, MetLife-like, Superhero-like and other stable merchant variants.
+6. Confirm generic Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA rows are not over-grouped.
+7. Open More options and confirm it shows only `Source details from this CSV` plus the browser-memory privacy copy.
+8. Use Previous, Next and page-number controls and confirm each page change scrolls to the top without losing category, merchant, tax, action or Merge choices.
+9. Confirm committed import history is absent from active mapping/review and available from Settings.
+10. Complete a signed-in import and confirm imported transactions still appear in Transactions, remain editable and can be soft-deleted.
+11. Reconfirm Ready/Needs review semantics, stable filtering, Needs Review warning import, 600-row paging and safe retry/idempotency behaviour.
 
 If the client reports a defect, fix only that Phase 3A acceptance issue. Otherwise wait for explicit Phase 3A closure or separately scoped next-phase approval.
 
