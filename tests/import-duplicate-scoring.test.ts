@@ -3,10 +3,15 @@ import { manualCategories } from "@/lib/manual-categories";
 import { loadManualTransactionsFromStorage } from "@/lib/manual-transaction-storage";
 import { createManualTransaction, type ManualTransaction } from "@/lib/manual-transactions";
 import {
+  countLikelyExistingDuplicateRows,
   createMergeTargetReviewSelection,
+  defaultLikelyExistingDuplicatesToSkip,
   findImportDuplicateCandidates,
+  LIKELY_EXISTING_DUPLICATE_WARNING_CODE,
+  looksLikeOverlappingImport,
+  type ExistingAccountTransaction,
 } from "@/lib/import-duplicate-scoring";
-import type { ImportReviewRow } from "@/lib/import-review";
+import { updateImportReviewAction, type ImportReviewRow } from "@/lib/import-review";
 
 const groceries = manualCategories.find((category) => category.name === "Groceries")!;
 const dining = manualCategories.find((category) => category.name === "Dining out")!;
@@ -47,6 +52,15 @@ function manualTransaction(overrides: Partial<ManualTransaction> = {}) {
   }).map((transaction) => ({ ...transaction, ...overrides }))[0];
 }
 
+function accountTransaction(overrides: Partial<ExistingAccountTransaction> = {}): ExistingAccountTransaction {
+  return {
+    ...manualTransaction(),
+    source: "IMPORTED",
+    merchantName: "Woolworths",
+    ...overrides,
+  };
+}
+
 describe("import duplicate scoring", () => {
   it("shows existing browser-local manual transactions as likely merge targets", () => {
     const candidates = findImportDuplicateCandidates(
@@ -56,7 +70,8 @@ describe("import duplicate scoring", () => {
     );
 
     expect(candidates[0]).toMatchObject({
-      source: "MANUAL_TRANSACTION",
+      source: "EXISTING_TRANSACTION",
+      transactionSource: "MANUAL",
       candidateId: "manual-1",
       confidence: "LIKELY",
       canMergeTarget: true,
@@ -89,7 +104,8 @@ describe("import duplicate scoring", () => {
     );
 
     expect(candidates[0]).toMatchObject({
-      source: "MANUAL_TRANSACTION",
+      source: "EXISTING_TRANSACTION",
+      transactionSource: "MANUAL",
       confidence: "POSSIBLE",
       canMergeTarget: true,
     });
@@ -156,7 +172,7 @@ describe("import duplicate scoring", () => {
     expect(findImportDuplicateCandidates(source, [source, skippedImportRow], [deletedManual, splitParentManual])).toEqual([]);
     expect(findImportDuplicateCandidates(reviewRow({ date: null }), [source], [manualTransaction()])).toEqual([]);
     expect(findImportDuplicateCandidates(reviewRow({ amountCents: null }), [source], [manualTransaction()])).toEqual([]);
-    expect(findImportDuplicateCandidates(reviewRow({ action: "SKIP" }), [source], [manualTransaction()])).toEqual([]);
+    expect(findImportDuplicateCandidates(reviewRow({ action: "SKIP" }), [source], [manualTransaction()])).toHaveLength(1);
   });
 
   it("avoids prominent warnings when merchant and description are weak", () => {
@@ -177,6 +193,65 @@ describe("import duplicate scoring", () => {
     );
 
     expect(candidates).toEqual([]);
+  });
+
+  it("detects an exact existing imported transaction but never offers it as a merge target", () => {
+    const [candidate] = findImportDuplicateCandidates(reviewRow(), [reviewRow()], [accountTransaction()]);
+
+    expect(candidate).toMatchObject({
+      source: "EXISTING_TRANSACTION",
+      transactionSource: "IMPORTED",
+      confidence: "LIKELY",
+      canMergeTarget: false,
+    });
+    expect(() => createMergeTargetReviewSelection(reviewRow(), candidate)).toThrow(
+      "Only existing manual transactions can be selected as merge targets.",
+    );
+  });
+
+  it("defaults high-confidence existing matches to Skip and preserves a deliberate Import override", () => {
+    const rows = [reviewRow()];
+    const defaulted = defaultLikelyExistingDuplicatesToSkip(rows, [accountTransaction()]);
+
+    expect(defaulted[0]).toMatchObject({ action: "SKIP" });
+    expect(defaulted[0].warningCodes).toContain(LIKELY_EXISTING_DUPLICATE_WARNING_CODE);
+
+    const overridden = updateImportReviewAction(defaulted, defaulted[0].id, "IMPORT");
+    expect(overridden[0]).toMatchObject({ action: "IMPORT" });
+    expect(overridden[0].warningCodes).toContain(LIKELY_EXISTING_DUPLICATE_WARNING_CODE);
+  });
+
+  it("warns only on overlapping rows and leaves new rows ready to import", () => {
+    const rows = [
+      reviewRow({ id: "row-1", rowNumber: 1, amountCents: -1299, description: "Woolworths Metro", merchantName: "Woolworths" }),
+      reviewRow({ id: "row-2", rowNumber: 2, amountCents: -2500, description: "Blue Lantern Cafe", merchantName: "Blue Lantern Cafe", categoryId: dining.id }),
+      reviewRow({ id: "row-3", rowNumber: 3, amountCents: -875, description: "New Corner Store", merchantName: "New Corner Store" }),
+    ];
+    const existing = [
+      accountTransaction({ id: "imported-1", amountCents: -1299, description: "Woolworths Metro", merchantName: "Woolworths" }),
+      accountTransaction({ id: "imported-2", amountCents: -2500, description: "Blue Lantern Cafe", merchantName: "Blue Lantern Cafe", categoryId: dining.id }),
+    ];
+
+    expect(countLikelyExistingDuplicateRows(rows, existing)).toBe(2);
+    expect(looksLikeOverlappingImport(2, rows.length)).toBe(true);
+    expect(defaultLikelyExistingDuplicatesToSkip(rows, existing).map((row) => row.action)).toEqual([
+      "SKIP",
+      "SKIP",
+      "IMPORT",
+    ]);
+  });
+
+  it("does not over-match generic transfer or payment descriptions", () => {
+    const genericRow = reviewRow({ merchantName: "Bank transfer", description: "Payment", categoryId: dining.id });
+    const existing = accountTransaction({ merchantName: "Bank transfer", description: "Payment", categoryId: dining.id });
+
+    expect(findImportDuplicateCandidates(genericRow, [genericRow], [existing])).toEqual([]);
+  });
+
+  it("keeps durable duplicate comparison user-scoped", () => {
+    const otherUser = accountTransaction({ userId: "user_2" });
+    expect(findImportDuplicateCandidates(reviewRow(), [reviewRow()], [otherUser], { userId: "user_1" })).toEqual([]);
+    expect(findImportDuplicateCandidates(reviewRow(), [reviewRow()], [otherUser], { userId: "user_2" })).toHaveLength(1);
   });
 
   it("requires compatible money direction before suggesting a match", () => {

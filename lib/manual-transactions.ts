@@ -204,12 +204,14 @@ export function listActiveManualTransactions(transactions: ManualTransaction[]) 
     });
 }
 
-function formatDraftAmount(transaction: ManualTransaction) {
+function formatDraftAmount(transaction: Pick<ManualTransaction, "type" | "amountCents">) {
   const cents = transaction.type === "TRANSFER" ? transaction.amountCents : Math.abs(transaction.amountCents);
   return (cents / 100).toFixed(2);
 }
 
-export function duplicateManualTransactionToDraft(transaction: ManualTransaction): ManualTransactionDraft {
+export function duplicateManualTransactionToDraft(
+  transaction: Pick<ManualTransaction, "type" | "amountCents" | "date" | "description" | "categoryId" | "notes" | "csvMatchHint">,
+): ManualTransactionDraft {
   return {
     type: transaction.type,
     amountInput: formatDraftAmount(transaction),

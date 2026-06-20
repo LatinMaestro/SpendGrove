@@ -135,6 +135,37 @@ describe("durable import commit", () => {
     expect(warningOnly.rows[0].warningCodes).toContain("POSSIBLE_SAME_IMPORT_DUPLICATE");
   });
 
+  it("records likely existing duplicates as safe skipped outcomes without creating transactions", async () => {
+    const store = createMemoryStore();
+    const duplicateSkip = importCommitRequestSchema.parse({
+      ...request,
+      requestId: "33333333-3333-4333-8333-333333333333",
+      rows: [
+        { rowNumber: 1, action: "SKIP", warningCodes: ["LIKELY_EXISTING_DUPLICATE"] },
+      ],
+      metadata: {
+        ...request.metadata,
+        parsedRowCount: 1,
+        privateFieldCount: 0,
+        warningCodes: [],
+      },
+    });
+
+    const result = await commitReviewedImport(createTestUserContext("user_1"), duplicateSkip, store);
+
+    expect(result).toMatchObject({ importedCount: 0, skippedCount: 1 });
+    expect(store.transactions).toEqual([]);
+    expect(store.rows).toEqual([
+      {
+        rowNumber: 1,
+        action: "SKIP",
+        status: "SKIPPED",
+        warningCodes: ["LIKELY_EXISTING_DUPLICATE"],
+      },
+    ]);
+    expect(JSON.stringify(store.rows)).not.toMatch(/description|merchant|raw|filename|account|bsb|balance/i);
+  });
+
   it("stores only safe aggregate audit metadata", async () => {
     const store = createMemoryStore();
     await commitReviewedImport(createTestUserContext("user_1"), request, store);

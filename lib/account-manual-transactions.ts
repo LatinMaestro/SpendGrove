@@ -1,21 +1,19 @@
 import type { ManualTransaction } from "@/lib/manual-transactions";
 
-export type AccountManualTransactionResult =
-  | { ok: true; transactions: ManualTransaction[] }
+export type AccountTransaction = Omit<ManualTransaction, "source"> & {
+  source: "MANUAL" | "IMPORTED";
+  merchantName?: string;
+};
+
+export type AccountTransactionResult =
+  | { ok: true; transactions: AccountTransaction[] }
   | { ok: false; error: string };
 
-export async function listAccountManualTransactions(): Promise<AccountManualTransactionResult> {
+export async function listAccountTransactionsForImportReview(): Promise<AccountTransactionResult> {
   try {
     const response = await fetch("/api/account/manual-transactions", { method: "GET", cache: "no-store" });
-    const payload = await response.json() as AccountManualTransactionResult;
-    if (payload.ok) {
-      return {
-        ok: true,
-        transactions: payload.transactions.filter((transaction) =>
-          (transaction as { source?: string }).source === "MANUAL",
-        ),
-      };
-    }
+    const payload = await response.json() as AccountTransactionResult;
+    if (payload.ok) return payload;
     return { ok: false, error: payload.error || "We could not load account transactions for duplicate review." };
   } catch {
     return { ok: false, error: "Account transactions are unavailable right now." };
