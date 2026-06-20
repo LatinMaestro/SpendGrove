@@ -56,15 +56,20 @@ export type ImportHistoryStore = {
 };
 
 function safeCount(value: unknown, maximum = 5000) {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0
-    ? Math.min(value, maximum)
-    : 0;
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? Math.min(value, maximum) : 0;
 }
 
 function safeMetadataCount(metadata: unknown, key: string, fallback: number) {
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return fallback;
   const value = (metadata as Record<string, unknown>)[key];
   return value === undefined ? fallback : safeCount(value);
+}
+
+function linkedState(transaction: StoredLinkedTransaction, userId: string, source: "IMPORTED" | "MANUAL"): ImportHistoryLinkState {
+  if (!transaction || transaction.userId !== userId || transaction.source !== source) return "UNAVAILABLE";
+  if (transaction.status === "ACTIVE") return "ACTIVE";
+  if (transaction.status === "DELETED") return "DELETED";
+  return "UNAVAILABLE";
 }
 
 function mapOutcome(userId: string, row: StoredImportRow): SafeImportRowOutcome {
@@ -78,28 +83,14 @@ function mapOutcome(userId: string, row: StoredImportRow): SafeImportRowOutcome 
   } else if (row.action === "IMPORT" && row.status === "COMMITTED") {
     outcome = "IMPORTED";
     linkedTransaction = "IMPORTED";
-    linkState = row.committedTransaction?.userId === userId
-      && row.committedTransaction.source === "IMPORTED"
-      && row.committedTransaction.status === "ACTIVE"
-      ? "ACTIVE"
-      : "UNAVAILABLE";
+    linkState = linkedState(row.committedTransaction, userId, "IMPORTED");
   } else if (row.action === "MERGE" && row.status === "MERGED") {
     outcome = "MERGED";
     linkedTransaction = "MANUAL";
-    linkState = row.matchedTransaction?.userId === userId
-      && row.matchedTransaction.source === "MANUAL"
-      && row.matchedTransaction.status === "ACTIVE"
-      ? "ACTIVE"
-      : "UNAVAILABLE";
+    linkState = linkedState(row.matchedTransaction, userId, "MANUAL");
   }
 
-  return {
-    rowNumber: safeCount(row.rowNumber),
-    outcome,
-    linkedTransaction,
-    linkState,
-    warningCount: safeCount(row.warningCodes.length, 20),
-  };
+  return { rowNumber: safeCount(row.rowNumber), outcome, linkedTransaction, linkState, warningCount: safeCount(row.warningCodes.length, 20) };
 }
 
 function mapAudit(batch: StoredImportBatch, audit: StoredAuditEvent | undefined): SafeImportAuditTrail | null {
@@ -126,29 +117,10 @@ export function createPrismaImportHistoryStore(prisma: PrismaClient = getPrismaC
         orderBy: [{ completedAt: "desc" }, { createdAt: "desc" }],
         take: limit,
         select: {
-          id: true,
-          userId: true,
-          status: true,
-          rowCount: true,
-          importedCount: true,
-          skippedCount: true,
-          mergedCount: true,
-          privateFieldCount: true,
-          warningCodes: true,
-          createdAt: true,
-          completedAt: true,
+          id: true, userId: true, status: true, rowCount: true, importedCount: true, skippedCount: true, mergedCount: true, privateFieldCount: true, warningCodes: true, createdAt: true, completedAt: true,
           importRows: {
-            orderBy: { rowNumber: "asc" },
-            take: rowLimit,
-            select: {
-              userId: true,
-              rowNumber: true,
-              action: true,
-              status: true,
-              warningCodes: true,
-              committedTransaction: { select: { userId: true, source: true, status: true } },
-              matchedTransaction: { select: { userId: true, source: true, status: true } },
-            },
+            orderBy: { rowNumber: "asc" }, take: rowLimit,
+            select: { userId: true, rowNumber: true, action: true, status: true, warningCodes: true, committedTransaction: { select: { userId: true, source: true, status: true } }, matchedTransaction: { select: { userId: true, source: true, status: true } } },
           },
         },
       });
@@ -182,26 +154,21 @@ export async function listSafeImportHistory(
     auditByBatchId.set(audit.entityId, audit);
   });
 
-  return batches
-    .map((batch) => {
-      const outcomes = batch.importRows
-        .filter((row) => row.userId === user.userId && Number.isInteger(row.rowNumber) && row.rowNumber > 0)
-        .slice(0, rowLimit)
-        .map((row) => mapOutcome(user.userId, row));
-      const totalCount = safeCount(batch.rowCount);
-      return {
-        batchId: batch.id,
-        completedAt: (batch.completedAt ?? batch.createdAt).toISOString(),
-        totalCount,
-        importedCount: safeCount(batch.importedCount),
-        skippedCount: safeCount(batch.skippedCount),
-        mergedCount: safeCount(batch.mergedCount),
-        warningCount: safeCount(batch.warningCodes.length, 20),
-        privateFieldCount: safeCount(batch.privateFieldCount, 100),
-        outcomes,
-        hiddenOutcomeCount: Math.max(0, totalCount - outcomes.length),
-        audit: mapAudit(batch, auditByBatchId.get(batch.id)),
-      } satisfies AccountImportHistoryEntry;
-    })
-    .sort((left, right) => right.completedAt.localeCompare(left.completedAt));
+  return batches.map((batch) => {
+    const outcomes = batch.importRows.filter((row) => row.userId === user.userId && Number.isInteger(row.rowNumber) && row.rowNumber > 0).slice(0, rowLimit).map((row) => mapOutcome(user.userId, row));
+    const totalCount = safeCount(batch.rowCount);
+    return {
+      batchId: batch.id,
+      completedAt: (batch.completedAt ?? batch.createdAt).toISOString(),
+      totalCount,
+      importedCount: safeCount(batch.importedCount),
+      skippedCount: safeCount(batch.skippedCount),
+      mergedCount: safeCount(batch.mergedCount),
+      warningCount: safeCount(batch.warningCodes.length, 20),
+      privateFieldCount: safeCount(batch.privateFieldCount, 100),
+      outcomes,
+      hiddenOutcomeCount: Math.max(0, totalCount - outcomes.length),
+      audit: mapAudit(batch, auditByBatchId.get(batch.id)),
+    } satisfies AccountImportHistoryEntry;
+  }).sort((left, right) => right.completedAt.localeCompare(left.completedAt));
 }

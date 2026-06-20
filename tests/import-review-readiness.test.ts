@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { ImportReviewRow } from "@/lib/import-review";
-import { countReadyImportRows, countRowsInNeedsReviewCategory, createImportReviewWorkingSet, filterImportReviewRows, filterImportReviewRowsByWorkingSet, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowHasHardBlocker, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
+import { countImportReviewRowsNeedingAttention, countReadyImportRows, countRowsInNeedsReviewCategory, createImportReviewWorkingSet, filterImportReviewRows, filterImportReviewRowsByWorkingSet, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowHasHardBlocker, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
 import { manualCategories } from "@/lib/manual-categories";
 
 const categoryId = (name: string) => manualCategories.find((category) => category.name === name)!.id;
@@ -9,11 +9,20 @@ function row(overrides: Partial<ImportReviewRow> = {}): ImportReviewRow {
 }
 
 describe("import review readiness and filtering", () => {
-  it("removes Needs review after a valid category when no warning remains", () => {
+  it("marks a valid manually selected category ready when no blocker remains", () => {
     const ready = row();
     expect(importReviewRowNeedsAttention(ready)).toBe(false);
     expect(importReviewRowBlockers(ready)).toEqual([]);
     expect(countReadyImportRows([ready])).toBe(1);
+  });
+
+  it("treats valid suggested and remembered categories as ready without confirmation", () => {
+    const suggested = row({ id: "suggested", categoryConfirmed: false, reviewState: "UNREVIEWED", suggestionSource: "KEYWORD", suggestionConfidence: "MEDIUM", warningCodes: ["NON_CRITICAL_SYNTHETIC_WARNING"] });
+    const remembered = row({ id: "remembered", categoryConfirmed: false, reviewState: "UNREVIEWED", suggestionSource: "USER_RULE", suggestionConfidence: "HIGH" });
+    expect(importReviewRowNeedsAttention(suggested)).toBe(false);
+    expect(importReviewRowNeedsAttention(remembered)).toBe(false);
+    expect(countImportReviewRowsNeedingAttention([suggested, remembered])).toBe(0);
+    expect(countReadyImportRows([suggested, remembered])).toBe(2);
   });
 
   it("blocks zero-dollar rows before commit and explains why", () => {
