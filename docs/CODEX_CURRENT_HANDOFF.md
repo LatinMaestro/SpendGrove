@@ -1,38 +1,43 @@
 # Current Codex Handoff
 
-Last updated: 20 June 2026
+Last updated: 21 June 2026
 
 ## Current state
 
 - Active phase: Phase 3A — Persistence & Commit Foundation.
 - Formal status: implementation complete; pending client acceptance and signed-in retesting.
-- Current objective: stop implementation and support client retesting after PR #42.
+- Current objective: stop implementation and support client retesting after PR #44.
 - Do not start Phase 3B, Phase 4, Production migration or later modules without explicit client approval.
 
 ## Repository truth
 
-- Latest functional PR: [#42](https://github.com/LatinMaestro/SpendGrove/pull/42), merged green on 20 June 2026.
-- Merge commit: `483647b62b499f964688f89e1060e3e0486ea66a`.
-- PR commit: `4ae5a7786120aac77b57442861a53e9361586bcf`.
-- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/FzadChj22ECNippN9ErqxD9xm8xz
-- Post-merge main deployment: https://vercel.com/latinmaestros-projects/spendgrove/F5NyN8gAeex1YVAtn6Utqumnj6bg
-- Full tests: 55 files / 296 tests passed.
+- Latest functional PR: [#44](https://github.com/LatinMaestro/SpendGrove/pull/44), merged green on 21 June 2026.
+- Merge commit: `6e7c15d59d5c6fedf1f18cf5a822e11fbb95a769`.
+- PR commit: `b3b4e5dd36ff13826c4207a5c93c6b48ccc41e18`.
+- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/BFKbsaUr5iH4sMRFyZ9CHniHi8vj
+- PR preview: https://spendgrove-git-codex-phase-3a-pos-ac737d-latinmaestros-projects.vercel.app
+- Post-merge main deployment: https://vercel.com/latinmaestros-projects/spendgrove/79GLPBGxHpnjsrNXPmi6xREUJhsF
+- Production alias: https://spendgrove.vercel.app
+- Full tests: 55 files / 313 tests passed.
+- TypeScript type-check: passed.
 - Next.js production build: passed.
 - Main Vercel deployment: Ready / green.
+- Production `/transactions` route: HTTP 200 from Vercel.
 
-## PR #42 acceptance fixes
+## PR #44 acceptance fixes
 
-- Merchant grouping now removes or de-weights leading, trailing and embedded reference-like fragments, including long numbers and mixed alphanumeric invoice/transaction tokens, while preserving stable merchant words.
-- Synthetic Kindred-like, MetLife-like and Superhero-like variants group safely.
-- Generic labels such as Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA remain excluded from bulk grouping.
-- `Apply to same merchant`, grouped category suggestions and automatic merchant/category learning use the safer canonical key.
-- Automatic learning stores only the canonical cleaned merchant name and category ID, never transaction-specific references or raw bank narration.
-- More options now contains only `Source details from this CSV` and the browser-memory privacy explanation.
-- Duplicate/Merge guidance remains available outside More options.
-- Previous, Next and page-number controls scroll to the top of the existing review list without remounting or resetting review state.
-- Committed import history was removed from the active Import route and is now available in Settings when account persistence is configured.
-- The active saved/reuse column mapping UI was removed. Each file is still automatically mapped, shown for confirmation and manually adjustable.
-- The visible `Private account details hidden` panel was removed. Privacy scanning and private-column exclusion remain active.
+- Successful authenticated import now navigates to Transactions only after the commit succeeds.
+- Transactions shows a safe completion message and imported count. A zero-import result says no new transactions were added.
+- Duplicate review now checks active imported and manual account transactions, not only browser-local/manual rows.
+- High-confidence existing matches default to Skip and retain a safe `LIKELY_EXISTING_DUPLICATE` warning code.
+- A likely duplicate can still be deliberately changed to Import, but the final confirmation warns that another copy will be created.
+- Files with at least two likely matches covering at least 30% of rows show an overlapping-import warning.
+- Import remains disabled if the signed-in account duplicate check is loading or unavailable; the user can retry safely.
+- Existing imported transactions are warning-only and cannot become Merge targets.
+- Existing manual transactions remain the only eligible Merge targets.
+- `MetLifeInsurance` rows containing changing `MetLifePN_...` references now group under the stable `metlifeinsurance` key.
+- Direct-debit numbers and provider-specific reference fragments are excluded from merchant learning.
+- Generic Payment, Transfer, Bank transfer and similar labels remain excluded from unsafe duplicate or merchant grouping.
 
 ## Preserved working behaviour
 
@@ -44,13 +49,16 @@ Last updated: 20 June 2026
 - Needs Review remains a soft-warning import choice; true blockers remain strict.
 - Batched, atomic and idempotent account commit remains.
 - Source details remain browser-memory-only.
+- Retrying the same commit request cannot create a second batch.
 
 ## Privacy and database status
 
-- Raw CSV files, rows, original filenames, narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, secrets and connection strings remain excluded from durable account data, merchant learning, history, audit metadata, logs and documentation.
+- Duplicate comparison uses only user-owned, cleaned transaction fields already permitted in the account transaction projection.
+- Duplicate warnings persist only safe outcome codes and aggregate counts; they do not persist compared descriptions or merchant candidates.
+- Raw CSV files, rows, original filenames, raw bank narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, secrets and connection strings remain excluded from durable account data, merchant learning, history, audit metadata, logs and documentation.
 - Source details never enter commit, transaction, mapping, merchant, history or audit payloads.
 - No schema migration, package, provider, secret or environment change was included.
-- No Preview database migration was required.
+- No Preview database migration was required or run.
 - No Production migration has been run.
 - Home dashboard expense/income stats remain later-phase work and were not implemented.
 - No Phase 4 or later work has started.
@@ -59,17 +67,19 @@ Last updated: 20 June 2026
 
 Ask the client to retest with synthetic data:
 
-1. Upload a CSV and confirm SpendGrove automatically attempts the column mapping.
-2. Confirm the detected mapping can be accepted or manually changed, with no saved/reuse mapping controls shown.
-3. Confirm the large private-details panel is absent while private columns still cannot be mapped or reviewed.
-4. Review repeated merchant variants containing different leading, trailing and embedded reference tokens.
-5. Confirm `Apply to same merchant` appears for safe Kindred-like, MetLife-like, Superhero-like and other stable merchant variants.
-6. Confirm generic Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA rows are not over-grouped.
-7. Open More options and confirm it shows only `Source details from this CSV` plus the browser-memory privacy copy.
-8. Use Previous, Next and page-number controls and confirm each page change scrolls to the top without losing category, merchant, tax, action or Merge choices.
-9. Confirm committed import history is absent from active mapping/review and available from Settings.
-10. Complete a signed-in import and confirm imported transactions still appear in Transactions, remain editable and can be soft-deleted.
-11. Reconfirm Ready/Needs review semantics, stable filtering, Needs Review warning import, 600-row paging and safe retry/idempotency behaviour.
+1. Upload and commit a small signed-in import, then confirm SpendGrove navigates to Transactions and shows the correct imported count.
+2. Re-import the same synthetic CSV and confirm matching rows default to Skip with `Already in SpendGrove` duplicate guidance.
+3. Change one likely duplicate from Skip to Import and confirm the final dialog warns that another copy will be created.
+4. Import an overlapping CSV containing both previously imported and new synthetic rows; confirm only likely matches default to Skip and new rows remain Import.
+5. Confirm an overlap warning appears when at least two likely matches cover 30% or more of the file.
+6. Confirm imported existing rows are warning-only and cannot be selected as Merge targets.
+7. Confirm a matching existing manual transaction can still be selected as the Merge target.
+8. Temporarily interrupt the account transaction request and confirm import stays disabled with a safe Retry duplicate check action.
+9. Review `Direct Debit ... MetLifeInsurance MetLifePN_...` variants and confirm they group together and reuse the Insurance choice.
+10. Confirm a different named direct-debit merchant does not group with MetLifeInsurance.
+11. Confirm generic Payment, Transfer and Bank transfer rows are not over-grouped or treated as duplicate matches on amount/date alone.
+12. Reconfirm imported transaction edit/soft-delete, Settings import history, Ready/Needs review semantics, stable filtering, 600-row paging and safe idempotent retry behaviour.
+13. Use synthetic data only and inspect account/history surfaces to confirm no raw CSV, filename, bank narration or private banking identifiers are persisted.
 
 If the client reports a defect, fix only that Phase 3A acceptance issue. Otherwise wait for explicit Phase 3A closure or separately scoped next-phase approval.
 
