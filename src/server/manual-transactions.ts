@@ -13,6 +13,7 @@ import { getPrismaClient } from "@/src/server/db";
 
 export type AccountTransaction = Omit<ManualTransaction, "source"> & {
   source: "MANUAL" | "IMPORTED";
+  merchantName: string;
 };
 
 export type DbManualTransactionCategoryRecord = {
@@ -28,10 +29,11 @@ export type DbManualTransactionRecord = {
   id: string;
   userId: string;
   type: ManualCategoryType | string;
-  source: "MANUAL" | "IMPORTED" | string;
+  source?: "MANUAL" | "IMPORTED" | string;
   amountCents: number;
   date: Date | string;
   description: string;
+  merchantName?: string | null;
   categoryId?: string | null;
   category?: DbManualTransactionCategoryRecord | null;
   notes?: string | null;
@@ -124,6 +126,7 @@ function toAccountTransaction(record: DbManualTransactionRecord): AccountTransac
     amountCents: record.amountCents,
     date: toDateOnly(record.date),
     description: record.description,
+    merchantName: record.merchantName ?? record.description,
     categoryId: toManualCategoryId(record.category),
     notes: record.notes ?? "",
     csvMatchHint: record.csvMatchHint,

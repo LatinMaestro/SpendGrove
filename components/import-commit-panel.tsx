@@ -3,40 +3,58 @@
 import { useEffect, useMemo, useState } from "react";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { CheckCircle2, Cloud, LockKeyhole, X } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { commitReviewedImport } from "@/lib/account-import-commit";
-import { listAccountManualTransactions } from "@/lib/account-manual-transactions";
+import { listAccountTransactionsForImportReview } from "@/lib/account-manual-transactions";
 import { createImportCommitRequest, type ImportCommitSummary } from "@/lib/import-commit";
 import { IMPORT_HISTORY_UPDATED_EVENT } from "@/lib/import-history";
-import type { MergeTargetReviewSelection } from "@/lib/import-duplicate-scoring";
+import { LIKELY_EXISTING_DUPLICATE_WARNING_CODE, type ExistingAccountTransaction, type MergeTargetReviewSelection } from "@/lib/import-duplicate-scoring";
 import { countRowsInNeedsReviewCategory, importReviewBlockerReason, listImportReviewBlockingRows } from "@/lib/import-review-readiness";
 import type { ImportReviewRow } from "@/lib/import-review";
 import type { CsvScanResult } from "@/lib/csv-import";
-import type { ManualTransaction } from "@/lib/manual-transactions";
 
 function createRequestId() { return globalThis.crypto?.randomUUID?.() ?? "00000000-0000-4000-8000-000000000000"; }
 
-export function ImportCommitPanel({ rows, mergeSelections, scan, onAccountTransactions }: { rows: ImportReviewRow[]; mergeSelections: Record<string, MergeTargetReviewSelection>; scan: CsvScanResult; onAccountTransactions(transactions: ManualTransaction[]): void }) {
+export function ImportCommitPanel({ rows, mergeSelections, scan, onAccountTransactions }: { rows: ImportReviewRow[]; mergeSelections: Record<string, MergeTargetReviewSelection>; scan: CsvScanResult; onAccountTransactions(transactions: ExistingAccountTransaction[]): void }) {
   const { isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
   const [requestId] = useState(createRequestId);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isCommitting, setIsCommitting] = useState(false);
   const [summary, setSummary] = useState<ImportCommitSummary | null>(null);
   const [message, setMessage] = useState("");
+  const [duplicateCheckStatus, setDuplicateCheckStatus] = useState<"LOADING" | "READY" | "UNAVAILABLE">("LOADING");
+  const [duplicateCheckError, setDuplicateCheckError] = useState("");
+  const [duplicateCheckAttempt, setDuplicateCheckAttempt] = useState(0);
   const importCount = rows.filter((row) => row.action === "IMPORT").length;
   const skipCount = rows.filter((row) => row.action === "SKIP").length;
   const mergeCount = rows.filter((row) => row.action === "MERGE").length;
+  const duplicateOverrideCount = rows.filter((row) =>
+    row.action === "IMPORT" && row.warningCodes.includes(LIKELY_EXISTING_DUPLICATE_WARNING_CODE),
+  ).length;
   const needsReviewCount = useMemo(() => countRowsInNeedsReviewCategory(rows), [rows]);
   const blockingRows = useMemo(() => listImportReviewBlockingRows(rows, mergeSelections), [mergeSelections, rows]);
 
   useEffect(() => {
     if (!isSignedIn) return;
     let cancelled = false;
-    void listAccountManualTransactions().then((result) => { if (!cancelled && result.ok) onAccountTransactions(result.transactions); });
+    setDuplicateCheckStatus("LOADING");
+    setDuplicateCheckError("");
+    void listAccountTransactionsForImportReview().then((result) => {
+      if (cancelled) return;
+      if (result.ok) {
+        onAccountTransactions(result.transactions);
+        setDuplicateCheckStatus("READY");
+        return;
+      }
+      setDuplicateCheckStatus("UNAVAILABLE");
+      setDuplicateCheckError(result.error);
+    });
     return () => { cancelled = true; };
-  }, [isSignedIn, onAccountTransactions]);
+  }, [duplicateCheckAttempt, isSignedIn, onAccountTransactions]);
 
   async function commitImport() {
-    if (summary || isCommitting || blockingRows.length > 0) return;
+    if (summary || isCommitting || blockingRows.length > 0 || duplicateCheckStatus !== "READY") return;
     setIsCommitting(true); setMessage("");
     try {
       const request = createImportCommitRequest({ requestId, rows, mergeSelections, metadata: { parsedRowCount: rows.length, privateFieldCount: scan.privateColumnCount, detectedBankName: scan.profile.bankName || undefined, hasHeader: scan.hasHeader, amountMode: scan.amountMode, detectedDateFormats: scan.detectedDateFormats, warningCodes: scan.warningCodes } });
@@ -44,6 +62,7 @@ export function ImportCommitPanel({ rows, mergeSelections, scan, onAccountTransa
       if (!result.ok) { setMessage(`${result.error} Nothing was partly saved, and your review is still open.`); return; }
       setSummary(result.summary); setShowConfirmation(false); window.dispatchEvent(new Event(IMPORT_HISTORY_UPDATED_EVENT));
       setMessage(result.summary.alreadyCommitted ? "This reviewed import was already saved. No duplicate transactions were created." : `Import saved: ${result.summary.importedCount} imported, ${result.summary.skippedCount} skipped and ${result.summary.mergedCount} merged.`);
+      router.replace(`/transactions?import=complete&count=${result.summary.importedCount}`);
     } catch (error) { setMessage(`${error instanceof Error ? error.message : "Check the reviewed rows and try again."} Your review was preserved.`); }
     finally { setIsCommitting(false); }
   }
@@ -54,9 +73,11 @@ export function ImportCommitPanel({ rows, mergeSelections, scan, onAccountTransa
   return <section className="scroll-mb-28 rounded-[2rem] border border-brand-green bg-surface-mint p-5 sm:p-6" aria-labelledby="commit-import-heading">
     <div className="flex items-start gap-3">{summary ? <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /> : <Cloud aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />}<div><h2 id="commit-import-heading" className="text-xl font-bold text-brand-deepTeal">{summary ? "Transactions imported" : "Import reviewed transactions"}</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Only cleaned reviewed fields, integer cents, outcomes, warning codes and aggregate metadata are saved. Source CSV details shown in More options remain in this browser review only.</p></div></div>
     {!summary && blockingRows.length > 0 && <div role="alert" className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm text-brand-deepTeal"><p className="font-bold">{blockingRows.length} transaction{blockingRows.length === 1 ? " has" : "s have"} a problem that must be fixed before import.</p><ul className="mt-2 space-y-1 text-xs font-semibold">{blockingRows.slice(0, 8).map((item) => <li key={item.rowNumber}>Row {item.rowNumber}: {Array.from(new Set(item.blockers.map(importReviewBlockerReason))).join(", ")}</li>)}</ul>{blockingRows.length > 8 && <p className="mt-2 text-xs font-semibold">Plus {blockingRows.length - 8} more blocking transaction{blockingRows.length - 8 === 1 ? "" : "s"}.</p>}</div>}
+    {!summary && duplicateCheckStatus === "LOADING" && <p role="status" className="mt-4 rounded-2xl bg-white p-4 text-sm font-semibold text-brand-deepTeal">Checking your existing account transactions for duplicates…</p>}
+    {!summary && duplicateCheckStatus === "UNAVAILABLE" && <div role="alert" className="mt-4 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm leading-6 text-brand-deepTeal"><p className="font-bold">Duplicate protection is temporarily unavailable.</p><p className="mt-1">{duplicateCheckError} Import stays disabled until SpendGrove can safely check your existing transactions.</p><button type="button" onClick={() => setDuplicateCheckAttempt((attempt) => attempt + 1)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal">Retry duplicate check</button></div>}
     {!summary && needsReviewCount > 0 && <p role="status" className="mt-4 rounded-2xl bg-white p-4 text-sm font-semibold text-brand-deepTeal">{needsReviewCount} transaction{needsReviewCount === 1 ? " is" : "s are"} still in Needs review. You can import now and review {needsReviewCount === 1 ? "it" : "them"} later.</p>}
-    {!summary && !showConfirmation && <button type="button" disabled={isCommitting || blockingRows.length > 0} onClick={() => setShowConfirmation(true)} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45">{blockingRows.length > 0 ? "Fix blocking transactions" : "Import reviewed transactions"}</button>}
-    {!summary && showConfirmation && <div role="dialog" aria-modal="false" aria-labelledby="save-confirmation-heading" className="mt-4 rounded-2xl border border-brand-green bg-white p-4"><div className="flex items-start justify-between gap-3"><div><h3 id="save-confirmation-heading" className="font-bold text-brand-deepTeal">{needsReviewCount > 0 ? "Import with Needs review transactions?" : "Confirm import"}</h3><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{importCount} will be imported, {skipCount} skipped and {mergeCount} merged. Retrying the same request cannot create duplicate batches.</p>{needsReviewCount > 0 && <p className="mt-2 text-sm font-semibold leading-6 text-brand-deepTeal">{needsReviewCount} transaction{needsReviewCount === 1 ? " will" : "s will"} keep the Needs review category.</p>}</div><button type="button" onClick={() => setShowConfirmation(false)} aria-label="Close import confirmation" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border"><X aria-hidden="true" className="h-4 w-4" /></button></div><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={isCommitting} onClick={commitImport} className="min-h-11 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:opacity-45">{isCommitting ? "Importing transactions…" : needsReviewCount > 0 ? "Import anyway" : "Confirm import"}</button><button type="button" disabled={isCommitting} onClick={() => setShowConfirmation(false)} className="min-h-11 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal">Keep reviewing</button></div></div>}
+    {!summary && !showConfirmation && <button type="button" disabled={isCommitting || blockingRows.length > 0 || duplicateCheckStatus !== "READY"} onClick={() => setShowConfirmation(true)} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-45">{blockingRows.length > 0 ? "Fix blocking transactions" : duplicateCheckStatus !== "READY" ? "Checking existing transactions" : "Import reviewed transactions"}</button>}
+    {!summary && showConfirmation && <div role="dialog" aria-modal="false" aria-labelledby="save-confirmation-heading" className="mt-4 rounded-2xl border border-brand-green bg-white p-4"><div className="flex items-start justify-between gap-3"><div><h3 id="save-confirmation-heading" className="font-bold text-brand-deepTeal">{duplicateOverrideCount > 0 ? "Import likely duplicates?" : needsReviewCount > 0 ? "Import with Needs review transactions?" : "Confirm import"}</h3><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{importCount} will be imported, {skipCount} skipped and {mergeCount} merged. Retrying the same request cannot create duplicate batches.</p>{duplicateOverrideCount > 0 && <p className="mt-2 text-sm font-semibold leading-6 text-brand-deepTeal">{duplicateOverrideCount} likely duplicate{duplicateOverrideCount === 1 ? " is" : "s are"} set to Import. Continue only if you deliberately want another copy.</p>}{needsReviewCount > 0 && <p className="mt-2 text-sm font-semibold leading-6 text-brand-deepTeal">{needsReviewCount} transaction{needsReviewCount === 1 ? " will" : "s will"} keep the Needs review category.</p>}</div><button type="button" onClick={() => setShowConfirmation(false)} aria-label="Close import confirmation" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border"><X aria-hidden="true" className="h-4 w-4" /></button></div><div className="mt-4 flex flex-wrap gap-2"><button type="button" disabled={isCommitting} onClick={commitImport} className="min-h-11 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:opacity-45">{isCommitting ? "Importing transactions…" : duplicateOverrideCount > 0 || needsReviewCount > 0 ? "Import anyway" : "Confirm import"}</button><button type="button" disabled={isCommitting} onClick={() => setShowConfirmation(false)} className="min-h-11 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal">Keep reviewing</button></div></div>}
     {message && <p role="status" className="mt-4 rounded-2xl bg-white p-4 text-sm font-semibold text-brand-deepTeal">{message}</p>}
   </section>;
 }

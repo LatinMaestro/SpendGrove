@@ -67,7 +67,7 @@ describe("imported account transaction management", () => {
   it("lists imported and manual account records through the same active projection", async () => {
     const store = createImportedStore();
     const transactions = await listDurableManualTransactions(createTestUserContext("user_1"), store);
-    expect(transactions).toEqual([expect.objectContaining({ id: "imported-1", source: "IMPORTED", description: "Synthetic imported merchant", categoryId: groceries.id })]);
+    expect(transactions).toEqual([expect.objectContaining({ id: "imported-1", source: "IMPORTED", description: "Synthetic imported merchant", merchantName: "Synthetic imported merchant", categoryId: groceries.id })]);
   });
 
   it("edits and soft-deletes a user-owned imported transaction without changing its import links", async () => {

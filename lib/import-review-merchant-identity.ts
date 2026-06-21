@@ -62,6 +62,8 @@ const genericTransferWords = new Set([
 const transferStylePattern = /\b(?:bank transfer|transfer|xfer|pay anyone|osko|internet banking)\b/i;
 const ownAccountTransferPattern = /\b(?:internal transfer|between accounts|own account|to savings|from savings)\b/i;
 const referenceMarkerPattern = /\b(?:ref(?:erence)?|invoice|inv|receipt|transaction|txn|payment id|member|policy|account|order|confirmation|trace)\s*[:#./-]?\s*[a-z0-9][a-z0-9._/-]{2,}\b/gi;
+const camelProviderReferenceTokenPattern = /\b([A-Za-z][A-Za-z0-9]{2,}?)(?:PN|Payment|Ref|Reference|ID|Txn|Trx)[_-][A-Za-z0-9]{4,}\b/g;
+const separatedProviderReferenceTokenPattern = /\b([a-z][a-z0-9]{2,})[_-](?:pn|payment|ref|reference|id|txn|trx)[_-][a-z0-9]{4,}\b/gi;
 const dateLikeTokenPattern = /^(?:\d{1,2}[/-]){1,2}\d{2,4}$|^\d{4}[/-]\d{1,2}[/-]\d{1,2}$/;
 const prefixedReferenceTokenPattern = /^(?:inv|invoice|ref|txn|trx|id|ord|order|receipt|policy|member)[-_]?[a-z0-9]{3,}$/i;
 
@@ -89,6 +91,15 @@ function isReferenceLikeToken(token: string) {
   return false;
 }
 
+function removeSubsumedProviderTokens(tokens: string[]) {
+  const uniqueTokens = Array.from(new Set(tokens));
+  return uniqueTokens.filter((token, index) => !uniqueTokens.some((candidate, candidateIndex) =>
+    candidateIndex !== index &&
+    candidate.length >= token.length + 3 &&
+    candidate.startsWith(token),
+  ));
+}
+
 export function isSafeCanonicalMerchantGroupingKey(key: string) {
   if (!key || genericMerchantKeys.has(key)) return false;
   const meaningfulWords = key.split(" ").filter((token) =>
@@ -102,12 +113,15 @@ export function isSafeCanonicalMerchantGroupingKey(key: string) {
 export function canonicalMerchantGroupingKey(value: string) {
   const original = baseWords(value);
   if (!original) return original;
-  const withoutMarkedReferences = baseWords(value.replace(referenceMarkerPattern, " "));
+  const withoutProviderReferences = value
+    .replace(camelProviderReferenceTokenPattern, "$1")
+    .replace(separatedProviderReferenceTokenPattern, "$1");
+  const withoutMarkedReferences = baseWords(withoutProviderReferences.replace(referenceMarkerPattern, " "));
   const tokens = withoutMarkedReferences.split(" ").filter(Boolean);
-  const meaningfulTokens = tokens.filter((token) =>
+  const meaningfulTokens = removeSubsumedProviderTokens(tokens.filter((token) =>
     !genericReferenceWords.has(token) &&
     !isReferenceLikeToken(token),
-  );
+  ));
   const withoutTransferNoise = meaningfulTokens.filter((token) => !genericTransferWords.has(token));
   const filtered = (withoutTransferNoise.length > 0 ? withoutTransferNoise : meaningfulTokens).join(" ").trim();
   if (!filtered) {

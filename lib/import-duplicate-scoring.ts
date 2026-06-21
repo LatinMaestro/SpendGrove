@@ -3,7 +3,10 @@ import {
   listActiveManualTransactions,
   type ManualTransaction,
 } from "@/lib/manual-transactions";
-import { normalizeMerchantName } from "@/lib/merchant-rules";
+import {
+  canonicalMerchantGroupingKey,
+  isSafeCanonicalMerchantGroupingKey,
+} from "@/lib/import-review-merchant-identity";
 import {
   sanitizeBankDescription,
   sanitizeTransactionNarration,
@@ -18,10 +21,21 @@ export const DUPLICATE_SCORE_WEIGHTS = {
 } as const;
 
 export type DuplicateConfidenceBand = "LIKELY" | "POSSIBLE";
-export type DuplicateCandidateSource = "MANUAL_TRANSACTION" | "SAME_IMPORT";
+export type DuplicateCandidateSource = "EXISTING_TRANSACTION" | "SAME_IMPORT";
+export type ExistingTransactionSource = "MANUAL" | "IMPORTED";
+export type ExistingAccountTransaction = Omit<ManualTransaction, "source"> & {
+  source: ExistingTransactionSource;
+  merchantName?: string;
+  userId?: string;
+  splitRole?: string;
+  isSplitParent?: boolean;
+};
+
+export const LIKELY_EXISTING_DUPLICATE_WARNING_CODE = "LIKELY_EXISTING_DUPLICATE";
 
 export type DuplicateCandidate = {
   source: DuplicateCandidateSource;
+  transactionSource?: ExistingTransactionSource;
   candidateId: string;
   label: string;
   date: string;
@@ -50,6 +64,7 @@ type DuplicateScoringOptions = {
 
 type ComparableCandidate = {
   source: DuplicateCandidateSource;
+  transactionSource?: ExistingTransactionSource;
   candidateId: string;
   label: string;
   date: string | null;
@@ -95,12 +110,25 @@ function dateScore(dayDifference: number) {
 }
 
 function safeMerchantKey(value: string) {
-  try {
-    return normalizeMerchantName(value || "Payment");
-  } catch {
-    return "";
-  }
+  const key = canonicalMerchantGroupingKey(value || "Payment");
+  return isSafeCanonicalMerchantGroupingKey(key) ? key : "";
 }
+
+const genericDuplicateTokens = new Set([
+  "bank",
+  "credit",
+  "debit",
+  "deposit",
+  "direct",
+  "payment",
+  "payments",
+  "transfer",
+  "withdrawal",
+  "transaction",
+  "account",
+  "osko",
+  "cba",
+]);
 
 function safeTokens(value: string) {
   const cleaned = sanitizeBankDescription(value)
@@ -110,7 +138,11 @@ function safeTokens(value: string) {
     .replace(/[^a-z0-9]+/g, " ")
     .trim();
   return cleaned
-    ? cleaned.split(" ").filter((token) => token.length > 2 && !["the", "and", "for", "with"].includes(token))
+    ? cleaned.split(" ").filter((token) =>
+      token.length > 2 &&
+      !["the", "and", "for", "with"].includes(token) &&
+      !genericDuplicateTokens.has(token),
+    )
     : [];
 }
 
@@ -143,7 +175,7 @@ function consistencyScore(row: ImportReviewRow, candidate: ComparableCandidate, 
   let score = 0;
   if (directionCompatible) score += 3;
   if (candidate.categoryId && candidate.categoryId === row.categoryId) score += 5;
-  if (candidate.source === "MANUAL_TRANSACTION" || candidate.source === "SAME_IMPORT") score += 2;
+  if (candidate.source === "EXISTING_TRANSACTION" || candidate.source === "SAME_IMPORT") score += 2;
   return Math.min(DUPLICATE_SCORE_WEIGHTS.consistency, score);
 }
 
@@ -170,11 +202,12 @@ function safeDisplayMerchant(value: string) {
   return sanitizeTransactionNarration(value) || safeDisplayDescription(value);
 }
 
-function toManualCandidate(transaction: ManualTransaction): ComparableCandidate {
+function toExistingTransactionCandidate(transaction: ExistingAccountTransaction): ComparableCandidate {
   const description = safeDisplayDescription(transaction.description);
-  const merchantName = safeDisplayMerchant(transaction.description);
+  const merchantName = safeDisplayMerchant(transaction.merchantName || transaction.description);
   return {
-    source: "MANUAL_TRANSACTION",
+    source: "EXISTING_TRANSACTION",
+    transactionSource: transaction.source,
     candidateId: transaction.id,
     label: merchantName,
     date: transaction.date,
@@ -183,7 +216,7 @@ function toManualCandidate(transaction: ManualTransaction): ComparableCandidate 
     description,
     categoryId: transaction.categoryId,
     type: transaction.type,
-    canMergeTarget: true,
+    canMergeTarget: transaction.source === "MANUAL",
     raw: transaction,
   };
 }
@@ -207,7 +240,6 @@ function toSameImportCandidate(row: ImportReviewRow): ComparableCandidate {
 }
 
 function scoreCandidate(row: ImportReviewRow, candidate: ComparableCandidate): DuplicateCandidate | null {
-  if (row.action === "SKIP") return null;
   if (!row.date || row.amountCents === null || !candidate.date || candidate.amountCents === null) return null;
 
   const dayDifference = daysBetween(row.date, candidate.date);
@@ -248,6 +280,7 @@ function scoreCandidate(row: ImportReviewRow, candidate: ComparableCandidate): D
 
   return {
     source: candidate.source,
+    transactionSource: candidate.transactionSource,
     candidateId: candidate.candidateId,
     label: candidate.label,
     date: candidate.date,
@@ -263,24 +296,66 @@ function scoreCandidate(row: ImportReviewRow, candidate: ComparableCandidate): D
   };
 }
 
+function findExistingDuplicateCandidates(
+  row: ImportReviewRow,
+  existingTransactions: ExistingAccountTransaction[],
+  options: DuplicateScoringOptions = {},
+) {
+  return listActiveManualTransactions(existingTransactions as ManualTransaction[])
+    .filter((transaction) => !isSplitParent(transaction) && isOwnedByCurrentUser(transaction, options.userId))
+    .map((transaction) => toExistingTransactionCandidate(transaction as ExistingAccountTransaction))
+    .map((candidate) => scoreCandidate(row, candidate))
+    .filter((candidate): candidate is DuplicateCandidate => Boolean(candidate))
+    .sort((left, right) => right.score - left.score)
+    .slice(0, options.limit ?? 5);
+}
+
 export function findImportDuplicateCandidates(
   row: ImportReviewRow,
   allRows: ImportReviewRow[],
-  manualTransactions: ManualTransaction[],
+  existingTransactions: ExistingAccountTransaction[],
   options: DuplicateScoringOptions = {},
 ) {
-  const manualCandidates = listActiveManualTransactions(manualTransactions)
-    .filter((transaction) => !isSplitParent(transaction) && isOwnedByCurrentUser(transaction, options.userId))
-    .map(toManualCandidate);
+  const existingCandidates = findExistingDuplicateCandidates(row, existingTransactions, options);
   const sameImportCandidates = allRows
     .filter((candidate) => candidate.id !== row.id && candidate.action !== "SKIP")
-    .map(toSameImportCandidate);
-
-  return [...manualCandidates, ...sameImportCandidates]
+    .map(toSameImportCandidate)
     .map((candidate) => scoreCandidate(row, candidate))
-    .filter((candidate): candidate is DuplicateCandidate => Boolean(candidate))
+    .filter((candidate): candidate is DuplicateCandidate => Boolean(candidate));
+
+  return [...existingCandidates, ...sameImportCandidates]
     .sort((left, right) => right.score - left.score || left.source.localeCompare(right.source))
     .slice(0, options.limit ?? 5);
+}
+
+export function defaultLikelyExistingDuplicatesToSkip(
+  rows: ImportReviewRow[],
+  existingTransactions: ExistingAccountTransaction[],
+  excludedRowIds: ReadonlySet<string> = new Set(),
+) {
+  return rows.map((row) => {
+    if (row.action !== "IMPORT" || excludedRowIds.has(row.id)) return row;
+    const likelyExisting = findExistingDuplicateCandidates(row, existingTransactions)
+      .some((candidate) => candidate.source === "EXISTING_TRANSACTION" && candidate.confidence === "LIKELY");
+    if (!likelyExisting) return row;
+    return {
+      ...row,
+      action: "SKIP" as const,
+      warningCodes: Array.from(new Set([...row.warningCodes, LIKELY_EXISTING_DUPLICATE_WARNING_CODE])),
+    };
+  });
+}
+
+export function countLikelyExistingDuplicateRows(
+  rows: ImportReviewRow[],
+  existingTransactions: ExistingAccountTransaction[],
+) {
+  return rows.filter((row) => findExistingDuplicateCandidates(row, existingTransactions)
+    .some((candidate) => candidate.source === "EXISTING_TRANSACTION" && candidate.confidence === "LIKELY")).length;
+}
+
+export function looksLikeOverlappingImport(likelyDuplicateCount: number, totalRows: number) {
+  return likelyDuplicateCount >= 2 && likelyDuplicateCount / Math.max(totalRows, 1) >= 0.3;
 }
 
 export function createMergeTargetReviewSelection(
@@ -289,7 +364,11 @@ export function createMergeTargetReviewSelection(
   now = new Date(),
 ): MergeTargetReviewSelection {
   if (row.action === "SKIP") throw new Error("Skipped rows cannot choose a merge target.");
-  if (!candidate.canMergeTarget || candidate.source !== "MANUAL_TRANSACTION") {
+  if (
+    !candidate.canMergeTarget ||
+    candidate.source !== "EXISTING_TRANSACTION" ||
+    candidate.transactionSource !== "MANUAL"
+  ) {
     throw new Error("Only existing manual transactions can be selected as merge targets.");
   }
   return {

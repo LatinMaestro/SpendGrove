@@ -19,6 +19,10 @@ describe("safe merchant grouping across reference tokens", () => {
     ["Kindred INV-A93B772 Early", "kindred early"],
     ["MetLife policy 88392011", "metlife"],
     ["REF-Z91X72 MetLife", "metlife"],
+    ["Direct Debit 507156 MetLifeInsurance MetLifePN_UGDn1Zzs", "metlifeinsurance"],
+    ["Direct Debit 507156 MetLifeInsurance MetLifePN_U4bf9Ybt", "metlifeinsurance"],
+    ["Direct Debit 885511 BlueLantern BlueLanternRef_A91b7X", "bluelantern"],
+    ["Direct Debit 885511 BlueLantern_ref_A91b7X", "bluelantern"],
     ["Superhero transfer TRX-91A72", "superhero"],
     ["Superhero confirmation 81Z-992A", "superhero"],
   ])("groups %s using stable merchant words", (input, expected) => {
@@ -71,6 +75,23 @@ describe("safe merchant grouping across reference tokens", () => {
     });
   });
 
+  it("applies one category across MetLifePN variants without grouping other direct debit merchants", () => {
+    const rows = [
+      row("1", "Direct Debit 507156 MetLifeInsurance MetLifePN_UGDn1Zzs", { categoryId: categoryId("Insurance"), categoryConfirmed: true }),
+      row("2", "Direct Debit 507156 MetLifeInsurance MetLifePN_U4bf9Ybt"),
+      row("3", "Direct Debit 507156 Blue Lantern BlueLanternPN_A91b7X"),
+    ];
+
+    expect(countApplySameMerchantMatches(rows, "1")).toBe(1);
+    expect(applyCategoryToMatchingMerchants(rows, "1").rows[1]).toMatchObject({
+      categoryId: categoryId("Insurance"),
+      reviewState: "APPLIED_TO_MATCH",
+    });
+    expect(canonicalMerchantGroupingKey(rows[2].merchantName)).not.toBe(
+      canonicalMerchantGroupingKey(rows[0].merchantName),
+    );
+  });
+
   it("reuses a learned canonical category without storing reference fragments", () => {
     const learned = learnMerchantCategory(emptyLocalMerchantData(), {
       merchantName: "Kindred Early INV-A93B772",
@@ -84,5 +105,20 @@ describe("safe merchant grouping across reference tokens", () => {
     const serialized = serializeMerchantRuleStorage(learned);
     expect(serialized).toContain("Kindred Early");
     expect(serialized).not.toMatch(/A93B772|Z91X72|invoice|reference/i);
+  });
+
+  it("learns only the stable MetLife canonical merchant", () => {
+    const learned = learnMerchantCategory(emptyLocalMerchantData(), {
+      merchantName: "Direct Debit 507156 MetLifeInsurance MetLifePN_UGDn1Zzs",
+      categoryId: categoryId("Insurance"),
+    });
+    const serialized = serializeMerchantRuleStorage(learned);
+
+    expect(suggestImportReviewCategory("Direct Debit 507156 MetLifeInsurance MetLifePN_U4bf9Ybt", learned)).toMatchObject({
+      categoryId: categoryId("Insurance"),
+      source: "USER_RULE",
+    });
+    expect(serialized).toContain("Metlifeinsurance");
+    expect(serialized).not.toMatch(/UGDn1Zzs|U4bf9Ybt|507156|Direct Debit|MetLifePN/i);
   });
 });
