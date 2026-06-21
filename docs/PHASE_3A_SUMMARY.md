@@ -28,6 +28,7 @@ Phase 3A delivered Clerk authentication, Neon/Postgres and server-only Prisma fo
 | [#40](https://github.com/LatinMaestro/SpendGrove/pull/40) | Imported transaction visibility/edit/delete and corrected Needs review badges | `918863fd` |
 | [#42](https://github.com/LatinMaestro/SpendGrove/pull/42) | Broader safe merchant grouping, simpler mapping/review UI, pagination scroll and Settings import history | `483647b6` |
 | [#44](https://github.com/LatinMaestro/SpendGrove/pull/44) | Post-import navigation, imported-row duplicate protection, overlapping CSV warnings and MetLifePN grouping | `6e7c15d5` |
+| [#46](https://github.com/LatinMaestro/SpendGrove/pull/46) | Analyse account duplicates before revealing review rows; add loading, retry and honest signed-out fallback states | `c4af1e4a` |
 
 Earlier functional PRs #16–#32 remain part of the complete Phase 3A persistence, commit, migration, history and QA record.
 
@@ -60,6 +61,23 @@ Earlier functional PRs #16–#32 remain part of the complete Phase 3A persistenc
 - Provider reference fragments, direct-debit numbers and transfer noise are excluded from learned merchant data.
 - Other named direct-debit merchants remain separate.
 - Generic Payment, Transfer, Bank transfer, Deposit, Withdrawal and CBA labels remain excluded from bulk grouping.
+
+## PR #46: analyse CSV before showing review rows
+
+### Root cause
+
+The signed-in account transaction request lived in the commit panel below the review summary and transaction cards. The parser-created rows were therefore visible with initial Import actions before the later account request applied duplicate Skip defaults and warnings.
+
+### Fix
+
+- The import review foundation now owns account duplicate preparation before the review UI is revealed.
+- Signed-in users see `Analysing CSV` while account access, existing active transactions and duplicate outcomes are prepared.
+- Review summaries, cards and row actions remain absent until the duplicate check succeeds.
+- Likely duplicates first appear as Skip / Already in SpendGrove; overlapping-file warnings are present on the first review render.
+- Failed account checks keep cards hidden and show a safe `Retry duplicate check` action.
+- Signed-out browser-local review remains available and explicitly states that saved-account duplicate protection has not run.
+- Signing out after an account-backed check removes the account projection from component state and restores browser-local transactions.
+- Duplicate weights, thresholds, overlap rules, imported-row warning-only behavior, manual-only Merge eligibility and commit logic did not change.
 
 ## Preserved Phase 3A behaviour
 
@@ -101,6 +119,24 @@ PR #44 evidence:
 - Vercel preview and merged-main deployment: Ready / green.
 - Production `/transactions`: HTTP 200, matched route `/transactions`, served by Vercel.
 
+PR #46 evidence:
+
+- PR: https://github.com/LatinMaestro/SpendGrove/pull/46
+- PR commit: `47728b975ec6553a89d818a8949070b531766447`
+- Merge: `c4af1e4aa906b35f3d3803d0e7ff18e3237d7563`
+- PR deployment: https://vercel.com/latinmaestros-projects/spendgrove/Edc7uG93GEjfqDKbt49R3BoKMYtA
+- PR preview: https://spendgrove-git-codex-phase-3a-ana-c2c6dc-latinmaestros-projects.vercel.app
+- Post-merge main: https://vercel.com/latinmaestros-projects/spendgrove/AzCUGVjQY4N3K4nxxtsrJTfQMbgF
+- Production alias: https://spendgrove.vercel.app
+- Focused tests: 3 files / 49 tests passed.
+- Full tests: 55 files / 316 tests passed.
+- TypeScript type-check: passed.
+- Next.js production build: passed.
+- `git diff --check`: passed.
+- Vercel preview and merged-main deployment: Ready / green.
+- Production `/import`: HTTP 200, matched route `/import`, served by Vercel.
+- Standalone `next lint` remains unconfigured for non-interactive use and opens Next.js’s first-time setup prompt; the production build’s lint/type validity phase passed.
+
 Synthetic coverage includes:
 
 - success-only navigation and safe imported-count display;
@@ -123,18 +159,17 @@ Automated signed-in browser retesting remains unavailable because the account-ba
 Use synthetic data only:
 
 1. Commit a signed-in import and confirm navigation to Transactions with the correct imported count.
-2. Re-import the same CSV and confirm likely matches default to Skip.
-3. Override one likely duplicate to Import and confirm the final another-copy warning.
-4. Import a partly overlapping CSV and confirm duplicate rows default to Skip while new rows remain Import.
-5. Confirm the overlapping-file warning appears at the documented threshold.
-6. Confirm imported existing rows cannot be selected as Merge targets.
-7. Confirm existing manual transactions remain valid Merge targets.
-8. Confirm import is disabled and retryable if the account duplicate check is unavailable.
-9. Confirm changing `MetLifePN_...` values still group under MetLifeInsurance and reuse the chosen category.
-10. Confirm another named direct-debit merchant remains separate.
-11. Confirm generic Payment, Transfer and Bank transfer rows are not over-grouped or matched on amount/date alone.
-12. Reconfirm imported edit/soft-delete, retained Settings history, Ready/Needs review semantics, stable filtering, 600-row paging and safe retry/idempotency.
-13. Confirm no raw CSV, original filename, raw narration or private banking identifiers appear in account/history surfaces.
+2. Re-import the same CSV and confirm `Analysing CSV` appears before any transaction cards.
+3. Confirm the list appears once with likely duplicates already set to Skip and no all-Import flash.
+4. Import a partly overlapping CSV and confirm duplicate/new-row outcomes and the overlap warning are correct on first render.
+5. Simulate an unavailable duplicate check and confirm cards stay hidden with a safe retry action.
+6. Retry and confirm the prepared rows appear only after success.
+7. Test signed out and confirm local review works without claiming saved-account duplicate protection.
+8. Confirm imported existing rows cannot be Merge targets and manual transactions remain eligible.
+9. Override one likely duplicate to Import and confirm the final another-copy warning.
+10. Reconfirm MetLifeInsurance grouping, generic transfer/payment protection, successful navigation and imported edit/soft-delete.
+11. Reconfirm Settings history, Ready/Needs review semantics, stable filtering, 600-row paging and idempotent retry.
+12. Confirm no raw CSV, original filename, raw narration or private banking identifiers appear in account/history surfaces.
 
 ## Exact next step
 
