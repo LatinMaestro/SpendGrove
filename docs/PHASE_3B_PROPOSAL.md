@@ -14,7 +14,7 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 
 ### PR 3B.0 — Financial rules and data-contract decision record
 
-Status: active.
+Status: merged in PR #49.
 
 - Define repayment, principal, interest, fee and balance semantics.
 - Define reconciliation eligibility, tolerances, confidence bands and manual override rules.
@@ -25,7 +25,7 @@ Status: active.
 
 ### PR 3B.1 — Schema foundation
 
-Status: approved after PR 3B.0. Stop before running the Preview migration.
+Status: active. Stop before running the Preview migration.
 
 - Add user-owned property, loan account, loan repayment and reconciliation-link foundations.
 - Store monetary values as integer cents.
