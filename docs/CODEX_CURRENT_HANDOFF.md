@@ -9,12 +9,12 @@ Last updated: 22 June 2026
 - PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
 - PR 3B.1 merged as [#50](https://github.com/LatinMaestro/SpendGrove/pull/50), merge commit `fa1a872c87d15a8c7853819485670e47b2da25ca`.
 - PR 3B.1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7ahCZopnMku2nWmF8DMbhJVq1syo
-- Active state: paused before Preview migration because the Loans-first clarification requires approval of a minimal `CAR_LOAN` enum amendment.
+- Active state: implementing the approved minimal `CAR_LOAN` amendment before Preview migration.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
 - Migration status: the original schema and migration file are merged to `main`; no Preview or Production migration has run.
-- Client approved the Preview-only plan subject to a Loans-first UI. Schema review found that Car loan cannot be represented distinctly without adding `CAR_LOAN` to `LoanType`.
-- Proposed amendment: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship or data rewrite.
-- Mandatory next stop: explicit client approval of the amendment in `docs/PHASE_3B_LOANS_FIRST_UI_CONTRACT.md`.
+- Client approved the Preview-only plan and the exact `CAR_LOAN` amendment.
+- Amendment scope: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship, private field or data rewrite.
+- Preview workflow may run once from `main` only after the amendment PR is green and merged.
 - PRs 3B.2 and 3B.3 remain authorised only after the client approves the PR 3B.1 migration gate.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
@@ -65,7 +65,7 @@ Last updated: 22 June 2026
 
 ## Exact next action
 
-Obtain explicit approval for adding `CAR_LOAN` to `LoanType` and to the unexecuted enum creation SQL. After approval, implement and verify that minimal amendment, merge it, run the existing Preview-only workflow once from `main`, verify success, then continue autonomously through Loans-first PR 3B.2 and PR 3B.3.
+Verify and merge the exact `CAR_LOAN` amendment. Run the existing Preview-only workflow once from `main` with `RUN PREVIEW MIGRATION`, verify success and confirm Production remains untouched, then continue autonomously through Loans-first PR 3B.2 and PR 3B.3.
 
 ## Resume instruction
 

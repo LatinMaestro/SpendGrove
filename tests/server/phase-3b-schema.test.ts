@@ -65,4 +65,18 @@ describe("Phase 3B schema foundation", () => {
       /"?(address|accountNumber|maskedReference|lenderReference|customerId|rawNarration|originalFileName)"?\s+/i,
     );
   });
+
+  it("represents car loans explicitly without adding a broader schema field", async () => {
+    const schema = await readFile(schemaPath, "utf8");
+    const migration = await readFile(migrationPath, "utf8");
+    const loanType = schema.match(/enum LoanType \{[\s\S]*?\n\}/)?.[0] ?? "";
+
+    expect(loanType).toContain("HOME_LOAN");
+    expect(loanType).toContain("CAR_LOAN");
+    expect(loanType).toContain("PERSONAL_LOAN");
+    expect(loanType).toContain("OTHER");
+    expect(migration).toContain(
+      `CREATE TYPE "LoanType" AS ENUM ('HOME_LOAN', 'CAR_LOAN', 'PERSONAL_LOAN', 'OTHER');`,
+    );
+  });
 });

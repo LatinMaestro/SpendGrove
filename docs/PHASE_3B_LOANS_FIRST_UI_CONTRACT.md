@@ -1,6 +1,6 @@
 # Phase 3B Loans-First UI Contract
 
-Status: approved client clarification with one schema amendment awaiting approval
+Status: approved client clarification and approved minimal schema amendment
 
 Date: 22 June 2026
 
@@ -131,9 +131,9 @@ The purpose remains descriptive and creates no tax conclusion.
 
 ## Gate
 
-Do not amend or run the Preview migration until the client explicitly approves the exact `CAR_LOAN` addition above.
+The client approved the exact `CAR_LOAN` addition above.
 
-After approval:
+Required sequence:
 
 1. amend the Prisma enum and the still-unexecuted migration SQL;
 2. update schema privacy/migration tests;
