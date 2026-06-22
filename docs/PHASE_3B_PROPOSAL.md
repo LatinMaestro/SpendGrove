@@ -1,8 +1,8 @@
 # Proposed Phase 3B — Loan and Property Foundations
 
-Status: proposal only — awaiting explicit client approval.
+Status: Milestone 1 approved by the client on 22 June 2026.
 
-No Phase 3B code, schema change or migration is authorised by this document.
+Approved Milestone 1 covers PRs 3B.0 through 3B.3. Durable repayment commit and reconciliation implementation remain unapproved Milestone 2 work.
 
 ## Proposed objective
 
@@ -14,6 +14,8 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 
 ### PR 3B.0 — Financial rules and data-contract decision record
 
+Status: active.
+
 - Define repayment, principal, interest, fee and balance semantics.
 - Define reconciliation eligibility, tolerances, confidence bands and manual override rules.
 - Define how linked everyday-account and loan-side records avoid double counting.
@@ -22,6 +24,8 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 - Documentation only; no schema or code.
 
 ### PR 3B.1 — Schema foundation
+
+Status: approved after PR 3B.0. Stop before running the Preview migration.
 
 - Add user-owned property, loan account, loan repayment and reconciliation-link foundations.
 - Store monetary values as integer cents.
@@ -32,13 +36,17 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 
 ### PR 3B.2 — Property and loan metadata management
 
+Status: approved after the client resolves the PR 3B.1 Preview migration gate.
+
 - Add authenticated create/edit/archive flows for minimal property and loan metadata.
 - Prefer user-selected nicknames and optional broad purpose/type fields.
 - Link a loan to a property only when the user chooses.
-- Keep account references absent by default; any masked reference requires explicit approval.
+- Do not add account numbers, masked references or lender references.
 - Preserve an honest browser/local or unavailable state where appropriate.
 
 ### PR 3B.3 — Browser-local loan CSV mapping and review
+
+Status: approved after PR 3B.2. Stop for client Milestone 1 review after merge.
 
 - Treat loan CSV as a first-class import type.
 - Parse and scan the selected file in browser memory.
@@ -48,6 +56,8 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 
 ### PR 3B.4 — Durable loan repayment commit and safe history
 
+Status: not approved. Requires Milestone 2 approval.
+
 - Commit only reviewed, validated loan repayment fields.
 - Add atomic, batched and idempotent commit.
 - Record safe aggregate import history and lineage.
@@ -55,6 +65,8 @@ Phase 3B should stop before EOFY/property reports, automated tax conclusions, Ho
 - Do not create tax reports or dashboard totals.
 
 ### PR 3B.5 — Reconciliation and no-double-count safeguards
+
+Status: not approved. Requires Milestone 2 approval.
 
 - Suggest links between loan repayments and eligible everyday-account transactions.
 - Show confidence and mismatch reasons.

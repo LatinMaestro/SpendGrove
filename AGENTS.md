@@ -84,9 +84,16 @@ The agent must pause for the client before:
 
 ## Active phase rule
 
-The current active approved phase is **Phase 3A - Persistence & Commit Foundation**.
+The current active approved work is **Phase 3B Milestone 1 - Loan and Property Foundations**.
 
-Do not implement Phase 4+ functionality or later modules unless explicitly approved. Loans, property/tax reports, recurring, budgets, Basiq, enhanced merchant lookup, AI and payments remain excluded unless separately authorised.
+Approved sequence:
+
+- PR 3B.0 - financial rules and data-contract decision record;
+- PR 3B.1 - schema foundation and Preview migration plan;
+- PR 3B.2 - property and loan metadata management after the approved migration gate;
+- PR 3B.3 - browser-local loan CSV mapping and review.
+
+Stop before running any Preview migration and obtain explicit client approval of the migration plan. No Production migration is authorised. Durable repayment commit, reconciliation implementation, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 and later modules remain excluded.
 
 ## UI flexibility
 
