@@ -98,7 +98,7 @@ Scope:
 
 ## Phase 3A — Persistence & Commit Foundation
 
-Status: implementation complete; ready for final client acceptance testing. Formal closure remains a client decision.
+Status: formally accepted and closed by the client on 22 June 2026.
 
 Objective:
 
@@ -109,8 +109,10 @@ Closure evidence:
 - All approved implementation PRs 3A.0 through 3A.9 are merged.
 - Preview database migrations completed successfully.
 - Functional PRs passed the Vercel test and production-build gate.
-- `docs/PHASE_3A_SUMMARY.md` contains the full merge register, privacy evidence, limitations and non-technical testing checklist.
-- Do not begin a later phase until the client accepts or closes Phase 3A and explicitly approves the next scope.
+- `docs/PHASE_3A_SUMMARY.md` contains the final delivery evidence, privacy confirmation, accepted limitations and closure record.
+- Final signed-in client retesting completed with no further acceptance comments.
+- No Production migration was run.
+- No Phase 4 or later module started.
 
 ### PR 3A.0 — Auth/database decision record
 
@@ -189,16 +191,38 @@ Status: merged.
 
 ### PR 3A.9 — Migration assistant and Phase 3A QA closure
 
-Status: implementation merged; final QA documentation ready for client review.
+Status: merged and accepted.
 
 - Provide explicit browser-local manual transaction migration to account storage.
 - Preserve the device copy on failure and prevent duplicate retry writes.
 - Verify full Phase 3A workflows.
 - Produce `docs/PHASE_3A_SUMMARY.md` and the non-technical user-testing checklist.
 
-## Phase 3 — Loans, Properties and Tax
+## Proposed Phase 3B — Loan and Property Foundations
 
-Only begin after explicit client approval following Phase 3A closure.
+Status: proposal only; awaiting explicit client approval. No implementation, schema change or migration is authorised.
+
+Proposed objective:
+
+Establish privacy-safe property and loan data foundations plus reviewable loan repayment reconciliation, without beginning tax reports, dashboard statistics or Phase 4.
+
+Proposed PR sequence:
+
+1. Financial rules and data-contract decision record.
+2. Property, loan account, repayment and reconciliation schema foundation.
+3. Property and loan metadata management.
+4. Browser-local loan CSV mapping and review.
+5. Durable loan repayment commit with safe history.
+6. Reconciliation suggestions, manual link/unlink and no-double-count safeguards.
+7. Phase 3B QA, Vercel review and client testing.
+
+The detailed inclusions, exclusions, migration gates, privacy risks and stop conditions are in `docs/PHASE_3B_PROPOSAL.md`.
+
+Do not start this sequence until the client approves or revises the proposal.
+
+## Broader Phase 3 scope — Loans, Properties and Tax
+
+Only begin through separately approved subphases.
 
 Scope:
 
@@ -207,6 +231,8 @@ Scope:
 - reconciliation engine;
 - property records;
 - EOFY/property reports.
+
+The proposed Phase 3B is a limited first slice of this broader scope. EOFY/property reporting and automated tax treatment are not included in the current proposal.
 
 ## Phase 4 — Recurring, Budgets and Insights
 
