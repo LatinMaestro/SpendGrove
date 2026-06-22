@@ -1,6 +1,6 @@
 # Phase 3B Preview Migration Plan
 
-Status: awaiting explicit client approval before execution
+Status: conditionally approved, but blocked on the `CAR_LOAN` schema amendment
 
 Date prepared: 22 June 2026
 
@@ -8,7 +8,9 @@ Date prepared: 22 June 2026
 
 This plan accompanies PR 3B.1. The migration has not been run against Preview or Production.
 
-The next action after PR 3B.1 merges is to stop and ask the client to approve or reject this exact Preview migration plan. PR 3B.2 must not begin until the approved Preview migration succeeds.
+The client approved the Preview-only plan subject to the Loans-first clarification. Review found that the existing enum cannot represent Car loan distinctly. The exact minimal amendment is documented in `docs/PHASE_3B_LOANS_FIRST_UI_CONTRACT.md`.
+
+Do not run the workflow until the client approves that amendment and it is merged to `main`. PR 3B.2 must not begin until the amended Preview migration succeeds.
 
 ## Migration
 

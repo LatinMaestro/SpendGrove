@@ -84,7 +84,7 @@ The agent must pause for the client before:
 
 ## Active phase rule
 
-The current active approved work is **Phase 3B Milestone 1 - Loan and Property Foundations**.
+The current active approved work is **Phase 3B Milestone 1 - Loans-First Foundations**.
 
 Approved sequence:
 
@@ -94,6 +94,8 @@ Approved sequence:
 - PR 3B.3 - browser-local loan CSV mapping and review.
 
 Stop before running any Preview migration and obtain explicit client approval of the migration plan. No Production migration is authorised. Durable repayment commit, reconciliation implementation, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 and later modules remain excluded.
+
+The main user-facing area is Loans. Loan accounts are the primary records; properties are optional supporting metadata for relevant loans. The approved Loans-first clarification is in `docs/PHASE_3B_LOANS_FIRST_UI_CONTRACT.md`.
 
 ## UI flexibility
 
