@@ -5,10 +5,12 @@ Last updated: 22 June 2026
 ## Current state
 
 - Phase 3A — Persistence & Commit Foundation is formally accepted and closed.
-- The client completed Phase 3A retesting on 22 June 2026 and reported no further acceptance comments.
-- No implementation phase is active.
-- The current objective is client review of the proposed Phase 3B plan in `docs/PHASE_3B_PROPOSAL.md`.
-- Do not begin Phase 3B implementation, Phase 4, Home dashboard statistics or any later module without explicit client approval.
+- Phase 3B Milestone 1 is approved under Autonomous Phase Delivery Mode.
+- Active task: PR 3B.0 — financial rules and data-contract decision record.
+- Approved continuation: PR 3B.1 — schema foundation and Preview migration plan.
+- Mandatory next stop: before running any Preview migration.
+- PRs 3B.2 and 3B.3 remain authorised only after the client approves the PR 3B.1 migration gate.
+- PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
 ## Final Phase 3A evidence
 
@@ -57,8 +59,8 @@ Last updated: 22 June 2026
 
 ## Exact next action
 
-Present `docs/PHASE_3B_PROPOSAL.md` to the client for approval or revision. Do not create an implementation branch, modify the schema, run a migration or write Phase 3B code until the client explicitly approves the objective and task sequence.
+Merge the documentation-only PR 3B.0 when green, then implement PR 3B.1 exactly against `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Generate and review an additive Preview migration plan, but do not run it. Present the plan and stop for explicit client approval before PR 3B.2.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file and `docs/PHASE_3B_PROPOSAL.md`; verify GitHub/Vercel; then perform only the next action explicitly approved by the client.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`; verify GitHub/Vercel; then continue only the approved Milestone 1 sequence and obey the migration gate.

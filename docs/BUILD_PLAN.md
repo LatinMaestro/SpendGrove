@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Proposed Phase 3B — Loan and Property Foundations
 
-Status: proposal only; awaiting explicit client approval. No implementation, schema change or migration is authorised.
+Status: Milestone 1 approved on 22 June 2026. PRs 3B.0 through 3B.3 are authorised under Autonomous Phase Delivery Mode.
 
 Proposed objective:
 
@@ -218,7 +218,7 @@ Proposed PR sequence:
 
 The detailed inclusions, exclusions, migration gates, privacy risks and stop conditions are in `docs/PHASE_3B_PROPOSAL.md`.
 
-Do not start this sequence until the client approves or revises the proposal.
+Mandatory gate: stop after PR 3B.1 and present the exact Preview migration plan before running it. Continue to PR 3B.2 only after explicit migration approval. Stop after PR 3B.3 for client Milestone 1 review. PR 3B.4 and later are not authorised.
 
 ## Broader Phase 3 scope — Loans, Properties and Tax
 
