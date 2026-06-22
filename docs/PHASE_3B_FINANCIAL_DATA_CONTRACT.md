@@ -104,7 +104,7 @@ Purpose is user-selected metadata. It is not a tax determination.
 The allowed loan types are:
 
 - `HOME_LOAN`;
-- `CAR_LOAN` (pending the explicit schema-amendment gate);
+- `CAR_LOAN`;
 - `PERSONAL_LOAN`;
 - `OTHER`.
 
