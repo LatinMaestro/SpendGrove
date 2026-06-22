@@ -104,6 +104,7 @@ Purpose is user-selected metadata. It is not a tax determination.
 The allowed loan types are:
 
 - `HOME_LOAN`;
+- `CAR_LOAN` (pending the explicit schema-amendment gate);
 - `PERSONAL_LOAN`;
 - `OTHER`.
 
@@ -123,7 +124,8 @@ Property usage is descriptive metadata only.
 
 - A loan may link to at most one user-owned property.
 - A property may link to multiple user-owned loans.
-- A personal loan does not require a property.
+- Car, personal and other loans do not require a property.
+- Properties are optional supporting metadata; Loans is the main user-facing section.
 - A property link does not create a deductible outcome.
 - Exact property addresses are forbidden in Milestone 1.
 

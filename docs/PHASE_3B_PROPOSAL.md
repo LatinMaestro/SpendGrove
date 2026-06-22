@@ -1,4 +1,4 @@
-# Proposed Phase 3B — Loan and Property Foundations
+# Phase 3B — Loans-First Foundations
 
 Status: Milestone 1 approved by the client on 22 June 2026.
 
@@ -34,13 +34,15 @@ Status: merged in PR #50. Preview migration plan awaiting explicit client approv
 - Include a Preview migration plan and rollback notes.
 - Do not run a Production migration.
 
-### PR 3B.2 — Property and loan metadata management
+### PR 3B.2 — Loans-first metadata management
 
-Status: approved but blocked until the client approves the PR 3B.1 Preview migration plan and the Preview-only workflow succeeds.
+Status: approved but blocked until the minimal `CAR_LOAN` amendment is approved, merged and successfully applied through the Preview-only workflow.
 
-- Add authenticated create/edit/archive flows for minimal property and loan metadata.
+- Add authenticated create/edit/archive flows with Loan Accounts as the main entry point.
 - Prefer user-selected nicknames and optional broad purpose/type fields.
 - Link a loan to a property only when the user chooses.
+- Support owner-occupier home, investment property, car, personal and other loan choices.
+- Do not require a property for car, personal or other loans.
 - Do not add account numbers, masked references or lender references.
 - Preserve an honest browser/local or unavailable state where appropriate.
 
@@ -49,6 +51,8 @@ Status: approved but blocked until the client approves the PR 3B.1 Preview migra
 Status: approved after PR 3B.2. Stop for client Milestone 1 review after merge.
 
 - Treat loan CSV as a first-class import type.
+- Require the user to choose the owning Loan Account before row review.
+- Show optional linked-property context only when the selected loan has one.
 - Parse and scan the selected file in browser memory.
 - Map date, total repayment, principal, interest, fees and balance-after-payment where supplied.
 - Show review-before-commit, validation and safe correction.

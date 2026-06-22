@@ -198,7 +198,7 @@ Status: merged and accepted.
 - Verify full Phase 3A workflows.
 - Produce `docs/PHASE_3A_SUMMARY.md` and the non-technical user-testing checklist.
 
-## Proposed Phase 3B — Loan and Property Foundations
+## Phase 3B — Loans-First Foundations
 
 Status: Milestone 1 approved on 22 June 2026. PRs 3B.0 through 3B.3 are authorised under Autonomous Phase Delivery Mode.
 
@@ -206,18 +206,18 @@ Current progress:
 
 - PR 3B.0 merged in #49.
 - PR 3B.1 merged in #50.
-- Preview migration not run; work is paused at the explicit migration approval gate.
+- Preview migration not run; the approved plan is paused for explicit approval of the minimal `CAR_LOAN` enum amendment.
 - PRs 3B.2 and 3B.3 remain pending.
 
 Proposed objective:
 
-Establish privacy-safe property and loan data foundations plus reviewable loan repayment reconciliation, without beginning tax reports, dashboard statistics or Phase 4.
+Establish privacy-safe loan foundations with optional supporting property metadata plus reviewable loan repayment reconciliation, without beginning tax reports, dashboard statistics or Phase 4.
 
 Proposed PR sequence:
 
 1. Financial rules and data-contract decision record.
 2. Property, loan account, repayment and reconciliation schema foundation.
-3. Property and loan metadata management.
+3. Loans-first metadata management with optional property linking.
 4. Browser-local loan CSV mapping and review.
 5. Durable loan repayment commit with safe history.
 6. Reconciliation suggestions, manual link/unlink and no-double-count safeguards.
