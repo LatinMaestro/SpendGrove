@@ -6,8 +6,10 @@ Last updated: 22 June 2026
 
 - Phase 3A — Persistence & Commit Foundation is formally accepted and closed.
 - Phase 3B Milestone 1 is approved under Autonomous Phase Delivery Mode.
-- Active task: PR 3B.0 — financial rules and data-contract decision record.
-- Approved continuation: PR 3B.1 — schema foundation and Preview migration plan.
+- PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
+- Active task: PR 3B.1 — schema foundation and Preview migration plan.
+- PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
+- PR 3B.1 migration status: generated and reviewed locally only; not run against Preview or Production.
 - Mandatory next stop: before running any Preview migration.
 - PRs 3B.2 and 3B.3 remain authorised only after the client approves the PR 3B.1 migration gate.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
@@ -59,7 +61,7 @@ Last updated: 22 June 2026
 
 ## Exact next action
 
-Merge the documentation-only PR 3B.0 when green, then implement PR 3B.1 exactly against `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Generate and review an additive Preview migration plan, but do not run it. Present the plan and stop for explicit client approval before PR 3B.2.
+Complete and merge PR 3B.1 exactly against `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Present `docs/PHASE_3B_PREVIEW_MIGRATION_PLAN.md` and stop for explicit client approval. Do not run the Preview migration or begin PR 3B.2 before that approval.
 
 ## Resume instruction
 

@@ -43,6 +43,7 @@ enum SplitRole {
 
 enum ImportType {
   TRANSACTION_CSV
+  LOAN_CSV
 }
 
 enum ImportBatchStatus {
@@ -98,6 +99,10 @@ enum AuditEntityType {
   MERCHANT_PROFILE
   MERCHANT_ALIAS
   MERCHANT_RULE
+  PROPERTY
+  LOAN_ACCOUNT
+  LOAN_REPAYMENT
+  LOAN_RECONCILIATION_LINK
 }
 
 enum AuditAction {
@@ -113,6 +118,54 @@ enum AuditAction {
   PRIVACY_FIELDS_EXCLUDED
 }
 
+enum PropertyUsage {
+  OWNER_OCCUPIED
+  INVESTMENT
+  OTHER
+}
+
+enum LoanPurpose {
+  OWNER_OCCUPIER
+  INVESTMENT
+  PERSONAL
+  OTHER
+}
+
+enum LoanType {
+  HOME_LOAN
+  PERSONAL_LOAN
+  OTHER
+}
+
+enum LoanRepaymentSource {
+  MANUAL
+  LOAN_CSV
+}
+
+enum LoanReconciliationStatus {
+  UNMATCHED
+  NEEDS_REVIEW
+  LINKED
+}
+
+enum LoanReconciliationConfidence {
+  HIGH
+  MEDIUM
+  MANUAL
+}
+
+enum LoanReconciliationLinkMethod {
+  SUGGESTED
+  MANUAL
+}
+
+enum LoanReconciliationReason {
+  EXACT_AMOUNT_NEAR_DATE
+  ROUNDING_VARIANCE
+  EXACT_AMOUNT_DELAYED_DATE
+  MANUAL_OVERRIDE
+}
+
 model User {
   id                 String        @id @default(cuid())
   authProvider       AuthProvider?
@@ -125,16 +178,20 @@ model User {
   createdAt          DateTime      @default(now())
   updatedAt          DateTime      @updatedAt
 
-  settings           UserSettings?
-  categories         Category[]
-  transactions       Transaction[]
-  importBatches      ImportBatch[]
-  importRows         ImportRow[]
-  bankImportProfiles BankImportProfile[]
-  merchantProfiles   MerchantProfile[]
-  merchantAliases    MerchantAlias[]
-  merchantRules      MerchantRule[]
-  auditEvents        AuditEvent[]
+  settings                UserSettings?
+  categories              Category[]
+  transactions            Transaction[]
+  importBatches           ImportBatch[]
+  importRows              ImportRow[]
+  bankImportProfiles      BankImportProfile[]
+  merchantProfiles        MerchantProfile[]
+  merchantAliases         MerchantAlias[]
+  merchantRules           MerchantRule[]
+  properties              Property[]
+  loanAccounts            LoanAccount[]
+  loanRepayments          LoanRepayment[]
+  loanReconciliationLinks LoanReconciliationLink[]
+  auditEvents             AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
 }
@@ -176,45 +233,46 @@ model Category {
   merchantProfiles MerchantProfile[] @relation("MerchantDefaultCategory")
   merchantRules    MerchantRule[]    @relation("MerchantRuleCategory")
 
+  @@unique([userId, name, type])
   @@index([userId, type])
   @@index([userId, parentId])
   @@index([userId, isArchived, deletedAt])
-  @@unique([userId, name, type])
 }
 
 model Transaction {
-  id                String            @id @default(cuid())
-  userId            String
-  categoryId        String?
-  importBatchId     String?
-  merchantProfileId String?
-  type                TransactionType
-  source              TransactionSource
-  status              TransactionStatus @default(ACTIVE)
-  splitRole           SplitRole         @default(NONE)
-  parentTransactionId String?
-  amountCents         Int
-  date                DateTime
+  id                           String            @id @default(cuid())
+  userId                       String
+  categoryId                   String?
+  importBatchId                String?
+  merchantProfileId            String?
+  type                         TransactionType
+  source                       TransactionSource
+  status                       TransactionStatus @default(ACTIVE)
+  splitRole                    SplitRole         @default(NONE)
+  parentTransactionId          String?
+  amountCents                  Int
+  date                         DateTime
   description                  String
   importedDescriptionSanitized String?
   merchantName                 String?
   notes                        String?
-  csvMatchHint      Boolean   @default(false)
-  importFingerprint String?
-  duplicateKey      String?
-  reviewedAt        DateTime?
-  deletedAt         DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  csvMatchHint                 Boolean           @default(false)
+  importFingerprint            String?
+  duplicateKey                 String?
+  reviewedAt                   DateTime?
+  deletedAt                    DateTime?
+  createdAt                    DateTime          @default(now())
+  updatedAt                    DateTime          @updatedAt
 
-  user              User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category          Category?        @relation("TransactionCategory", fields: [categoryId], references: [id], onDelete: SetNull)
-  importBatch       ImportBatch?     @relation("ImportBatchTransactions", fields: [importBatchId], references: [id], onDelete: SetNull)
-  merchantProfile   MerchantProfile? @relation("TransactionMerchantProfile", fields: [merchantProfileId], references: [id], onDelete: SetNull)
-  parentTransaction Transaction?     @relation("TransactionSplits", fields: [parentTransactionId], references: [id], onDelete: SetNull)
-  splitChildren     Transaction[]    @relation("TransactionSplits")
-  importRowsMatched   ImportRow[] @relation("ImportRowMatchedTransaction")
-  importRowsCommitted ImportRow[] @relation("ImportRowCommittedTransaction")
+  user                    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category                Category?                @relation("TransactionCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  importBatch             ImportBatch?             @relation("ImportBatchTransactions", fields: [importBatchId], references: [id], onDelete: SetNull)
+  merchantProfile         MerchantProfile?         @relation("TransactionMerchantProfile", fields: [merchantProfileId], references: [id], onDelete: SetNull)
+  parentTransaction       Transaction?             @relation("TransactionSplits", fields: [parentTransactionId], references: [id], onDelete: SetNull)
+  splitChildren           Transaction[]            @relation("TransactionSplits")
+  importRowsMatched       ImportRow[]              @relation("ImportRowMatchedTransaction")
+  importRowsCommitted     ImportRow[]              @relation("ImportRowCommittedTransaction")
+  loanReconciliationLinks LoanReconciliationLink[]
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -227,35 +285,36 @@ model Transaction {
 }
 
 model ImportBatch {
-  id                  String            @id @default(cuid())
-  userId              String
-  type                ImportType        @default(TRANSACTION_CSV)
-  status              ImportBatchStatus @default(CREATED)
-  bankImportProfileId String?
+  id                       String            @id @default(cuid())
+  userId                   String
+  type                     ImportType        @default(TRANSACTION_CSV)
+  status                   ImportBatchStatus @default(CREATED)
+  bankImportProfileId      String?
   safeFileName             String?
   originalFileNameRedacted String?
   fileNameHash             String?
   fileSizeBytes            Int?
-  rowCount          Int @default(0)
-  parsedRowCount    Int @default(0)
-  privateFieldCount Int @default(0)
-  importedCount     Int @default(0)
-  skippedCount      Int @default(0)
-  mergedCount       Int @default(0)
-  detectedBankName       String?
-  detectedAccountType    String?
-  mappingSummary         Json?
-  excludedPrivateHeaders String[] @default([])
-  warningCodes           String[] @default([])
-  createdAt   DateTime  @default(now())
-  completedAt DateTime?
-  deletedAt   DateTime?
-  updatedAt   DateTime  @updatedAt
+  rowCount                 Int               @default(0)
+  parsedRowCount           Int               @default(0)
+  privateFieldCount        Int               @default(0)
+  importedCount            Int               @default(0)
+  skippedCount             Int               @default(0)
+  mergedCount              Int               @default(0)
+  detectedBankName         String?
+  detectedAccountType      String?
+  mappingSummary           Json?
+  excludedPrivateHeaders   String[]          @default([])
+  warningCodes             String[]          @default([])
+  createdAt                DateTime          @default(now())
+  completedAt              DateTime?
+  deletedAt                DateTime?
+  updatedAt                DateTime          @updatedAt
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   bankImportProfile BankImportProfile? @relation("BankImportProfileBatches", fields: [bankImportProfileId], references: [id], onDelete: SetNull)
   transactions      Transaction[]      @relation("ImportBatchTransactions")
   importRows        ImportRow[]
+  loanRepayments    LoanRepayment[]
 
   @@index([userId, status])
   @@index([userId, createdAt])
@@ -264,23 +323,23 @@ model ImportBatch {
 }
 
 model ImportRow {
-  id            String          @id @default(cuid())
-  userId        String
-  importBatchId String
-  rowNumber     Int
-  action ImportRowAction @default(UNDECIDED)
-  status ImportRowStatus @default(NEEDS_REVIEW)
-  mappedDate   DateTime?
-  amountCents  Int?
-  description  String?
-  merchantName String?
-  categoryId   String?
+  id                     String          @id @default(cuid())
+  userId                 String
+  importBatchId          String
+  rowNumber              Int
+  action                 ImportRowAction @default(UNDECIDED)
+  status                 ImportRowStatus @default(NEEDS_REVIEW)
+  mappedDate             DateTime?
+  amountCents            Int?
+  description            String?
+  merchantName           String?
+  categoryId             String?
   matchedTransactionId   String?
   committedTransactionId String?
-  warningCodes String[] @default([])
-  metadata     Json?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  warningCodes           String[]        @default([])
+  metadata               Json?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
 
   user                 User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   importBatch          ImportBatch  @relation(fields: [importBatchId], references: [id], onDelete: Cascade)
@@ -288,11 +347,11 @@ model ImportRow {
   matchedTransaction   Transaction? @relation("ImportRowMatchedTransaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
   committedTransaction Transaction? @relation("ImportRowCommittedTransaction", fields: [committedTransactionId], references: [id], onDelete: SetNull)
 
+  @@unique([importBatchId, rowNumber])
   @@index([userId, importBatchId])
   @@index([userId, status])
   @@index([userId, action])
   @@index([userId, matchedTransactionId])
-  @@unique([importBatchId, rowNumber])
 }
 
 model BankImportProfile {
@@ -314,20 +373,20 @@ model BankImportProfile {
   user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   importBatches ImportBatch[] @relation("BankImportProfileBatches")
 
-  @@index([userId, bankName])
   @@unique([userId, displayName])
+  @@index([userId, bankName])
 }
 
 model MerchantProfile {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
   name              String
   normalizedName    String
   defaultCategoryId String?
-  isActive          Boolean  @default(true)
+  isActive          Boolean   @default(true)
   deletedAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   defaultCategory Category?       @relation("MerchantDefaultCategory", fields: [defaultCategoryId], references: [id], onDelete: SetNull)
@@ -335,30 +394,30 @@ model MerchantProfile {
   rules           MerchantRule[]  @relation("MerchantProfileRules")
   transactions    Transaction[]   @relation("TransactionMerchantProfile")
 
+  @@unique([userId, normalizedName])
   @@index([userId, defaultCategoryId])
   @@index([userId, isActive, deletedAt])
-  @@unique([userId, normalizedName])
 }
 
 model MerchantAlias {
-  id                String   @id @default(cuid())
+  id                String    @id @default(cuid())
   userId            String
   merchantProfileId String
   aliasName         String
   normalizedAlias   String
-  isActive          Boolean  @default(true)
+  isActive          Boolean   @default(true)
   deactivatedAt     DateTime?
   deletedAt         DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @default(now()) @updatedAt
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @default(now()) @updatedAt
 
   user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   merchantProfile MerchantProfile @relation("MerchantProfileAliases", fields: [merchantProfileId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, normalizedAlias])
   @@index([userId, merchantProfileId])
   @@index([userId, normalizedAlias])
   @@index([userId, isActive, deletedAt])
-  @@unique([userId, normalizedAlias])
 }
 
 model MerchantRule {
@@ -400,4 +459,101 @@ model AuditEvent {
 
   @@index([userId, createdAt])
   @@index([userId, entityType, entityId])
+}
+
+model Property {
+  id         String        @id @default(cuid())
+  userId     String
+  nickname   String
+  usage      PropertyUsage
+  isArchived Boolean       @default(false)
+  archivedAt DateTime?
+  deletedAt  DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loanAccounts LoanAccount[]
+
+  @@unique([userId, nickname])
+  @@index([userId, usage])
+  @@index([userId, isArchived, deletedAt])
+}
+
+model LoanAccount {
+  id                  String      @id @default(cuid())
+  userId              String
+  propertyId          String?
+  nickname            String
+  lenderName          String?
+  purpose             LoanPurpose
+  type                LoanType
+  currentBalanceCents Int?
+  balanceAsOf         DateTime?
+  isArchived          Boolean     @default(false)
+  archivedAt          DateTime?
+  deletedAt           DateTime?
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  repayments LoanRepayment[]
+
+  @@unique([userId, nickname])
+  @@index([userId, propertyId])
+  @@index([userId, purpose, type])
+  @@index([userId, isArchived, deletedAt])
+}
+
+model LoanRepayment {
+  id                   String                   @id @default(cuid())
+  userId               String
+  loanAccountId        String
+  importBatchId        String?
+  repaymentDate        DateTime
+  totalPaymentCents    Int
+  principalCents       Int?
+  interestCents        Int?
+  feeCents             Int?
+  balanceAfterCents    Int?
+  source               LoanRepaymentSource
+  reconciliationStatus LoanReconciliationStatus @default(UNMATCHED)
+  isArchived           Boolean                  @default(false)
+  archivedAt           DateTime?
+  deletedAt            DateTime?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loanAccount        LoanAccount             @relation(fields: [loanAccountId], references: [id], onDelete: Restrict)
+  importBatch        ImportBatch?            @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  reconciliationLink LoanReconciliationLink?
+
+  @@index([userId, loanAccountId, repaymentDate])
+  @@index([userId, importBatchId])
+  @@index([userId, reconciliationStatus])
+  @@index([userId, isArchived, deletedAt])
+}
+
+model LoanReconciliationLink {
+  id                  String                       @id @default(cuid())
+  userId              String
+  loanRepaymentId     String                       @unique
+  transactionId       String
+  confidence          LoanReconciliationConfidence
+  amountVarianceCents Int
+  dateDifferenceDays  Int
+  method              LoanReconciliationLinkMethod
+  reason              LoanReconciliationReason
+  unlinkedAt          DateTime?
+  createdAt           DateTime                     @default(now())
+  updatedAt           DateTime                     @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  loanRepayment LoanRepayment @relation(fields: [loanRepaymentId], references: [id], onDelete: Restrict)
+  transaction   Transaction   @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, transactionId])
+  @@index([userId, unlinkedAt])
 }
