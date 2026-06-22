@@ -202,6 +202,13 @@ Status: merged and accepted.
 
 Status: Milestone 1 approved on 22 June 2026. PRs 3B.0 through 3B.3 are authorised under Autonomous Phase Delivery Mode.
 
+Current progress:
+
+- PR 3B.0 merged in #49.
+- PR 3B.1 merged in #50.
+- Preview migration not run; work is paused at the explicit migration approval gate.
+- PRs 3B.2 and 3B.3 remain pending.
+
 Proposed objective:
 
 Establish privacy-safe property and loan data foundations plus reviewable loan repayment reconciliation, without beginning tax reports, dashboard statistics or Phase 4.

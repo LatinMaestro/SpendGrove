@@ -25,7 +25,7 @@ Status: merged in PR #49.
 
 ### PR 3B.1 — Schema foundation
 
-Status: active. Stop before running the Preview migration.
+Status: merged in PR #50. Preview migration plan awaiting explicit client approval; no migration has run.
 
 - Add user-owned property, loan account, loan repayment and reconciliation-link foundations.
 - Store monetary values as integer cents.
@@ -36,7 +36,7 @@ Status: active. Stop before running the Preview migration.
 
 ### PR 3B.2 — Property and loan metadata management
 
-Status: approved after the client resolves the PR 3B.1 Preview migration gate.
+Status: approved but blocked until the client approves the PR 3B.1 Preview migration plan and the Preview-only workflow succeeds.
 
 - Add authenticated create/edit/archive flows for minimal property and loan metadata.
 - Prefer user-selected nicknames and optional broad purpose/type fields.
