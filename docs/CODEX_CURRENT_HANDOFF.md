@@ -1,25 +1,27 @@
 # Current Codex Handoff
 
-Last updated: 22 June 2026
+Last updated: 23 June 2026
 
 ## Current state
 
 - Phase 3A — Persistence & Commit Foundation is formally accepted and closed.
-- Phase 3B Milestone 1 is approved under Autonomous Phase Delivery Mode.
+- Phase 3B Milestone 1 implementation is complete and stopped for client review.
 - PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
 - PR 3B.1 merged as [#50](https://github.com/LatinMaestro/SpendGrove/pull/50), merge commit `fa1a872c87d15a8c7853819485670e47b2da25ca`.
 - PR 3B.1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7ahCZopnMku2nWmF8DMbhJVq1syo
 - PR #53 merged the approved minimal `CAR_LOAN` amendment as `3938a0c2ef872553fa18df1c9b41832f83516e44`.
 - Preview migration workflow run [27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458) completed successfully from `main`.
-- Active state: PR 3B.2 — Loans-first metadata management with optional property linking.
-- PR 3B.2 local verification: focused tests 3 files / 10 tests passed; full tests 58 files / 327 tests passed; TypeScript and clean production build passed.
-- PR 3B.2 mobile browser verification: `/loans` rendered meaningful content at 390×844, showed all five navigation items, had no framework error overlay and presented a safe account-unavailable state when Clerk/database configuration was absent.
+- PR 3B.2 merged as [#54](https://github.com/LatinMaestro/SpendGrove/pull/54), merge commit `52406a62318741b339a1ddc6371eb5c7f9fd17f1`.
+- PR 3B.3 merged as [#55](https://github.com/LatinMaestro/SpendGrove/pull/55), merge commit `8eb07b0f6f24e577f14c90cf68968762ca0430d1`.
+- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/6gadsxgV1Xh7Epj23aEb5FWAh7Bn
+- Final verification: focused PR 3B.3 tests 3 files / 9 tests passed; full tests 60 files / 334 tests passed; TypeScript and production build passed.
+- Mobile browser verification: `/loans/import` rendered without horizontal overflow or console errors at 390×844 and preserved all five primary navigation items.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
 - Migration status: Phase 3B foundation applied to Preview only. No Production migration has run.
 - Client approved the Preview-only plan and the exact `CAR_LOAN` amendment.
 - Amendment scope: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship, private field or data rewrite.
 - Preview workflow confirmation, Preview secret presence, Prisma generation/validation, migration deployment and completion steps all passed.
-- PRs 3B.2 and 3B.3 remain authorised only after the client approves the PR 3B.1 migration gate.
+- Client review package: `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
 ## Final Phase 3A evidence
@@ -69,8 +71,8 @@ Last updated: 22 June 2026
 
 ## Exact next action
 
-Publish and merge the verified PR 3B.2 with Loans as the primary section, safe nicknames, all five approved loan choices, optional property metadata, authenticated ownership, edit/archive behaviour and no tax conclusions. Then continue to PR 3B.3. Do not run a Production migration or begin Milestone 2.
+Client retesting of Phase 3B Milestone 1 on the final main deployment. Do not begin PR 3B.4 or Milestone 2 until the client approves the next milestone.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`; verify GitHub/Vercel; then continue only the approved Milestone 1 sequence and obey the migration gate.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Milestone 1 is stopped for client review; do not implement Milestone 2 without explicit approval.
