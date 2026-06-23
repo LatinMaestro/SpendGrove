@@ -17,9 +17,11 @@ import {
   assessLoanCsvColumns,
   buildLoanCsvReview,
   buildSuggestedLoanCsvMapping,
+  detectLoanCsvMappingMode,
   type LoanCsvColumn,
   type LoanCsvColumnRole,
   type LoanCsvMapping,
+  type LoanCsvMappingMode,
   type LoanCsvReviewRow,
 } from "@/lib/loan-csv-review";
 import { MAX_CSV_FILE_SIZE_BYTES, parseCsvDocument, type TransientCsvDocument } from "@/lib/csv-import";
@@ -45,17 +47,31 @@ type LoanResult =
   | { ok: false; error: string };
 
 const roleLabels: Record<LoanCsvColumnRole, string> = {
-  DATE: "Repayment date",
+  DATE: "Date",
   TOTAL_PAYMENT: "Total payment",
   PRINCIPAL: "Principal",
   INTEREST: "Interest",
   FEES: "Fees",
+  SIGNED_AMOUNT: "Signed amount",
+  EVENT_TYPE: "Loan event type",
   BALANCE_AFTER: "Balance after",
   IGNORE: "Do not use",
   PRIVATE: "Private — excluded",
 };
 
-const selectableRoles = Object.keys(roleLabels).filter((role) => role !== "PRIVATE") as LoanCsvColumnRole[];
+const selectableRoles: Record<LoanCsvMappingMode, LoanCsvColumnRole[]> = {
+  COMPONENT_COLUMNS: ["DATE", "TOTAL_PAYMENT", "PRINCIPAL", "INTEREST", "FEES", "BALANCE_AFTER", "IGNORE"],
+  ROW_EVENT_LEDGER: ["DATE", "SIGNED_AMOUNT", "EVENT_TYPE", "BALANCE_AFTER", "IGNORE"],
+};
+
+const classificationLabels: Record<NonNullable<LoanCsvReviewRow["classification"]>, string> = {
+  REPAYMENT: "Repayment",
+  INTEREST: "Interest",
+  FEE: "Fee",
+  LOAN_ADVANCE: "Loan advance",
+  ADJUSTMENT: "Adjustment",
+  UNKNOWN: "Needs review",
+};
 
 function loanLabel(loan: LoanRecord) {
   if (loan.type === "CAR_LOAN") return "Car loan";
@@ -80,14 +96,19 @@ function dateLabel(date: string | null) {
 }
 
 function ReviewRow({ row }: Readonly<{ row: LoanCsvReviewRow }>) {
+  const primaryAmount = row.classification
+    ? row.eventAmountCents
+    : row.totalPaymentCents ?? row.principalCents ?? row.interestCents ?? row.feeCents;
   return (
     <article className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-teal">CSV row {row.rowNumber}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-teal">
+            {row.classification ? classificationLabels[row.classification] : `CSV row ${row.rowNumber}`}
+          </p>
           <h3 className="mt-1 text-lg font-bold text-brand-deepTeal">{dateLabel(row.date)}</h3>
         </div>
-        <p className="text-lg font-bold text-brand-deepTeal">{aud(row.totalPaymentCents)}</p>
+        <p className="text-lg font-bold text-brand-deepTeal">{aud(primaryAmount)}</p>
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         {([
@@ -105,7 +126,7 @@ function ReviewRow({ row }: Readonly<{ row: LoanCsvReviewRow }>) {
       {row.warningCodes.length > 0 && (
         <p className="mt-4 flex gap-2 rounded-2xl bg-warning-amber/10 p-3 text-sm font-semibold text-brand-deepTeal">
           <AlertTriangle aria-hidden="true" className="h-5 w-5 shrink-0 text-warning-amber" />
-          Check the date, payment and component amounts before any later commit step.
+          Check this row’s date, amount or classification before any later commit step.
         </p>
       )}
     </article>
@@ -133,7 +154,11 @@ function AuthenticatedLoanCsvReview() {
   const [selectedLoanId, setSelectedLoanId] = useState("");
   const [document, setDocument] = useState<TransientCsvDocument | null>(null);
   const [columns, setColumns] = useState<LoanCsvColumn[]>([]);
-  const [mapping, setMapping] = useState<LoanCsvMapping>({});
+  const [mode, setMode] = useState<LoanCsvMappingMode>("COMPONENT_COLUMNS");
+  const [mappings, setMappings] = useState<Record<LoanCsvMappingMode, LoanCsvMapping>>({
+    COMPONENT_COLUMNS: {},
+    ROW_EVENT_LEDGER: {},
+  });
   const [step, setStep] = useState<"SELECT" | "MAP" | "REVIEW">("SELECT");
   const [error, setError] = useState("");
   const [isReady, setIsReady] = useState(false);
@@ -163,15 +188,17 @@ function AuthenticatedLoanCsvReview() {
   }, [isLoaded, isSignedIn]);
 
   const selectedLoan = loans.find((loan) => loan.id === selectedLoanId) ?? null;
+  const mapping = mappings[mode];
   const review = useMemo(
-    () => document ? buildLoanCsvReview(document, columns, mapping) : null,
-    [columns, document, mapping],
+    () => document ? buildLoanCsvReview(document, columns, mapping, mode) : null,
+    [columns, document, mapping, mode],
   );
 
   function clearCsv() {
     setDocument(null);
     setColumns([]);
-    setMapping({});
+    setMode("COMPONENT_COLUMNS");
+    setMappings({ COMPONENT_COLUMNS: {}, ROW_EVENT_LEDGER: {} });
     setStep("SELECT");
     setError("");
   }
@@ -190,9 +217,14 @@ function AuthenticatedLoanCsvReview() {
     try {
       const nextDocument = parseCsvDocument(await file.text());
       const nextColumns = assessLoanCsvColumns(nextDocument);
+      const nextMode = detectLoanCsvMappingMode(nextDocument, nextColumns);
       setDocument(nextDocument);
       setColumns(nextColumns);
-      setMapping(buildSuggestedLoanCsvMapping(nextColumns));
+      setMode(nextMode);
+      setMappings({
+        COMPONENT_COLUMNS: buildSuggestedLoanCsvMapping(nextColumns, "COMPONENT_COLUMNS"),
+        ROW_EVENT_LEDGER: buildSuggestedLoanCsvMapping(nextColumns, "ROW_EVENT_LEDGER"),
+      });
       setStep("MAP");
     } catch (fileError) {
       setError(fileError instanceof Error ? fileError.message : "We could not read that CSV safely.");
@@ -218,7 +250,7 @@ function AuthenticatedLoanCsvReview() {
         <Link href="/loans" className="inline-flex items-center gap-2 text-sm font-bold text-white/75"><ArrowLeft aria-hidden="true" className="h-4 w-4" /> Loans</Link>
         <p className="mt-5 text-sm font-semibold text-white/70">Browser-local review</p>
         <h1 className="mt-2 text-3xl font-bold">Review a loan CSV safely.</h1>
-        <p className="mt-3 text-sm leading-6 text-white/75">Choose its Loan Account, match repayment columns, then review sanitized amounts. Nothing is committed in this milestone.</p>
+        <p className="mt-3 text-sm leading-6 text-white/75">Choose its Loan Account, match its loan CSV format, then review sanitized amounts. Nothing is committed in this milestone.</p>
       </section>
 
       <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
@@ -273,9 +305,40 @@ function AuthenticatedLoanCsvReview() {
         {document && (
           <div className="mt-4">
             <div className="flex items-center justify-between gap-3 rounded-2xl bg-brand-green/5 p-4">
-              <div><p className="font-bold text-brand-deepTeal">Selected loan CSV</p><p className="text-xs text-brand-deepTeal/60">{document.rows.length} repayment row{document.rows.length === 1 ? "" : "s"} held in this tab</p></div>
+              <div><p className="font-bold text-brand-deepTeal">Selected loan CSV</p><p className="text-xs text-brand-deepTeal/60">{document.rows.length} loan row{document.rows.length === 1 ? "" : "s"} held in this tab</p></div>
               <button type="button" onClick={clearCsv} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Reset</button>
             </div>
+            <fieldset className="mt-4 rounded-3xl bg-surface-mint p-4">
+              <legend className="px-1 text-sm font-bold text-brand-deepTeal">Loan CSV format</legend>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                {([
+                  ["ROW_EVENT_LEDGER", "Loan ledger", "Rows describe events such as repayments, interest, fees or balance changes."],
+                  ["COMPONENT_COLUMNS", "Repayment breakdown", "Columns separately provide payment, principal, interest or fees."],
+                ] as const).map(([value, label, description]) => (
+                  <label key={value} className={`cursor-pointer rounded-2xl border p-3 ${mode === value ? "border-brand-green bg-white" : "border-border bg-surface-base"}`}>
+                    <span className="flex items-center gap-2 font-bold text-brand-deepTeal">
+                      <input
+                        type="radio"
+                        name="loan-csv-format"
+                        value={value}
+                        checked={mode === value}
+                        onChange={() => {
+                          setMode(value);
+                          setStep("MAP");
+                        }}
+                      />
+                      {label}
+                    </span>
+                    <span className="mt-1 block pl-6 text-xs leading-5 text-brand-deepTeal/65">{description}</span>
+                  </label>
+                ))}
+              </div>
+              {mode === "ROW_EVENT_LEDGER" && (
+                <p className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-sm text-brand-deepTeal">
+                  This looks like a loan ledger CSV. We matched the date, amount, event type and balance columns. This format does not need a total payment column because each row is classified by event type.
+                </p>
+              )}
+            </fieldset>
             <div className="mt-4 space-y-3">
               {columns.map((column) => (
                 <label key={column.index} className="grid gap-2 rounded-2xl border border-border p-3 text-sm font-bold text-brand-deepTeal sm:grid-cols-2 sm:items-center">
@@ -283,16 +346,23 @@ function AuthenticatedLoanCsvReview() {
                   <select
                     value={mapping[column.index] ?? "IGNORE"}
                     disabled={column.isPrivate}
-                    onChange={(event) => setMapping({ ...mapping, [column.index]: event.target.value as LoanCsvColumnRole })}
+                    onChange={(event) => setMappings({
+                      ...mappings,
+                      [mode]: { ...mapping, [column.index]: event.target.value as LoanCsvColumnRole },
+                    })}
                     className="min-h-11 rounded-xl border border-border bg-white px-3 font-normal disabled:bg-surface-mint"
                   >
-                    {(column.isPrivate ? ["PRIVATE" as const] : selectableRoles).map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}
+                    {(column.isPrivate ? ["PRIVATE" as const] : selectableRoles[mode]).map((role) => (
+                      <option key={role} value={role}>
+                        {role === "DATE" ? mode === "ROW_EVENT_LEDGER" ? "Event date" : "Repayment date" : roleLabels[role]}
+                      </option>
+                    ))}
                   </select>
                 </label>
               ))}
             </div>
             {review && review.mappingIssues.length > 0 && <ul className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm text-brand-deepTeal">{review.mappingIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul>}
-            <button type="button" disabled={!review || review.mappingIssues.length > 0} onClick={() => setStep("REVIEW")} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review repayment rows</button>
+            <button type="button" disabled={!review || review.mappingIssues.length > 0} onClick={() => setStep("REVIEW")} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review loan rows</button>
           </div>
         )}
       </section>
