@@ -13,8 +13,9 @@ Last updated: 23 June 2026
 - Preview migration workflow run [27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458) completed successfully from `main`.
 - PR 3B.2 merged as [#54](https://github.com/LatinMaestro/SpendGrove/pull/54), merge commit `52406a62318741b339a1ddc6371eb5c7f9fd17f1`.
 - PR 3B.3 merged as [#55](https://github.com/LatinMaestro/SpendGrove/pull/55), merge commit `8eb07b0f6f24e577f14c90cf68968762ca0430d1`.
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/6gadsxgV1Xh7Epj23aEb5FWAh7Bn
-- Final verification: focused PR 3B.3 tests 3 files / 9 tests passed; full tests 60 files / 334 tests passed; TypeScript and production build passed.
+- Milestone 1 row-event mapping acceptance fix merged as [#57](https://github.com/LatinMaestro/SpendGrove/pull/57), merge commit `77ef31279b139697b47ddf7e032da8b0c93edee2`.
+- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4vbS9Nn5FZ7LRGNPcSTsEYfEyd1L
+- Final verification: focused acceptance tests 3 files / 18 tests passed; full tests 60 files / 343 tests passed; TypeScript and production build passed.
 - Mobile browser verification: `/loans/import` rendered without horizontal overflow or console errors at 390×844 and preserved all five primary navigation items.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
 - Migration status: Phase 3B foundation applied to Preview only. No Production migration has run.
@@ -22,6 +23,8 @@ Last updated: 23 June 2026
 - Amendment scope: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship, private field or data rewrite.
 - Preview workflow confirmation, Preview secret presence, Prisma generation/validation, migration deployment and completion steps all passed.
 - Client review package: `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`.
+- Loan CSV review now supports both component-column repayment breakdowns and row-event loan ledgers. Headerless four-column ledgers auto-map event date, signed amount, loan event type and balance after.
+- Row-event source text is used transiently to derive safe Repayment, Interest, Fee, Loan advance, Adjustment or Needs review labels; the source text is not returned in review rows, stored or logged.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
 ## Final Phase 3A evidence
