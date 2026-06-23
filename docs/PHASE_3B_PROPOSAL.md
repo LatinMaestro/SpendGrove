@@ -1,6 +1,6 @@
 # Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 approved by the client on 22 June 2026.
+Status: Milestone 1 implementation completed on 23 June 2026 and stopped for client review.
 
 Approved Milestone 1 covers PRs 3B.0 through 3B.3. Durable repayment commit and reconciliation implementation remain unapproved Milestone 2 work.
 
@@ -25,7 +25,7 @@ Status: merged in PR #49.
 
 ### PR 3B.1 — Schema foundation
 
-Status: merged in PR #50. Preview migration plan awaiting explicit client approval; no migration has run.
+Status: merged in PR #50. The approved amended migration ran successfully against Preview only in workflow run 27958341458.
 
 - Add user-owned property, loan account, loan repayment and reconciliation-link foundations.
 - Store monetary values as integer cents.
@@ -36,7 +36,7 @@ Status: merged in PR #50. Preview migration plan awaiting explicit client approv
 
 ### PR 3B.2 — Loans-first metadata management
 
-Status: implementation and local verification complete; ready for PR/Vercel gates.
+Status: merged in PR #54.
 
 - Add authenticated create/edit/archive flows with Loan Accounts as the main entry point.
 - Prefer user-selected nicknames and optional broad purpose/type fields.
@@ -48,7 +48,7 @@ Status: implementation and local verification complete; ready for PR/Vercel gate
 
 ### PR 3B.3 — Browser-local loan CSV mapping and review
 
-Status: approved after PR 3B.2. Stop for client Milestone 1 review after merge.
+Status: merged in PR #55. Milestone 1 is stopped for client review.
 
 - Treat loan CSV as a first-class import type.
 - Require the user to choose the owning Loan Account before row review.

@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 approved on 22 June 2026. PRs 3B.0 through 3B.3 are authorised under Autonomous Phase Delivery Mode.
+Status: Milestone 1 implementation completed on 23 June 2026 and stopped for client review.
 
 Current progress:
 
@@ -209,8 +209,12 @@ Current progress:
 - The minimal `CAR_LOAN` amendment merged in #53.
 - Preview migration run 27958341458 completed successfully.
 - No Production migration ran.
-- PR 3B.2 implementation and local verification are complete; PR/Vercel gates remain.
-- PR 3B.3 remains pending.
+- PR 3B.2 merged in #54.
+- PR 3B.3 merged in #55.
+- Final main Vercel deployment is green.
+- Full tests: 60 files / 334 tests passed; TypeScript and production build passed.
+- `docs/PHASE_3B_MILESTONE_1_SUMMARY.md` is the client review package.
+- PR 3B.4 and Milestone 2 remain unapproved.
 
 Proposed objective:
 
