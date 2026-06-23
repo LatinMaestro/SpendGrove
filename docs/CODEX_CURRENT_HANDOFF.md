@@ -9,12 +9,16 @@ Last updated: 22 June 2026
 - PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
 - PR 3B.1 merged as [#50](https://github.com/LatinMaestro/SpendGrove/pull/50), merge commit `fa1a872c87d15a8c7853819485670e47b2da25ca`.
 - PR 3B.1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7ahCZopnMku2nWmF8DMbhJVq1syo
-- Active state: implementing the approved minimal `CAR_LOAN` amendment before Preview migration.
+- PR #53 merged the approved minimal `CAR_LOAN` amendment as `3938a0c2ef872553fa18df1c9b41832f83516e44`.
+- Preview migration workflow run [27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458) completed successfully from `main`.
+- Active state: PR 3B.2 — Loans-first metadata management with optional property linking.
+- PR 3B.2 local verification: focused tests 3 files / 10 tests passed; full tests 58 files / 327 tests passed; TypeScript and clean production build passed.
+- PR 3B.2 mobile browser verification: `/loans` rendered meaningful content at 390×844, showed all five navigation items, had no framework error overlay and presented a safe account-unavailable state when Clerk/database configuration was absent.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
-- Migration status: the original schema and migration file are merged to `main`; no Preview or Production migration has run.
+- Migration status: Phase 3B foundation applied to Preview only. No Production migration has run.
 - Client approved the Preview-only plan and the exact `CAR_LOAN` amendment.
 - Amendment scope: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship, private field or data rewrite.
-- Preview workflow may run once from `main` only after the amendment PR is green and merged.
+- Preview workflow confirmation, Preview secret presence, Prisma generation/validation, migration deployment and completion steps all passed.
 - PRs 3B.2 and 3B.3 remain authorised only after the client approves the PR 3B.1 migration gate.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
@@ -65,7 +69,7 @@ Last updated: 22 June 2026
 
 ## Exact next action
 
-Verify and merge the exact `CAR_LOAN` amendment. Run the existing Preview-only workflow once from `main` with `RUN PREVIEW MIGRATION`, verify success and confirm Production remains untouched, then continue autonomously through Loans-first PR 3B.2 and PR 3B.3.
+Publish and merge the verified PR 3B.2 with Loans as the primary section, safe nicknames, all five approved loan choices, optional property metadata, authenticated ownership, edit/archive behaviour and no tax conclusions. Then continue to PR 3B.3. Do not run a Production migration or begin Milestone 2.
 
 ## Resume instruction
 

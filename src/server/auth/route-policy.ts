@@ -1,4 +1,4 @@
-export const PUBLIC_APP_ROUTES = ["/", "/import", "/onboarding", "/settings", "/sign-in", "/sign-up", "/transactions"] as const;
+export const PUBLIC_APP_ROUTES = ["/", "/import", "/loans", "/onboarding", "/settings", "/sign-in", "/sign-up", "/transactions"] as const;
 
 export const CLERK_PROTECTED_ROUTE_PATTERNS = ["/account(.*)", "/api/account(.*)", "/api/server(.*)"] as const;
 
