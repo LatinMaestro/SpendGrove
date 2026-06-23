@@ -34,10 +34,33 @@ Milestone 1 established a privacy-safe Loans-first foundation:
 | Minimal `CAR_LOAN` amendment | [#53](https://github.com/LatinMaestro/SpendGrove/pull/53) | `3938a0c2ef872553fa18df1c9b41832f83516e44` |
 | 3B.2 Loans-first metadata management | [#54](https://github.com/LatinMaestro/SpendGrove/pull/54) | `52406a62318741b339a1ddc6371eb5c7f9fd17f1` |
 | 3B.3 browser-local loan CSV mapping and review | [#55](https://github.com/LatinMaestro/SpendGrove/pull/55) | `8eb07b0f6f24e577f14c90cf68968762ca0430d1` |
+| Milestone 1 row-event mapping acceptance fix | [#57](https://github.com/LatinMaestro/SpendGrove/pull/57) | `77ef31279b139697b47ddf7e032da8b0c93edee2` |
+
+## Row-event mapping acceptance hardening
+
+Client retesting identified that the original PR 3B.3 mapper assumed separate repayment-component columns. A common loan ledger instead uses one row per event with date, signed amount, event type and running balance.
+
+The acceptance fix adds two explicit browser-local mapping formats:
+
+- **Loan ledger:** event date, signed amount, loan event type and optional balance after.
+- **Repayment breakdown:** repayment date plus total payment and/or principal, interest and fees, with optional balance after.
+
+Headerless four-column loan ledgers are now detected from safe structural evidence and mapped automatically. The user can change the format or any role manually without losing corrections made in the other format.
+
+Loan event text is used only transiently to derive safe review labels:
+
+- Repayment;
+- Interest;
+- Fee;
+- Loan advance;
+- Adjustment;
+- Needs review.
+
+Interest and fee events are not treated as repayments. Loan advances are not treated as repayments or principal payments. Adjustments and unknown events carry review warnings.
 
 ## Deployment and migration evidence
 
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/6gadsxgV1Xh7Epj23aEb5FWAh7Bn
+- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4vbS9Nn5FZ7LRGNPcSTsEYfEyd1L
 - Production alias: https://spendgrove.vercel.app
 - PR 3B.3 preview deployment: https://vercel.com/latinmaestros-projects/spendgrove/DXPQ2DwFMwHRNbtswPuxfhVahVEh
 - Preview migration workflow: [run 27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458)
@@ -47,8 +70,8 @@ Milestone 1 established a privacy-safe Loans-first foundation:
 
 ## Test and build evidence
 
-- PR 3B.3 focused tests: 3 files / 9 tests passed.
-- Full regression suite: 60 files / 334 tests passed.
+- Row-event acceptance-fix focused tests: 3 files / 18 tests passed.
+- Full regression suite: 60 files / 343 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
 - Vercel PR preview: green.
@@ -60,6 +83,7 @@ Milestone 1 established a privacy-safe Loans-first foundation:
 - Raw loan CSV files, raw rows, original filenames and narration are held only in browser memory and are discarded on reset or page close.
 - No CSV upload, durable repayment write or browser storage is used by PR 3B.3.
 - Private identifier columns are locked out of mapping.
+- Row-event source text may be classified transiently in browser memory but is not returned in review rows, displayed, logged or sent to an API.
 - Review rows contain only parsed dates, integer-cent repayment components, optional balance-after values and structured warnings.
 - Durable Loan Accounts and properties contain safe nicknames and broad type/purpose/usage metadata only.
 - Exact addresses, account numbers, lender references, customer IDs, masked account references, BSBs, card fragments, secrets and connection strings are not requested or persisted.
@@ -90,11 +114,17 @@ Milestone 1 established a privacy-safe Loans-first foundation:
 10. Select a non-property loan and confirm no property details are requested.
 11. Review the supplied synthetic home-loan and personal-loan CSV fixtures.
 12. Confirm date, payment, principal, interest, fee and balance columns can be corrected before review.
-13. Confirm private identifier columns are excluded and raw narration is never shown.
-14. Confirm the original filename is not displayed.
-15. Confirm the page clearly says **Review only — nothing saved** and offers no commit action.
-16. Reset the CSV or close the page and confirm the transient review is cleared.
-17. Check the flow on a phone-sized viewport.
+13. Test a headerless four-column loan ledger and confirm **Loan ledger** is selected automatically.
+14. Confirm its columns map to Event date, Signed amount, Loan event type and Balance after.
+15. Confirm there is no warning requiring a Total payment column in Loan ledger mode.
+16. Confirm the format can be changed to **Repayment breakdown** and back without losing manual corrections.
+17. Confirm repayment, interest, fee and loan-advance rows receive distinct safe labels.
+18. Confirm adjustments and unknown events show a Needs review warning.
+19. Confirm private identifier columns are excluded and raw event text/narration is never shown.
+20. Confirm the original filename is not displayed.
+21. Confirm the page clearly says **Review only — nothing saved** and offers no commit action.
+22. Reset the CSV or close the page and confirm the transient review is cleared.
+23. Check the flow on a phone-sized viewport.
 
 ## Recommended next step
 
