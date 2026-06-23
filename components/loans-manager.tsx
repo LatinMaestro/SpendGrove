@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   AlertTriangle,
@@ -404,9 +405,12 @@ function AuthenticatedLoansManager() {
             <h2 className="mt-2 text-3xl font-bold">Your Loan Accounts first.</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Track home, investment, car, personal and other loans. Add optional property context only when it is useful.</p>
           </div>
-          <button type="button" onClick={() => { setError(""); setEditor({ draft: emptyLoanDraft() }); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-white">
-            <Plus aria-hidden="true" className="h-5 w-5" /> Add Loan Account
-          </button>
+          <div className="flex flex-col gap-2">
+            <button type="button" onClick={() => { setError(""); setEditor({ draft: emptyLoanDraft() }); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-white">
+              <Plus aria-hidden="true" className="h-5 w-5" /> Add Loan Account
+            </button>
+            <Link href="/loans/import" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/35 px-5 text-sm font-bold text-white">Review loan CSV</Link>
+          </div>
         </div>
       </section>
 
