@@ -1,6 +1,6 @@
 # Phase 3B Preview Migration Plan
 
-Status: approved; execute only after the `CAR_LOAN` amendment PR is green and merged
+Status: completed successfully in Preview
 
 Date prepared: 22 June 2026
 
@@ -10,7 +10,7 @@ This plan accompanies PR 3B.1. The migration has not been run against Preview or
 
 The client approved the Preview-only plan and the exact minimal `CAR_LOAN` amendment documented in `docs/PHASE_3B_LOANS_FIRST_UI_CONTRACT.md`.
 
-Do not run the workflow until that amendment is green and merged to `main`. PR 3B.2 must not begin until the amended Preview migration succeeds.
+The amendment merged in PR #53. The existing workflow ran once from `main` as run 27958341458 and completed successfully. Production was not targeted.
 
 ## Migration
 

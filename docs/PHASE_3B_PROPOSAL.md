@@ -36,7 +36,7 @@ Status: merged in PR #50. Preview migration plan awaiting explicit client approv
 
 ### PR 3B.2 — Loans-first metadata management
 
-Status: approved but blocked until the minimal `CAR_LOAN` amendment is approved, merged and successfully applied through the Preview-only workflow.
+Status: implementation and local verification complete; ready for PR/Vercel gates.
 
 - Add authenticated create/edit/archive flows with Loan Accounts as the main entry point.
 - Prefer user-selected nicknames and optional broad purpose/type fields.

@@ -6,6 +6,7 @@ describe("Clerk route policy", () => {
     expect(isPublicPrototypePath("/")).toBe(true);
     expect(isPublicPrototypePath("/transactions")).toBe(true);
     expect(isPublicPrototypePath("/import")).toBe(true);
+    expect(isPublicPrototypePath("/loans")).toBe(true);
     expect(isPublicPrototypePath("/settings")).toBe(true);
     expect(isPublicPrototypePath("/sign-in")).toBe(true);
     expect(isPublicPrototypePath("/sign-up")).toBe(true);
@@ -22,6 +23,7 @@ describe("Clerk route policy", () => {
     expect(isProtectedPath("/")).toBe(false);
     expect(isProtectedPath("/transactions")).toBe(false);
     expect(isProtectedPath("/import")).toBe(false);
+    expect(isProtectedPath("/loans")).toBe(false);
     expect(isProtectedPath("/settings")).toBe(false);
   });
 });

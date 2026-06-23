@@ -206,8 +206,11 @@ Current progress:
 
 - PR 3B.0 merged in #49.
 - PR 3B.1 merged in #50.
-- Preview migration not run; the approved plan is paused for explicit approval of the minimal `CAR_LOAN` enum amendment.
-- PRs 3B.2 and 3B.3 remain pending.
+- The minimal `CAR_LOAN` amendment merged in #53.
+- Preview migration run 27958341458 completed successfully.
+- No Production migration ran.
+- PR 3B.2 implementation and local verification are complete; PR/Vercel gates remain.
+- PR 3B.3 remains pending.
 
 Proposed objective:
 
