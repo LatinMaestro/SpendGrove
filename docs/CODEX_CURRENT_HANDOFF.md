@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 23 June 2026
+Last updated: 24 June 2026
 
 ## Current state
 
@@ -14,8 +14,9 @@ Last updated: 23 June 2026
 - PR 3B.2 merged as [#54](https://github.com/LatinMaestro/SpendGrove/pull/54), merge commit `52406a62318741b339a1ddc6371eb5c7f9fd17f1`.
 - PR 3B.3 merged as [#55](https://github.com/LatinMaestro/SpendGrove/pull/55), merge commit `8eb07b0f6f24e577f14c90cf68968762ca0430d1`.
 - Milestone 1 row-event mapping acceptance fix merged as [#57](https://github.com/LatinMaestro/SpendGrove/pull/57), merge commit `77ef31279b139697b47ddf7e032da8b0c93edee2`.
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4vbS9Nn5FZ7LRGNPcSTsEYfEyd1L
-- Final verification: focused acceptance tests 3 files / 18 tests passed; full tests 60 files / 343 tests passed; TypeScript and production build passed.
+- Milestone 1 loan-ledger grouping acceptance fix merged as [#59](https://github.com/LatinMaestro/SpendGrove/pull/59), merge commit `5bf5162a0190e26b1294a5c95b221092d9cf6db5`.
+- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
+- Final verification: focused acceptance tests 2 files / 25 tests passed; full tests 60 files / 352 tests passed; TypeScript and production build passed.
 - Mobile browser verification: `/loans/import` rendered without horizontal overflow or console errors at 390×844 and preserved all five primary navigation items.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
 - Migration status: Phase 3B foundation applied to Preview only. No Production migration has run.
@@ -25,6 +26,8 @@ Last updated: 23 June 2026
 - Client review package: `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`.
 - Loan CSV review now supports both component-column repayment breakdowns and row-event loan ledgers. Headerless four-column ledgers auto-map event date, signed amount, loan event type and balance after.
 - Row-event source text is used transiently to derive safe Repayment, Interest, Fee, Loan advance, Adjustment or Needs review labels; the source text is not returned in review rows, stored or logged.
+- Row-event ledger review now groups safe same-date repayment, interest and fee rows into one repayment breakdown card. Principal is derived only when there is one clear repayment row and no ambiguous adjustment, advance, unknown or multiple-repayment companion rows.
+- Investment-loan interest receives only a transient neutral review suggestion for future property/tax record keeping. It is not a durable tax field, tax report, EOFY report, deductibility decision or tax advice.
 - PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
 
 ## Final Phase 3A evidence

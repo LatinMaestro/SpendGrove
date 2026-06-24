@@ -35,6 +35,7 @@ Milestone 1 established a privacy-safe Loans-first foundation:
 | 3B.2 Loans-first metadata management | [#54](https://github.com/LatinMaestro/SpendGrove/pull/54) | `52406a62318741b339a1ddc6371eb5c7f9fd17f1` |
 | 3B.3 browser-local loan CSV mapping and review | [#55](https://github.com/LatinMaestro/SpendGrove/pull/55) | `8eb07b0f6f24e577f14c90cf68968762ca0430d1` |
 | Milestone 1 row-event mapping acceptance fix | [#57](https://github.com/LatinMaestro/SpendGrove/pull/57) | `77ef31279b139697b47ddf7e032da8b0c93edee2` |
+| Milestone 1 loan-ledger repayment grouping acceptance fix | [#59](https://github.com/LatinMaestro/SpendGrove/pull/59) | `5bf5162a0190e26b1294a5c95b221092d9cf6db5` |
 
 ## Row-event mapping acceptance hardening
 
@@ -58,25 +59,44 @@ Loan event text is used only transiently to derive safe review labels:
 
 Interest and fee events are not treated as repayments. Loan advances are not treated as repayments or principal payments. Adjustments and unknown events carry review warnings.
 
+## Loan-ledger repayment grouping acceptance hardening
+
+Client retesting after PR #57 showed that classifying each loan ledger row was not enough. Some loan exports list a repayment row and related same-date interest or fee rows separately, even though the user made one repayment event.
+
+PR #59 changes row-event ledger review so safe same-date rows are grouped into one repayment breakdown before display:
+
+- total repayment;
+- interest component;
+- fee component;
+- principal calculated as repayment minus interest and fees when safe;
+- balance after as review-only context.
+
+Principal is derived only when there is one clear repayment row for the date and no ambiguous adjustment, loan advance, unknown event or multiple-repayment pattern. Ambiguous same-date patterns show a review warning and avoid false precision.
+
+Interest-only, fee-only, loan-advance, adjustment and unknown rows remain review-warning items rather than repayments. This prevents the UI from implying the user made extra repayments merely because the source ledger has component rows.
+
+For investment loans only, identified interest receives a transient neutral suggestion for future property/tax record keeping. The wording does not say interest is deductible, does not tell the user to claim anything and does not create tax reports, EOFY reports, durable tax fields or tax advice.
+
 ## Deployment and migration evidence
 
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4vbS9Nn5FZ7LRGNPcSTsEYfEyd1L
+- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
 - Production alias: https://spendgrove.vercel.app
 - PR 3B.3 preview deployment: https://vercel.com/latinmaestros-projects/spendgrove/DXPQ2DwFMwHRNbtswPuxfhVahVEh
 - Preview migration workflow: [run 27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458)
 - The workflow used the approved Preview-only Neon secret names and completed successfully from `main`.
 - No Production migration was run.
 - PRs 3B.2 and 3B.3 required no further schema change or migration.
+- PR #59 required no schema change or migration.
 
 ## Test and build evidence
 
-- Row-event acceptance-fix focused tests: 3 files / 18 tests passed.
-- Full regression suite: 60 files / 343 tests passed.
+- Loan-ledger grouping acceptance-fix focused tests: 2 files / 25 tests passed.
+- Full regression suite: 60 files / 352 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
 - Vercel PR preview: green.
 - Vercel merged-main deployment: green.
-- Mobile browser verification at 390×844: no horizontal overflow, no console errors and all five primary navigation items remained available.
+- Mobile browser verification at 390×844: signed-out/account-setup state rendered meaningful content with no horizontal overflow, no console errors and all primary navigation items available.
 
 ## Privacy and security evidence
 
@@ -84,11 +104,12 @@ Interest and fee events are not treated as repayments. Loan advances are not tre
 - No CSV upload, durable repayment write or browser storage is used by PR 3B.3.
 - Private identifier columns are locked out of mapping.
 - Row-event source text may be classified transiently in browser memory but is not returned in review rows, displayed, logged or sent to an API.
-- Review rows contain only parsed dates, integer-cent repayment components, optional balance-after values and structured warnings.
+- Review rows contain only parsed dates, integer-cent repayment components, optional balance-after values, safe grouping metadata and structured warnings.
 - Durable Loan Accounts and properties contain safe nicknames and broad type/purpose/usage metadata only.
 - Exact addresses, account numbers, lender references, customer IDs, masked account references, BSBs, card fragments, secrets and connection strings are not requested or persisted.
 - All durable metadata queries and writes remain authenticated and user-owned.
 - Loan purpose and property usage remain descriptive; no deductibility or tax conclusion is produced.
+- The investment-interest record-keeping suggestion is transient review UI only and is not a durable tax/reporting feature.
 
 ## Known limitations
 
@@ -108,7 +129,7 @@ Interest and fee events are not treated as repayments. Loan advances are not tre
 4. For a home or investment loan, create or link an optional property using a nickname and broad usage only.
 5. Edit, archive and restore a Loan Account.
 6. Edit, archive and restore an optional property.
-7. Open **Review loan CSV**.
+7. Open **Import Loan CSV**.
 8. Confirm a Loan Account must be selected before a CSV can be chosen.
 9. Select a property-linked loan and confirm its linked property context appears.
 10. Select a non-property loan and confirm no property details are requested.
@@ -116,15 +137,18 @@ Interest and fee events are not treated as repayments. Loan advances are not tre
 12. Confirm date, payment, principal, interest, fee and balance columns can be corrected before review.
 13. Test a headerless four-column loan ledger and confirm **Loan ledger** is selected automatically.
 14. Confirm its columns map to Event date, Signed amount, Loan event type and Balance after.
-15. Confirm there is no warning requiring a Total payment column in Loan ledger mode.
-16. Confirm the format can be changed to **Repayment breakdown** and back without losing manual corrections.
-17. Confirm repayment, interest, fee and loan-advance rows receive distinct safe labels.
-18. Confirm adjustments and unknown events show a Needs review warning.
-19. Confirm private identifier columns are excluded and raw event text/narration is never shown.
-20. Confirm the original filename is not displayed.
-21. Confirm the page clearly says **Review only — nothing saved** and offers no commit action.
-22. Reset the CSV or close the page and confirm the transient review is cleared.
-23. Check the flow on a phone-sized viewport.
+15. Confirm same-date repayment plus interest rows appear as one repayment breakdown, not separate repayments.
+16. Confirm same-date repayment plus interest plus fee rows show Total repayment, Interest, Principal, Fees and Balance after.
+17. Confirm principal is calculated only for clear single-repayment groups.
+18. Confirm multiple same-date repayments, adjustments, advances and unknown rows show Needs review rather than false precision.
+19. Confirm investment-loan interest shows only neutral future record-keeping wording and does not use deductible/claim language.
+20. Confirm owner-occupier, car, personal and other loans do not get the investment record-keeping suggestion automatically.
+21. Confirm the format can be changed to **Repayment breakdown** and back without losing manual corrections.
+22. Confirm private identifier columns are excluded and raw event text/narration is never shown.
+23. Confirm the original filename is not displayed.
+24. Confirm the page clearly says **Review only - nothing saved** and offers no commit action.
+25. Reset the CSV or close the page and confirm the transient review is cleared.
+26. Check the flow on a phone-sized viewport.
 
 ## Recommended next step
 
