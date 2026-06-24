@@ -45,11 +45,16 @@ export type LoanCsvReviewWarning =
   | "EVENT_TYPE_NEEDS_REVIEW"
   | "ADJUSTMENT_NEEDS_REVIEW"
   | "UNKNOWN_EVENT_NEEDS_REVIEW"
+  | "MULTIPLE_REPAYMENTS_NEED_REVIEW"
+  | "NON_REPAYMENT_NEEDS_REVIEW"
   | "COMPONENTS_EXCEED_PAYMENT"
   | "COMPONENTS_DO_NOT_MATCH_PAYMENT";
 
 export type LoanCsvReviewRow = {
   rowNumber: number;
+  sourceRowNumbers: number[];
+  sourceRowCount: number;
+  isGroupedRepayment: boolean;
   date: string | null;
   classification: LoanEventClassification | null;
   eventAmountCents: number | null;
@@ -58,8 +63,11 @@ export type LoanCsvReviewRow = {
   interestCents: number | null;
   feeCents: number | null;
   balanceAfterCents: number | null;
+  componentNotes: string[];
   warningCodes: LoanCsvReviewWarning[];
 };
+
+export type LoanPurposeForRecordKeeping = "OWNER_OCCUPIER" | "INVESTMENT" | "PERSONAL" | "OTHER";
 
 const privateHeaderRules = [
   /\bbsb\b/i,
@@ -284,7 +292,19 @@ export function classifyLoanEvent(value: string): LoanEventClassification {
   return "UNKNOWN";
 }
 
-function buildRowEventReviewRow(
+function combineWarnings(...warnings: LoanCsvReviewWarning[][]) {
+  return Array.from(new Set(warnings.flat()));
+}
+
+function sumCents(values: Array<number | null>) {
+  return values.reduce<number>((sum, value) => sum + (value ?? 0), 0);
+}
+
+function latestBalanceAfter(rows: LoanCsvReviewRow[]) {
+  return [...rows].reverse().find((row) => row.balanceAfterCents !== null)?.balanceAfterCents ?? null;
+}
+
+function buildRowEventSourceRow(
   row: string[],
   rowNumber: number,
   mapping: LoanCsvMapping,
@@ -304,6 +324,9 @@ function buildRowEventReviewRow(
 
   return {
     rowNumber,
+    sourceRowNumbers: [rowNumber],
+    sourceRowCount: 1,
+    isGroupedRepayment: false,
     date,
     classification,
     eventAmountCents,
@@ -312,8 +335,116 @@ function buildRowEventReviewRow(
     interestCents: classification === "INTEREST" ? eventAmountCents : null,
     feeCents: classification === "FEE" ? eventAmountCents : null,
     balanceAfterCents: safeMoney(valueForRole(row, mapping, "BALANCE_AFTER")),
+    componentNotes: [],
     warningCodes,
   };
+}
+
+function groupRowEventReviewRows(rows: LoanCsvReviewRow[]): LoanCsvReviewRow[] {
+  const grouped = new Map<string, LoanCsvReviewRow[]>();
+  const output: LoanCsvReviewRow[] = [];
+
+  for (const row of rows) {
+    if (!row.date) {
+      output.push({
+        ...row,
+        warningCodes: combineWarnings(row.warningCodes, ["DATE_NEEDS_REVIEW"]),
+      });
+      continue;
+    }
+
+    if (!grouped.has(row.date)) grouped.set(row.date, []);
+    grouped.get(row.date)?.push(row);
+  }
+
+  for (const sameDateRows of grouped.values()) {
+    const rowNumber = sameDateRows[0].rowNumber;
+    const date = sameDateRows[0].date;
+    const sourceRowNumbers = sameDateRows.flatMap((row) => row.sourceRowNumbers);
+    const warningCodes = combineWarnings(...sameDateRows.map((row) => row.warningCodes));
+    const repaymentRows = sameDateRows.filter((row) => row.classification === "REPAYMENT");
+    const interestRows = sameDateRows.filter((row) => row.classification === "INTEREST");
+    const feeRows = sameDateRows.filter((row) => row.classification === "FEE");
+    const advanceRows = sameDateRows.filter((row) => row.classification === "LOAN_ADVANCE");
+    const adjustmentRows = sameDateRows.filter((row) => row.classification === "ADJUSTMENT");
+    const unknownRows = sameDateRows.filter((row) => row.classification === "UNKNOWN");
+    const componentNotes: string[] = [];
+
+    if (repaymentRows.length === 0) {
+      const firstClassification = sameDateRows[0].classification;
+      const interestCents = interestRows.length > 0 ? sumCents(interestRows.map((row) => row.interestCents)) : null;
+      const feeCents = feeRows.length > 0 ? sumCents(feeRows.map((row) => row.feeCents)) : null;
+      if (interestCents !== null) componentNotes.push("interest identified");
+      if (feeCents !== null) componentNotes.push("fee identified");
+
+      output.push({
+        rowNumber,
+        sourceRowNumbers,
+        sourceRowCount: sourceRowNumbers.length,
+        isGroupedRepayment: false,
+        date,
+        classification: firstClassification,
+        eventAmountCents: sameDateRows.length === 1 ? sameDateRows[0].eventAmountCents : null,
+        totalPaymentCents: null,
+        principalCents: null,
+        interestCents,
+        feeCents,
+        balanceAfterCents: latestBalanceAfter(sameDateRows),
+        componentNotes,
+        warningCodes: combineWarnings(warningCodes, ["NON_REPAYMENT_NEEDS_REVIEW"]),
+      });
+      continue;
+    }
+
+    const totalPaymentCents = sumCents(repaymentRows.map((row) => row.totalPaymentCents));
+    const interestCents = interestRows.length > 0 ? sumCents(interestRows.map((row) => row.interestCents)) : 0;
+    const feeCents = feeRows.length > 0 ? sumCents(feeRows.map((row) => row.feeCents)) : 0;
+    const hasAmbiguousCompanions = advanceRows.length > 0 || adjustmentRows.length > 0 || unknownRows.length > 0;
+    const hasMultipleRepayments = repaymentRows.length > 1;
+    let principalCents: number | null = null;
+
+    if (interestRows.length > 0) componentNotes.push("interest identified");
+    if (feeRows.length > 0) componentNotes.push("fee identified");
+
+    if (hasMultipleRepayments) warningCodes.push("MULTIPLE_REPAYMENTS_NEED_REVIEW");
+    if (hasAmbiguousCompanions) warningCodes.push("NON_REPAYMENT_NEEDS_REVIEW");
+
+    if (!hasMultipleRepayments && !hasAmbiguousCompanions) {
+      const derivedPrincipal = totalPaymentCents - interestCents - feeCents;
+      if (derivedPrincipal >= 0) {
+        principalCents = derivedPrincipal;
+        componentNotes.push("principal calculated");
+      } else {
+        warningCodes.push("COMPONENTS_EXCEED_PAYMENT");
+      }
+    }
+
+    output.push({
+      rowNumber,
+      sourceRowNumbers,
+      sourceRowCount: sourceRowNumbers.length,
+      isGroupedRepayment: true,
+      date,
+      classification: "REPAYMENT",
+      eventAmountCents: totalPaymentCents,
+      totalPaymentCents,
+      principalCents,
+      interestCents,
+      feeCents,
+      balanceAfterCents: latestBalanceAfter(sameDateRows),
+      componentNotes,
+      warningCodes: combineWarnings(warningCodes),
+    });
+  }
+
+  return output;
+}
+
+export function shouldSuggestPropertyRecordKeeping(
+  loanPurpose: LoanPurposeForRecordKeeping,
+  row: Pick<LoanCsvReviewRow, "interestCents">,
+) {
+  return loanPurpose === "INVESTMENT" && (row.interestCents ?? 0) > 0;
 }
 
 function buildComponentReviewRow(
@@ -347,6 +478,9 @@ function buildComponentReviewRow(
 
   return {
     rowNumber,
+    sourceRowNumbers: [rowNumber],
+    sourceRowCount: 1,
+    isGroupedRepayment: false,
     date,
     classification: null,
     eventAmountCents: null,
@@ -355,6 +489,7 @@ function buildComponentReviewRow(
     interestCents,
     feeCents,
     balanceAfterCents: safeMoney(valueForRole(row, mapping, "BALANCE_AFTER")),
+    componentNotes: [],
     warningCodes,
   };
 }
@@ -371,12 +506,13 @@ export function buildLoanCsvReview(
   });
 
   const mappingIssues = validateLoanCsvMapping(safeMapping, mode);
-  const rows = document.rows.map((row, index) => {
+  const sourceRows = document.rows.map((row, index) => {
     const rowNumber = index + (document.hasHeader ? 2 : 1);
     return mode === "ROW_EVENT_LEDGER"
-      ? buildRowEventReviewRow(row, rowNumber, safeMapping)
+      ? buildRowEventSourceRow(row, rowNumber, safeMapping)
       : buildComponentReviewRow(row, rowNumber, safeMapping);
   });
+  const rows = mode === "ROW_EVENT_LEDGER" ? groupRowEventReviewRows(sourceRows) : sourceRows;
 
   return { mode, mapping: safeMapping, mappingIssues, rows };
 }
