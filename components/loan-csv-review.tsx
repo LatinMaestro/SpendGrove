@@ -23,6 +23,7 @@ import {
   type LoanCsvMapping,
   type LoanCsvMappingMode,
   type LoanCsvReviewRow,
+  shouldSuggestPropertyRecordKeeping,
 } from "@/lib/loan-csv-review";
 import { MAX_CSV_FILE_SIZE_BYTES, parseCsvDocument, type TransientCsvDocument } from "@/lib/csv-import";
 
@@ -95,23 +96,34 @@ function dateLabel(date: string | null) {
   return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function ReviewRow({ row }: Readonly<{ row: LoanCsvReviewRow }>) {
-  const primaryAmount = row.classification
-    ? row.eventAmountCents
-    : row.totalPaymentCents ?? row.principalCents ?? row.interestCents ?? row.feeCents;
+function ReviewRow({ row, selectedLoan }: Readonly<{ row: LoanCsvReviewRow; selectedLoan: LoanRecord }>) {
+  const isRepaymentBreakdown = row.isGroupedRepayment || (!row.classification && row.totalPaymentCents !== null);
+  const title = row.isGroupedRepayment
+    ? "Repayment breakdown"
+    : row.classification ? classificationLabels[row.classification] : `CSV row ${row.rowNumber}`;
+  const primaryAmount = row.totalPaymentCents ?? row.eventAmountCents ?? row.principalCents ?? row.interestCents ?? row.feeCents;
+  const suggestPropertyRecordKeeping = shouldSuggestPropertyRecordKeeping(selectedLoan.purpose, row);
   return (
     <article className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-teal">
-            {row.classification ? classificationLabels[row.classification] : `CSV row ${row.rowNumber}`}
+            {title}
           </p>
-          <h3 className="mt-1 text-lg font-bold text-brand-deepTeal">{dateLabel(row.date)}</h3>
+          <h3 className="mt-1 text-lg font-bold text-brand-deepTeal">
+            {isRepaymentBreakdown ? "Repayment date" : "Review date"}: {dateLabel(row.date)}
+          </h3>
+          {row.sourceRowCount > 1 && (
+            <p className="mt-1 text-xs font-semibold text-brand-deepTeal/60">
+              Grouped from {row.sourceRowCount} same-day ledger rows.
+            </p>
+          )}
         </div>
         <p className="text-lg font-bold text-brand-deepTeal">{aud(primaryAmount)}</p>
       </div>
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         {([
+          ["Total repayment", row.totalPaymentCents],
           ["Principal", row.principalCents],
           ["Interest", row.interestCents],
           ["Fees", row.feeCents],
@@ -123,6 +135,18 @@ function ReviewRow({ row }: Readonly<{ row: LoanCsvReviewRow }>) {
           </div>
         ))}
       </dl>
+      {row.componentNotes.length > 0 && (
+        <ul className="mt-4 flex flex-wrap gap-2 text-xs font-bold text-brand-deepTeal">
+          {row.componentNotes.map((note) => (
+            <li key={note} className="rounded-full bg-brand-green/10 px-3 py-1">{note}</li>
+          ))}
+        </ul>
+      )}
+      {suggestPropertyRecordKeeping && (
+        <p className="mt-4 rounded-2xl bg-brand-green/10 p-3 text-sm font-semibold text-brand-deepTeal">
+          Potential property tax record: interest on an investment loan - review later for record-keeping.
+        </p>
+      )}
       {row.warningCodes.length > 0 && (
         <p className="mt-4 flex gap-2 rounded-2xl bg-warning-amber/10 p-3 text-sm font-semibold text-brand-deepTeal">
           <AlertTriangle aria-hidden="true" className="h-5 w-5 shrink-0 text-warning-amber" />
@@ -249,8 +273,9 @@ function AuthenticatedLoanCsvReview() {
       <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
         <Link href="/loans" className="inline-flex items-center gap-2 text-sm font-bold text-white/75"><ArrowLeft aria-hidden="true" className="h-4 w-4" /> Loans</Link>
         <p className="mt-5 text-sm font-semibold text-white/70">Browser-local review</p>
-        <h1 className="mt-2 text-3xl font-bold">Review a loan CSV safely.</h1>
-        <p className="mt-3 text-sm leading-6 text-white/75">Choose its Loan Account, match its loan CSV format, then review sanitized amounts. Nothing is committed in this milestone.</p>
+        <h1 className="mt-2 text-3xl font-bold">Import Loan CSV</h1>
+        <p className="mt-3 text-sm leading-6 text-white/75">Choose a loan account, match the columns, and review repayment breakdowns before anything is saved.</p>
+        <p className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Review only - nothing saved yet</p>
       </section>
 
       <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
@@ -335,7 +360,7 @@ function AuthenticatedLoanCsvReview() {
               </div>
               {mode === "ROW_EVENT_LEDGER" && (
                 <p className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-sm text-brand-deepTeal">
-                  This looks like a loan ledger CSV. We matched the date, amount, event type and balance columns. This format does not need a total payment column because each row is classified by event type.
+                  This looks like a loan ledger CSV. We matched the date, amount, event type and balance columns. Same-day repayment, interest and fee rows are grouped into one repayment breakdown where safe.
                 </p>
               )}
             </fieldset>
@@ -374,7 +399,7 @@ function AuthenticatedLoanCsvReview() {
             <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Review only — nothing saved</h2>
             <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">These sanitized amounts belong to <strong>{selectedLoan.nickname}</strong>. Raw narration is not shown.</p>
           </div>
-          <div className="mt-4 space-y-4">{review.rows.map((row) => <ReviewRow key={row.rowNumber} row={row} />)}</div>
+          <div className="mt-4 space-y-4">{review.rows.map((row) => <ReviewRow key={row.rowNumber} row={row} selectedLoan={selectedLoan} />)}</div>
           <div className="mt-5 rounded-3xl border border-brand-green/30 bg-brand-green/5 p-5 text-sm leading-6 text-brand-deepTeal">
             <p className="flex items-center gap-2 font-bold"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Review complete for this tab</p>
             <p className="mt-2">Durable repayment commit and reconciliation are deliberately not available in Milestone 1.</p>

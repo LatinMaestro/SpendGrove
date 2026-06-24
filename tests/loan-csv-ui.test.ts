@@ -6,6 +6,15 @@ const pagePath = new URL("../app/loans/import/page.tsx", import.meta.url);
 const loansPath = new URL("../components/loans-manager.tsx", import.meta.url);
 
 describe("loan CSV review UI contract", () => {
+  it("uses Import Loan CSV as the main title while keeping review-only copy", async () => {
+    const review = await readFile(reviewPath, "utf8");
+
+    expect(review).toContain("Import Loan CSV");
+    expect(review).toContain("review repayment breakdowns before anything is saved");
+    expect(review).toContain("Review only - nothing saved yet");
+    expect(review).not.toContain("Review a loan CSV safely");
+  });
+
   it("requires the owning Loan Account before local file review", async () => {
     const review = await readFile(reviewPath, "utf8");
 
@@ -57,9 +66,37 @@ describe("loan CSV review UI contract", () => {
     expect(review).toContain("Event date");
     expect(review).toContain("Signed amount");
     expect(review).toContain("Loan event type");
-    expect(review).toContain("This format does not need a total payment column");
+    expect(review).toContain("Same-day repayment, interest and fee rows are grouped into one repayment breakdown where safe.");
     expect(review).toContain("classificationLabels");
     expect(review).toContain("Needs review");
+  });
+
+  it("renders grouped repayment breakdown cards without raw event text", async () => {
+    const review = await readFile(reviewPath, "utf8");
+
+    expect(review).toContain("Repayment breakdown");
+    expect(review).toContain("Repayment date");
+    expect(review).toContain("Total repayment");
+    expect(review).toContain("Principal");
+    expect(review).toContain("Interest");
+    expect(review).toContain("Fees");
+    expect(review).toContain("Balance after");
+    expect(review).toContain("Grouped from");
+    expect(review).toContain("componentNotes");
+    expect(review).not.toContain("rawEvent");
+    expect(review).not.toContain("eventText");
+  });
+
+  it("uses neutral investment-interest record-keeping wording only", async () => {
+    const review = await readFile(reviewPath, "utf8");
+
+    expect(review).toContain("Potential property tax record");
+    expect(review).toContain("review later for record-keeping");
+    expect(review).toContain("shouldSuggestPropertyRecordKeeping");
+    expect(review).not.toMatch(/\bdeductible\b/i);
+    expect(review).not.toMatch(/\btax deductible\b/i);
+    expect(review).not.toMatch(/\bclaim\b/i);
+    expect(review).not.toMatch(/\bATO\b/i);
   });
 
   it("keeps independent mappings when switching formats", async () => {

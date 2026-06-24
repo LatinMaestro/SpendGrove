@@ -7,6 +7,7 @@ import {
   classifyLoanEvent,
   detectLoanCsvMappingMode,
   scanLoanCsv,
+  shouldSuggestPropertyRecordKeeping,
   validateLoanCsvMapping,
 } from "@/lib/loan-csv-review";
 import { parseCsvDocument } from "@/lib/csv-import";
@@ -22,6 +23,11 @@ const syntheticLedger = [
   "04/05/2026,1200.00,Loan drawdown,25783.75",
   "05/05/2026,-4.00,Account correction,25779.75",
   "06/05/2026,3.00,Unclassified entry,25782.75",
+].join("\n");
+
+const groupedRepaymentLedger = [
+  "12/05/2026,-3000.00,Scheduled payment,220000.00",
+  "12/05/2026,2100.00,Interest charge,219100.00",
 ].join("\n");
 
 describe("browser-local loan CSV review", () => {
@@ -41,27 +47,126 @@ describe("browser-local loan CSV review", () => {
     expect(scan.mappingIssues).toEqual([]);
   });
 
-  it("classifies row events into safe derived types and positive integer-cent magnitudes", () => {
+  it("groups a same-date repayment and interest row into one repayment breakdown", () => {
+    const scan = scanLoanCsv(groupedRepaymentLedger);
+
+    expect(scan.rows).toHaveLength(1);
+    expect(scan.rows[0]).toMatchObject({
+      isGroupedRepayment: true,
+      sourceRowCount: 2,
+      classification: "REPAYMENT",
+      totalPaymentCents: 300000,
+      interestCents: 210000,
+      feeCents: 0,
+      principalCents: 90000,
+      balanceAfterCents: 21910000,
+      warningCodes: [],
+    });
+    expect(scan.rows[0].componentNotes).toEqual(expect.arrayContaining(["interest identified", "principal calculated"]));
+  });
+
+  it("groups same-date repayment, interest and fee rows and derives principal safely", () => {
+    const scan = scanLoanCsv([
+      "15/05/2026,-1800.00,Scheduled payment,150000.00",
+      "15/05/2026,700.00,Interest charge,149300.00",
+      "15/05/2026,25.00,Monthly service fee,149275.00",
+    ].join("\n"));
+
+    expect(scan.rows).toHaveLength(1);
+    expect(scan.rows[0]).toMatchObject({
+      totalPaymentCents: 180000,
+      interestCents: 70000,
+      feeCents: 2500,
+      principalCents: 107500,
+      balanceAfterCents: 14927500,
+      warningCodes: [],
+    });
+  });
+
+  it("keeps interest-only and fee-only ledger entries as warning review items, not repayments", () => {
+    const scan = scanLoanCsv([
+      "16/05/2026,650.00,Interest charge,148625.00",
+      "17/05/2026,12.50,Monthly service fee,148637.50",
+    ].join("\n"));
+
+    expect(scan.rows).toHaveLength(2);
+    expect(scan.rows[0]).toMatchObject({
+      isGroupedRepayment: false,
+      classification: "INTEREST",
+      totalPaymentCents: null,
+      interestCents: 65000,
+      warningCodes: expect.arrayContaining(["NON_REPAYMENT_NEEDS_REVIEW"]),
+    });
+    expect(scan.rows[1]).toMatchObject({
+      isGroupedRepayment: false,
+      classification: "FEE",
+      totalPaymentCents: null,
+      feeCents: 1250,
+      warningCodes: expect.arrayContaining(["NON_REPAYMENT_NEEDS_REVIEW"]),
+    });
+  });
+
+  it("does not treat loan advances or ambiguous adjustments as repayments", () => {
+    const scan = scanLoanCsv([
+      "18/05/2026,1200.00,Loan advance,149837.50",
+      "19/05/2026,-4.00,Account correction,149833.50",
+    ].join("\n"));
+
+    expect(scan.rows[0]).toMatchObject({
+      classification: "LOAN_ADVANCE",
+      totalPaymentCents: null,
+      principalCents: null,
+      warningCodes: expect.arrayContaining(["NON_REPAYMENT_NEEDS_REVIEW"]),
+    });
+    expect(scan.rows[1]).toMatchObject({
+      classification: "ADJUSTMENT",
+      totalPaymentCents: null,
+      principalCents: null,
+      warningCodes: expect.arrayContaining(["ADJUSTMENT_NEEDS_REVIEW", "NON_REPAYMENT_NEEDS_REVIEW"]),
+    });
+  });
+
+  it("handles multiple same-date repayment rows conservatively without deriving principal", () => {
+    const scan = scanLoanCsv([
+      "20/05/2026,-900.00,Scheduled payment,148900.00",
+      "20/05/2026,-850.00,Extra payment,148050.00",
+      "20/05/2026,500.00,Interest charge,147550.00",
+    ].join("\n"));
+
+    expect(scan.rows).toHaveLength(1);
+    expect(scan.rows[0]).toMatchObject({
+      isGroupedRepayment: true,
+      totalPaymentCents: 175000,
+      interestCents: 50000,
+      principalCents: null,
+      balanceAfterCents: 14755000,
+      warningCodes: expect.arrayContaining(["MULTIPLE_REPAYMENTS_NEED_REVIEW"]),
+    });
+  });
+
+  it("keeps row-event classifications safe without exposing raw event text", () => {
     const scan = scanLoanCsv(syntheticLedger);
 
     expect(scan.rows[0]).toMatchObject({
       classification: "REPAYMENT",
       eventAmountCents: 50000,
       totalPaymentCents: 50000,
-      interestCents: null,
-      feeCents: null,
+      interestCents: 0,
+      feeCents: 0,
     });
     expect(scan.rows[1]).toMatchObject({
       classification: "INTEREST",
       eventAmountCents: 7525,
       totalPaymentCents: null,
       interestCents: 7525,
+      warningCodes: expect.arrayContaining(["NON_REPAYMENT_NEEDS_REVIEW"]),
     });
     expect(scan.rows[2]).toMatchObject({
       classification: "FEE",
       eventAmountCents: 850,
       feeCents: 850,
       principalCents: null,
+      warningCodes: expect.arrayContaining(["NON_REPAYMENT_NEEDS_REVIEW"]),
     });
     expect(scan.rows[3]).toMatchObject({
       classification: "LOAN_ADVANCE",
@@ -77,6 +182,9 @@ describe("browser-local loan CSV review", () => {
       classification: "UNKNOWN",
       warningCodes: expect.arrayContaining(["UNKNOWN_EVENT_NEEDS_REVIEW"]),
     });
+    expect(JSON.stringify(scan.rows)).not.toContain("Regular repayment");
+    expect(JSON.stringify(scan.rows)).not.toContain("Interest charge");
+    expect(JSON.stringify(scan.rows)).not.toContain("Monthly service fee");
   });
 
   it("never returns raw event text in row-event review rows", () => {
@@ -85,6 +193,7 @@ describe("browser-local loan CSV review", () => {
 
     expect(scan.mode).toBe("ROW_EVENT_LEDGER");
     expect(scan.rows[0].classification).toBe("REPAYMENT");
+    expect(scan.rows[0].isGroupedRepayment).toBe(true);
     expect(JSON.stringify(scan.rows)).not.toContain(privateLookingText);
     expect(JSON.stringify(scan.rows)).not.toContain("12345678");
     expect(JSON.stringify(scan.rows)).not.toContain("987654321");
@@ -193,5 +302,15 @@ describe("browser-local loan CSV review", () => {
     expect(classifyLoanEvent("Balance adjustment")).toBe("ADJUSTMENT");
     expect(classifyLoanEvent("Interest correction")).toBe("ADJUSTMENT");
     expect(classifyLoanEvent("Other entry")).toBe("UNKNOWN");
+  });
+
+  it("suggests neutral property record-keeping only for investment loan interest", () => {
+    const row = scanLoanCsv(groupedRepaymentLedger).rows[0];
+
+    expect(shouldSuggestPropertyRecordKeeping("INVESTMENT", row)).toBe(true);
+    expect(shouldSuggestPropertyRecordKeeping("OWNER_OCCUPIER", row)).toBe(false);
+    expect(shouldSuggestPropertyRecordKeeping("PERSONAL", row)).toBe(false);
+    expect(shouldSuggestPropertyRecordKeeping("OTHER", row)).toBe(false);
+    expect(shouldSuggestPropertyRecordKeeping("INVESTMENT", { interestCents: 0 })).toBe(false);
   });
 });
