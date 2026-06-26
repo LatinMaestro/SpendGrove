@@ -1,8 +1,8 @@
 # Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 implementation completed on 23 June 2026 and stopped for client review.
+Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 is proposed in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` but not approved for implementation.
 
-Approved Milestone 1 covers PRs 3B.0 through 3B.3. Durable repayment commit and reconciliation implementation remain unapproved Milestone 2 work.
+Approved Milestone 1 covered PRs 3B.0 through 3B.3 plus acceptance-hardening PRs #57 and #59. Durable repayment commit and reconciliation implementation remain unapproved Milestone 2 work.
 
 ## Proposed objective
 
@@ -48,7 +48,7 @@ Status: merged in PR #54.
 
 ### PR 3B.3 — Browser-local loan CSV mapping and review
 
-Status: merged in PR #55. Milestone 1 is stopped for client review.
+Status: merged in PR #55 and accepted after Milestone 1 client retesting.
 
 - Treat loan CSV as a first-class import type.
 - Require the user to choose the owning Loan Account before row review.
@@ -60,7 +60,7 @@ Status: merged in PR #55. Milestone 1 is stopped for client review.
 
 ### PR 3B.4 — Durable loan repayment commit and safe history
 
-Status: not approved. Requires Milestone 2 approval.
+Status: proposed only in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Requires explicit Milestone 2 approval before implementation.
 
 - Commit only reviewed, validated loan repayment fields.
 - Add atomic, batched and idempotent commit.
@@ -70,7 +70,7 @@ Status: not approved. Requires Milestone 2 approval.
 
 ### PR 3B.5 — Reconciliation and no-double-count safeguards
 
-Status: not approved. Requires Milestone 2 approval.
+Status: proposed only in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Requires explicit Milestone 2 approval before implementation.
 
 - Suggest links between loan repayments and eligible everyday-account transactions.
 - Show confidence and mismatch reasons.

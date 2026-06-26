@@ -1,11 +1,12 @@
 # Current Codex Handoff
 
-Last updated: 24 June 2026
+Last updated: 26 June 2026
 
 ## Current state
 
 - Phase 3A — Persistence & Commit Foundation is formally accepted and closed.
-- Phase 3B Milestone 1 implementation is complete and stopped for client review.
+- Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
+- Client completed Milestone 1 retesting on 26 June 2026 with no further acceptance comments.
 - PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
 - PR 3B.1 merged as [#50](https://github.com/LatinMaestro/SpendGrove/pull/50), merge commit `fa1a872c87d15a8c7853819485670e47b2da25ca`.
 - PR 3B.1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7ahCZopnMku2nWmF8DMbhJVq1syo
@@ -15,7 +16,8 @@ Last updated: 24 June 2026
 - PR 3B.3 merged as [#55](https://github.com/LatinMaestro/SpendGrove/pull/55), merge commit `8eb07b0f6f24e577f14c90cf68968762ca0430d1`.
 - Milestone 1 row-event mapping acceptance fix merged as [#57](https://github.com/LatinMaestro/SpendGrove/pull/57), merge commit `77ef31279b139697b47ddf7e032da8b0c93edee2`.
 - Milestone 1 loan-ledger grouping acceptance fix merged as [#59](https://github.com/LatinMaestro/SpendGrove/pull/59), merge commit `5bf5162a0190e26b1294a5c95b221092d9cf6db5`.
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
+- Final accepted Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DmX3T1SbgYwf2EHECNuwbpzMCPqb
+- Final functional Milestone 1 main deployment before closure docs: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
 - Final verification: focused acceptance tests 2 files / 25 tests passed; full tests 60 files / 352 tests passed; TypeScript and production build passed.
 - Mobile browser verification: `/loans/import` rendered without horizontal overflow or console errors at 390×844 and preserved all five primary navigation items.
 - PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
@@ -28,7 +30,8 @@ Last updated: 24 June 2026
 - Row-event source text is used transiently to derive safe Repayment, Interest, Fee, Loan advance, Adjustment or Needs review labels; the source text is not returned in review rows, stored or logged.
 - Row-event ledger review now groups safe same-date repayment, interest and fee rows into one repayment breakdown card. Principal is derived only when there is one clear repayment row and no ambiguous adjustment, advance, unknown or multiple-repayment companion rows.
 - Investment-loan interest receives only a transient neutral review suggestion for future property/tax record keeping. It is not a durable tax field, tax report, EOFY report, deductibility decision or tax advice.
-- PR 3B.4, Milestone 2, Phase 4, Home dashboard statistics and later modules are not authorised.
+- PR 3B.4, Milestone 2 implementation, Phase 4, Home dashboard statistics and later modules are not authorised.
+- Proposed Milestone 2 plan: `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`.
 
 ## Final Phase 3A evidence
 
@@ -77,8 +80,8 @@ Last updated: 24 June 2026
 
 ## Exact next action
 
-Client retesting of Phase 3B Milestone 1 on the final main deployment. Do not begin PR 3B.4 or Milestone 2 until the client approves the next milestone.
+Client review and approval decision for `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Do not begin PR 3B.4, Milestone 2 implementation or any later module until the client explicitly approves the plan.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Milestone 1 is stopped for client review; do not implement Milestone 2 without explicit approval.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Milestone 1 is formally closed; Milestone 2 is proposed only and must not be implemented without explicit client approval.

@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 implementation completed on 23 June 2026 and stopped for client review.
+Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 is proposed only and not approved for implementation.
 
 Current progress:
 
@@ -211,10 +211,13 @@ Current progress:
 - No Production migration ran.
 - PR 3B.2 merged in #54.
 - PR 3B.3 merged in #55.
-- Final main Vercel deployment is green.
-- Full tests: 60 files / 334 tests passed; TypeScript and production build passed.
+- Final accepted Milestone 1 main Vercel deployment is green: https://vercel.com/latinmaestros-projects/spendgrove/DmX3T1SbgYwf2EHECNuwbpzMCPqb
+- Final functional Milestone 1 main deployment before closure docs is green: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
+- Full tests: 60 files / 352 tests passed; TypeScript and production build passed.
 - `docs/PHASE_3B_MILESTONE_1_SUMMARY.md` is the client review package.
-- PR 3B.4 and Milestone 2 remain unapproved.
+- Client signed-in retesting completed on 26 June 2026 with no further acceptance comments.
+- `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` is the proposed Milestone 2 plan.
+- PR 3B.4 and Milestone 2 implementation remain unapproved.
 
 Proposed objective:
 
@@ -233,6 +236,8 @@ Proposed PR sequence:
 The detailed inclusions, exclusions, migration gates, privacy risks and stop conditions are in `docs/PHASE_3B_PROPOSAL.md`.
 
 Mandatory gate: stop after PR 3B.1 and present the exact Preview migration plan before running it. Continue to PR 3B.2 only after explicit migration approval. Stop after PR 3B.3 for client Milestone 1 review. PR 3B.4 and later are not authorised.
+
+Milestone 2 gate: review `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and obtain explicit client approval before starting PR 3B.4. Do not start durable repayment commit, repayment history, reconciliation suggestions, manual link/unlink, no-double-count UI, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
 
 ## Broader Phase 3 scope — Loans, Properties and Tax
 

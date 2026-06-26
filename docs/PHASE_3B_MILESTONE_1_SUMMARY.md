@@ -2,9 +2,13 @@
 
 Date completed: 23 June 2026
 
+Date formally accepted and closed: 26 June 2026
+
 ## Status
 
-Implementation is complete and stopped for client review.
+Phase 3B Milestone 1 is formally accepted and closed.
+
+The client completed final Milestone 1 retesting on 26 June 2026 and reported no further acceptance comments.
 
 PR 3B.4 and Milestone 2 have not started. Phase 4, Home dashboard statistics, tax/EOFY reporting and later modules have not started.
 
@@ -79,7 +83,8 @@ For investment loans only, identified interest receives a transient neutral sugg
 
 ## Deployment and migration evidence
 
-- Final Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
+- Final accepted Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DmX3T1SbgYwf2EHECNuwbpzMCPqb
+- Final functional Milestone 1 main deployment before closure docs: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
 - Production alias: https://spendgrove.vercel.app
 - PR 3B.3 preview deployment: https://vercel.com/latinmaestros-projects/spendgrove/DXPQ2DwFMwHRNbtswPuxfhVahVEh
 - Preview migration workflow: [run 27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458)
@@ -115,7 +120,7 @@ For investment loans only, identified interest receives a transient neutral sugg
 
 - Milestone 1 reviews repayment rows but cannot save them.
 - Durable repayment history, idempotent commit, reconciliation suggestions, manual link/unlink and no-double-count enforcement are reserved for an approved Milestone 2.
-- The client must perform final signed-in browser testing because automated verification does not use the client’s protected authenticated session.
+- Final signed-in browser testing was completed by the client because automated verification does not use the client's protected authenticated session.
 - Unusual or headerless loan CSVs may require manual column matching.
 - Component mismatches are warned for review; no automated correction is made.
 - Balance-after values are review-only and are not used to infer loan balances or financial advice.
@@ -152,4 +157,4 @@ For investment loans only, identified interest receives a transient neutral sugg
 
 ## Recommended next step
 
-After the client accepts Milestone 1, prepare a separate Milestone 2 approval gate for PR 3B.4 durable reviewed repayment commit and PR 3B.5 reconciliation/no-double-count safeguards. Do not implement either until explicitly approved.
+Review `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Do not implement PR 3B.4, Milestone 2 or any later module until the client explicitly approves that plan.
