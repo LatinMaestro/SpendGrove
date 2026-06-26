@@ -84,16 +84,18 @@ The agent must pause for the client before:
 
 ## Active phase rule
 
-The current active approved work is **Phase 3B Milestone 1 - Loans-First Foundations**.
+Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 
-Approved sequence:
+Completed Milestone 1 sequence:
 
 - PR 3B.0 - financial rules and data-contract decision record;
 - PR 3B.1 - schema foundation and Preview migration plan;
 - PR 3B.2 - property and loan metadata management after the approved migration gate;
 - PR 3B.3 - browser-local loan CSV mapping and review.
 
-Stop before running any Preview migration and obtain explicit client approval of the migration plan. No Production migration is authorised. Durable repayment commit, reconciliation implementation, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 and later modules remain excluded.
+The proposed Milestone 2 plan is in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. It is proposal-only and does not authorise implementation. Do not start PR 3B.4, durable repayment commit, reconciliation implementation, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules until the client explicitly approves the next milestone.
+
+No Production migration is authorised.
 
 The main user-facing area is Loans. Loan accounts are the primary records; properties are optional supporting metadata for relevant loans. The approved Loans-first clarification is in `docs/PHASE_3B_LOANS_FIRST_UI_CONTRACT.md`.
 
