@@ -94,6 +94,13 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "auditEvent.write",
     ]),
   ],
+  [
+    "src/server/loan-repayment-history.ts",
+    new Set([
+      "loanRepayment.write",
+      "auditEvent.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { loanRepaymentCommitRequestSchema } from "@/lib/loan-repayment-commit";
 import { getCurrentUserContext } from "@/src/server/auth/current-user";
+import { listSafeLoanRepayments } from "@/src/server/loan-repayment-history";
 import {
   LoanRepaymentCommitConflictError,
   commitReviewedLoanRepayments,
@@ -24,7 +25,12 @@ function safeError(error: unknown) {
 
 export async function GET() {
   try {
-    return NextResponse.json({ ok: true, imports: await listSafeLoanImportHistory(await getCurrentUserContext()) });
+    const context = await getCurrentUserContext();
+    const [imports, repayments] = await Promise.all([
+      listSafeLoanImportHistory(context),
+      listSafeLoanRepayments(context),
+    ]);
+    return NextResponse.json({ ok: true, imports, repayments });
   } catch (error) {
     const safe = safeError(error);
     return NextResponse.json({ ok: false, imports: [], error: safe.message }, { status: safe.status });
