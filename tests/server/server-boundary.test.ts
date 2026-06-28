@@ -22,6 +22,7 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "importBatch.write", pattern: /importBatch\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "importRow.write", pattern: /importRow\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "auditEvent.write", pattern: /auditEvent\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "loanRepayment.write", pattern: /loanRepayment\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -85,6 +86,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "category.upsert",
     ]),
   ],
+  [
+    "src/server/loan-repayments.ts",
+    new Set([
+      "importBatch.write",
+      "loanRepayment.write",
+      "auditEvent.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
@@ -114,7 +123,7 @@ describe("server persistence boundaries", () => {
     expect(violations).toEqual([]);
   });
 
-  it("allows only approved Phase 3A product write paths", async () => {
+  it("allows only approved product write paths", async () => {
     const files = await listFiles("src/server");
     const violations: string[] = [];
     for (const file of files) {
