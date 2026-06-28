@@ -30,4 +30,18 @@ describe("Loans-first UI contract", () => {
     expect(manager).not.toContain("Account number");
     expect(manager).not.toContain("Customer ID");
   });
+
+  it("shows repayment breakdown history without presenting extra spending", async () => {
+    const manager = await readFile(managerPath, "utf8");
+
+    expect(manager).toContain("Repayment history");
+    expect(manager).toContain("Breakdowns only — these are not extra payments or spending entries.");
+    expect(manager).toContain("Principal");
+    expect(manager).toContain("Interest");
+    expect(manager).toContain("Fees");
+    expect(manager).toContain("Balance after");
+    expect(manager).toContain("Archive breakdown");
+    expect(manager).toContain("Restore breakdown");
+    expect(manager).not.toContain("rawNarration");
+  });
 });

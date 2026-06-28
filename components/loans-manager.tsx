@@ -10,13 +10,16 @@ import {
   Car,
   CheckCircle2,
   Home,
+  History,
   Landmark,
+  Link2,
   Pencil,
   Plus,
   RotateCcw,
   ShieldCheck,
   X,
 } from "lucide-react";
+import type { SafeLoanRepayment } from "@/lib/loan-repayment-history";
 
 type LoanKind = "OWNER_OCCUPIER_HOME" | "INVESTMENT_PROPERTY" | "CAR" | "PERSONAL" | "OTHER";
 type PropertyUsage = "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
@@ -65,6 +68,57 @@ const propertyUsageLabels: Record<PropertyUsage, string> = {
 
 function choiceForLoan(loan: LoanRecord) {
   return choices.find((choice) => choice.type === loan.type && choice.purpose === loan.purpose) ?? choices[4];
+}
+
+function aud(cents: number | null) {
+  if (cents === null) return "Not supplied";
+  return new Intl.NumberFormat("en-AU", { style: "currency", currency: "AUD" }).format(cents / 100);
+}
+
+function dateLabel(date: string) {
+  return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
+}
+
+function RepaymentHistory({ repayments, isSaving, onArchiveChange }: Readonly<{
+  repayments: SafeLoanRepayment[];
+  isSaving: boolean;
+  onArchiveChange: (repayment: SafeLoanRepayment, isArchived: boolean) => void;
+}>) {
+  if (repayments.length === 0) {
+    return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
+  }
+  return (
+    <div className="mt-4 border-t border-border pt-4">
+      <p className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Repayment history</p>
+      <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Breakdowns only — these are not extra payments or spending entries.</p>
+      <div className="mt-3 space-y-2">
+        {repayments.map((repayment) => (
+          <details key={repayment.id} className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
+            <summary className="cursor-pointer list-none">
+              <div className="flex items-center justify-between gap-3">
+                <span><strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong><span className="text-xs text-brand-deepTeal/60">{repayment.isArchived ? "Archived" : repayment.reconciliationStatus === "LINKED" ? "Linked" : repayment.reconciliationStatus === "NEEDS_REVIEW" ? "Review match" : "Not linked"}</span></span>
+                <strong className="text-sm text-brand-deepTeal">{aud(repayment.totalPaymentCents)}</strong>
+              </div>
+            </summary>
+            <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+              {([[
+                "Principal", repayment.principalCents,
+              ], ["Interest", repayment.interestCents], ["Fees", repayment.feeCents], ["Balance after", repayment.balanceAfterCents]] as const).map(([label, value]) => (
+                <div key={label} className="rounded-xl bg-surface-mint p-2"><dt className="text-brand-deepTeal/60">{label}</dt><dd className="mt-1 font-bold text-brand-deepTeal">{aud(value)}</dd></div>
+              ))}
+            </dl>
+            {repayment.linkedTransaction && (
+              <p className="mt-3 flex items-start gap-2 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow record.</p>
+            )}
+            <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+              {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
+              {repayment.isArchived ? "Restore breakdown" : "Archive breakdown"}
+            </button>
+          </details>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 async function readResult(response: Response): Promise<LoanResult> {
@@ -274,6 +328,7 @@ function AuthenticatedLoansManager() {
   const { isLoaded, isSignedIn } = useUser();
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
+  const [repayments, setRepayments] = useState<SafeLoanRepayment[]>([]);
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState("");
   const [editor, setEditor] = useState<{ loanId?: string; draft: LoanDraft } | null>(null);
@@ -288,11 +343,17 @@ function AuthenticatedLoansManager() {
     async function loadLoans() {
       setIsReady(false);
       setError("");
-      const result = await readResult(await fetch("/api/account/loans", { cache: "no-store" }));
+      const [result, repaymentResponse] = await Promise.all([
+        readResult(await fetch("/api/account/loans", { cache: "no-store" })),
+        fetch("/api/account/loan-repayments", { cache: "no-store" }),
+      ]);
+      const repaymentResult = await repaymentResponse.json() as { ok: boolean; repayments?: SafeLoanRepayment[]; error?: string };
       if (cancelled) return;
       if (result.ok) {
         setLoans(result.loans);
         setProperties(result.properties);
+        if (repaymentResult.ok) setRepayments(repaymentResult.repayments ?? []);
+        else setError(repaymentResult.error || "We could not load repayment history.");
       } else {
         setError(result.error);
       }
@@ -357,6 +418,25 @@ function AuthenticatedLoansManager() {
     }));
     setIsSaving(false);
     applyResult(result);
+  }
+
+  async function setRepaymentArchived(repayment: SafeLoanRepayment, isArchived: boolean) {
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/account/loan-repayments/${repayment.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isArchived }),
+      });
+      const result = await response.json() as { ok: boolean; repayment?: SafeLoanRepayment; error?: string };
+      if (!response.ok || !result.ok || !result.repayment) throw new Error(result.error || "We could not update that repayment.");
+      setRepayments((current) => current.map((item) => item.id === repayment.id ? result.repayment! : item));
+    } catch (repaymentError) {
+      setError(repaymentError instanceof Error ? repaymentError.message : "We could not update that repayment safely.");
+    } finally {
+      setIsSaving(false);
+    }
   }
 
   function openProperty(property: PropertyRecord) {
@@ -440,6 +520,7 @@ function AuthenticatedLoansManager() {
                     </div>
                   </div>
                   {loan.property && <div className="mt-4 flex items-center gap-2 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal"><Building2 aria-hidden="true" className="h-4 w-4 text-brand-teal" /><span><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></div>}
+                  <RepaymentHistory repayments={repayments.filter((repayment) => repayment.loanAccountId === loan.id)} isSaving={isSaving} onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)} />
                   <div className="mt-4 flex gap-2 border-t border-border pt-4">
                     <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
                     <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive</button>
