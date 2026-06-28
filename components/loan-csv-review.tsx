@@ -10,7 +10,9 @@ import {
   CheckCircle2,
   FileSpreadsheet,
   Landmark,
+  Loader2,
   RotateCcw,
+  Save,
   ShieldCheck,
 } from "lucide-react";
 import {
@@ -25,6 +27,13 @@ import {
   type LoanCsvReviewRow,
   shouldSuggestPropertyRecordKeeping,
 } from "@/lib/loan-csv-review";
+import {
+  createLoanRepaymentCommitRequest,
+  isCommittableLoanRepaymentRow,
+  type LoanRepaymentCommitRequest,
+  type LoanRepaymentCommitSummary,
+  type SafeLoanImportHistoryEntry,
+} from "@/lib/loan-repayment-commit";
 import { MAX_CSV_FILE_SIZE_BYTES, parseCsvDocument, type TransientCsvDocument } from "@/lib/csv-import";
 
 type PropertyRecord = {
@@ -96,8 +105,21 @@ function dateLabel(date: string | null) {
   return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function ReviewRow({ row, selectedLoan }: Readonly<{ row: LoanCsvReviewRow; selectedLoan: LoanRecord }>) {
+function ReviewRow({
+  row,
+  selectedLoan,
+  selected,
+  selectionLocked,
+  onSelectionChange,
+}: Readonly<{
+  row: LoanCsvReviewRow;
+  selectedLoan: LoanRecord;
+  selected: boolean;
+  selectionLocked: boolean;
+  onSelectionChange: (selected: boolean) => void;
+}>) {
   const isRepaymentBreakdown = row.isGroupedRepayment || (!row.classification && row.totalPaymentCents !== null);
+  const committable = isCommittableLoanRepaymentRow(row);
   const title = row.isGroupedRepayment
     ? "Repayment breakdown"
     : row.classification ? classificationLabels[row.classification] : `CSV row ${row.rowNumber}`;
@@ -153,6 +175,21 @@ function ReviewRow({ row, selectedLoan }: Readonly<{ row: LoanCsvReviewRow; sele
           Check this row’s date, amount or classification before any later commit step.
         </p>
       )}
+      <label className={`mt-4 flex items-start gap-3 rounded-2xl p-3 text-sm ${committable ? "cursor-pointer bg-brand-green/10" : "bg-surface-mint text-brand-deepTeal/60"}`}>
+        <input
+          type="checkbox"
+          checked={selected}
+          disabled={!committable || selectionLocked}
+          onChange={(event) => onSelectionChange(event.target.checked)}
+          className="mt-0.5 h-5 w-5 accent-brand-green"
+        />
+        <span>
+          <strong className="block text-brand-deepTeal">{committable ? "Save this repayment breakdown" : "Excluded from saving"}</strong>
+          {committable
+            ? "Only the reviewed date and structured amounts will be saved."
+            : "This is not a clear repayment breakdown, or it still has a review warning."}
+        </span>
+      </label>
     </article>
   );
 }
@@ -186,6 +223,13 @@ function AuthenticatedLoanCsvReview() {
   const [step, setStep] = useState<"SELECT" | "MAP" | "REVIEW">("SELECT");
   const [error, setError] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [requestId, setRequestId] = useState("");
+  const [selectedRowNumbers, setSelectedRowNumbers] = useState<Set<number>>(new Set());
+  const [confirmed, setConfirmed] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [pendingRequest, setPendingRequest] = useState<LoanRepaymentCommitRequest | null>(null);
+  const [saveSummary, setSaveSummary] = useState<LoanRepaymentCommitSummary | null>(null);
+  const [importHistory, setImportHistory] = useState<SafeLoanImportHistoryEntry[]>([]);
 
   useEffect(() => {
     if (!isLoaded || !isSignedIn) return;
@@ -193,11 +237,16 @@ function AuthenticatedLoanCsvReview() {
     async function loadLoans() {
       setIsReady(false);
       try {
-        const response = await fetch("/api/account/loans", { cache: "no-store" });
-        const result = await response.json() as LoanResult;
+        const [loanResponse, historyResponse] = await Promise.all([
+          fetch("/api/account/loans", { cache: "no-store" }),
+          fetch("/api/account/loan-repayments", { cache: "no-store" }),
+        ]);
+        const result = await loanResponse.json() as LoanResult;
+        const historyResult = await historyResponse.json() as { ok: boolean; imports?: SafeLoanImportHistoryEntry[] };
         if (!cancelled) {
           if (result.ok) setLoans(result.loans.filter((loan) => !loan.isArchived));
           else setError(result.error);
+          if (historyResult.ok) setImportHistory(historyResult.imports ?? []);
         }
       } catch {
         if (!cancelled) setError("We could not load your Loan Accounts.");
@@ -225,6 +274,11 @@ function AuthenticatedLoanCsvReview() {
     setMappings({ COMPONENT_COLUMNS: {}, ROW_EVENT_LEDGER: {} });
     setStep("SELECT");
     setError("");
+    setRequestId("");
+    setSelectedRowNumbers(new Set());
+    setConfirmed(false);
+    setPendingRequest(null);
+    setSaveSummary(null);
   }
 
   async function chooseFile(file: File | undefined) {
@@ -249,9 +303,67 @@ function AuthenticatedLoanCsvReview() {
         COMPONENT_COLUMNS: buildSuggestedLoanCsvMapping(nextColumns, "COMPONENT_COLUMNS"),
         ROW_EVENT_LEDGER: buildSuggestedLoanCsvMapping(nextColumns, "ROW_EVENT_LEDGER"),
       });
+      setRequestId(crypto.randomUUID());
+      setSelectedRowNumbers(new Set());
+      setConfirmed(false);
+      setPendingRequest(null);
+      setSaveSummary(null);
       setStep("MAP");
     } catch (fileError) {
       setError(fileError instanceof Error ? fileError.message : "We could not read that CSV safely.");
+    }
+  }
+
+  function beginReview() {
+    if (!review || review.mappingIssues.length > 0 || pendingRequest) return;
+    setSelectedRowNumbers(new Set(review.rows.filter(isCommittableLoanRepaymentRow).map((row) => row.rowNumber)));
+    setConfirmed(false);
+    setPendingRequest(null);
+    setSaveSummary(null);
+    setStep("REVIEW");
+  }
+
+  function changeRowSelection(rowNumber: number, selected: boolean) {
+    setSelectedRowNumbers((current) => {
+      const next = new Set(current);
+      if (selected) next.add(rowNumber);
+      else next.delete(rowNumber);
+      return next;
+    });
+    setConfirmed(false);
+  }
+
+  async function saveReviewedRepayments() {
+    if (!review || !selectedLoan || !requestId || !confirmed || selectedRowNumbers.size === 0) return;
+    setError("");
+    setIsSaving(true);
+    try {
+      const payload = pendingRequest ?? createLoanRepaymentCommitRequest({
+        requestId,
+        loanAccountId: selectedLoan.id,
+        rows: review.rows,
+        selectedRowNumbers,
+        privateFieldCount: columns.filter((column) => column.isPrivate).length,
+      });
+      setPendingRequest(payload);
+      const response = await fetch("/api/account/loan-repayments", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json() as { ok: boolean; summary?: LoanRepaymentCommitSummary; error?: string };
+      if (!response.ok || !result.ok || !result.summary) throw new Error(result.error || "We could not save these repayments.");
+      setSaveSummary(result.summary);
+      setImportHistory((current) => [{
+        completedAt: new Date().toISOString(),
+        reviewedCount: result.summary!.totalCount,
+        savedCount: result.summary!.savedCount,
+        excludedCount: result.summary!.excludedCount,
+      }, ...current].slice(0, 10));
+    } catch (saveError) {
+      setError(saveError instanceof Error ? saveError.message : "We could not save these repayments safely.");
+    } finally {
+      setIsSaving(false);
     }
   }
 
@@ -275,7 +387,7 @@ function AuthenticatedLoanCsvReview() {
         <p className="mt-5 text-sm font-semibold text-white/70">Browser-local review</p>
         <h1 className="mt-2 text-3xl font-bold">Import Loan CSV</h1>
         <p className="mt-3 text-sm leading-6 text-white/75">Choose a loan account, match the columns, and review repayment breakdowns before anything is saved.</p>
-        <p className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Review only - nothing saved yet</p>
+        <p className="mt-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-bold text-white">Review first, then confirm what to save</p>
       </section>
 
       <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
@@ -347,6 +459,7 @@ function AuthenticatedLoanCsvReview() {
                         name="loan-csv-format"
                         value={value}
                         checked={mode === value}
+                        disabled={Boolean(pendingRequest)}
                         onChange={() => {
                           setMode(value);
                           setStep("MAP");
@@ -370,7 +483,7 @@ function AuthenticatedLoanCsvReview() {
                   <span>{column.safeLabel}</span>
                   <select
                     value={mapping[column.index] ?? "IGNORE"}
-                    disabled={column.isPrivate}
+                        disabled={column.isPrivate || Boolean(pendingRequest)}
                     onChange={(event) => setMappings({
                       ...mappings,
                       [mode]: { ...mapping, [column.index]: event.target.value as LoanCsvColumnRole },
@@ -387,7 +500,7 @@ function AuthenticatedLoanCsvReview() {
               ))}
             </div>
             {review && review.mappingIssues.length > 0 && <ul className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm text-brand-deepTeal">{review.mappingIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul>}
-            <button type="button" disabled={!review || review.mappingIssues.length > 0} onClick={() => setStep("REVIEW")} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review loan rows</button>
+            <button type="button" disabled={!review || review.mappingIssues.length > 0 || Boolean(pendingRequest)} onClick={beginReview} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review loan rows</button>
           </div>
         )}
       </section>
@@ -396,21 +509,66 @@ function AuthenticatedLoanCsvReview() {
         <section>
           <div className="px-1">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-teal">Step 3</p>
-            <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Review only — nothing saved</h2>
+            <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Choose the clear repayments to save</h2>
             <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">These sanitized amounts belong to <strong>{selectedLoan.nickname}</strong>. Raw narration is not shown.</p>
           </div>
-          <div className="mt-4 space-y-4">{review.rows.map((row) => <ReviewRow key={row.rowNumber} row={row} selectedLoan={selectedLoan} />)}</div>
+          <div className="mt-4 space-y-4">{review.rows.map((row) => (
+            <ReviewRow
+              key={row.rowNumber}
+              row={row}
+              selectedLoan={selectedLoan}
+              selected={selectedRowNumbers.has(row.rowNumber)}
+              selectionLocked={Boolean(pendingRequest)}
+              onSelectionChange={(selected) => changeRowSelection(row.rowNumber, selected)}
+            />
+          ))}</div>
           <div className="mt-5 rounded-3xl border border-brand-green/30 bg-brand-green/5 p-5 text-sm leading-6 text-brand-deepTeal">
-            <p className="flex items-center gap-2 font-bold"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Review complete for this tab</p>
-            <p className="mt-2">Durable repayment commit and reconciliation are deliberately not available in Milestone 1.</p>
+            <p className="flex items-center gap-2 font-bold"><Save aria-hidden="true" className="h-5 w-5 text-brand-green" /> Step 4: confirm the save</p>
+            <p className="mt-2"><strong>{selectedRowNumbers.size}</strong> repayment breakdown{selectedRowNumbers.size === 1 ? "" : "s"} selected. {review.rows.length - selectedRowNumbers.size} row{review.rows.length - selectedRowNumbers.size === 1 ? "" : "s"} will be excluded.</p>
+            <p className="mt-2">SpendGrove saves only the selected repayment date and structured amounts. The CSV, filename, raw rows and narration stay in this tab.</p>
+            {pendingRequest && !saveSummary && <p className="mt-2 font-semibold">Your selection is locked for a safe retry. Reset the CSV to start a different save.</p>}
+            <label className="mt-4 flex items-start gap-3 rounded-2xl bg-white p-4 font-semibold">
+              <input type="checkbox" checked={confirmed} disabled={Boolean(saveSummary)} onChange={(event) => setConfirmed(event.target.checked)} className="mt-0.5 h-5 w-5 accent-brand-green" />
+              I reviewed these repayment breakdowns and want to save the selected rows.
+            </label>
+            <button
+              type="button"
+              disabled={!confirmed || selectedRowNumbers.size === 0 || isSaving || Boolean(saveSummary)}
+              onClick={() => void saveReviewedRepayments()}
+              className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-green px-5 font-bold text-white disabled:opacity-45"
+            >
+              {isSaving ? <Loader2 aria-hidden="true" className="h-5 w-5 animate-spin" /> : <CheckCircle2 aria-hidden="true" className="h-5 w-5" />}
+              {isSaving ? "Saving safely…" : "Save reviewed repayments"}
+            </button>
+            {saveSummary && (
+              <div role="status" className="mt-4 rounded-2xl bg-white p-4">
+                <p className="font-bold text-brand-green">Repayments saved</p>
+                <p className="mt-1">{saveSummary.savedCount} saved and {saveSummary.excludedCount} excluded. Retrying this completed save will not create duplicates.</p>
+                <Link href="/loans" className="mt-3 inline-flex font-bold text-brand-teal underline">Return to Loans</Link>
+              </div>
+            )}
           </div>
+        </section>
+      )}
+
+      {importHistory.length > 0 && (
+        <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-brand-teal">Safe save history</p>
+          <h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Recent loan CSV saves</h2>
+          <ul className="mt-4 space-y-2">
+            {importHistory.slice(0, 5).map((entry) => (
+              <li key={`${entry.completedAt}-${entry.savedCount}`} className="rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal">
+                <strong>{entry.savedCount} saved</strong> · {entry.excludedCount} excluded · {dateLabel(entry.completedAt.slice(0, 10))}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
       {error && <p role="alert" className="rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
       <section className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
         <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-brand-green" /> Browser-local privacy boundary</p>
-        <p className="mt-2">The file, raw rows, filename and narration stay in browser memory and are discarded when reset or when this page closes. Only the selected safe Loan Account metadata is read from SpendGrove.</p>
+        <p className="mt-2">The file, raw rows, filename and narration stay in browser memory and are discarded when reset or when this page closes. Saving sends only the selected date and structured repayment amounts.</p>
       </section>
     </div>
   );

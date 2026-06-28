@@ -6,12 +6,12 @@ const pagePath = new URL("../app/loans/import/page.tsx", import.meta.url);
 const loansPath = new URL("../components/loans-manager.tsx", import.meta.url);
 
 describe("loan CSV review UI contract", () => {
-  it("uses Import Loan CSV as the main title while keeping review-only copy", async () => {
+  it("uses Import Loan CSV as the main title with review-before-save copy", async () => {
     const review = await readFile(reviewPath, "utf8");
 
     expect(review).toContain("Import Loan CSV");
     expect(review).toContain("review repayment breakdowns before anything is saved");
-    expect(review).toContain("Review only - nothing saved yet");
+    expect(review).toContain("Review first, then confirm what to save");
     expect(review).not.toContain("Review a loan CSV safely");
   });
 
@@ -37,22 +37,24 @@ describe("loan CSV review UI contract", () => {
     expect(review).not.toContain("property input");
   });
 
-  it("keeps CSV data browser-local and exposes no durable commit action", async () => {
+  it("keeps source data browser-local while sending only reviewed structured repayment fields", async () => {
     const [review, page, loans] = await Promise.all([
       readFile(reviewPath, "utf8"),
       readFile(pagePath, "utf8"),
       readFile(loansPath, "utf8"),
     ]);
 
-    expect(review).toContain("Review only — nothing saved");
+    expect(review).toContain("Choose the clear repayments to save");
     expect(review).toContain("filename is not retained");
     expect(review).toContain("Raw narration is not shown");
-    expect(review).not.toContain('method: "POST"');
+    expect(review).toContain('method: "POST"');
+    expect(review).toContain("createLoanRepaymentCommitRequest");
+    expect(review).toContain("Save reviewed repayments");
     expect(review).not.toContain("FormData");
     expect(review).not.toContain("localStorage");
     expect(review).not.toContain("sessionStorage");
     expect(review).not.toContain("console.");
-    expect(review).not.toContain("/api/account/loan-repayments");
+    expect(review).toContain("/api/account/loan-repayments");
     expect(page).toContain("force-dynamic");
     expect(loans).toContain('href="/loans/import"');
   });
