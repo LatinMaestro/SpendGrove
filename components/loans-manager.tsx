@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import type { SafeLoanRepayment } from "@/lib/loan-repayment-history";
+import type { LoanReconciliationCandidate, ReconciliationCandidateMode } from "@/lib/loan-reconciliation";
 
 type LoanKind = "OWNER_OCCUPIER_HOME" | "INVESTMENT_PROPERTY" | "CAR" | "PERSONAL" | "OTHER";
 type PropertyUsage = "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
@@ -79,10 +80,22 @@ function dateLabel(date: string) {
   return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function RepaymentHistory({ repayments, isSaving, onArchiveChange }: Readonly<{
+function confidenceLabel(confidence: LoanReconciliationCandidate["confidence"]) {
+  return confidence === "HIGH" ? "High confidence" : confidence === "MEDIUM" ? "Possible match" : "Manual review";
+}
+
+function varianceLabel(candidate: LoanReconciliationCandidate) {
+  if (candidate.amountVarianceCents === 0) return "Exact amount";
+  return `Amount differs by ${aud(Math.abs(candidate.amountVarianceCents))}`;
+}
+
+function RepaymentHistory({ repayments, isSaving, candidateReviews, candidateLoadingId, onArchiveChange, onLoadCandidates }: Readonly<{
   repayments: SafeLoanRepayment[];
   isSaving: boolean;
+  candidateReviews: Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>;
+  candidateLoadingId: string;
   onArchiveChange: (repayment: SafeLoanRepayment, isArchived: boolean) => void;
+  onLoadCandidates: (repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode) => void;
 }>) {
   if (repayments.length === 0) {
     return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
@@ -109,6 +122,36 @@ function RepaymentHistory({ repayments, isSaving, onArchiveChange }: Readonly<{
             </dl>
             {repayment.linkedTransaction && (
               <p className="mt-3 flex items-start gap-2 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow record.</p>
+            )}
+            {!repayment.isArchived && !repayment.linkedTransaction && (
+              <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
+                <p className="text-xs font-bold text-brand-deepTeal">Possible everyday transaction match</p>
+                <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Suggestions compare the repayment total with the absolute transaction amount and approved date tolerances. Nothing is linked automatically.</p>
+                {!candidateReviews[repayment.id] ? (
+                  <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "SUGGESTED")} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">{candidateLoadingId === repayment.id ? "Checking…" : "Find possible matches"}</button>
+                ) : (
+                  <div className="mt-3">
+                    {candidateReviews[repayment.id].candidates.length === 0 ? (
+                      <p className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">No transactions fit this matching range.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {candidateReviews[repayment.id].candidates.map((candidate) => (
+                          <li key={candidate.transactionId} className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
+                            <div className="flex items-center justify-between gap-2"><strong>{dateLabel(candidate.transactionDate)}</strong><span className="rounded-full bg-white px-2 py-1 font-bold text-brand-teal">{confidenceLabel(candidate.confidence)}</span></div>
+                            <p className="mt-2">Everyday transaction: <strong>{aud(Math.abs(candidate.transactionAmountCents))}</strong></p>
+                            <p>{varianceLabel(candidate)} · {candidate.dateDifferenceDays} day{candidate.dateDifferenceDays === 1 ? "" : "s"} apart</p>
+                            {candidate.existingAllocationCents > 0 && <p className="mt-1">Includes {aud(candidate.existingAllocationCents)} already linked as another loan breakdown.</p>}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {candidateReviews[repayment.id].mode === "SUGGESTED" && (
+                      <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "MANUAL")} className="mt-3 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">Search wider manually</button>
+                    )}
+                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Review only — confirmation and linking are added in the next step.</p>
+                  </div>
+                )}
+              </div>
             )}
             <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
               {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
@@ -329,6 +372,8 @@ function AuthenticatedLoansManager() {
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [repayments, setRepayments] = useState<SafeLoanRepayment[]>([]);
+  const [candidateReviews, setCandidateReviews] = useState<Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>>({});
+  const [candidateLoadingId, setCandidateLoadingId] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState("");
   const [editor, setEditor] = useState<{ loanId?: string; draft: LoanDraft } | null>(null);
@@ -432,10 +477,30 @@ function AuthenticatedLoansManager() {
       const result = await response.json() as { ok: boolean; repayment?: SafeLoanRepayment; error?: string };
       if (!response.ok || !result.ok || !result.repayment) throw new Error(result.error || "We could not update that repayment.");
       setRepayments((current) => current.map((item) => item.id === repayment.id ? result.repayment! : item));
+      setCandidateReviews((current) => {
+        const next = { ...current };
+        delete next[repayment.id];
+        return next;
+      });
     } catch (repaymentError) {
       setError(repaymentError instanceof Error ? repaymentError.message : "We could not update that repayment safely.");
     } finally {
       setIsSaving(false);
+    }
+  }
+
+  async function loadReconciliationCandidates(repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode) {
+    setCandidateLoadingId(repayment.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/account/loan-repayments/${repayment.id}/candidates?mode=${mode === "MANUAL" ? "manual" : "suggested"}`, { cache: "no-store" });
+      const result = await response.json() as { ok: boolean; mode?: ReconciliationCandidateMode; candidates?: LoanReconciliationCandidate[]; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "We could not check possible matches.");
+      setCandidateReviews((current) => ({ ...current, [repayment.id]: { mode: result.mode ?? mode, candidates: result.candidates ?? [] } }));
+    } catch (candidateError) {
+      setError(candidateError instanceof Error ? candidateError.message : "We could not check possible matches safely.");
+    } finally {
+      setCandidateLoadingId("");
     }
   }
 
@@ -520,7 +585,14 @@ function AuthenticatedLoansManager() {
                     </div>
                   </div>
                   {loan.property && <div className="mt-4 flex items-center gap-2 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal"><Building2 aria-hidden="true" className="h-4 w-4 text-brand-teal" /><span><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></div>}
-                  <RepaymentHistory repayments={repayments.filter((repayment) => repayment.loanAccountId === loan.id)} isSaving={isSaving} onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)} />
+                  <RepaymentHistory
+                    repayments={repayments.filter((repayment) => repayment.loanAccountId === loan.id)}
+                    isSaving={isSaving}
+                    candidateReviews={candidateReviews}
+                    candidateLoadingId={candidateLoadingId}
+                    onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
+                    onLoadCandidates={(repayment, mode) => void loadReconciliationCandidates(repayment, mode)}
+                  />
                   <div className="mt-4 flex gap-2 border-t border-border pt-4">
                     <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
                     <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive</button>

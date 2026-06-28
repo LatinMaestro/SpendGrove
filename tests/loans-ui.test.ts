@@ -44,4 +44,17 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("Restore breakdown");
     expect(manager).not.toContain("rawNarration");
   });
+
+  it("presents reconciliation as review-only suggestions with an explicit wider search", async () => {
+    const manager = await readFile(managerPath, "utf8");
+
+    expect(manager).toContain("Find possible matches");
+    expect(manager).toContain("Search wider manually");
+    expect(manager).toContain("Nothing is linked automatically");
+    expect(manager).toContain("High confidence");
+    expect(manager).toContain("Possible match");
+    expect(manager).toContain("Manual review");
+    expect(manager).toContain("confirmation and linking are added in the next step");
+    expect(manager).not.toContain("automatic link");
+  });
 });
