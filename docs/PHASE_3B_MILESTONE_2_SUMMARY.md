@@ -29,7 +29,7 @@ No tax conclusion, report, Home dashboard statistic or later module was added.
 | 3B.5 repayment history and repayment detail | [#63](https://github.com/LatinMaestro/SpendGrove/pull/63) | `f92e7f56a28b75a0c8b5c6a6f7bc1dfb4b04a1d1` |
 | 3B.6 reconciliation candidate suggestions | [#64](https://github.com/LatinMaestro/SpendGrove/pull/64) | `17fb6abe9e536186ea1ec8c035ed2dd71a047774` |
 | 3B.7 manual link/unlink and no-double-count safeguards | [#65](https://github.com/LatinMaestro/SpendGrove/pull/65) | `7ab14bee38193de0e587971b0f21a3600446b99c` |
-| 3B.8 QA, Vercel review and client testing package | [#66](https://github.com/LatinMaestro/SpendGrove/pull/66) | pending merge |
+| 3B.8 QA, Vercel review and client testing package | [#66](https://github.com/LatinMaestro/SpendGrove/pull/66) | `bdddcfb2cb5e161ff6894864e4963a16ac263b34` |
 
 ## Durable repayment commit
 
@@ -123,6 +123,7 @@ For transactions outside the candidate bands, the user can deliberately search o
 - PR 3B.6 preview: https://vercel.com/latinmaestros-projects/spendgrove/3WcmJgL8zrZsjqrfcJdEQUuN7bHX
 - PR 3B.7 preview: https://vercel.com/latinmaestros-projects/spendgrove/3MynVjB5Re4shdQ4p8BdDELAzhDw
 - Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
+- Merged PR 3B.8 review-package main deployment: https://vercel.com/latinmaestros-projects/spendgrove/FB3oxwArid1Hzj3PhWGAi4pkvMCm
 - Production alias: https://spendgrove.vercel.app
 - Vercel checks for PRs 3B.4 through 3B.7 and each merged main commit were green.
 - Mobile signed-out checks at 390×844 passed for `/loans` and `/loans/import`: no horizontal overflow, no console errors, and all five primary navigation items remained available.
