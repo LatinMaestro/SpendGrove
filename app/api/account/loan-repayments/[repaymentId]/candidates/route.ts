@@ -6,8 +6,14 @@ export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, { params }: { params: { repaymentId: string } }) {
   try {
-    const mode = new URL(request.url).searchParams.get("mode") === "manual" ? "MANUAL" : "SUGGESTED";
-    const candidates = await listLoanReconciliationCandidates(await getCurrentUserContext(), params.repaymentId, mode);
+    const searchParams = new URL(request.url).searchParams;
+    const requestedMode = searchParams.get("mode");
+    const mode = requestedMode === "override" ? "OVERRIDE" : requestedMode === "manual" ? "MANUAL" : "SUGGESTED";
+    const overrideDate = searchParams.get("date") ?? undefined;
+    if (mode === "OVERRIDE" && !/^\d{4}-\d{2}-\d{2}$/.test(overrideDate ?? "")) {
+      return NextResponse.json({ ok: false, candidates: [], error: "Choose an exact transaction date for manual override search." }, { status: 400 });
+    }
+    const candidates = await listLoanReconciliationCandidates(await getCurrentUserContext(), params.repaymentId, mode, undefined, overrideDate);
     return NextResponse.json({ ok: true, mode, candidates });
   } catch (error) {
     if (error instanceof Error) {

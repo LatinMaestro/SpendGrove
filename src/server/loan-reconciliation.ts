@@ -56,6 +56,7 @@ export function createPrismaLoanReconciliationCandidateStore(prisma: PrismaClien
           date: { gte: dateFrom, lte: dateTo },
         },
         orderBy: [{ date: "desc" }, { id: "asc" }],
+        take: 50,
         select: {
           id: true, userId: true, date: true, amountCents: true, status: true, splitRole: true, deletedAt: true,
           loanReconciliationLinks: {
@@ -77,16 +78,21 @@ export async function listLoanReconciliationCandidates(
   repaymentId: string,
   mode: ReconciliationCandidateMode,
   store: LoanReconciliationCandidateStore = createPrismaLoanReconciliationCandidateStore(),
+  overrideDate?: string,
 ): Promise<LoanReconciliationCandidate[]> {
   const user = requireAuthenticatedUserContext(context);
   const repayment = await store.findRepayment(user.userId, repaymentId);
   if (!repayment || repayment.userId !== user.userId) throw new OwnershipError("loan repayment");
   if (repayment.isArchived || repayment.deletedAt || repayment.reconciliationLink?.unlinkedAt === null) return [];
 
-  const dateFrom = new Date(repayment.repaymentDate);
-  dateFrom.setUTCDate(dateFrom.getUTCDate() - 7);
-  const dateTo = new Date(repayment.repaymentDate);
-  dateTo.setUTCDate(dateTo.getUTCDate() + 7);
+  const exactOverrideDate = mode === "OVERRIDE" && overrideDate ? new Date(`${overrideDate}T00:00:00.000Z`) : null;
+  if (exactOverrideDate && (Number.isNaN(exactOverrideDate.getTime()) || exactOverrideDate.toISOString().slice(0, 10) !== overrideDate)) {
+    throw new Error("Choose a valid transaction date for manual override search.");
+  }
+  const dateFrom = exactOverrideDate ? new Date(exactOverrideDate) : new Date(repayment.repaymentDate);
+  if (!exactOverrideDate) dateFrom.setUTCDate(dateFrom.getUTCDate() - 7);
+  const dateTo = exactOverrideDate ? new Date(exactOverrideDate) : new Date(repayment.repaymentDate);
+  if (!exactOverrideDate) dateTo.setUTCDate(dateTo.getUTCDate() + 7);
   const transactions = await store.listTransactions(user.userId, dateFrom, dateTo);
 
   const candidates = transactions.flatMap((transaction) => {
