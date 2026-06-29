@@ -1,87 +1,72 @@
 # Current Codex Handoff
 
-Last updated: 26 June 2026
+Last updated: 29 June 2026
 
-## Current state
+## Current phase and status
 
-- Phase 3A — Persistence & Commit Foundation is formally accepted and closed.
+- Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
-- Client completed Milestone 1 retesting on 26 June 2026 with no further acceptance comments.
-- PR 3B.0 merged as [#49](https://github.com/LatinMaestro/SpendGrove/pull/49), merge commit `518851d15f07415067c8dfaaeb2d26f7c15cc9ae`.
-- PR 3B.1 merged as [#50](https://github.com/LatinMaestro/SpendGrove/pull/50), merge commit `fa1a872c87d15a8c7853819485670e47b2da25ca`.
-- PR 3B.1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7ahCZopnMku2nWmF8DMbhJVq1syo
-- PR #53 merged the approved minimal `CAR_LOAN` amendment as `3938a0c2ef872553fa18df1c9b41832f83516e44`.
-- Preview migration workflow run [27958341458](https://github.com/LatinMaestro/SpendGrove/actions/runs/27958341458) completed successfully from `main`.
-- PR 3B.2 merged as [#54](https://github.com/LatinMaestro/SpendGrove/pull/54), merge commit `52406a62318741b339a1ddc6371eb5c7f9fd17f1`.
-- PR 3B.3 merged as [#55](https://github.com/LatinMaestro/SpendGrove/pull/55), merge commit `8eb07b0f6f24e577f14c90cf68968762ca0430d1`.
-- Milestone 1 row-event mapping acceptance fix merged as [#57](https://github.com/LatinMaestro/SpendGrove/pull/57), merge commit `77ef31279b139697b47ddf7e032da8b0c93edee2`.
-- Milestone 1 loan-ledger grouping acceptance fix merged as [#59](https://github.com/LatinMaestro/SpendGrove/pull/59), merge commit `5bf5162a0190e26b1294a5c95b221092d9cf6db5`.
-- Final accepted Milestone 1 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/DmX3T1SbgYwf2EHECNuwbpzMCPqb
-- Final functional Milestone 1 main deployment before closure docs: https://vercel.com/latinmaestros-projects/spendgrove/DjjRAXdTXP4uRjETdTdavhw4zvD9
-- Final verification: focused acceptance tests 2 files / 25 tests passed; full tests 60 files / 352 tests passed; TypeScript and production build passed.
-- Mobile browser verification: `/loans/import` rendered without horizontal overflow or console errors at 390×844 and preserved all five primary navigation items.
-- PR 3B.1 local verification: Prisma schema validation/generation passed; focused schema tests 1 file / 3 tests passed; full tests 56 files / 319 tests passed; TypeScript and production build passed.
-- Migration status: Phase 3B foundation applied to Preview only. No Production migration has run.
-- Client approved the Preview-only plan and the exact `CAR_LOAN` amendment.
-- Amendment scope: one enum value in Prisma and the still-unexecuted migration SQL only; no table, column, relationship, private field or data rewrite.
-- Preview workflow confirmation, Preview secret presence, Prisma generation/validation, migration deployment and completion steps all passed.
-- Client review package: `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`.
-- Loan CSV review now supports both component-column repayment breakdowns and row-event loan ledgers. Headerless four-column ledgers auto-map event date, signed amount, loan event type and balance after.
-- Row-event source text is used transiently to derive safe Repayment, Interest, Fee, Loan advance, Adjustment or Needs review labels; the source text is not returned in review rows, stored or logged.
-- Row-event ledger review now groups safe same-date repayment, interest and fee rows into one repayment breakdown card. Principal is derived only when there is one clear repayment row and no ambiguous adjustment, advance, unknown or multiple-repayment companion rows.
-- Investment-loan interest receives only a transient neutral review suggestion for future property/tax record keeping. It is not a durable tax field, tax report, EOFY report, deductibility decision or tax advice.
-- PR 3B.4, Milestone 2 implementation, Phase 4, Home dashboard statistics and later modules are not authorised.
-- Proposed Milestone 2 plan: `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`.
+- Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation completed its approved implementation sequence and is awaiting client retesting/acceptance. It is not formally closed.
+- Stop at client retesting. No Milestone 3, Phase 4 or later-module implementation is authorised.
 
-## Final Phase 3A evidence
+## Milestone 2 completed work
 
-- Final functional PR: [#46](https://github.com/LatinMaestro/SpendGrove/pull/46)
-- Functional merge commit: `c4af1e4aa906b35f3d3803d0e7ff18e3237d7563`
-- Final functional main deployment: https://vercel.com/latinmaestros-projects/spendgrove/AzCUGVjQY4N3K4nxxtsrJTfQMbgF
-- Latest verified main documentation deployment before formal closure: https://vercel.com/latinmaestros-projects/spendgrove/rnbphLdHCi6sNukAPoM3irKz9PYf
-- Production alias: https://spendgrove.vercel.app
-- Production `/import` route: HTTP 200 after the final functional merge.
-- Full tests: 55 files / 316 tests passed.
+| Work | PR | Merge commit |
+|---|---|---|
+| 3B.4 durable reviewed repayment commit and safe aggregate history | [#62](https://github.com/LatinMaestro/SpendGrove/pull/62) | `1cedad415bc4d0f12687b98ac83741174d2808ff` |
+| 3B.5 repayment history and detail review | [#63](https://github.com/LatinMaestro/SpendGrove/pull/63) | `f92e7f56a28b75a0c8b5c6a6f7bc1dfb4b04a1d1` |
+| 3B.6 reconciliation candidate suggestions | [#64](https://github.com/LatinMaestro/SpendGrove/pull/64) | `17fb6abe9e536186ea1ec8c035ed2dd71a047774` |
+| 3B.7 manual link/unlink and no-double-count safeguards | [#65](https://github.com/LatinMaestro/SpendGrove/pull/65) | `7ab14bee38193de0e587971b0f21a3600446b99c` |
+| 3B.8 QA, Vercel review and client testing package | [#66](https://github.com/LatinMaestro/SpendGrove/pull/66) | pending merge |
+
+Delivered behaviour:
+
+- Browser-local loan CSV review can save only explicitly selected, warning-free structured repayment breakdowns after user confirmation.
+- A frozen request ID and atomic batch write make network retries idempotent without adding a private fingerprint or schema field.
+- Loan Account cards show structured repayment history and detail, including archive/restore for unmatched records.
+- Candidate suggestions follow the approved high, medium and manual bands and never link automatically.
+- Explicit exact-date override search is available for out-of-band manual selection; it is never labelled a likely match and requires mismatch confirmation.
+- Link, unlink and relink are user-confirmed and reversible. Split-loan allocation allows multiple repayment breakdowns to share one everyday transaction.
+- Everyday transactions remain the only cashflow/spending records. Reconciliation never creates, changes or duplicates a transaction.
+
+## Verification and deployment
+
+- Full regression suite: 65 test files / 375 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
-- Vercel preview and merged-main deployments: Ready / green.
-- Client signed-in retesting: completed and accepted on 22 June 2026.
+- PR #65 Vercel preview: https://vercel.com/latinmaestros-projects/spendgrove/3MynVjB5Re4shdQ4p8BdDELAzhDw
+- Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
+- Production alias: https://spendgrove.vercel.app
+- Mobile signed-out verification at 390×844: `/loans` and `/loans/import` rendered without horizontal overflow or console errors and retained all five primary navigation items.
+- Signed-in end-to-end verification requires the client's protected account session and is the current acceptance task.
 
-## Accepted Phase 3A behaviour
+## Schema, migration, privacy and security status
 
-- Successful authenticated imports navigate to Transactions and show the imported count.
-- Signed-in duplicate analysis finishes before review rows appear.
-- Existing imported and manual transactions participate in duplicate detection.
-- Likely existing duplicates default to Skip; partially overlapping files warn while new rows remain importable.
-- Existing imported transactions remain warning-only and cannot become Merge targets.
-- Existing manual transactions remain valid Merge targets.
-- MetLifeInsurance narration containing changing `MetLifePN_...` references groups under the stable `metlifeinsurance` merchant.
-- Generic transfer/payment descriptions remain protected from unsafe bulk grouping.
-- Imported transactions remain visible, editable and soft-deletable.
-- Atomic, batched and idempotent account import commit remains in place.
-
-## Privacy, migration and scope status
-
-- CSV parsing, private-field scanning, mapping and source-detail review remain browser-local.
-- Raw CSV files, raw rows, original filenames, raw bank narration, balances, account identifiers, BSBs, card fragments, customer IDs, loan references, secrets and connection strings are not durably persisted.
-- Duplicate comparison uses only user-owned cleaned transaction fields.
-- Durable duplicate outcomes contain safe action/status/warning metadata only.
-- No Preview migration was required or run for the final Phase 3A acceptance-hardening PRs.
+- Milestone 2 used the existing `LoanRepayment`, `LoanReconciliationLink` and `ImportBatch.type = LOAN_CSV` foundation unchanged.
+- No Prisma schema or migration file changed in Milestone 2.
+- No Preview migration was required or run for Milestone 2.
+- The earlier Phase 3B foundation migration remains Preview-only.
 - No Production migration has been run.
-- No Phase 4 or later module has started.
-- Home dashboard expense/income statistics were not implemented.
+- Loan CSV files, raw rows, original filenames, raw event text and narration remain browser-local and are not persisted or logged.
+- Durable repayment payloads contain only the owned Loan Account ID, reviewed date, integer-cent components, optional balance-after value, safe source and import lineage.
+- Reconciliation persists only the approved IDs, confidence/method/reason codes, signed amount variance, date difference and unlink timestamp.
+- Audit metadata contains aggregate counts or safe state/reason codes only, not amounts, balances, nicknames, lender names or source text.
+- Exact addresses, account numbers, lender references, customer IDs, masked references, BSBs, card fragments, secrets and connection strings are neither requested nor persisted.
 
-## Accepted known limitations
+## Known limitations
 
-- Automated signed-in end-to-end browser testing was unavailable because it requires the client’s protected authenticated session; the client completed that retesting manually.
-- Signed-out review remains browser-local and cannot compare against saved account transactions.
-- Standalone `next lint` remains unconfigured for non-interactive use and opens Next.js’s first-time setup prompt; the production build’s lint/type validation passed.
-- Phase 3A does not include loans, properties, tax reports, recurring detection, budgets, dashboard insights, Basiq, AI, payments or later modules.
+- Client signed-in retesting is required for the complete save/history/suggestion/link flow.
+- Retry idempotency covers the same frozen save request. Deliberately starting a new import of the same source later is a new request and is not content-fingerprinted.
+- Repayment rows can be archived/restored but are not edited after commit in this milestone.
+- Reconciliation is deterministic and user-driven; no link is automatic.
+- Manual override search uses an exact transaction date and safe date/amount context only; there is no narration search.
+- Loan repayment breakdowns do not feed spending, income, property, loan, net-worth or Home dashboard statistics.
+- No tax/EOFY/property/accountant report, deductibility conclusion, property profile or everyday-transaction-to-property tax link exists.
 
 ## Exact next action
 
-Client review and approval decision for `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Do not begin PR 3B.4, Milestone 2 implementation or any later module until the client explicitly approves the plan.
+Client retests Phase 3B Milestone 2 using `docs/PHASE_3B_MILESTONE_2_SUMMARY.md` and reports acceptance comments. Do not begin implementation after Milestone 2 until the client separately approves a plan.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`, `docs/PHASE_3B_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Milestone 1 is formally closed; Milestone 2 is proposed only and must not be implemented without explicit client approval.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state. Milestone 2 implementation is complete but not formally accepted/closed; the only authorised next action is client acceptance hardening arising from retesting.
