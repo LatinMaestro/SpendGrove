@@ -1,10 +1,10 @@
 # Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 is proposed in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` but not approved for implementation.
+Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 was approved on 28 June 2026, delivered through PRs #62-#65 plus the PR 3B.8 review package, and is awaiting client retesting/acceptance.
 
-Approved Milestone 1 covered PRs 3B.0 through 3B.3 plus acceptance-hardening PRs #57 and #59. Durable repayment commit and reconciliation implementation remain unapproved Milestone 2 work.
+Milestone 1 covered PRs 3B.0 through 3B.3 plus acceptance-hardening PRs #57 and #59. Milestone 2 delivered durable repayment commit, safe repayment history, reconciliation suggestions, manual link/unlink and no-double-count safeguards without a schema change or migration.
 
-## Proposed objective
+## Phase objective
 
 Establish privacy-safe property and loan account foundations and a reviewable loan repayment reconciliation workflow. The phase should let a user describe a property and loan, import reviewed loan repayment data, and link repayments to everyday-account transactions without double counting.
 
@@ -60,7 +60,7 @@ Status: merged in PR #55 and accepted after Milestone 1 client retesting.
 
 ### PR 3B.4 — Durable loan repayment commit and safe history
 
-Status: proposed only in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Requires explicit Milestone 2 approval before implementation.
+Status: merged in PR #62.
 
 - Commit only reviewed, validated loan repayment fields.
 - Add atomic, batched and idempotent commit.
@@ -68,18 +68,36 @@ Status: proposed only in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Requires expli
 - Keep retry and rollback behaviour explicit.
 - Do not create tax reports or dashboard totals.
 
-### PR 3B.5 — Reconciliation and no-double-count safeguards
+### PR 3B.5 — Loan repayment history and detail review
 
-Status: proposed only in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`. Requires explicit Milestone 2 approval before implementation.
+Status: merged in PR #63.
+
+- Show structured repayment history by Loan Account.
+- Show linked everyday context only when an active reconciliation link exists.
+- Keep repayment history separate from spending and cashflow totals.
+- Support safe archive/restore, while blocking archive of an active linked repayment.
+
+### PR 3B.6 — Reconciliation candidate suggestions
+
+Status: merged in PR #64.
 
 - Suggest links between loan repayments and eligible everyday-account transactions.
 - Show confidence and mismatch reasons.
-- Require user review for uncertain matches.
-- Support manual link, unlink and correction.
-- Ensure linked cashflow and loan records cannot both inflate spending or repayment totals.
 - Exclude deleted, split-parent, already-linked and incompatible records.
+- Never create a link automatically.
 
-### PR 3B.6 — Phase 3B QA and client acceptance package
+### PR 3B.7 — Manual link/unlink and no-double-count safeguards
+
+Status: merged in PR #65.
+
+- Require explicit user confirmation before linking.
+- Support link, unlink, relink and split-loan allocation.
+- Preserve the everyday transaction as the only cashflow/spending record.
+- Re-run ownership, active-state, tolerance and allocation checks atomically.
+
+### PR 3B.8 — Milestone 2 QA and client acceptance package
+
+Status: completed for client retesting; formal acceptance is pending.
 
 - Test ownership, idempotency, reconciliation, unlink/relink and double-count prevention.
 - Test synthetic home, investment and personal-loan cases without providing tax advice.
@@ -164,14 +182,16 @@ Required controls:
 - PR 3B.2: Vercel preview review of property/loan setup, mobile layout and privacy copy.
 - PR 3B.3: client tests synthetic loan CSV mapping, rejected private fields and review-before-commit.
 - PR 3B.4: client tests import success, retry/idempotency and safe history.
-- PR 3B.5: client tests exact, uncertain, mismatched and manual reconciliation plus no-double-count totals.
-- PR 3B.6: full automated checks, final Vercel deployment and a non-technical acceptance checklist.
+- PR 3B.5: client reviews repayment history and detail wording.
+- PR 3B.6: client tests exact, uncertain and manual candidate suggestions.
+- PR 3B.7: client tests link/unlink/relink, split-loan allocation and no-double-count behaviour.
+- PR 3B.8: full automated checks, final Vercel deployment and a non-technical acceptance checklist.
 
 ## Stop conditions requiring client approval
 
 Stop before proceeding if any of the following arises:
 
-- approval or revision of this Phase 3B objective and PR sequence;
+- any new implementation after the completed Milestone 2 sequence;
 - a financial rule is ambiguous, including principal/interest/fee treatment or reconciliation tolerance;
 - a new durable field could contain an account identifier, property address, lender reference, balance history or other private data outside the approved minimum;
 - a schema design materially differs from the approved data contract;
@@ -184,4 +204,4 @@ Stop before proceeding if any of the following arises:
 
 ## Approval boundary
 
-Client approval of this proposal would authorise only the agreed Phase 3B sequence under the repository’s autonomous delivery rules. It would not authorise a Production migration, Phase 4, Home dashboard statistics, tax reporting or any excluded feature.
+The client approved Milestones 1 and 2 through separate gates. Milestone 2 implementation is complete and awaiting client acceptance. No approval granted for Phase 3B authorises a Production migration, Milestone 3, Phase 4, Home dashboard statistics, tax reporting or any excluded feature.

@@ -1,16 +1,14 @@
 # Phase 3B Milestone 2 Proposal - Durable Loan Repayments and Reconciliation
 
-Status: proposed only; not approved for implementation
+Status: approved by the client on 28 June 2026; implementation completed on 29 June 2026 and awaiting client retesting/acceptance
 
 Date prepared: 26 June 2026
 
 ## Approval boundary
 
-This document is a planning proposal only. It does not authorise implementation.
+The client approved this exact Milestone 2 objective and PR sequence under Autonomous Phase Delivery Mode on 28 June 2026. PRs 3B.4 through 3B.8 are now delivered. This approval does not authorise a Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules.
 
-Do not start PR 3B.4, Milestone 2 implementation, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until the client explicitly approves this plan.
-
-## Proposed Milestone 2 objective
+## Approved Milestone 2 objective
 
 Turn the accepted Milestone 1 loan CSV review into a durable, privacy-safe loan repayment workflow:
 
@@ -262,10 +260,6 @@ Stop before continuing if any of the following occurs:
 - any recurring, budgets, Basiq, AI, payments, household, accountant workspace, document storage, Phase 4 or later module work appears;
 - Vercel, tests, type-check or build fail and the fix is not clearly inside Milestone 2 scope.
 
-## Proposed client approval wording
+## Approval record
 
-If accepted, the approval should explicitly say:
-
-> Approve Phase 3B Milestone 2 under Autonomous Phase Delivery Mode, following `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`.
-
-Until then, Milestone 2 remains unapproved.
+The client approved Phase 3B Milestone 2 under Autonomous Phase Delivery Mode following this document on 28 June 2026. Implementation is complete and stopped after PR 3B.8 for client retesting. Formal acceptance and closure remain a separate client decision.

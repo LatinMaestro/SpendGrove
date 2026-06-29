@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 is proposed only and not approved for implementation.
+Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 implementation completed on 29 June 2026 and is awaiting client retesting/acceptance.
 
 Current progress:
 
@@ -216,14 +216,22 @@ Current progress:
 - Full tests: 60 files / 352 tests passed; TypeScript and production build passed.
 - `docs/PHASE_3B_MILESTONE_1_SUMMARY.md` is the client review package.
 - Client signed-in retesting completed on 26 June 2026 with no further acceptance comments.
-- `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` is the proposed Milestone 2 plan.
-- PR 3B.4 and Milestone 2 implementation remain unapproved.
+- The client approved `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` on 28 June 2026.
+- PR 3B.4 merged in #62: durable reviewed repayment commit and safe aggregate history.
+- PR 3B.5 merged in #63: repayment history, structured detail and archive/restore.
+- PR 3B.6 merged in #64: deterministic high, medium and explicit manual reconciliation suggestions.
+- PR 3B.7 merged in #65: user-confirmed link/unlink/relink, split-loan allocation and no-double-count safeguards.
+- PR 3B.8 completed the QA, Vercel and client testing package.
+- Milestone 2 required no schema change, Preview migration or Production migration.
+- Full tests: 65 files / 375 tests passed; TypeScript and production build passed.
+- Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
+- `docs/PHASE_3B_MILESTONE_2_SUMMARY.md` is the client review package.
 
-Proposed objective:
+Delivered objective:
 
 Establish privacy-safe loan foundations with optional supporting property metadata plus reviewable loan repayment reconciliation, without beginning tax reports, dashboard statistics or Phase 4.
 
-Proposed PR sequence:
+Delivered PR sequence:
 
 1. Financial rules and data-contract decision record.
 2. Property, loan account, repayment and reconciliation schema foundation.
@@ -235,9 +243,9 @@ Proposed PR sequence:
 
 The detailed inclusions, exclusions, migration gates, privacy risks and stop conditions are in `docs/PHASE_3B_PROPOSAL.md`.
 
-Mandatory gate: stop after PR 3B.1 and present the exact Preview migration plan before running it. Continue to PR 3B.2 only after explicit migration approval. Stop after PR 3B.3 for client Milestone 1 review. PR 3B.4 and later are not authorised.
+Milestone 1 migration gate: completed. The approved Phase 3B foundation migration ran against Preview only. No Production migration has run.
 
-Milestone 2 gate: review `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and obtain explicit client approval before starting PR 3B.4. Do not start durable repayment commit, repayment history, reconciliation suggestions, manual link/unlink, no-double-count UI, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
+Milestone 2 gate: completed through PR 3B.8. Stop for client retesting and formal acceptance. Do not start a Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
 
 ## Broader Phase 3 scope — Loans, Properties and Tax
 
@@ -251,7 +259,7 @@ Scope:
 - property records;
 - EOFY/property reports.
 
-The proposed Phase 3B is a limited first slice of this broader scope. EOFY/property reporting and automated tax treatment are not included in the current proposal.
+The delivered Phase 3B milestones are a limited first slice of this broader scope. EOFY/property reporting and automated tax treatment are not included and remain unapproved.
 
 ## Phase 4 — Recurring, Budgets and Insights
 
