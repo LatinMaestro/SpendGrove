@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { scoreReconciliationCandidate } from "@/lib/loan-reconciliation";
+import { resolveReconciliationLinkDecision, scoreReconciliationCandidate } from "@/lib/loan-reconciliation";
 
 const base = {
   repaymentTotalCents: 180000,
@@ -35,5 +35,24 @@ describe("loan reconciliation candidate scoring", () => {
       transactionAmountCents: -320000,
       existingAllocationCents: 160000,
     })).toMatchObject({ confidence: "HIGH", amountVarianceCents: 0, existingAllocationCents: 160000 });
+  });
+
+  it("requires displayed mismatch confirmation for medium, manual and override links", () => {
+    const medium = { ...base, transactionAmountCents: -180002, selectionMode: "SUGGESTED" as const, mismatchConfirmed: false };
+    expect(() => resolveReconciliationLinkDecision(medium)).toThrow(/confirm the displayed/i);
+    expect(resolveReconciliationLinkDecision({ ...medium, mismatchConfirmed: true })).toMatchObject({ confidence: "MEDIUM", method: "SUGGESTED" });
+
+    const override = { ...base, transactionAmountCents: -250000, transactionDate: "2026-08-01", selectionMode: "OVERRIDE" as const, mismatchConfirmed: false };
+    expect(() => resolveReconciliationLinkDecision(override)).toThrow(/confirm the displayed/i);
+    expect(resolveReconciliationLinkDecision({ ...override, mismatchConfirmed: true })).toMatchObject({ confidence: "MANUAL", method: "MANUAL", reasonCode: "MANUAL_OVERRIDE" });
+  });
+
+  it("does not allow a manual-band transaction through the suggested-link path", () => {
+    expect(() => resolveReconciliationLinkDecision({
+      ...base,
+      transactionAmountCents: -180050,
+      selectionMode: "SUGGESTED",
+      mismatchConfirmed: true,
+    })).toThrow(/outside the selected matching flow/i);
   });
 });

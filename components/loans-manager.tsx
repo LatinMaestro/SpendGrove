@@ -89,13 +89,34 @@ function varianceLabel(candidate: LoanReconciliationCandidate) {
   return `Amount differs by ${aud(Math.abs(candidate.amountVarianceCents))}`;
 }
 
-function RepaymentHistory({ repayments, isSaving, candidateReviews, candidateLoadingId, onArchiveChange, onLoadCandidates }: Readonly<{
+function RepaymentHistory({
+  repayments,
+  isSaving,
+  candidateReviews,
+  candidateLoadingId,
+  reconciliationSavingId,
+  confirmedLinks,
+  overrideDates,
+  onArchiveChange,
+  onLoadCandidates,
+  onConfirmationChange,
+  onOverrideDateChange,
+  onLink,
+  onUnlink,
+}: Readonly<{
   repayments: SafeLoanRepayment[];
   isSaving: boolean;
   candidateReviews: Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>;
   candidateLoadingId: string;
+  reconciliationSavingId: string;
+  confirmedLinks: Record<string, boolean>;
+  overrideDates: Record<string, string>;
   onArchiveChange: (repayment: SafeLoanRepayment, isArchived: boolean) => void;
-  onLoadCandidates: (repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode) => void;
+  onLoadCandidates: (repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode, overrideDate?: string) => void;
+  onConfirmationChange: (key: string, confirmed: boolean) => void;
+  onOverrideDateChange: (repaymentId: string, date: string) => void;
+  onLink: (repayment: SafeLoanRepayment, candidate: LoanReconciliationCandidate, mode: ReconciliationCandidateMode, confirmed: boolean) => void;
+  onUnlink: (repayment: SafeLoanRepayment) => void;
 }>) {
   if (repayments.length === 0) {
     return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
@@ -121,7 +142,10 @@ function RepaymentHistory({ repayments, isSaving, candidateReviews, candidateLoa
               ))}
             </dl>
             {repayment.linkedTransaction && (
-              <p className="mt-3 flex items-start gap-2 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow record.</p>
+              <div className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
+                <p className="flex items-start gap-2"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow and spending record; this card is its loan breakdown.</p>
+                <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 font-bold text-brand-deepTeal disabled:opacity-50">{reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink breakdown"}</button>
+              </div>
             )}
             {!repayment.isArchived && !repayment.linkedTransaction && (
               <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
@@ -141,6 +165,18 @@ function RepaymentHistory({ repayments, isSaving, candidateReviews, candidateLoa
                             <p className="mt-2">Everyday transaction: <strong>{aud(Math.abs(candidate.transactionAmountCents))}</strong></p>
                             <p>{varianceLabel(candidate)} · {candidate.dateDifferenceDays} day{candidate.dateDifferenceDays === 1 ? "" : "s"} apart</p>
                             {candidate.existingAllocationCents > 0 && <p className="mt-1">Includes {aud(candidate.existingAllocationCents)} already linked as another loan breakdown.</p>}
+                            {(candidate.confidence !== "HIGH" || candidateReviews[repayment.id].mode === "OVERRIDE") && (
+                              <label className="mt-3 flex items-start gap-2 rounded-lg bg-white p-2 font-semibold">
+                                <input type="checkbox" checked={Boolean(confirmedLinks[`${repayment.id}:${candidate.transactionId}`])} onChange={(event) => onConfirmationChange(`${repayment.id}:${candidate.transactionId}`, event.target.checked)} className="mt-0.5 accent-brand-green" />
+                                I checked the amount variance and date difference.
+                              </label>
+                            )}
+                            <button
+                              type="button"
+                              disabled={reconciliationSavingId === repayment.id || ((candidate.confidence !== "HIGH" || candidateReviews[repayment.id].mode === "OVERRIDE") && !confirmedLinks[`${repayment.id}:${candidate.transactionId}`])}
+                              onClick={() => onLink(repayment, candidate, candidateReviews[repayment.id].mode, Boolean(confirmedLinks[`${repayment.id}:${candidate.transactionId}`]))}
+                              className="mt-3 min-h-10 rounded-full bg-brand-green px-3 font-bold text-white disabled:opacity-45"
+                            >{reconciliationSavingId === repayment.id ? "Linking…" : "Link this breakdown"}</button>
                           </li>
                         ))}
                       </ul>
@@ -148,7 +184,14 @@ function RepaymentHistory({ repayments, isSaving, candidateReviews, candidateLoa
                     {candidateReviews[repayment.id].mode === "SUGGESTED" && (
                       <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "MANUAL")} className="mt-3 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">Search wider manually</button>
                     )}
-                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Review only — confirmation and linking are added in the next step.</p>
+                    <div className="mt-3 rounded-xl bg-white p-3">
+                      <label className="block text-xs font-bold text-brand-deepTeal">Find another eligible transaction by exact date
+                        <input type="date" value={overrideDates[repayment.id] ?? ""} onChange={(event) => onOverrideDateChange(repayment.id, event.target.value)} className="mt-2 min-h-10 w-full rounded-lg border border-border px-2 font-normal" />
+                      </label>
+                      <button type="button" disabled={!overrideDates[repayment.id] || candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "OVERRIDE", overrideDates[repayment.id])} className="mt-2 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-45">Search this exact date</button>
+                      <p className="mt-2 text-xs text-brand-deepTeal/60">This is an explicit manual override search, not a likely-match suggestion. Any result requires mismatch confirmation.</p>
+                    </div>
+                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Linking is user-confirmed and reversible. It never creates or changes an everyday transaction.</p>
                   </div>
                 )}
               </div>
@@ -374,6 +417,9 @@ function AuthenticatedLoansManager() {
   const [repayments, setRepayments] = useState<SafeLoanRepayment[]>([]);
   const [candidateReviews, setCandidateReviews] = useState<Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>>({});
   const [candidateLoadingId, setCandidateLoadingId] = useState("");
+  const [reconciliationSavingId, setReconciliationSavingId] = useState("");
+  const [confirmedLinks, setConfirmedLinks] = useState<Record<string, boolean>>({});
+  const [overrideDates, setOverrideDates] = useState<Record<string, string>>({});
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState("");
   const [editor, setEditor] = useState<{ loanId?: string; draft: LoanDraft } | null>(null);
@@ -489,11 +535,13 @@ function AuthenticatedLoansManager() {
     }
   }
 
-  async function loadReconciliationCandidates(repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode) {
+  async function loadReconciliationCandidates(repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode, overrideDate?: string) {
     setCandidateLoadingId(repayment.id);
     setError("");
     try {
-      const response = await fetch(`/api/account/loan-repayments/${repayment.id}/candidates?mode=${mode === "MANUAL" ? "manual" : "suggested"}`, { cache: "no-store" });
+      const modeParam = mode === "OVERRIDE" ? "override" : mode === "MANUAL" ? "manual" : "suggested";
+      const dateParam = mode === "OVERRIDE" && overrideDate ? `&date=${encodeURIComponent(overrideDate)}` : "";
+      const response = await fetch(`/api/account/loan-repayments/${repayment.id}/candidates?mode=${modeParam}${dateParam}`, { cache: "no-store" });
       const result = await response.json() as { ok: boolean; mode?: ReconciliationCandidateMode; candidates?: LoanReconciliationCandidate[]; error?: string };
       if (!response.ok || !result.ok) throw new Error(result.error || "We could not check possible matches.");
       setCandidateReviews((current) => ({ ...current, [repayment.id]: { mode: result.mode ?? mode, candidates: result.candidates ?? [] } }));
@@ -501,6 +549,52 @@ function AuthenticatedLoansManager() {
       setError(candidateError instanceof Error ? candidateError.message : "We could not check possible matches safely.");
     } finally {
       setCandidateLoadingId("");
+    }
+  }
+
+  async function refreshRepaymentHistory() {
+    const response = await fetch("/api/account/loan-repayments", { cache: "no-store" });
+    const result = await response.json() as { ok: boolean; repayments?: SafeLoanRepayment[]; error?: string };
+    if (!response.ok || !result.ok) throw new Error(result.error || "We could not refresh repayment history.");
+    setRepayments(result.repayments ?? []);
+  }
+
+  async function linkRepayment(repayment: SafeLoanRepayment, candidate: LoanReconciliationCandidate, mode: ReconciliationCandidateMode, mismatchConfirmed: boolean) {
+    setReconciliationSavingId(repayment.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/account/loan-repayments/${repayment.id}/reconciliation`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ transactionId: candidate.transactionId, selectionMode: mode, mismatchConfirmed }),
+      });
+      const result = await response.json() as { ok: boolean; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "We could not link that repayment.");
+      await refreshRepaymentHistory();
+      setCandidateReviews((current) => {
+        const next = { ...current };
+        delete next[repayment.id];
+        return next;
+      });
+    } catch (linkError) {
+      setError(linkError instanceof Error ? linkError.message : "We could not link that repayment safely.");
+    } finally {
+      setReconciliationSavingId("");
+    }
+  }
+
+  async function unlinkRepayment(repayment: SafeLoanRepayment) {
+    setReconciliationSavingId(repayment.id);
+    setError("");
+    try {
+      const response = await fetch(`/api/account/loan-repayments/${repayment.id}/reconciliation`, { method: "DELETE" });
+      const result = await response.json() as { ok: boolean; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "We could not unlink that repayment.");
+      await refreshRepaymentHistory();
+    } catch (unlinkError) {
+      setError(unlinkError instanceof Error ? unlinkError.message : "We could not unlink that repayment safely.");
+    } finally {
+      setReconciliationSavingId("");
     }
   }
 
@@ -590,8 +684,15 @@ function AuthenticatedLoansManager() {
                     isSaving={isSaving}
                     candidateReviews={candidateReviews}
                     candidateLoadingId={candidateLoadingId}
+                    reconciliationSavingId={reconciliationSavingId}
+                    confirmedLinks={confirmedLinks}
+                    overrideDates={overrideDates}
                     onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
-                    onLoadCandidates={(repayment, mode) => void loadReconciliationCandidates(repayment, mode)}
+                    onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
+                    onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
+                    onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
+                    onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
+                    onUnlink={(repayment) => void unlinkRepayment(repayment)}
                   />
                   <div className="mt-4 flex gap-2 border-t border-border pt-4">
                     <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>

@@ -1,4 +1,6 @@
-export type ReconciliationCandidateMode = "SUGGESTED" | "MANUAL";
+import { z } from "zod";
+
+export type ReconciliationCandidateMode = "SUGGESTED" | "MANUAL" | "OVERRIDE";
 export type ReconciliationCandidateConfidence = "HIGH" | "MEDIUM" | "MANUAL";
 export type ReconciliationReasonCode = "EXACT_AMOUNT_NEAR_DATE" | "ROUNDING_VARIANCE" | "EXACT_AMOUNT_DELAYED_DATE" | "MANUAL_OVERRIDE";
 
@@ -12,6 +14,20 @@ export type LoanReconciliationCandidate = {
   confidence: ReconciliationCandidateConfidence;
   reasonCode: ReconciliationReasonCode;
 };
+
+export const reconciliationLinkRequestSchema = z.object({
+  transactionId: z.string().trim().min(1).max(128),
+  selectionMode: z.enum(["SUGGESTED", "MANUAL", "OVERRIDE"]),
+  mismatchConfirmed: z.boolean(),
+}).strict();
+
+export type ReconciliationLinkRequest = z.infer<typeof reconciliationLinkRequestSchema>;
+
+export type ReconciliationLinkDecision = LoanReconciliationCandidate & {
+  method: "SUGGESTED" | "MANUAL";
+};
+
+export type SafeReconciliationLink = ReconciliationLinkDecision;
 
 export function scoreReconciliationCandidate(input: {
   repaymentTotalCents: number;
@@ -42,7 +58,10 @@ export function scoreReconciliationCandidate(input: {
   } else if (absoluteVariance === 0 && dateDifferenceDays <= 7) {
     confidence = "MEDIUM";
     reasonCode = "EXACT_AMOUNT_DELAYED_DATE";
-  } else if (input.mode === "MANUAL" && absoluteVariance <= 100 && dateDifferenceDays <= 7) {
+  } else if ((input.mode === "MANUAL" || input.mode === "OVERRIDE") && absoluteVariance <= 100 && dateDifferenceDays <= 7) {
+    confidence = "MANUAL";
+    reasonCode = "MANUAL_OVERRIDE";
+  } else if (input.mode === "OVERRIDE") {
     confidence = "MANUAL";
     reasonCode = "MANUAL_OVERRIDE";
   }
@@ -58,4 +77,20 @@ export function scoreReconciliationCandidate(input: {
     confidence,
     reasonCode,
   };
+}
+
+export function resolveReconciliationLinkDecision(input: Parameters<typeof scoreReconciliationCandidate>[0] & {
+  selectionMode: ReconciliationLinkRequest["selectionMode"];
+  mismatchConfirmed: boolean;
+}): ReconciliationLinkDecision {
+  const scoringMode = input.selectionMode === "SUGGESTED" ? "SUGGESTED" : input.selectionMode === "MANUAL" ? "MANUAL" : "OVERRIDE";
+  const candidate = scoreReconciliationCandidate({ ...input, mode: scoringMode });
+  if (!candidate) throw new Error("That transaction is outside the selected matching flow.");
+  if (input.selectionMode === "SUGGESTED" && candidate.confidence === "MANUAL") {
+    throw new Error("Open manual matching before linking this transaction.");
+  }
+  if ((candidate.confidence !== "HIGH" || input.selectionMode === "OVERRIDE") && !input.mismatchConfirmed) {
+    throw new Error("Confirm the displayed amount and date difference before linking.");
+  }
+  return { ...candidate, method: input.selectionMode === "SUGGESTED" ? "SUGGESTED" : "MANUAL" };
 }

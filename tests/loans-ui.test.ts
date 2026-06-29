@@ -54,7 +54,12 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("High confidence");
     expect(manager).toContain("Possible match");
     expect(manager).toContain("Manual review");
-    expect(manager).toContain("confirmation and linking are added in the next step");
+    expect(manager).toContain("Link this breakdown");
+    expect(manager).toContain("Unlink breakdown");
+    expect(manager).toContain("Search this exact date");
+    expect(manager).toContain("explicit manual override search, not a likely-match suggestion");
+    expect(manager).toContain("Linking is user-confirmed and reversible");
+    expect(manager).toContain("only cashflow and spending record");
     expect(manager).not.toContain("automatic link");
   });
 });
