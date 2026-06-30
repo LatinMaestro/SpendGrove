@@ -29,9 +29,11 @@ import {
 } from "@/lib/loan-csv-review";
 import {
   createLoanRepaymentCommitRequest,
+  createLoanRepaymentDuplicateCheckRequest,
   isCommittableLoanRepaymentRow,
   type LoanRepaymentCommitRequest,
   type LoanRepaymentCommitSummary,
+  type LoanRepaymentDuplicateSignal,
   type SafeLoanImportHistoryEntry,
 } from "@/lib/loan-repayment-commit";
 import { MAX_CSV_FILE_SIZE_BYTES, parseCsvDocument, type TransientCsvDocument } from "@/lib/csv-import";
@@ -109,14 +111,20 @@ function ReviewRow({
   row,
   selectedLoan,
   selected,
+  duplicateSignal,
+  duplicateOverrideConfirmed,
   selectionLocked,
   onSelectionChange,
+  onDuplicateOverrideChange,
 }: Readonly<{
   row: LoanCsvReviewRow;
   selectedLoan: LoanRecord;
   selected: boolean;
+  duplicateSignal?: LoanRepaymentDuplicateSignal;
+  duplicateOverrideConfirmed: boolean;
   selectionLocked: boolean;
   onSelectionChange: (selected: boolean) => void;
+  onDuplicateOverrideChange: (confirmed: boolean) => void;
 }>) {
   const isRepaymentBreakdown = row.isGroupedRepayment || (!row.classification && row.totalPaymentCents !== null);
   const committable = isCommittableLoanRepaymentRow(row);
@@ -175,7 +183,33 @@ function ReviewRow({
           Check this row’s date, amount or classification before any later commit step.
         </p>
       )}
-      {committable ? (
+      {duplicateSignal?.classification === "LIKELY_DUPLICATE" && (
+        <div role="status" className="mt-4 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm text-brand-deepTeal">
+          <p className="font-bold">Likely duplicate — excluded by default</p>
+          <p className="mt-1">This Loan Account already has the same reviewed date and structured amounts, or this review contains an earlier exact row.</p>
+        </div>
+      )}
+      {duplicateSignal?.classification === "POSSIBLE_OVERLAP" && (
+        <div role="status" className="mt-4 rounded-2xl border border-brand-teal/40 bg-surface-mint p-4 text-sm text-brand-deepTeal">
+          <p className="font-bold">Possible overlap — review before saving</p>
+          <p className="mt-1">The date and total match, but at least one structured component or balance differs. This row remains selected unless you exclude it.</p>
+        </div>
+      )}
+      {committable && duplicateSignal?.classification === "LIKELY_DUPLICATE" ? (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-warning-amber/10 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={duplicateOverrideConfirmed}
+            disabled={selectionLocked}
+            onChange={(event) => onDuplicateOverrideChange(event.target.checked)}
+            className="mt-0.5 h-5 w-5 accent-brand-green"
+          />
+          <span>
+            <strong className="block text-brand-deepTeal">Save anyway</strong>
+            I reviewed this exact-match warning and deliberately want another repayment breakdown.
+          </span>
+        </label>
+      ) : committable ? (
         <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-brand-green/10 p-3 text-sm">
           <input
             type="checkbox"
@@ -230,6 +264,9 @@ function AuthenticatedLoanCsvReview() {
   const [isReady, setIsReady] = useState(false);
   const [requestId, setRequestId] = useState("");
   const [selectedRowNumbers, setSelectedRowNumbers] = useState<Set<number>>(new Set());
+  const [duplicateOverrideRowNumbers, setDuplicateOverrideRowNumbers] = useState<Set<number>>(new Set());
+  const [duplicateSignals, setDuplicateSignals] = useState<Record<number, LoanRepaymentDuplicateSignal>>({});
+  const [duplicateCheckStatus, setDuplicateCheckStatus] = useState<"IDLE" | "LOADING" | "READY" | "ERROR">("IDLE");
   const [confirmed, setConfirmed] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [pendingRequest, setPendingRequest] = useState<LoanRepaymentCommitRequest | null>(null);
@@ -281,6 +318,9 @@ function AuthenticatedLoanCsvReview() {
     setError("");
     setRequestId("");
     setSelectedRowNumbers(new Set());
+    setDuplicateOverrideRowNumbers(new Set());
+    setDuplicateSignals({});
+    setDuplicateCheckStatus("IDLE");
     setConfirmed(false);
     setPendingRequest(null);
     setSaveSummary(null);
@@ -310,6 +350,9 @@ function AuthenticatedLoanCsvReview() {
       });
       setRequestId(crypto.randomUUID());
       setSelectedRowNumbers(new Set());
+      setDuplicateOverrideRowNumbers(new Set());
+      setDuplicateSignals({});
+      setDuplicateCheckStatus("IDLE");
       setConfirmed(false);
       setPendingRequest(null);
       setSaveSummary(null);
@@ -319,19 +362,70 @@ function AuthenticatedLoanCsvReview() {
     }
   }
 
-  function beginReview() {
+  async function beginReview() {
     if (!review || review.mappingIssues.length > 0 || pendingRequest) return;
-    setSelectedRowNumbers(new Set(review.rows.filter(isCommittableLoanRepaymentRow).map((row) => row.rowNumber)));
+    setStep("REVIEW");
+    setError("");
+    setDuplicateCheckStatus("LOADING");
+    setSelectedRowNumbers(new Set());
+    setDuplicateOverrideRowNumbers(new Set());
+    setDuplicateSignals({});
     setConfirmed(false);
     setPendingRequest(null);
     setSaveSummary(null);
-    setStep("REVIEW");
+    if (!review.rows.some(isCommittableLoanRepaymentRow)) {
+      setDuplicateCheckStatus("READY");
+      return;
+    }
+    try {
+      if (!selectedLoan) throw new Error("Choose the Loan Account that owns this CSV first.");
+      const response = await fetch("/api/account/loan-repayments/duplicates", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(createLoanRepaymentDuplicateCheckRequest({ loanAccountId: selectedLoan.id, rows: review.rows })),
+      });
+      const result = await response.json() as { ok: boolean; signals?: LoanRepaymentDuplicateSignal[]; error?: string };
+      if (!response.ok || !result.ok) throw new Error(result.error || "We could not check these repayments for duplicates.");
+      const signals = Object.fromEntries((result.signals ?? []).map((signal) => [signal.reviewRowNumber, signal]));
+      const likelyRows = new Set((result.signals ?? [])
+        .filter((signal) => signal.classification === "LIKELY_DUPLICATE")
+        .map((signal) => signal.reviewRowNumber));
+      setDuplicateSignals(signals);
+      setSelectedRowNumbers(new Set(review.rows
+        .filter((row) => isCommittableLoanRepaymentRow(row) && !likelyRows.has(row.rowNumber))
+        .map((row) => row.rowNumber)));
+      setDuplicateCheckStatus("READY");
+    } catch (duplicateError) {
+      setDuplicateCheckStatus("ERROR");
+      setError(duplicateError instanceof Error ? duplicateError.message : "We could not check these repayments safely. Retry before saving.");
+    }
   }
 
   function changeRowSelection(rowNumber: number, selected: boolean) {
     setSelectedRowNumbers((current) => {
       const next = new Set(current);
       if (selected) next.add(rowNumber);
+      else next.delete(rowNumber);
+      return next;
+    });
+    if (!selected) setDuplicateOverrideRowNumbers((current) => {
+      const next = new Set(current);
+      next.delete(rowNumber);
+      return next;
+    });
+    setConfirmed(false);
+  }
+
+  function changeDuplicateOverride(rowNumber: number, confirmedOverride: boolean) {
+    setDuplicateOverrideRowNumbers((current) => {
+      const next = new Set(current);
+      if (confirmedOverride) next.add(rowNumber);
+      else next.delete(rowNumber);
+      return next;
+    });
+    setSelectedRowNumbers((current) => {
+      const next = new Set(current);
+      if (confirmedOverride) next.add(rowNumber);
       else next.delete(rowNumber);
       return next;
     });
@@ -348,6 +442,7 @@ function AuthenticatedLoanCsvReview() {
         loanAccountId: selectedLoan.id,
         rows: review.rows,
         selectedRowNumbers,
+        duplicateOverrideRowNumbers,
         privateFieldCount: columns.filter((column) => column.isPrivate).length,
       });
       setPendingRequest(payload);
@@ -357,7 +452,16 @@ function AuthenticatedLoanCsvReview() {
         body: JSON.stringify(payload),
       });
       const result = await response.json() as { ok: boolean; summary?: LoanRepaymentCommitSummary; error?: string };
-      if (!response.ok || !result.ok || !result.summary) throw new Error(result.error || "We could not save these repayments.");
+      if (!response.ok || !result.ok || !result.summary) {
+        if (response.status === 409) {
+          setPendingRequest(null);
+          setDuplicateCheckStatus("ERROR");
+          setSelectedRowNumbers(new Set());
+          setDuplicateOverrideRowNumbers(new Set());
+          setConfirmed(false);
+        }
+        throw new Error(result.error || "We could not save these repayments.");
+      }
       setSaveSummary(result.summary);
       setImportHistory((current) => [{
         completedAt: new Date().toISOString(),
@@ -505,7 +609,7 @@ function AuthenticatedLoanCsvReview() {
               ))}
             </div>
             {review && review.mappingIssues.length > 0 && <ul className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm text-brand-deepTeal">{review.mappingIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul>}
-            <button type="button" disabled={!review || review.mappingIssues.length > 0 || Boolean(pendingRequest)} onClick={beginReview} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review loan rows</button>
+            <button type="button" disabled={!review || review.mappingIssues.length > 0 || Boolean(pendingRequest)} onClick={() => void beginReview()} className="mt-4 min-h-12 w-full rounded-full bg-brand-green px-5 text-sm font-bold text-white disabled:opacity-45">Review loan rows</button>
           </div>
         )}
       </section>
@@ -517,14 +621,20 @@ function AuthenticatedLoanCsvReview() {
             <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Choose the clear repayments to save</h2>
             <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">These sanitized amounts belong to <strong>{selectedLoan.nickname}</strong>. Raw narration is not shown.</p>
           </div>
+          {duplicateCheckStatus === "LOADING" && <div role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">Checking reviewed structured values against this Loan Account…</div>}
+          {duplicateCheckStatus === "ERROR" && <button type="button" onClick={() => void beginReview()} className="mt-4 min-h-11 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white">Retry duplicate check</button>}
+          {duplicateCheckStatus === "READY" && <div role="status" className="mt-4 rounded-2xl bg-brand-green/10 p-4 text-sm font-semibold text-brand-deepTeal">Duplicate check complete. Exact matches are excluded unless you confirm Save anyway for that row.</div>}
           <div className="mt-4 space-y-4">{review.rows.map((row) => (
             <ReviewRow
               key={row.rowNumber}
               row={row}
               selectedLoan={selectedLoan}
               selected={selectedRowNumbers.has(row.rowNumber)}
-              selectionLocked={Boolean(pendingRequest)}
+              duplicateSignal={duplicateSignals[row.rowNumber]}
+              duplicateOverrideConfirmed={duplicateOverrideRowNumbers.has(row.rowNumber)}
+              selectionLocked={Boolean(pendingRequest) || duplicateCheckStatus !== "READY"}
               onSelectionChange={(selected) => changeRowSelection(row.rowNumber, selected)}
+              onDuplicateOverrideChange={(overrideConfirmed) => changeDuplicateOverride(row.rowNumber, overrideConfirmed)}
             />
           ))}</div>
           <div className="mt-5 rounded-3xl border border-brand-green/30 bg-brand-green/5 p-5 text-sm leading-6 text-brand-deepTeal">
@@ -538,7 +648,7 @@ function AuthenticatedLoanCsvReview() {
             </label>
             <button
               type="button"
-              disabled={!confirmed || selectedRowNumbers.size === 0 || isSaving || Boolean(saveSummary)}
+              disabled={duplicateCheckStatus !== "READY" || !confirmed || selectedRowNumbers.size === 0 || isSaving || Boolean(saveSummary)}
               onClick={() => void saveReviewedRepayments()}
               className="mt-4 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full bg-brand-green px-5 font-bold text-white disabled:opacity-45"
             >

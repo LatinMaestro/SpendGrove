@@ -2,10 +2,17 @@ import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   loanRepaymentCommitRequestSchema,
+  loanRepaymentDuplicateCheckRequestSchema,
   type LoanRepaymentCommitRequest,
   type LoanRepaymentCommitSummary,
+  type LoanRepaymentDuplicateCheckRequest,
+  type LoanRepaymentDuplicateSignal,
   type SafeLoanImportHistoryEntry,
 } from "@/lib/loan-repayment-commit";
+import {
+  assessLoanRepaymentDuplicates,
+  type ComparableLoanRepayment,
+} from "@/lib/loan-repayment-duplicates";
 import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
@@ -15,6 +22,13 @@ export class LoanRepaymentCommitConflictError extends Error {
   constructor() {
     super("This reviewed loan import is already being saved. Refresh before trying again.");
     this.name = "LoanRepaymentCommitConflictError";
+  }
+}
+
+export class LoanRepaymentDuplicateReviewRequiredError extends Error {
+  constructor() {
+    super("A selected repayment now looks like a likely duplicate. Refresh the duplicate check and confirm Save anyway for that row if it is intentional.");
+    this.name = "LoanRepaymentDuplicateReviewRequiredError";
   }
 }
 
@@ -34,6 +48,7 @@ type StoredLoanImportBatch = {
 export type LoanRepaymentStore = {
   commit(userId: string, request: LoanRepaymentCommitRequest, now: Date): Promise<LoanRepaymentCommitSummary>;
   listImports(userId: string, limit: number): Promise<StoredLoanImportBatch[]>;
+  assessDuplicates(userId: string, request: LoanRepaymentDuplicateCheckRequest): Promise<LoanRepaymentDuplicateSignal[]>;
 };
 
 function summaryFromBatch(batch: StoredLoanImportBatch, alreadyCommitted: boolean): LoanRepaymentCommitSummary {
@@ -52,6 +67,24 @@ function dateOnlyToUtcDate(value: string) {
     throw new Error("A reviewed repayment contains an invalid date.");
   }
   return date;
+}
+
+function toComparableRepayment(row: {
+  repaymentDate: Date;
+  totalPaymentCents: number;
+  principalCents: number | null;
+  interestCents: number | null;
+  feeCents: number | null;
+  balanceAfterCents: number | null;
+}): ComparableLoanRepayment {
+  return {
+    repaymentDate: row.repaymentDate.toISOString().slice(0, 10),
+    totalPaymentCents: row.totalPaymentCents,
+    principalCents: row.principalCents,
+    interestCents: row.interestCents,
+    feeCents: row.feeCents,
+    balanceAfterCents: row.balanceAfterCents,
+  };
 }
 
 export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaClient()): LoanRepaymentStore {
@@ -79,6 +112,21 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
             select: { id: true },
           });
           if (!loan) throw new OwnershipError("active loan account");
+
+          const existingRepayments = (await tx.loanRepayment.findMany({
+            where: { userId, loanAccountId: loan.id, deletedAt: null },
+            select: {
+              repaymentDate: true, totalPaymentCents: true, principalCents: true,
+              interestCents: true, feeCents: true, balanceAfterCents: true,
+            },
+          })).map(toComparableRepayment);
+          const duplicateSignals = assessLoanRepaymentDuplicates(request.rows, existingRepayments);
+          const likelyDuplicateRowNumbers = new Set(duplicateSignals
+            .filter((signal) => signal.classification === "LIKELY_DUPLICATE")
+            .map((signal) => signal.reviewRowNumber));
+          if (request.rows.some((row) => likelyDuplicateRowNumbers.has(row.reviewRowNumber) && !row.duplicateOverrideConfirmed)) {
+            throw new LoanRepaymentDuplicateReviewRequiredError();
+          }
 
           const batch = await tx.importBatch.create({
             data: {
@@ -117,6 +165,10 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
             savedCount: request.rows.length,
             excludedCount: request.excludedRowCount,
             privateFieldCount: request.privateFieldCount,
+            likelyDuplicateCount: likelyDuplicateRowNumbers.size,
+            duplicateOverrideCount: request.rows.filter((row) =>
+              likelyDuplicateRowNumbers.has(row.reviewRowNumber) && row.duplicateOverrideConfirmed
+            ).length,
           } satisfies Prisma.InputJsonObject;
           auditEventSchema.parse({
             userId,
@@ -128,7 +180,11 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
           await tx.auditEvent.create({ data: { userId, entityType: "IMPORT_BATCH", entityId: batch.id, action: "IMPORTED", metadata: auditMetadata } });
 
           return summaryFromBatch(batch, false);
-        }, { maxWait: 10_000, timeout: 30_000 });
+        }, {
+          isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
+          maxWait: 10_000,
+          timeout: 30_000,
+        });
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const committed = await prisma.importBatch.findFirst({
@@ -142,6 +198,9 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
           if (committed?.loanRepayments[0]?.loanAccountId === request.loanAccountId) return summaryFromBatch(committed, true);
           throw new LoanRepaymentCommitConflictError();
         }
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2034") {
+          throw new LoanRepaymentDuplicateReviewRequiredError();
+        }
         throw error;
       }
     },
@@ -152,6 +211,21 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
         take: limit,
         select: { id: true, userId: true, type: true, status: true, rowCount: true, importedCount: true, skippedCount: true, createdAt: true, completedAt: true },
       });
+    },
+    async assessDuplicates(userId, request) {
+      const loan = await prisma.loanAccount.findFirst({
+        where: { id: request.loanAccountId, userId, isArchived: false, deletedAt: null },
+        select: { id: true },
+      });
+      if (!loan) throw new OwnershipError("active loan account");
+      const existingRepayments = (await prisma.loanRepayment.findMany({
+        where: { userId, loanAccountId: loan.id, deletedAt: null },
+        select: {
+          repaymentDate: true, totalPaymentCents: true, principalCents: true,
+          interestCents: true, feeCents: true, balanceAfterCents: true,
+        },
+      })).map(toComparableRepayment);
+      return assessLoanRepaymentDuplicates(request.rows, existingRepayments);
     },
   };
 }
@@ -183,4 +257,14 @@ export async function listSafeLoanImportHistory(
       savedCount: Math.max(0, batch.importedCount),
       excludedCount: Math.max(0, batch.skippedCount),
     }));
+}
+
+export async function assessReviewedLoanRepaymentDuplicates(
+  context: AuthenticatedUserContext | null | undefined,
+  input: LoanRepaymentDuplicateCheckRequest,
+  store: LoanRepaymentStore = createPrismaLoanRepaymentStore(),
+) {
+  const user = requireAuthenticatedUserContext(context);
+  const request = loanRepaymentDuplicateCheckRequestSchema.parse(input);
+  return store.assessDuplicates(user.userId, request);
 }

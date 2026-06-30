@@ -1,19 +1,20 @@
 # Current Codex Handoff
 
-Last updated: 30 June 2026
+Last updated: 1 July 2026
 
 ## Current phase and status
 
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
-- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. PR 3B.9 is the active documentation gate.
+- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. PR 3B.11 is the active implementation slice.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Milestone 3 progress
 
 - PR 3B.9 correction and duplicate-safety contract merged in [#71](https://github.com/LatinMaestro/SpendGrove/pull/71) as `8c4b9123f0e07cd1a602cb1dcad1c7b30b60c36f`.
-- PR 3B.10 safe repayment correction is the active implementation slice.
+- PR 3B.10 safe repayment correction merged in [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) as `d79bc24b2bebe277b39729d655e995d8c7d1253d`.
+- PR 3B.11 deliberate duplicate loan re-import safeguards are implemented and under verification/review.
 - No Prisma schema or migration amendment has been needed.
 
 ## Milestone 2 completed work
@@ -72,8 +73,8 @@ Delivered behaviour:
 
 ## Known limitations
 
-- Retry idempotency covers the same frozen save request. Deliberately starting a new import of the same source later is a new request and is not content-fingerprinted.
-- Repayment rows can be archived/restored but are not edited after commit in this milestone.
+- Retry idempotency covers the same frozen save request. A later import uses structured duplicate warnings rather than a persisted content fingerprint.
+- Structured correction is available only for active, unmatched, unlinked repayments; linked repayments must be unlinked and archived repayments restored before editing.
 - Reconciliation is deterministic and user-driven; no link is automatic.
 - Manual override search uses an exact transaction date and safe date/amount context only; there is no narration search.
 - Loan repayment breakdowns do not feed spending, income, property, loan, net-worth or Home dashboard statistics.
@@ -81,7 +82,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3B.10, then continue autonomously through PRs 3B.11-3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
+Complete and merge PR 3B.11, then continue autonomously through PRs 3B.12-3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
 
 ## Resume instruction
 

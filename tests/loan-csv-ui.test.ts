@@ -119,4 +119,16 @@ describe("loan CSV review UI contract", () => {
     expect(review).toContain("ROW_EVENT_LEDGER: buildSuggestedLoanCsvMapping");
     expect(review).toContain("[mode]: { ...mapping");
   });
+
+  it("default-excludes likely duplicates and requires a visible per-row Save anyway confirmation", async () => {
+    const review = await readFile(reviewPath, "utf8");
+
+    expect(review).toContain("/api/account/loan-repayments/duplicates");
+    expect(review).toContain("Likely duplicate — excluded by default");
+    expect(review).toContain("Possible overlap — review before saving");
+    expect(review).toContain("Save anyway");
+    expect(review).toContain("duplicateOverrideRowNumbers");
+    expect(review).toContain("Retry duplicate check");
+    expect(review).not.toContain("fingerprint");
+  });
 });
