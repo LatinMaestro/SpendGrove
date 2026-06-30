@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type { SafeLoanRepayment } from "@/lib/loan-repayment-history";
 import type { LoanReconciliationCandidate, ReconciliationCandidateMode } from "@/lib/loan-reconciliation";
+import { parseMoneyToCents } from "@/lib/validation/money";
 
 type LoanKind = "OWNER_OCCUPIER_HOME" | "INVESTMENT_PROPERTY" | "CAR" | "PERSONAL" | "OTHER";
 type PropertyUsage = "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
@@ -45,6 +46,27 @@ type LoanRecord = {
 type LoanResult =
   | { ok: true; loans: LoanRecord[]; properties: PropertyRecord[] }
   | { ok: false; error: string };
+
+type RepaymentCorrectionDraft = {
+  repaymentDate: string;
+  totalPayment: string;
+  principal: string;
+  interest: string;
+  fees: string;
+  balanceAfter: string;
+};
+
+const repaymentMoneyFields: Array<{
+  key: keyof Pick<RepaymentCorrectionDraft, "totalPayment" | "principal" | "interest" | "fees" | "balanceAfter">;
+  label: string;
+  required?: boolean;
+}> = [
+  { key: "totalPayment", label: "Total repayment", required: true },
+  { key: "principal", label: "Principal" },
+  { key: "interest", label: "Interest" },
+  { key: "fees", label: "Fees" },
+  { key: "balanceAfter", label: "Balance after" },
+];
 
 const choices: Array<{
   kind: LoanKind;
@@ -120,6 +142,7 @@ function RepaymentHistory({
   confirmedLinks,
   overrideDates,
   onArchiveChange,
+  onEdit,
   onLoadCandidates,
   onConfirmationChange,
   onOverrideDateChange,
@@ -134,6 +157,7 @@ function RepaymentHistory({
   confirmedLinks: Record<string, boolean>;
   overrideDates: Record<string, string>;
   onArchiveChange: (repayment: SafeLoanRepayment, isArchived: boolean) => void;
+  onEdit: (repayment: SafeLoanRepayment) => void;
   onLoadCandidates: (repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode, overrideDate?: string) => void;
   onConfirmationChange: (key: string, confirmed: boolean) => void;
   onOverrideDateChange: (repaymentId: string, date: string) => void;
@@ -166,6 +190,7 @@ function RepaymentHistory({
             {repayment.linkedTransaction && (
               <div className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
                 <p className="flex items-start gap-2"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow and spending record; this card is its loan breakdown.</p>
+                <p className="mt-2 font-semibold">Unlink this breakdown before editing its date or amounts.</p>
                 <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 font-bold text-brand-deepTeal disabled:opacity-50">{reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink breakdown"}</button>
               </div>
             )}
@@ -222,10 +247,18 @@ function RepaymentHistory({
                 )}
               </div>
             )}
-            <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
-              {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
-              {repayment.isArchived ? "Restore breakdown" : "Archive breakdown"}
-            </button>
+            {repayment.isArchived && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Restore this breakdown before editing it.</p>}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {!repayment.isArchived && !repayment.linkedTransaction && repayment.reconciliationStatus === "UNMATCHED" && (
+                <button type="button" disabled={isSaving} onClick={() => onEdit(repayment)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+                  <Pencil aria-hidden="true" className="h-4 w-4" /> Edit breakdown
+                </button>
+              )}
+              <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+                {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
+                {repayment.isArchived ? "Restore breakdown" : "Archive breakdown"}
+              </button>
+            </div>
           </details>
         ))}
       </div>
@@ -263,6 +296,57 @@ function Modal({ title, description, onClose, children }: Readonly<{
         {children}
       </section>
     </div>
+  );
+}
+
+function centsDraft(value: number | null) {
+  return value === null ? "" : (value / 100).toFixed(2);
+}
+
+function repaymentCorrectionDraft(repayment: SafeLoanRepayment): RepaymentCorrectionDraft {
+  return {
+    repaymentDate: repayment.repaymentDate,
+    totalPayment: centsDraft(repayment.totalPaymentCents),
+    principal: centsDraft(repayment.principalCents),
+    interest: centsDraft(repayment.interestCents),
+    fees: centsDraft(repayment.feeCents),
+    balanceAfter: centsDraft(repayment.balanceAfterCents),
+  };
+}
+
+function optionalCents(value: string) {
+  return value.trim() === "" ? null : parseMoneyToCents(value);
+}
+
+function RepaymentCorrectionEditor({ draft, error, isSaving, onChange, onClose, onSave }: Readonly<{
+  draft: RepaymentCorrectionDraft;
+  error: string;
+  isSaving: boolean;
+  onChange: (draft: RepaymentCorrectionDraft) => void;
+  onClose: () => void;
+  onSave: () => void;
+}>) {
+  return (
+    <Modal title="Edit repayment breakdown" description="Correct structured values only. Source and import lineage stay unchanged." onClose={onClose}>
+      <form className="mt-6 space-y-5" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
+        <label className="block text-sm font-bold text-brand-deepTeal">Repayment date
+          <input type="date" value={draft.repaymentDate} onChange={(event) => onChange({ ...draft, repaymentDate: event.target.value })} required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal" />
+        </label>
+        <div className="grid gap-4 sm:grid-cols-2">
+          {repaymentMoneyFields.map((field) => (
+            <label key={field.key} className="block text-sm font-bold text-brand-deepTeal">{field.label} (AUD)
+              <input type="number" inputMode="decimal" min="0" step="0.01" value={draft[field.key]} onChange={(event) => onChange({ ...draft, [field.key]: event.target.value })} required={field.required} placeholder={field.required ? "0.00" : "Not supplied"} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal" />
+            </label>
+          ))}
+        </div>
+        <p className="rounded-2xl bg-surface-mint p-4 text-sm leading-6 text-brand-deepTeal/70">Leave optional values blank to keep them as not supplied. Complete principal, interest and fee values must match the total within two cents.</p>
+        {error && <p role="alert" className="rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
+        <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+          <button type="button" disabled={isSaving} onClick={onClose} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal">Cancel</button>
+          <button type="submit" disabled={isSaving} className="min-h-12 rounded-full bg-brand-green px-6 text-sm font-bold text-white disabled:opacity-50">{isSaving ? "Saving…" : "Save correction"}</button>
+        </div>
+      </form>
+    </Modal>
   );
 }
 
@@ -452,6 +536,7 @@ function AuthenticatedLoansManager() {
   const [propertyEditor, setPropertyEditor] = useState<PropertyRecord | null>(null);
   const [propertyNickname, setPropertyNickname] = useState("");
   const [propertyUsage, setPropertyUsage] = useState<PropertyUsage>("OTHER");
+  const [repaymentEditor, setRepaymentEditor] = useState<{ repayment: SafeLoanRepayment; draft: RepaymentCorrectionDraft } | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -556,6 +641,42 @@ function AuthenticatedLoansManager() {
       });
     } catch (repaymentError) {
       setError(repaymentError instanceof Error ? repaymentError.message : "We could not update that repayment safely.");
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  async function saveRepaymentCorrection() {
+    if (!repaymentEditor || isSaving) return;
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/account/loan-repayments/${repaymentEditor.repayment.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          expectedUpdatedAt: repaymentEditor.repayment.updatedAt,
+          repayment: {
+            repaymentDate: repaymentEditor.draft.repaymentDate,
+            totalPaymentCents: parseMoneyToCents(repaymentEditor.draft.totalPayment),
+            principalCents: optionalCents(repaymentEditor.draft.principal),
+            interestCents: optionalCents(repaymentEditor.draft.interest),
+            feeCents: optionalCents(repaymentEditor.draft.fees),
+            balanceAfterCents: optionalCents(repaymentEditor.draft.balanceAfter),
+          },
+        }),
+      });
+      const result = await response.json() as { ok: boolean; repayment?: SafeLoanRepayment; error?: string };
+      if (!response.ok || !result.ok || !result.repayment) throw new Error(result.error || "We could not save that correction.");
+      setRepayments((current) => current.map((item) => item.id === result.repayment!.id ? result.repayment! : item));
+      setCandidateReviews((current) => {
+        const next = { ...current };
+        delete next[result.repayment!.id];
+        return next;
+      });
+      setRepaymentEditor(null);
+    } catch (correctionError) {
+      setError(correctionError instanceof Error ? correctionError.message : "We could not save that correction safely.");
     } finally {
       setIsSaving(false);
     }
@@ -714,6 +835,7 @@ function AuthenticatedLoansManager() {
                     confirmedLinks={confirmedLinks}
                     overrideDates={overrideDates}
                     onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
+                    onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
                     onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
                     onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
                     onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
@@ -761,6 +883,8 @@ function AuthenticatedLoansManager() {
       </section>
 
       {editor && <LoanEditor draft={editor.draft} properties={properties} isEditing={Boolean(editor.loanId)} error={error} isSaving={isSaving} onChange={(draft) => { setEditor({ ...editor, draft }); setError(""); }} onClose={() => setEditor(null)} onSave={() => void saveLoan()} />}
+
+      {repaymentEditor && <RepaymentCorrectionEditor draft={repaymentEditor.draft} error={error} isSaving={isSaving} onChange={(draft) => { setRepaymentEditor({ ...repaymentEditor, draft }); setError(""); }} onClose={() => { setRepaymentEditor(null); setError(""); }} onSave={() => void saveRepaymentCorrection()} />}
 
       {propertyEditor && (
         <Modal title="Edit supporting property" description="Use a nickname and broad usage only. Do not enter an exact address." onClose={() => setPropertyEditor(null)}>

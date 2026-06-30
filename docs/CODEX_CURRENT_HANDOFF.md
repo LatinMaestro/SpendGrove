@@ -10,6 +10,12 @@ Last updated: 30 June 2026
 - Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. PR 3B.9 is the active documentation gate.
 - No Phase 4 or later-module implementation is authorised.
 
+## Milestone 3 progress
+
+- PR 3B.9 correction and duplicate-safety contract merged in [#71](https://github.com/LatinMaestro/SpendGrove/pull/71) as `8c4b9123f0e07cd1a602cb1dcad1c7b30b60c36f`.
+- PR 3B.10 safe repayment correction is the active implementation slice.
+- No Prisma schema or migration amendment has been needed.
+
 ## Milestone 2 completed work
 
 | Work | PR | Merge commit |
@@ -75,7 +81,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3B.9, then continue autonomously through PRs 3B.10-3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
+Complete and merge PR 3B.10, then continue autonomously through PRs 3B.11-3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
 
 ## Resume instruction
 
