@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 implementation completed on 29 June 2026 and is awaiting client retesting/acceptance.
+Status: Milestone 1 formally accepted and closed on 26 June 2026. Milestone 2 formally accepted and closed on 30 June 2026. Milestone 3 is proposal-only and not approved for implementation.
 
 Current progress:
 
@@ -222,10 +222,13 @@ Current progress:
 - PR 3B.6 merged in #64: deterministic high, medium and explicit manual reconciliation suggestions.
 - PR 3B.7 merged in #65: user-confirmed link/unlink/relink, split-loan allocation and no-double-count safeguards.
 - PR 3B.8 completed the QA, Vercel and client testing package.
+- Milestone 2 acceptance hardening merged in PR #68 and its permanent handoff update merged in PR #69.
 - Milestone 2 required no schema change, Preview migration or Production migration.
-- Full tests: 65 files / 375 tests passed; TypeScript and production build passed.
-- Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
+- Full tests after acceptance hardening: 65 files / 380 tests passed; TypeScript and production build passed.
+- Final accepted functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
 - `docs/PHASE_3B_MILESTONE_2_SUMMARY.md` is the client review package.
+- Client signed-in retesting completed on 30 June 2026 with no further acceptance comments.
+- `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` is proposal-only; no Milestone 3 implementation has started.
 
 Delivered objective:
 
@@ -245,7 +248,7 @@ The detailed inclusions, exclusions, migration gates, privacy risks and stop con
 
 Milestone 1 migration gate: completed. The approved Phase 3B foundation migration ran against Preview only. No Production migration has run.
 
-Milestone 2 gate: completed through PR 3B.8. Stop for client retesting and formal acceptance. Do not start a Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
+Milestone 2 gate: formally accepted and closed on 30 June 2026. Stop for client review of the proposal-only Milestone 3 plan. Do not start Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
 
 ## Broader Phase 3 scope — Loans, Properties and Tax
 

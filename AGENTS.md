@@ -86,7 +86,7 @@ The agent must pause for the client before:
 
 Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 
-Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation has completed its approved implementation sequence and is awaiting client retesting and acceptance. It is not formally closed.
+Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
 
 Completed Milestone 1 sequence:
 
@@ -103,7 +103,7 @@ Completed Milestone 2 sequence:
 - PR 3B.7 - manual link/unlink and no-double-count safeguards;
 - PR 3B.8 - QA, Vercel review and client testing package.
 
-The approved plan and review boundary are in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md`; the client package is in `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`. Stop for client retesting. Do not start a Milestone 3, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules without explicit client approval.
+The accepted plan and closure evidence are in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`. A proposal-only next milestone plan is in `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`. No Milestone 3 implementation has started. Do not start it, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules without explicit client approval.
 
 No Production migration is authorised.
 

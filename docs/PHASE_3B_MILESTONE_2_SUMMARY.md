@@ -4,7 +4,7 @@ Date implementation completed: 29 June 2026
 
 Acceptance hardening merged: 30 June 2026
 
-Status: implementation complete; awaiting client retesting and formal acceptance
+Status: formally accepted and closed by the client on 30 June 2026
 
 ## Delivered outcome
 
@@ -134,12 +134,13 @@ For transactions outside the candidate bands, the user can deliberately search o
 - Merged PR 3B.8 review-package main deployment: https://vercel.com/latinmaestros-projects/spendgrove/FB3oxwArid1Hzj3PhWGAi4pkvMCm
 - PR #68 acceptance-hardening preview: https://spendgrove-git-codex-phase-3b-m2-9bf9a4-latinmaestros-projects.vercel.app
 - Final acceptance-hardening main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
+- Latest pre-closure documentation main deployment: https://vercel.com/latinmaestros-projects/spendgrove/HjXJeqXkFAkbn47nvgMJ1vh6WHUB
 - Production alias: https://spendgrove.vercel.app
 - Vercel checks for PRs 3B.4 through 3B.8, acceptance-hardening PR #68 and each merged main commit were green.
 - Public main smoke verification passed for `/`, `/loans` and `/loans/import`; the loan routes remained signed-in/account gated with no horizontal overflow.
 - Mobile signed-out checks at 390×844 passed for `/loans` and `/loans/import`: no horizontal overflow, no console errors, and all five primary navigation items remained available.
 
-Signed-in end-to-end testing is intentionally left to the client because Codex does not use or expose the client's protected authenticated session.
+Client signed-in end-to-end retesting completed on 30 June 2026 with no further acceptance comments.
 
 ## Known limitations
 
@@ -188,10 +189,10 @@ Use fictional or synthetic data only for testing.
 29. Confirm no tax advice, deductible claim, Home statistic or property report appears.
 30. Repeat the key flow on a phone-sized screen.
 
-## Client decision required
+## Closure record
 
-Please complete signed-in Milestone 2 retesting and report any acceptance comments. Formal Milestone 2 closure requires explicit client acceptance.
+The client completed signed-in Milestone 2 retesting and reported no further acceptance comments on 30 June 2026. Phase 3B Milestone 2 is formally accepted and closed with the documented limitations preserved.
 
 ## Recommended next step
 
-After Milestone 2 acceptance, formally close the milestone before approving more implementation. If further Phase 3B work is desired, prepare a proposal-only Milestone 3 focused on repayment correction and deliberate duplicate re-import safeguards. Do not implement that proposal, tax/property reports, Home dashboard statistics, Phase 4 or later modules without a separate approval.
+Review `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`, which is proposal-only and focuses on repayment correction, deliberate duplicate re-import safeguards and safer cleanup. Do not implement it, tax/property reports, Home dashboard statistics, Phase 4 or later modules without separate approval.

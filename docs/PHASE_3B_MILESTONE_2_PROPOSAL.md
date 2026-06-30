@@ -1,12 +1,12 @@
 # Phase 3B Milestone 2 Proposal - Durable Loan Repayments and Reconciliation
 
-Status: approved by the client on 28 June 2026; implementation completed on 29 June 2026 and awaiting client retesting/acceptance
+Status: approved on 28 June 2026; implemented on 29 June 2026; formally accepted and closed on 30 June 2026
 
 Date prepared: 26 June 2026
 
 ## Approval boundary
 
-The client approved this exact Milestone 2 objective and PR sequence under Autonomous Phase Delivery Mode on 28 June 2026. PRs 3B.4 through 3B.8 are now delivered. This approval does not authorise a Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules.
+The client approved this exact Milestone 2 objective and PR sequence under Autonomous Phase Delivery Mode on 28 June 2026. PRs 3B.4 through 3B.8 and focused acceptance hardening are delivered, client retesting is complete and Milestone 2 is formally closed. This closure does not authorise Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules.
 
 ## Approved Milestone 2 objective
 
@@ -262,4 +262,4 @@ Stop before continuing if any of the following occurs:
 
 ## Approval record
 
-The client approved Phase 3B Milestone 2 under Autonomous Phase Delivery Mode following this document on 28 June 2026. Implementation is complete and stopped after PR 3B.8 for client retesting. Formal acceptance and closure remain a separate client decision.
+The client approved Phase 3B Milestone 2 under Autonomous Phase Delivery Mode following this document on 28 June 2026, completed signed-in retesting with no further comments and formally closed the milestone on 30 June 2026.
