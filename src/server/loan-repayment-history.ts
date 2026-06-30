@@ -1,8 +1,11 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import {
   loanRepaymentArchiveSchema,
+  loanRepaymentBulkArchiveSchema,
   loanRepaymentCorrectionSchema,
   type LoanRepaymentArchiveInput,
+  type LoanRepaymentBulkArchiveInput,
+  type LoanRepaymentBulkArchiveSummary,
   type LoanRepaymentCorrectionInput,
   type SafeLoanRepayment,
 } from "@/lib/loan-repayment-history";
@@ -48,6 +51,11 @@ export type LoanRepaymentHistoryStore = {
   findRepayment(userId: string, repaymentId: string): Promise<StoredLoanRepayment | null>;
   isActiveLoanAccount(userId: string, loanAccountId: string): Promise<boolean>;
   updateArchiveState(userId: string, repaymentId: string, isArchived: boolean, archivedAt: Date | null): Promise<StoredLoanRepayment>;
+  bulkUpdateArchiveState(
+    userId: string,
+    input: LoanRepaymentBulkArchiveInput,
+    now: Date,
+  ): Promise<LoanRepaymentBulkArchiveSummary>;
   correctRepayment(
     userId: string,
     repaymentId: string,
@@ -69,6 +77,13 @@ export class LoanRepaymentArchiveConflictError extends Error {
   constructor() {
     super("Unlink this repayment from its everyday transaction before archiving it.");
     this.name = "LoanRepaymentArchiveConflictError";
+  }
+}
+
+export class LoanRepaymentBulkArchiveConflictError extends Error {
+  constructor() {
+    super("Repayment history changed while cleanup was being saved. Refresh and try again.");
+    this.name = "LoanRepaymentBulkArchiveConflictError";
   }
 }
 
@@ -176,6 +191,70 @@ export function createPrismaLoanRepaymentHistoryStore(prisma: PrismaClient = get
         await tx.auditEvent.create({ data: audit });
         return updated;
       });
+    },
+    async bulkUpdateArchiveState(userId, input, now) {
+      async function applyBulkChange() {
+        return prisma.$transaction(async (tx) => {
+          const requestedIds = input.repayments.map((selection) => selection.repaymentId);
+          const repayments = await tx.loanRepayment.findMany({
+            where: { id: { in: requestedIds } },
+            select: repaymentSelect,
+          });
+          if (
+            repayments.length !== requestedIds.length
+            || repayments.some((repayment) => repayment.userId !== userId || repayment.deletedAt !== null)
+          ) {
+            throw new OwnershipError("loan repayments");
+          }
+
+          const byId = new Map(repayments.map((repayment) => [repayment.id, repayment]));
+          let changedCount = 0;
+          let skippedCount = 0;
+          for (const selection of input.repayments) {
+            const repayment = byId.get(selection.repaymentId)!;
+            const activeLink = repayment.reconciliationLink?.unlinkedAt === null;
+            if (
+              repayment.updatedAt.toISOString() !== selection.expectedUpdatedAt
+              || repayment.isArchived === input.isArchived
+              || (input.isArchived && activeLink)
+            ) {
+              skippedCount += 1;
+              continue;
+            }
+            const updated = await tx.loanRepayment.updateMany({
+              where: {
+                id: repayment.id,
+                userId,
+                updatedAt: repayment.updatedAt,
+                isArchived: repayment.isArchived,
+                deletedAt: null,
+              },
+              data: {
+                isArchived: input.isArchived,
+                archivedAt: input.isArchived ? now : null,
+                updatedAt: now,
+              },
+            });
+            if (updated.count !== 1) {
+              skippedCount += 1;
+              continue;
+            }
+            const audit = createLoanRepaymentArchiveAuditEvent(userId, repayment.id, input.isArchived);
+            await tx.auditEvent.create({ data: audit });
+            changedCount += 1;
+          }
+          return { requestedCount: input.repayments.length, changedCount, skippedCount, isArchived: input.isArchived };
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
+      }
+
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+          return await applyBulkChange();
+        } catch (error) {
+          if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2034") throw error;
+        }
+      }
+      throw new LoanRepaymentBulkArchiveConflictError();
     },
     async correctRepayment(userId, repaymentId, input, changedFieldCodes, now) {
       try {
@@ -304,6 +383,17 @@ export async function updateLoanRepaymentArchiveState(
   if (parsed.isArchived && repayment.reconciliationLink?.unlinkedAt === null) throw new LoanRepaymentArchiveConflictError();
   const updated = await store.updateArchiveState(user.userId, repayment.id, parsed.isArchived, parsed.isArchived ? now : null);
   return safeRepayment(user.userId, updated);
+}
+
+export async function bulkUpdateLoanRepaymentArchiveState(
+  context: AuthenticatedUserContext | null | undefined,
+  input: LoanRepaymentBulkArchiveInput,
+  store: LoanRepaymentHistoryStore = createPrismaLoanRepaymentHistoryStore(),
+  now = new Date(),
+) {
+  const user = requireAuthenticatedUserContext(context);
+  const parsed = loanRepaymentBulkArchiveSchema.parse(input);
+  return store.bulkUpdateArchiveState(user.userId, parsed, now);
 }
 
 export async function correctLoanRepayment(

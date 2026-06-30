@@ -80,4 +80,19 @@ describe("Loans-first UI contract", () => {
     expect(manager).not.toContain("oldAmount");
     expect(manager).not.toContain("newAmount");
   });
+
+  it("filters active and archived repayments and offers bounded confirmed cleanup", async () => {
+    const manager = await readFile(managerPath, "utf8");
+
+    expect(manager).toContain("Repayment history filter");
+    expect(manager).toContain("Finish selecting");
+    expect(manager).toContain('historyFilter === "ACTIVE" ? "archive" : "restore"');
+    expect(manager).toContain("maximum 100");
+    expect(manager).toContain("Archive selected");
+    expect(manager).toContain("Restore selected");
+    expect(manager).toContain("Linked — unlink before archiving");
+    expect(manager).toContain("Everyday transactions are never changed or deleted.");
+    expect(manager).toContain("expectedUpdatedAt");
+    expect(manager).toContain("/api/account/loan-repayments/archive");
+  });
 });
