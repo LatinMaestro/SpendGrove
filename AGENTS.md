@@ -107,7 +107,7 @@ The accepted Milestone 2 plan and closure evidence are in `docs/PHASE_3B_MILESTO
 
 Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. The approved plan is `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and the controlling rules are in `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md`.
 
-Approved Milestone 3 sequence:
+Completed Milestone 3 sequence:
 
 - PR 3B.9 - correction and duplicate-safety contract;
 - PR 3B.10 - safe repayment correction;
@@ -115,7 +115,7 @@ Approved Milestone 3 sequence:
 - PR 3B.12 - safer repayment cleanup flows;
 - PR 3B.13 - QA, Vercel review and client testing package.
 
-Stop after PR 3B.13 for client retesting. Do not start tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules.
+Milestone 3 implementation and QA are complete. Stop for client retesting after PR 3B.13. Do not start another milestone, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules.
 
 No Production migration is authorised.
 

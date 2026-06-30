@@ -7,7 +7,7 @@ Last updated: 1 July 2026
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
-- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. PR 3B.12 is the active implementation slice.
+- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety implementation and QA are complete. PR 3B.13 is the active client review-package slice; client retesting is the next gate.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Milestone 3 progress
@@ -15,8 +15,17 @@ Last updated: 1 July 2026
 - PR 3B.9 correction and duplicate-safety contract merged in [#71](https://github.com/LatinMaestro/SpendGrove/pull/71) as `8c4b9123f0e07cd1a602cb1dcad1c7b30b60c36f`.
 - PR 3B.10 safe repayment correction merged in [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) as `d79bc24b2bebe277b39729d655e995d8c7d1253d`.
 - PR 3B.11 deliberate duplicate loan re-import safeguards merged in [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) as `3ea74c685bef3076aadae801ec421b270233622c`.
-- PR 3B.12 safer repayment cleanup is implemented and under verification/review.
+- PR 3B.12 safer repayment cleanup merged in [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) as `e608a6af37c1f10b298f3d0536484cdbffbd40cd`.
+- PR 3B.13 final QA, Vercel review and client testing package is active.
 - No Prisma schema or migration amendment has been needed.
+
+Delivered Milestone 3 behaviour:
+
+- Safe correction is limited to structured repayment date/amount fields on active, unmatched and unlinked repayments, with `updatedAt` stale-edit protection and changed-field-code-only audit metadata.
+- Exact structured duplicate rows for the owning Loan Account are warnings and default-excluded; same-date/same-total non-exact rows are possible overlaps; exact rows require a visible per-row `Save anyway` confirmation.
+- Duplicate checks include archived non-deleted repayments and repeat atomically at commit without fingerprints, narration, filenames or private identifiers.
+- Repayment history has active/archived filters plus confirmed archive/restore selection capped at 100; stale, newly linked or already-updated selections are skipped and reported as aggregate counts.
+- Cleanup remains non-destructive and never changes, unlinks or deletes an everyday transaction.
 
 ## Milestone 2 completed work
 
@@ -44,6 +53,16 @@ Delivered behaviour:
 
 ## Verification and deployment
 
+- Final Milestone 3 regression suite: 65 test files / 394 tests passed.
+- Final Milestone 3 TypeScript type-check: passed.
+- Final Milestone 3 Next.js production build: passed.
+- PR #71 preview: https://vercel.com/latinmaestros-projects/spendgrove/7W3hc1rC91FTp8isDwFioKW1PKT4
+- PR #72 preview: https://vercel.com/latinmaestros-projects/spendgrove/Ac1zQC8spzLfASuik7QucFoWRfco
+- PR #73 preview: https://vercel.com/latinmaestros-projects/spendgrove/Beajmh9g5bEisTj2Ze28L6MLt7A1
+- PR #74 preview: https://vercel.com/latinmaestros-projects/spendgrove/5acWb392SBigHakoMW7iHurSuAvL
+- Main after PR #74: https://vercel.com/latinmaestros-projects/spendgrove/8bsg1jYHMBtMkE1YWJS9u9rR1Vag
+- Live public smoke checks returned HTTP 200 for `/`, `/loans` and `/loans/import`; both loan routes rendered their account-session shell and neither returned an internal server error.
+
 - Full regression suite after acceptance hardening: 65 test files / 380 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
@@ -60,6 +79,10 @@ Delivered behaviour:
 
 ## Schema, migration, privacy and security status
 
+- Milestone 3 changed no Prisma schema or migration file and required no Preview migration.
+- No Production migration has been run.
+- No durable old/new correction values, duplicate fingerprints, candidate snapshots, filenames, narration, raw rows or private identifiers were introduced.
+
 - Milestone 2 used the existing `LoanRepayment`, `LoanReconciliationLink` and `ImportBatch.type = LOAN_CSV` foundation unchanged.
 - No Prisma schema or migration file changed in Milestone 2.
 - No Preview migration was required or run for Milestone 2.
@@ -74,8 +97,11 @@ Delivered behaviour:
 
 ## Known limitations
 
-- Retry idempotency covers the same frozen save request. A later import uses structured duplicate warnings rather than a persisted content fingerprint.
+- Retry idempotency covers the same frozen save request. A later import uses exact structured duplicate warnings rather than a persisted content fingerprint.
 - Structured correction is available only for active, unmatched, unlinked repayments; linked repayments must be unlinked and archived repayments restored before editing.
+- Correction has no durable financial revision history; safe audit metadata records changed-field codes only.
+- Duplicate checks are exact and structured; they intentionally do not use fuzzy text or date/amount tolerances.
+- Cleanup is archive/restore only and bulk actions are capped at 100 selected repayments.
 - Reconciliation is deterministic and user-driven; no link is automatic.
 - Manual override search uses an exact transaction date and safe date/amount context only; there is no narration search.
 - Loan repayment breakdowns do not feed spending, income, property, loan, net-worth or Home dashboard statistics.
@@ -83,7 +109,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3B.12, then continue autonomously through PR 3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
+Complete and merge PR 3B.13, verify the final main deployment, then stop for client retesting. Do not begin another milestone or later module.
 
 ## Resume instruction
 
