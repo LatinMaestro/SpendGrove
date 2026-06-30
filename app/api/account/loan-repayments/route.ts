@@ -5,6 +5,7 @@ import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import { listSafeLoanRepayments } from "@/src/server/loan-repayment-history";
 import {
   LoanRepaymentCommitConflictError,
+  LoanRepaymentDuplicateReviewRequiredError,
   commitReviewedLoanRepayments,
   listSafeLoanImportHistory,
 } from "@/src/server/loan-repayments";
@@ -14,6 +15,7 @@ export const dynamic = "force-dynamic";
 function safeError(error: unknown) {
   if (error instanceof ZodError) return { status: 400, message: error.issues[0]?.message ?? "Check the reviewed repayments and try again." };
   if (error instanceof LoanRepaymentCommitConflictError) return { status: 409, message: error.message };
+  if (error instanceof LoanRepaymentDuplicateReviewRequiredError) return { status: 409, message: error.message };
   if (error instanceof Error) {
     if (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError") {
       return { status: 401, message: "Sign in to save reviewed loan repayments." };
