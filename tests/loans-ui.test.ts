@@ -66,4 +66,18 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("only cashflow and spending record");
     expect(manager).not.toContain("automatic link");
   });
+
+  it("offers structured repayment correction with unlink and restore safeguards", async () => {
+    const manager = await readFile(managerPath, "utf8");
+
+    expect(manager).toContain("Edit repayment breakdown");
+    expect(manager).toContain("Edit breakdown");
+    expect(manager).toContain("Save correction");
+    expect(manager).toContain("Unlink this breakdown before editing its date or amounts.");
+    expect(manager).toContain("Restore this breakdown before editing it.");
+    expect(manager).toContain("expectedUpdatedAt");
+    expect(manager).toContain('method: "PUT"');
+    expect(manager).not.toContain("oldAmount");
+    expect(manager).not.toContain("newAmount");
+  });
 });
