@@ -103,7 +103,19 @@ Completed Milestone 2 sequence:
 - PR 3B.7 - manual link/unlink and no-double-count safeguards;
 - PR 3B.8 - QA, Vercel review and client testing package.
 
-The accepted plan and closure evidence are in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`. A proposal-only next milestone plan is in `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`. No Milestone 3 implementation has started. Do not start it, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules without explicit client approval.
+The accepted Milestone 2 plan and closure evidence are in `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`.
+
+Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. The approved plan is `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and the controlling rules are in `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md`.
+
+Approved Milestone 3 sequence:
+
+- PR 3B.9 - correction and duplicate-safety contract;
+- PR 3B.10 - safe repayment correction;
+- PR 3B.11 - deliberate duplicate loan re-import safeguards;
+- PR 3B.12 - safer repayment cleanup flows;
+- PR 3B.13 - QA, Vercel review and client testing package.
+
+Stop after PR 3B.13 for client retesting. Do not start tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules.
 
 No Production migration is authorised.
 

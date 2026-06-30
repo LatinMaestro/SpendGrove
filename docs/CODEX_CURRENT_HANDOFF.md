@@ -7,7 +7,8 @@ Last updated: 30 June 2026
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
-- Phase 3B Milestone 3 is proposal-only and awaiting client approval. No Milestone 3, Phase 4 or later-module implementation is authorised.
+- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode. PR 3B.9 is the active documentation gate.
+- No Phase 4 or later-module implementation is authorised.
 
 ## Milestone 2 completed work
 
@@ -74,8 +75,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Client reviews `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and approves, revises or declines it. Do not begin Milestone 3 implementation until that plan is explicitly approved.
+Complete and merge PR 3B.9, then continue autonomously through PRs 3B.10-3B.13 while all schema, migration, privacy, reconciliation and later-module stop gates remain satisfied.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state. Milestone 2 is formally accepted and closed; the only authorised next action is proposal review. Do not implement Milestone 3 without explicit client approval.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`, `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state and continue the exact approved Milestone 3 PR sequence. Stop on any documented schema, migration, privacy, financial-rule or later-module gate.

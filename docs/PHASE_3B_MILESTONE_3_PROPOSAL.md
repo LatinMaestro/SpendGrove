@@ -1,12 +1,12 @@
 # Phase 3B Milestone 3 Proposal - Repayment Corrections and Duplicate Re-import Safety
 
-Status: proposed only; awaiting explicit client approval
+Status: approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode; PR 3B.9 active
 
 Date prepared: 30 June 2026
 
 ## Approval boundary
 
-This document proposes the next small Phase 3B milestone after formal closure of Milestone 2. It does not authorise implementation. No code, schema change or migration may begin until the client explicitly approves this objective, task sequence and stop conditions.
+The client approved this objective, task sequence and stop conditions on 30 June 2026. PRs 3B.9 through 3B.13 may proceed autonomously while every mandatory stop gate remains satisfied. No schema change or migration is authorised.
 
 ## Proposed objective
 
@@ -230,4 +230,4 @@ Stop and request approval if:
 
 ## Client approval required
 
-Approve, revise or decline this Milestone 3 proposal. Do not begin PR 3B.9 or any implementation until explicit approval is recorded.
+Approved by the client on 30 June 2026. Proceed through PRs 3B.9-3B.13 under Autonomous Phase Delivery Mode and stop after PR 3B.13 for client retesting.
