@@ -19,7 +19,7 @@ import {
   ShieldCheck,
   X,
 } from "lucide-react";
-import type { SafeLoanRepayment } from "@/lib/loan-repayment-history";
+import type { LoanRepaymentBulkArchiveSummary, SafeLoanRepayment } from "@/lib/loan-repayment-history";
 import type { LoanReconciliationCandidate, ReconciliationCandidateMode } from "@/lib/loan-reconciliation";
 import { parseMoneyToCents } from "@/lib/validation/money";
 
@@ -142,6 +142,7 @@ function RepaymentHistory({
   confirmedLinks,
   overrideDates,
   onArchiveChange,
+  onBulkArchiveChange,
   onEdit,
   onLoadCandidates,
   onConfirmationChange,
@@ -157,6 +158,7 @@ function RepaymentHistory({
   confirmedLinks: Record<string, boolean>;
   overrideDates: Record<string, string>;
   onArchiveChange: (repayment: SafeLoanRepayment, isArchived: boolean) => void;
+  onBulkArchiveChange: (repayments: SafeLoanRepayment[], isArchived: boolean) => Promise<LoanRepaymentBulkArchiveSummary>;
   onEdit: (repayment: SafeLoanRepayment) => void;
   onLoadCandidates: (repayment: SafeLoanRepayment, mode: ReconciliationCandidateMode, overrideDate?: string) => void;
   onConfirmationChange: (key: string, confirmed: boolean) => void;
@@ -164,6 +166,45 @@ function RepaymentHistory({
   onLink: (repayment: SafeLoanRepayment, candidate: LoanReconciliationCandidate, mode: ReconciliationCandidateMode, confirmed: boolean) => void;
   onUnlink: (repayment: SafeLoanRepayment) => void;
 }>) {
+  const [historyFilter, setHistoryFilter] = useState<"ACTIVE" | "ARCHIVED">("ACTIVE");
+  const [cleanupMode, setCleanupMode] = useState(false);
+  const [selectedRepaymentIds, setSelectedRepaymentIds] = useState<Set<string>>(new Set());
+  const [bulkConfirmed, setBulkConfirmed] = useState(false);
+  const [bulkSummary, setBulkSummary] = useState<LoanRepaymentBulkArchiveSummary | null>(null);
+  const visibleRepayments = repayments.filter((repayment) => repayment.isArchived === (historyFilter === "ARCHIVED"));
+  const selectedRepayments = visibleRepayments.filter((repayment) => selectedRepaymentIds.has(repayment.id));
+
+  function changeHistoryFilter(filter: "ACTIVE" | "ARCHIVED") {
+    setHistoryFilter(filter);
+    setCleanupMode(false);
+    setSelectedRepaymentIds(new Set());
+    setBulkConfirmed(false);
+    setBulkSummary(null);
+  }
+
+  function changeBulkSelection(repaymentId: string, selected: boolean) {
+    setSelectedRepaymentIds((current) => {
+      const next = new Set(current);
+      if (selected && next.size < 100) next.add(repaymentId);
+      else if (!selected) next.delete(repaymentId);
+      return next;
+    });
+    setBulkConfirmed(false);
+    setBulkSummary(null);
+  }
+
+  async function applyBulkCleanup() {
+    if (!bulkConfirmed || selectedRepayments.length === 0) return;
+    try {
+      const summary = await onBulkArchiveChange(selectedRepayments, historyFilter === "ACTIVE");
+      setBulkSummary(summary);
+      setSelectedRepaymentIds(new Set());
+      setBulkConfirmed(false);
+    } catch {
+      setBulkSummary(null);
+    }
+  }
+
   if (repayments.length === 0) {
     return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
   }
@@ -171,9 +212,34 @@ function RepaymentHistory({
     <div className="mt-4 border-t border-border pt-4">
       <p className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Repayment history</p>
       <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Breakdowns only — these are not extra payments or spending entries.</p>
+      <div className="mt-3 flex flex-wrap gap-2" aria-label="Repayment history filter">
+        <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Active ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
+        <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Archived ({repayments.filter((repayment) => repayment.isArchived).length})</button>
+        <button type="button" onClick={() => { setCleanupMode((current) => !current); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "archive" : "restore"}`}</button>
+      </div>
+      {cleanupMode && (
+        <div className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-4 text-xs text-brand-deepTeal">
+          <p className="font-bold">{selectedRepayments.length} selected · maximum 100</p>
+          <p className="mt-1">Linked or newly changed repayments are skipped safely. Everyday transactions are never changed or deleted.</p>
+          <label className="mt-3 flex items-start gap-2 rounded-xl bg-white p-3 font-semibold">
+            <input type="checkbox" checked={bulkConfirmed} disabled={selectedRepayments.length === 0 || isSaving} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-0.5 accent-brand-green" />
+            I reviewed this selection and want to {historyFilter === "ACTIVE" ? "archive" : "restore"} these repayment breakdowns.
+          </label>
+          <button type="button" disabled={!bulkConfirmed || selectedRepayments.length === 0 || isSaving} onClick={() => void applyBulkCleanup()} className="mt-3 min-h-10 rounded-full bg-brand-deepTeal px-4 font-bold text-white disabled:opacity-45">{isSaving ? "Saving…" : historyFilter === "ACTIVE" ? "Archive selected" : "Restore selected"}</button>
+        </div>
+      )}
+      {bulkSummary && <p role="status" className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-deepTeal">{bulkSummary.changedCount} changed and {bulkSummary.skippedCount} skipped because they were already updated, linked or already in that state.</p>}
       <div className="mt-3 space-y-2">
-        {repayments.map((repayment) => (
-          <details key={repayment.id} className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
+        {visibleRepayments.length === 0 && <p className="rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No {historyFilter === "ACTIVE" ? "active" : "archived"} repayment breakdowns.</p>}
+        {visibleRepayments.map((repayment) => (
+          <div key={repayment.id}>
+            {cleanupMode && (
+              <label className="mb-2 flex items-start gap-2 rounded-xl bg-surface-mint p-3 text-xs font-semibold text-brand-deepTeal">
+                <input type="checkbox" checked={selectedRepaymentIds.has(repayment.id)} disabled={isSaving || (historyFilter === "ACTIVE" && Boolean(repayment.linkedTransaction)) || (!selectedRepaymentIds.has(repayment.id) && selectedRepaymentIds.size >= 100)} onChange={(event) => changeBulkSelection(repayment.id, event.target.checked)} className="mt-0.5 accent-brand-green" />
+                {historyFilter === "ACTIVE" && repayment.linkedTransaction ? "Linked — unlink before archiving" : `Select ${dateLabel(repayment.repaymentDate)} repayment`}
+              </label>
+            )}
+            <details className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
             <summary className="cursor-pointer list-none">
               <div className="flex items-center justify-between gap-3">
                 <span><strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong><span className="text-xs text-brand-deepTeal/60">{repayment.isArchived ? "Archived" : repayment.reconciliationStatus === "LINKED" ? "Linked" : repayment.reconciliationStatus === "NEEDS_REVIEW" ? "Review match" : "Not linked"}</span></span>
@@ -259,7 +325,8 @@ function RepaymentHistory({
                 {repayment.isArchived ? "Restore breakdown" : "Archive breakdown"}
               </button>
             </div>
-          </details>
+            </details>
+          </div>
         ))}
       </div>
     </div>
@@ -646,6 +713,35 @@ function AuthenticatedLoansManager() {
     }
   }
 
+  async function bulkSetRepaymentArchived(selected: SafeLoanRepayment[], isArchived: boolean) {
+    setIsSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/account/loan-repayments/archive", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isArchived,
+          confirmed: true,
+          repayments: selected.slice(0, 100).map((repayment) => ({
+            repaymentId: repayment.id,
+            expectedUpdatedAt: repayment.updatedAt,
+          })),
+        }),
+      });
+      const result = await response.json() as { ok: boolean; summary?: LoanRepaymentBulkArchiveSummary; error?: string };
+      if (!response.ok || !result.ok || !result.summary) throw new Error(result.error || "We could not update those repayments.");
+      await refreshRepaymentHistory();
+      setCandidateReviews({});
+      return result.summary;
+    } catch (cleanupError) {
+      setError(cleanupError instanceof Error ? cleanupError.message : "We could not update those repayments safely.");
+      throw cleanupError;
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function saveRepaymentCorrection() {
     if (!repaymentEditor || isSaving) return;
     setIsSaving(true);
@@ -835,6 +931,7 @@ function AuthenticatedLoansManager() {
                     confirmedLinks={confirmedLinks}
                     overrideDates={overrideDates}
                     onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
+                    onBulkArchiveChange={bulkSetRepaymentArchived}
                     onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
                     onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
                     onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}

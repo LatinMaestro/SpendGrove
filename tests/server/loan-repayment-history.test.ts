@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { loanRepaymentCorrectionSchema, type LoanRepaymentCorrectionInput } from "@/lib/loan-repayment-history";
+import {
+  loanRepaymentBulkArchiveSchema,
+  loanRepaymentCorrectionSchema,
+  type LoanRepaymentCorrectionInput,
+} from "@/lib/loan-repayment-history";
 import { AuthenticationRequiredError, OwnershipError } from "@/src/server/auth/ownership";
 import {
   LoanRepaymentArchiveConflictError,
@@ -9,6 +13,7 @@ import {
   createLoanRepaymentArchiveAuditEvent,
   createLoanRepaymentCorrectionAuditEvent,
   correctLoanRepayment,
+  bulkUpdateLoanRepaymentArchiveState,
   listSafeLoanRepayments,
   updateLoanRepaymentArchiveState,
   type LoanRepaymentHistoryStore,
@@ -56,6 +61,27 @@ function memoryStore(rows = [repayment()], options: { activeLoan?: boolean } = {
       if (!row) throw new Error("not found");
       row.isArchived = isArchived;
       return row;
+    },
+    async bulkUpdateArchiveState(userId, input, now) {
+      const selected = input.repayments.map((selection) => stored.find((row) => row.id === selection.repaymentId));
+      if (selected.some((row) => !row || row.userId !== userId || row.deletedAt !== null)) throw new OwnershipError("loan repayments");
+      let changedCount = 0;
+      let skippedCount = 0;
+      input.repayments.forEach((selection, index) => {
+        const row = selected[index]!;
+        if (
+          row.updatedAt.toISOString() !== selection.expectedUpdatedAt
+          || row.isArchived === input.isArchived
+          || (input.isArchived && row.reconciliationLink?.unlinkedAt === null)
+        ) {
+          skippedCount += 1;
+          return;
+        }
+        row.isArchived = input.isArchived;
+        row.updatedAt = now;
+        changedCount += 1;
+      });
+      return { requestedCount: input.repayments.length, changedCount, skippedCount, isArchived: input.isArchived };
     },
     async correctRepayment(userId, repaymentId, input, _changedFieldCodes, now) {
       const row = stored.find((item) => item.userId === userId && item.id === repaymentId);
@@ -206,5 +232,65 @@ describe("safe loan repayment history", () => {
     await expect(listSafeLoanRepayments(null, memoryStore())).rejects.toThrow(AuthenticationRequiredError);
     await expect(updateLoanRepaymentArchiveState(createTestUserContext("user_2"), "repayment_1", { isArchived: true }, memoryStore())).rejects.toThrow(OwnershipError);
     await expect(updateLoanRepaymentArchiveState(createTestUserContext("user_1"), "repayment_1", { isArchived: true }, memoryStore([linked]))).rejects.toThrow(LoanRepaymentArchiveConflictError);
+  });
+
+  it("bulk archives owned fresh unlinked repayments and reports stale or newly linked selections as skipped", async () => {
+    const linkedTransaction = {
+      id: "transaction_1", userId: "user_1", date: new Date(), amountCents: -180000,
+      status: "ACTIVE", splitRole: "NONE", deletedAt: null,
+    };
+    const rows = [
+      repayment({ id: "repayment_fresh" }),
+      repayment({ id: "repayment_stale" }),
+      repayment({ id: "repayment_linked", reconciliationLink: { unlinkedAt: null, transaction: linkedTransaction } }),
+    ];
+    const store = memoryStore(rows);
+    const summary = await bulkUpdateLoanRepaymentArchiveState(createTestUserContext("user_1"), {
+      isArchived: true,
+      confirmed: true,
+      repayments: [
+        { repaymentId: "repayment_fresh", expectedUpdatedAt: "2026-06-18T01:00:00.000Z" },
+        { repaymentId: "repayment_stale", expectedUpdatedAt: "2026-06-18T02:00:00.000Z" },
+        { repaymentId: "repayment_linked", expectedUpdatedAt: "2026-06-18T01:00:00.000Z" },
+      ],
+    }, store, new Date("2026-07-01T00:00:00.000Z"));
+
+    expect(summary).toEqual({ requestedCount: 3, changedCount: 1, skippedCount: 2, isArchived: true });
+    expect(store.rows.find((row) => row.id === "repayment_fresh")?.isArchived).toBe(true);
+    expect(store.rows.find((row) => row.id === "repayment_linked")?.reconciliationLink?.transaction).toEqual(linkedTransaction);
+  });
+
+  it("bulk restores archived repayments without changing source, lineage, or linked transaction evidence", async () => {
+    const row = repayment({ isArchived: true });
+    const store = memoryStore([row]);
+    const summary = await bulkUpdateLoanRepaymentArchiveState(createTestUserContext("user_1"), {
+      isArchived: false,
+      confirmed: true,
+      repayments: [{ repaymentId: row.id, expectedUpdatedAt: row.updatedAt.toISOString() }],
+    }, store, new Date("2026-07-01T00:00:00.000Z"));
+
+    expect(summary.changedCount).toBe(1);
+    expect(store.rows[0]).toMatchObject({ isArchived: false, source: "LOAN_CSV", importBatchId: "batch_1" });
+  });
+
+  it("caps confirmed bulk cleanup at 100 unique selections and rejects cross-user or deleted IDs", async () => {
+    const selection = { repaymentId: "repayment_1", expectedUpdatedAt: "2026-06-18T01:00:00.000Z" };
+    expect(() => loanRepaymentBulkArchiveSchema.parse({ isArchived: true, confirmed: false, repayments: [selection] })).toThrow();
+    expect(() => loanRepaymentBulkArchiveSchema.parse({ isArchived: true, confirmed: true, repayments: [selection, selection] })).toThrow(/only once/i);
+    expect(() => loanRepaymentBulkArchiveSchema.parse({
+      isArchived: true,
+      confirmed: true,
+      repayments: Array.from({ length: 101 }, (_, index) => ({ ...selection, repaymentId: `repayment_${index}` })),
+    })).toThrow();
+    await expect(bulkUpdateLoanRepaymentArchiveState(createTestUserContext("user_1"), {
+      isArchived: true,
+      confirmed: true,
+      repayments: [{ repaymentId: "repayment_other", expectedUpdatedAt: selection.expectedUpdatedAt }],
+    }, memoryStore([repayment({ id: "repayment_other", userId: "user_2" })]))).rejects.toThrow(OwnershipError);
+    await expect(bulkUpdateLoanRepaymentArchiveState(createTestUserContext("user_1"), {
+      isArchived: true,
+      confirmed: true,
+      repayments: [{ repaymentId: "repayment_deleted", expectedUpdatedAt: selection.expectedUpdatedAt }],
+    }, memoryStore([repayment({ id: "repayment_deleted", deletedAt: new Date() })]))).rejects.toThrow(OwnershipError);
   });
 });
