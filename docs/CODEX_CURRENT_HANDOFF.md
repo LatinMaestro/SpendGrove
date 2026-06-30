@@ -6,8 +6,8 @@ Last updated: 30 June 2026
 
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
-- Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation completed its approved implementation sequence and is awaiting client retesting/acceptance. It is not formally closed.
-- Stop at client retesting. No Milestone 3, Phase 4 or later-module implementation is authorised.
+- Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
+- Phase 3B Milestone 3 is proposal-only and awaiting client approval. No Milestone 3, Phase 4 or later-module implementation is authorised.
 
 ## Milestone 2 completed work
 
@@ -43,10 +43,11 @@ Delivered behaviour:
 - Merged PR 3B.8 review-package main deployment: https://vercel.com/latinmaestros-projects/spendgrove/FB3oxwArid1Hzj3PhWGAi4pkvMCm
 - PR #68 acceptance-hardening preview: https://spendgrove-git-codex-phase-3b-m2-9bf9a4-latinmaestros-projects.vercel.app
 - Final acceptance-hardening main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
+- Latest pre-closure documentation main deployment: https://vercel.com/latinmaestros-projects/spendgrove/HjXJeqXkFAkbn47nvgMJ1vh6WHUB
 - Production alias: https://spendgrove.vercel.app
 - Public main smoke verification passed for `/`, `/loans` and `/loans/import`; both loan routes remained signed-in/account gated with no horizontal overflow.
 - Mobile signed-out verification at 390×844: `/loans` and `/loans/import` rendered without horizontal overflow or console errors and retained all five primary navigation items.
-- Signed-in end-to-end verification requires the client's protected account session and is the current acceptance task.
+- Client signed-in end-to-end retesting completed on 30 June 2026 with no further acceptance comments.
 
 ## Schema, migration, privacy and security status
 
@@ -64,7 +65,6 @@ Delivered behaviour:
 
 ## Known limitations
 
-- Client signed-in retesting is required for the complete save/history/suggestion/link flow.
 - Retry idempotency covers the same frozen save request. Deliberately starting a new import of the same source later is a new request and is not content-fingerprinted.
 - Repayment rows can be archived/restored but are not edited after commit in this milestone.
 - Reconciliation is deterministic and user-driven; no link is automatic.
@@ -74,8 +74,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Client retests Phase 3B Milestone 2 using `docs/PHASE_3B_MILESTONE_2_SUMMARY.md` and reports acceptance comments. Do not begin implementation after Milestone 2 until the client separately approves a plan.
+Client reviews `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and approves, revises or declines it. Do not begin Milestone 3 implementation until that plan is explicitly approved.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_2_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state. Milestone 2 implementation is complete but not formally accepted/closed; the only authorised next action is client acceptance hardening arising from retesting.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_2_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state. Milestone 2 is formally accepted and closed; the only authorised next action is proposal review. Do not implement Milestone 3 without explicit client approval.
