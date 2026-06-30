@@ -52,6 +52,18 @@ export class LoanRepaymentArchiveConflictError extends Error {
   }
 }
 
+export function createLoanRepaymentArchiveAuditEvent(userId: string, repaymentId: string, isArchived: boolean) {
+  const audit = {
+    userId,
+    entityType: "LOAN_REPAYMENT" as const,
+    entityId: repaymentId,
+    action: isArchived ? "ARCHIVED" as const : "UPDATED" as const,
+    metadata: { stateCode: isArchived ? "ARCHIVED" : "ACTIVE" },
+  };
+  auditEventSchema.parse(audit);
+  return audit;
+}
+
 const repaymentSelect = {
   id: true,
   userId: true,
@@ -95,14 +107,7 @@ export function createPrismaLoanRepaymentHistoryStore(prisma: PrismaClient = get
           data: { isArchived, archivedAt },
           select: repaymentSelect,
         });
-        const audit = {
-          userId,
-          entityType: "LOAN_REPAYMENT" as const,
-          entityId: repaymentId,
-          action: isArchived ? "ARCHIVED" as const : "UPDATED" as const,
-          metadata: { stateCode: isArchived ? "ARCHIVED" : "ACTIVE" },
-        };
-        auditEventSchema.parse(audit);
+        const audit = createLoanRepaymentArchiveAuditEvent(userId, repaymentId, isArchived);
         await tx.auditEvent.create({ data: audit });
         return updated;
       });

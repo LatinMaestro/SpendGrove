@@ -29,6 +29,41 @@ export type LoanReconciliationLinkStore = {
   unlink(userId: string, repaymentId: string, now: Date): Promise<{ alreadyUnlinked: boolean }>;
 };
 
+export function createLoanReconciliationLinkAuditEvent(input: {
+  userId: string;
+  linkId: string;
+  action: "CREATED" | "UPDATED";
+  methodCode: SafeReconciliationLink["method"];
+  confidenceCode: SafeReconciliationLink["confidence"];
+  reasonCode: SafeReconciliationLink["reasonCode"];
+}) {
+  const audit = {
+    userId: input.userId,
+    entityType: "LOAN_RECONCILIATION_LINK" as const,
+    entityId: input.linkId,
+    action: input.action,
+    metadata: {
+      methodCode: input.methodCode,
+      confidenceCode: input.confidenceCode,
+      reasonCode: input.reasonCode,
+    },
+  };
+  auditEventSchema.parse(audit);
+  return audit;
+}
+
+export function createLoanReconciliationUnlinkAuditEvent(userId: string, linkId: string) {
+  const audit = {
+    userId,
+    entityType: "LOAN_RECONCILIATION_LINK" as const,
+    entityId: linkId,
+    action: "UPDATED" as const,
+    metadata: { stateCode: "UNLINKED" },
+  };
+  auditEventSchema.parse(audit);
+  return audit;
+}
+
 function dateOnly(value: Date) {
   return value.toISOString().slice(0, 10);
 }
@@ -111,14 +146,14 @@ export function createPrismaLoanReconciliationLinkStore(prisma: PrismaClient = g
           });
           await tx.loanRepayment.update({ where: { id: repayment.id }, data: { reconciliationStatus: "LINKED" } });
 
-          const audit = {
+          const audit = createLoanReconciliationLinkAuditEvent({
             userId,
-            entityType: "LOAN_RECONCILIATION_LINK" as const,
-            entityId: link.id,
-            action: repayment.reconciliationLink ? "UPDATED" as const : "CREATED" as const,
-            metadata: { methodCode: decision.method, confidenceCode: decision.confidence, reasonCode: decision.reasonCode },
-          };
-          auditEventSchema.parse(audit);
+            linkId: link.id,
+            action: repayment.reconciliationLink ? "UPDATED" : "CREATED",
+            methodCode: decision.method,
+            confidenceCode: decision.confidence,
+            reasonCode: decision.reasonCode,
+          });
           await tx.auditEvent.create({ data: audit });
           return decision;
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
@@ -145,14 +180,7 @@ export function createPrismaLoanReconciliationLinkStore(prisma: PrismaClient = g
           if (link.userId !== userId) throw new OwnershipError("reconciliation link");
           await tx.loanReconciliationLink.update({ where: { id: link.id }, data: { unlinkedAt: now } });
           await tx.loanRepayment.update({ where: { id: repayment.id }, data: { reconciliationStatus: "UNMATCHED" } });
-          const audit = {
-            userId,
-            entityType: "LOAN_RECONCILIATION_LINK" as const,
-            entityId: link.id,
-            action: "UPDATED" as const,
-            metadata: { stateCode: "UNLINKED" },
-          };
-          auditEventSchema.parse(audit);
+          const audit = createLoanReconciliationUnlinkAuditEvent(userId, link.id);
           await tx.auditEvent.create({ data: audit });
           return { alreadyUnlinked: false };
         }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });

@@ -40,6 +40,10 @@ export const auditEntityTypeSchema = z.enum([
   "MERCHANT_PROFILE",
   "MERCHANT_ALIAS",
   "MERCHANT_RULE",
+  "PROPERTY",
+  "LOAN_ACCOUNT",
+  "LOAN_REPAYMENT",
+  "LOAN_RECONCILIATION_LINK",
 ]);
 export const auditActionSchema = z.enum([
   "CREATED",

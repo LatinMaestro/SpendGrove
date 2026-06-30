@@ -175,21 +175,26 @@ function ReviewRow({
           Check this row’s date, amount or classification before any later commit step.
         </p>
       )}
-      <label className={`mt-4 flex items-start gap-3 rounded-2xl p-3 text-sm ${committable ? "cursor-pointer bg-brand-green/10" : "bg-surface-mint text-brand-deepTeal/60"}`}>
-        <input
-          type="checkbox"
-          checked={selected}
-          disabled={!committable || selectionLocked}
-          onChange={(event) => onSelectionChange(event.target.checked)}
-          className="mt-0.5 h-5 w-5 accent-brand-green"
-        />
-        <span>
-          <strong className="block text-brand-deepTeal">{committable ? "Save this repayment breakdown" : "Excluded from saving"}</strong>
-          {committable
-            ? "Only the reviewed date and structured amounts will be saved."
-            : "This is not a clear repayment breakdown, or it still has a review warning."}
-        </span>
-      </label>
+      {committable ? (
+        <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-brand-green/10 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={selected}
+            disabled={selectionLocked}
+            onChange={(event) => onSelectionChange(event.target.checked)}
+            className="mt-0.5 h-5 w-5 accent-brand-green"
+          />
+          <span>
+            <strong className="block text-brand-deepTeal">Save this repayment breakdown</strong>
+            Only the reviewed date and structured amounts will be saved.
+          </span>
+        </label>
+      ) : (
+        <div role="status" className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/70">
+          <strong className="block text-brand-deepTeal">Excluded automatically</strong>
+          This row cannot be saved because it needs review or is not a repayment.
+        </div>
+      )}
     </article>
   );
 }

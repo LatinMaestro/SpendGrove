@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   createLoanRepaymentCommitRequest,
+  isCommittableLoanRepaymentRow,
   loanRepaymentCommitRequestSchema,
   type LoanRepaymentCommitRequest,
 } from "@/lib/loan-repayment-commit";
@@ -94,6 +95,7 @@ describe("durable reviewed loan repayment commit", () => {
     const review = scanLoanCsv([
       "01/06/2026,-500.00,Regular repayment,24500.00",
       "02/06/2026,75.25,Interest charge,24575.25",
+      "03/06/2026,-500.00,Regular repayment,24075.25",
     ].join("\n"));
     const selected = new Set(review.rows.map((row) => row.rowNumber));
     expect(() => createLoanRepaymentCommitRequest({
@@ -103,6 +105,17 @@ describe("durable reviewed loan repayment commit", () => {
       selectedRowNumbers: selected,
       privateFieldCount: 0,
     })).toThrow(/clear repayment breakdowns/i);
+
+    const clearRows = review.rows.filter(isCommittableLoanRepaymentRow);
+    expect(clearRows).toHaveLength(2);
+    const oneSelected = new Set([clearRows[0].rowNumber]);
+    expect(createLoanRepaymentCommitRequest({
+      requestId: request.requestId,
+      loanAccountId: request.loanAccountId,
+      rows: review.rows,
+      selectedRowNumbers: oneSelected,
+      privateFieldCount: 0,
+    })).toMatchObject({ reviewedRowCount: 3, excludedRowCount: 2, rows: [expect.any(Object)] });
   });
 
   it("returns aggregate-only loan import history", async () => {

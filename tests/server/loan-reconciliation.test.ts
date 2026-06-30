@@ -22,6 +22,10 @@ function store(options: { linked?: boolean } = {}): LoanReconciliationCandidateS
           status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
         },
         {
+          id: "transaction_manual", userId, date: new Date("2026-06-25T00:00:00.000Z"), amountCents: -180050,
+          status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
+        },
+        {
           id: "transaction_parent", userId, date: new Date("2026-06-18T00:00:00.000Z"), amountCents: -180000,
           status: "ACTIVE", splitRole: "PARENT", deletedAt: null, loanReconciliationLinks: [],
         },
@@ -43,6 +47,20 @@ describe("loan reconciliation candidate suggestions", () => {
 
   it("returns no candidates for an already-linked repayment", async () => {
     expect(await listLoanReconciliationCandidates(createTestUserContext("user_1"), "repayment_1", "SUGGESTED", store({ linked: true }))).toEqual([]);
+  });
+
+  it("shows the approved $1 and 7-day band only after wider manual search", async () => {
+    const user = createTestUserContext("user_1");
+    const suggested = await listLoanReconciliationCandidates(user, "repayment_1", "SUGGESTED", store());
+    expect(suggested.map((candidate) => candidate.transactionId)).not.toContain("transaction_manual");
+
+    const manual = await listLoanReconciliationCandidates(user, "repayment_1", "MANUAL", store());
+    expect(manual).toContainEqual(expect.objectContaining({
+      transactionId: "transaction_manual",
+      confidence: "MANUAL",
+      amountVarianceCents: 50,
+      dateDifferenceDays: 7,
+    }));
   });
 
   it("requires authentication and repayment ownership", async () => {

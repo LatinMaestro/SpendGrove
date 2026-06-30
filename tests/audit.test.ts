@@ -13,6 +13,23 @@ describe("audit validation", () => {
     expect(event.action).toBe("PRIVACY_FIELDS_EXCLUDED");
   });
 
+  it("accepts Phase 3B audit entities with privacy-safe state and decision codes", () => {
+    for (const event of [
+      { entityType: "PROPERTY", entityId: "property_1", action: "UPDATED", metadata: { stateCode: "ACTIVE" } },
+      { entityType: "LOAN_ACCOUNT", entityId: "loan_1", action: "ARCHIVED", metadata: { stateCode: "ARCHIVED" } },
+      { entityType: "LOAN_REPAYMENT", entityId: "repayment_1", action: "ARCHIVED", metadata: { stateCode: "ARCHIVED" } },
+      {
+        entityType: "LOAN_RECONCILIATION_LINK",
+        entityId: "link_1",
+        action: "CREATED",
+        metadata: { methodCode: "MANUAL", confidenceCode: "MANUAL", reasonCode: "MANUAL_OVERRIDE" },
+      },
+    ] as const) {
+      expect(auditEventSchema.parse({ userId: "user_1", ...event })).toMatchObject(event);
+      expect(Object.keys(event.metadata)).not.toEqual(expect.arrayContaining(["amountCents", "balanceAfterCents", "rawNarration"]));
+    }
+  });
+
   it("rejects private bank values in audit metadata", () => {
     expect(() => auditEventSchema.parse({
       userId: "user_1",
