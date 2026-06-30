@@ -16,7 +16,7 @@ Last updated: 1 July 2026
 - PR 3B.10 safe repayment correction merged in [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) as `d79bc24b2bebe277b39729d655e995d8c7d1253d`.
 - PR 3B.11 deliberate duplicate loan re-import safeguards merged in [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) as `3ea74c685bef3076aadae801ec421b270233622c`.
 - PR 3B.12 safer repayment cleanup merged in [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) as `e608a6af37c1f10b298f3d0536484cdbffbd40cd`.
-- PR 3B.13 final QA, Vercel review and client testing package is active.
+- PR 3B.13 final QA, Vercel review and client testing package is active in [#75](https://github.com/LatinMaestro/SpendGrove/pull/75).
 - No Prisma schema or migration amendment has been needed.
 
 Delivered Milestone 3 behaviour:

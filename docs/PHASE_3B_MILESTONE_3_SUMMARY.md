@@ -30,7 +30,7 @@ Everyday-account transactions remain the only cashflow/spending records. Correct
 | 3B.10 safe repayment correction | [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) | `d79bc24b2bebe277b39729d655e995d8c7d1253d` |
 | 3B.11 deliberate duplicate loan re-import safeguards | [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) | `3ea74c685bef3076aadae801ec421b270233622c` |
 | 3B.12 safer repayment cleanup | [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) | `e608a6af37c1f10b298f3d0536484cdbffbd40cd` |
-| 3B.13 QA, Vercel review and client testing package | This review-package PR | Recorded in the final client handoff after merge |
+| 3B.13 QA, Vercel review and client testing package | [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) | Recorded in the final client handoff after merge |
 
 ## Safe repayment correction
 
