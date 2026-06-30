@@ -200,7 +200,7 @@ Status: merged and accepted.
 
 ## Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 formally accepted and closed on 26 June 2026. Milestone 2 formally accepted and closed on 30 June 2026. Milestone 3 is proposal-only and not approved for implementation.
+Status: Milestones 1 and 2 are formally accepted and closed. Milestone 3 was approved on 30 June 2026 under Autonomous Phase Delivery Mode; PR 3B.9 is active.
 
 Current progress:
 
@@ -228,7 +228,7 @@ Current progress:
 - Final accepted functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
 - `docs/PHASE_3B_MILESTONE_2_SUMMARY.md` is the client review package.
 - Client signed-in retesting completed on 30 June 2026 with no further acceptance comments.
-- `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` is proposal-only; no Milestone 3 implementation has started.
+- `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md` is approved; PRs 3B.9-3B.13 are authorised subject to its stop gates.
 
 Delivered objective:
 
@@ -248,7 +248,7 @@ The detailed inclusions, exclusions, migration gates, privacy risks and stop con
 
 Milestone 1 migration gate: completed. The approved Phase 3B foundation migration ran against Preview only. No Production migration has run.
 
-Milestone 2 gate: formally accepted and closed on 30 June 2026. Stop for client review of the proposal-only Milestone 3 plan. Do not start Milestone 3, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules until separately approved.
+Milestone 2 gate: formally accepted and closed on 30 June 2026. Milestone 3 is approved for correction, duplicate re-import safety and non-destructive cleanup only. Stop after PR 3B.13 for client retesting. Do not start Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules.
 
 ## Broader Phase 3 scope — Loans, Properties and Tax
 
