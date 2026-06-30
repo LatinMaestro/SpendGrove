@@ -89,6 +89,16 @@ describe("loan CSV review UI contract", () => {
     expect(review).not.toContain("eventText");
   });
 
+  it("shows automatically excluded rows as status text rather than a broken checkbox", async () => {
+    const review = await readFile(reviewPath, "utf8");
+
+    expect(review).toContain("Excluded automatically");
+    expect(review).toContain("This row cannot be saved because it needs review or is not a repayment.");
+    expect(review).toContain("Save this repayment breakdown");
+    expect(review).toContain("disabled={selectionLocked}");
+    expect(review).not.toContain("disabled={!committable || selectionLocked}");
+  });
+
   it("uses neutral investment-interest record-keeping wording only", async () => {
     const review = await readFile(reviewPath, "utf8");
 

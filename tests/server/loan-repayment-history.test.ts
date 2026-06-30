@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { AuthenticationRequiredError, OwnershipError } from "@/src/server/auth/ownership";
 import {
   LoanRepaymentArchiveConflictError,
+  createLoanRepaymentArchiveAuditEvent,
   listSafeLoanRepayments,
   updateLoanRepaymentArchiveState,
   type LoanRepaymentHistoryStore,
@@ -50,6 +51,15 @@ function memoryStore(rows = [repayment()]) {
 }
 
 describe("safe loan repayment history", () => {
+  it("builds privacy-safe archive and restore audit events with the approved entity value", () => {
+    const archived = createLoanRepaymentArchiveAuditEvent("user_1", "repayment_1", true);
+    const restored = createLoanRepaymentArchiveAuditEvent("user_1", "repayment_1", false);
+
+    expect(archived).toMatchObject({ entityType: "LOAN_REPAYMENT", action: "ARCHIVED", metadata: { stateCode: "ARCHIVED" } });
+    expect(restored).toMatchObject({ entityType: "LOAN_REPAYMENT", action: "UPDATED", metadata: { stateCode: "ACTIVE" } });
+    expect(JSON.stringify([archived, restored])).not.toMatch(/amount|balance|narration|filename|account|reference|bsb|card|customer/i);
+  });
+
   it("lists owned structured breakdowns without raw source details", async () => {
     const result = await listSafeLoanRepayments(createTestUserContext("user_1"), memoryStore());
     expect(result[0]).toMatchObject({

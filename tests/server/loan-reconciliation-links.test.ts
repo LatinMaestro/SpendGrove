@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import { resolveReconciliationLinkDecision, type ReconciliationLinkRequest } from "@/lib/loan-reconciliation";
 import { AuthenticationRequiredError, OwnershipError } from "@/src/server/auth/ownership";
 import {
+  createLoanReconciliationLinkAuditEvent,
+  createLoanReconciliationUnlinkAuditEvent,
   linkLoanRepayment,
   unlinkLoanRepayment,
   type LoanReconciliationLinkStore,
@@ -47,6 +49,30 @@ const request: ReconciliationLinkRequest = {
 };
 
 describe("manual loan reconciliation links", () => {
+  it("builds privacy-safe link and unlink audit events with the approved entity value", () => {
+    const linked = createLoanReconciliationLinkAuditEvent({
+      userId: "user_1",
+      linkId: "link_1",
+      action: "CREATED",
+      methodCode: "SUGGESTED",
+      confidenceCode: "HIGH",
+      reasonCode: "EXACT_AMOUNT_NEAR_DATE",
+    });
+    const unlinked = createLoanReconciliationUnlinkAuditEvent("user_1", "link_1");
+
+    expect(linked).toMatchObject({ entityType: "LOAN_RECONCILIATION_LINK", action: "CREATED" });
+    expect(unlinked).toMatchObject({ entityType: "LOAN_RECONCILIATION_LINK", action: "UPDATED", metadata: { stateCode: "UNLINKED" } });
+    expect(Object.keys(linked.metadata).sort()).toEqual(["confidenceCode", "methodCode", "reasonCode"]);
+    expect(Object.keys(unlinked.metadata)).toEqual(["stateCode"]);
+    for (const metadata of [linked.metadata, unlinked.metadata]) {
+      expect(metadata).not.toHaveProperty("amountCents");
+      expect(metadata).not.toHaveProperty("balanceAfterCents");
+      expect(metadata).not.toHaveProperty("rawNarration");
+      expect(metadata).not.toHaveProperty("filename");
+      expect(metadata).not.toHaveProperty("accountNumber");
+    }
+  });
+
   it("links, unlinks, and safely relinks one repayment while supporting split allocation", async () => {
     const store = memoryStore();
     const user = createTestUserContext("user_1");

@@ -50,6 +50,10 @@ describe("Loans-first UI contract", () => {
 
     expect(manager).toContain("Find possible matches");
     expect(manager).toContain("Search wider manually");
+    expect(manager).toContain("Wider manual matches");
+    expect(manager).toContain("within $1 and 7 days");
+    expect(manager).toContain("Exact-date manual override results");
+    expect(manager).toContain("separate exact-date override below");
     expect(manager).toContain("Nothing is linked automatically");
     expect(manager).toContain("High confidence");
     expect(manager).toContain("Possible match");

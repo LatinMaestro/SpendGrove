@@ -89,6 +89,28 @@ function varianceLabel(candidate: LoanReconciliationCandidate) {
   return `Amount differs by ${aud(Math.abs(candidate.amountVarianceCents))}`;
 }
 
+function candidateReviewCopy(mode: ReconciliationCandidateMode) {
+  if (mode === "MANUAL") {
+    return {
+      heading: "Wider manual matches",
+      description: "Shows eligible everyday transactions within $1 and 7 days, including any likely matches.",
+      empty: "No everyday transactions are within $1 and 7 days. You can use the separate exact-date override below.",
+    };
+  }
+  if (mode === "OVERRIDE") {
+    return {
+      heading: "Exact-date manual override results",
+      description: "Shows eligible everyday transactions on the exact date you chose. These are not likely-match suggestions.",
+      empty: "No eligible everyday transactions were found on that exact date.",
+    };
+  }
+  return {
+    heading: "Suggested matches",
+    description: "Shows high- and medium-confidence matches within the approved tolerances.",
+    empty: "No high- or medium-confidence matches were found.",
+  };
+}
+
 function RepaymentHistory({
   repayments,
   isSaving,
@@ -155,8 +177,12 @@ function RepaymentHistory({
                   <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "SUGGESTED")} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">{candidateLoadingId === repayment.id ? "Checking…" : "Find possible matches"}</button>
                 ) : (
                   <div className="mt-3">
+                    <div className="mb-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
+                      <p className="font-bold">{candidateReviewCopy(candidateReviews[repayment.id].mode).heading}</p>
+                      <p className="mt-1 leading-5 text-brand-deepTeal/65">{candidateReviewCopy(candidateReviews[repayment.id].mode).description}</p>
+                    </div>
                     {candidateReviews[repayment.id].candidates.length === 0 ? (
-                      <p className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">No transactions fit this matching range.</p>
+                      <p className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">{candidateReviewCopy(candidateReviews[repayment.id].mode).empty}</p>
                     ) : (
                       <ul className="space-y-2">
                         {candidateReviews[repayment.id].candidates.map((candidate) => (
