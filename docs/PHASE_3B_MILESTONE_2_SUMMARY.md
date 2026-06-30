@@ -2,6 +2,8 @@
 
 Date implementation completed: 29 June 2026
 
+Acceptance hardening merged: 30 June 2026
+
 Status: implementation complete; awaiting client retesting and formal acceptance
 
 ## Delivered outcome
@@ -30,11 +32,13 @@ No tax conclusion, report, Home dashboard statistic or later module was added.
 | 3B.6 reconciliation candidate suggestions | [#64](https://github.com/LatinMaestro/SpendGrove/pull/64) | `17fb6abe9e536186ea1ec8c035ed2dd71a047774` |
 | 3B.7 manual link/unlink and no-double-count safeguards | [#65](https://github.com/LatinMaestro/SpendGrove/pull/65) | `7ab14bee38193de0e587971b0f21a3600446b99c` |
 | 3B.8 QA, Vercel review and client testing package | [#66](https://github.com/LatinMaestro/SpendGrove/pull/66) | `bdddcfb2cb5e161ff6894864e4963a16ac263b34` |
+| Milestone 2 acceptance hardening | [#68](https://github.com/LatinMaestro/SpendGrove/pull/68) | `54ee17b4436578a922d3b4c1d2b08e3e1e214d1a` |
 
 ## Durable repayment commit
 
 - The browser sends only selected reviewed dates and structured integer-cent repayment values.
 - Rows with warning codes, non-repayment events, missing dates or missing/invalid totals cannot be committed.
+- Warning and non-repayment rows display `Excluded automatically` with plain explanatory text and no disabled checkbox styling.
 - The user may exclude otherwise valid rows before saving.
 - The confirmation panel states exactly how many repayment breakdowns will be saved and excluded.
 - The first save attempt freezes its request and payload. A network retry reuses that same request instead of creating a second batch.
@@ -69,6 +73,8 @@ Approved bands:
 - **Medium confidence:** zero to two cents difference and zero to three calendar days apart, or exact amount and two to seven days apart.
 - **Manual candidate:** no more than one dollar difference and no more than seven days apart, shown only after the user opens wider manual matching.
 
+The UI labels wider manual results as `Wider manual matches` and explains the $1/seven-day boundary. Exact-date results are separately labelled `Exact-date manual override results` so the two paths cannot be mistaken for one another.
+
 The comparison uses the absolute everyday transaction amount. For a transaction already supporting another split-loan breakdown, the existing linked allocation is added before calculating variance for the next repayment.
 
 Deleted, inactive, zero-value, split-parent, cross-user, archived and already-linked repayment records are excluded as applicable.
@@ -97,6 +103,7 @@ For transactions outside the candidate bands, the user can deliberately search o
 - The earlier Phase 3B foundation migration remains applied to Preview only.
 - No Production migration was run.
 - No data rewrite occurred.
+- Acceptance hardening required no schema or migration amendment: the Prisma schema and existing Preview-applied Phase 3B migration already contained `LOAN_REPAYMENT` and `LOAN_RECONCILIATION_LINK`; only the stale app-side validation list needed alignment.
 
 ## Privacy and security evidence
 
@@ -110,12 +117,13 @@ For transactions outside the candidate bands, the user can deliberately search o
 - Every read and write is scoped to the authenticated user.
 - Link writes re-check both repayment and transaction ownership inside the atomic transaction.
 - Audit metadata contains aggregate counts or safe state/method/confidence/reason codes only. It contains no amounts, balances, labels or source text.
+- Regression tests exercise the production archive/restore/link/unlink audit payload builders and verify that private or financial values are absent from their metadata.
 - Tests enforce that reconciliation code never writes an everyday transaction.
 - Exact property addresses, account numbers, lender references, customer IDs, masked account references, BSBs, card fragments, secrets and connection strings are not requested, persisted or logged.
 
 ## Test, build and Vercel evidence
 
-- Full regression suite: 65 test files / 375 tests passed.
+- Full regression suite after acceptance hardening: 65 test files / 380 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
 - PR 3B.4 preview: https://vercel.com/latinmaestros-projects/spendgrove/DrpjL7qAw5wji3opUVtXHnhRQHLH
@@ -124,8 +132,11 @@ For transactions outside the candidate bands, the user can deliberately search o
 - PR 3B.7 preview: https://vercel.com/latinmaestros-projects/spendgrove/3MynVjB5Re4shdQ4p8BdDELAzhDw
 - Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
 - Merged PR 3B.8 review-package main deployment: https://vercel.com/latinmaestros-projects/spendgrove/FB3oxwArid1Hzj3PhWGAi4pkvMCm
+- PR #68 acceptance-hardening preview: https://spendgrove-git-codex-phase-3b-m2-9bf9a4-latinmaestros-projects.vercel.app
+- Final acceptance-hardening main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
 - Production alias: https://spendgrove.vercel.app
-- Vercel checks for PRs 3B.4 through 3B.7 and each merged main commit were green.
+- Vercel checks for PRs 3B.4 through 3B.8, acceptance-hardening PR #68 and each merged main commit were green.
+- Public main smoke verification passed for `/`, `/loans` and `/loans/import`; the loan routes remained signed-in/account gated with no horizontal overflow.
 - Mobile signed-out checks at 390×844 passed for `/loans` and `/loans/import`: no horizontal overflow, no console errors, and all five primary navigation items remained available.
 
 Signed-in end-to-end testing is intentionally left to the client because Codex does not use or expose the client's protected authenticated session.
@@ -150,7 +161,7 @@ Use fictional or synthetic data only for testing.
 2. Confirm your existing active Loan Accounts still appear and properties remain optional supporting information.
 3. Open **Import Loan CSV**, select the owning Loan Account and use a synthetic loan CSV.
 4. Confirm clear repayment breakdowns are selected for saving by default.
-5. Confirm warning rows and non-repayment events say they are excluded from saving.
+5. Confirm warning rows and non-repayment events show **Excluded automatically** and `This row cannot be saved because it needs review or is not a repayment.` with no disabled checkbox.
 6. Deselect one clear repayment and verify the saved/excluded counts update.
 7. Tick the confirmation and save the selected repayments.
 8. Confirm the success message reports the correct saved and excluded counts.
@@ -165,9 +176,9 @@ Use fictional or synthetic data only for testing.
 17. Unlink the breakdown and confirm both the repayment and everyday transaction remain.
 18. Relink it and confirm the checks run again.
 19. Test a two-cent/date-tolerant synthetic case and confirm the mismatch must be acknowledged before linking.
-20. Open **Search wider manually** and test a synthetic difference of no more than one dollar within seven days.
+20. Open **Search wider manually**, confirm the result area says **Wider manual matches**, and test a synthetic difference of no more than one dollar within seven days.
 21. Confirm manual-band results do not appear until wider matching is opened.
-22. Use **Search this exact date** for a deliberately out-of-band synthetic transaction.
+22. Use **Search this exact date** for a deliberately out-of-band synthetic transaction and confirm the result area says **Exact-date manual override results**.
 23. Confirm it is described as a manual override, not a likely match, and requires mismatch confirmation.
 24. For a split-loan case, create two Loan Accounts with synthetic $1,600 repayment breakdowns and one existing $3,200 everyday transaction.
 25. Link the first repayment through exact-date manual override, then confirm the second repayment can recognise the existing $1,600 allocation and reconcile to the same transaction.

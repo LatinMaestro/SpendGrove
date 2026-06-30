@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 29 June 2026
+Last updated: 30 June 2026
 
 ## Current phase and status
 
@@ -18,26 +18,33 @@ Last updated: 29 June 2026
 | 3B.6 reconciliation candidate suggestions | [#64](https://github.com/LatinMaestro/SpendGrove/pull/64) | `17fb6abe9e536186ea1ec8c035ed2dd71a047774` |
 | 3B.7 manual link/unlink and no-double-count safeguards | [#65](https://github.com/LatinMaestro/SpendGrove/pull/65) | `7ab14bee38193de0e587971b0f21a3600446b99c` |
 | 3B.8 QA, Vercel review and client testing package | [#66](https://github.com/LatinMaestro/SpendGrove/pull/66) | `bdddcfb2cb5e161ff6894864e4963a16ac263b34` |
+| Milestone 2 acceptance hardening | [#68](https://github.com/LatinMaestro/SpendGrove/pull/68) | `54ee17b4436578a922d3b4c1d2b08e3e1e214d1a` |
 
 Delivered behaviour:
 
 - Browser-local loan CSV review can save only explicitly selected, warning-free structured repayment breakdowns after user confirmation.
+- Warning and non-repayment rows now show a plain `Excluded automatically` status instead of a disabled checkbox; clear rows remain selectable and counts remain deterministic.
 - A frozen request ID and atomic batch write make network retries idempotent without adding a private fingerprint or schema field.
 - Loan Account cards show structured repayment history and detail, including archive/restore for unmatched records.
 - Candidate suggestions follow the approved high, medium and manual bands and never link automatically.
+- `Search wider manually` visibly shows the approved no-more-than-$1/no-more-than-seven-day band, while exact-date manual override remains a separate labelled path.
 - Explicit exact-date override search is available for out-of-band manual selection; it is never labelled a likely match and requires mismatch confirmation.
 - Link, unlink and relink are user-confirmed and reversible. Split-loan allocation allows multiple repayment breakdowns to share one everyday transaction.
+- Archive/restore and link/unlink audit validation now accepts the already-approved Phase 3B entity values. Audit payloads remain limited to safe state, method, confidence and reason codes.
 - Everyday transactions remain the only cashflow/spending records. Reconciliation never creates, changes or duplicates a transaction.
 
 ## Verification and deployment
 
-- Full regression suite: 65 test files / 375 tests passed.
+- Full regression suite after acceptance hardening: 65 test files / 380 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
 - PR #65 Vercel preview: https://vercel.com/latinmaestros-projects/spendgrove/3MynVjB5Re4shdQ4p8BdDELAzhDw
 - Final functional Milestone 2 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/H19jmvDTo34LpD31hjASNEsTKy6u
 - Merged PR 3B.8 review-package main deployment: https://vercel.com/latinmaestros-projects/spendgrove/FB3oxwArid1Hzj3PhWGAi4pkvMCm
+- PR #68 acceptance-hardening preview: https://spendgrove-git-codex-phase-3b-m2-9bf9a4-latinmaestros-projects.vercel.app
+- Final acceptance-hardening main deployment: https://vercel.com/latinmaestros-projects/spendgrove/Gb2Bs2AveMSiiShDnZkJq3DgocFs
 - Production alias: https://spendgrove.vercel.app
+- Public main smoke verification passed for `/`, `/loans` and `/loans/import`; both loan routes remained signed-in/account gated with no horizontal overflow.
 - Mobile signed-out verification at 390×844: `/loans` and `/loans/import` rendered without horizontal overflow or console errors and retained all five primary navigation items.
 - Signed-in end-to-end verification requires the client's protected account session and is the current acceptance task.
 
@@ -48,6 +55,7 @@ Delivered behaviour:
 - No Preview migration was required or run for Milestone 2.
 - The earlier Phase 3B foundation migration remains Preview-only.
 - No Production migration has been run.
+- Acceptance hardening required no Prisma schema or migration amendment because the existing Phase 3B database enum already contained the loan audit entity values.
 - Loan CSV files, raw rows, original filenames, raw event text and narration remain browser-local and are not persisted or logged.
 - Durable repayment payloads contain only the owned Loan Account ID, reviewed date, integer-cent components, optional balance-after value, safe source and import lineage.
 - Reconciliation persists only the approved IDs, confidence/method/reason codes, signed amount variance, date difference and unlink timestamp.
