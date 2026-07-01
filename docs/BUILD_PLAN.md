@@ -277,7 +277,9 @@ The delivered Phase 3B milestones are a limited first slice of this broader scop
 
 ## Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations
 
-Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 is the active documentation-only contract slice.
+Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 merged in #78; PR 3C.1 is #79 and contains the schema plus unexecuted migration plan.
+
+PR 3C.1 local verification: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and production build passed. No Phase 3C migration has run.
 
 Objective: let an authenticated user manually link one eligible owned everyday transaction to one active owned Property as reversible supporting metadata, while preserving the transaction as the only cashflow record.
 

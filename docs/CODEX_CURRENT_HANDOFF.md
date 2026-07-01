@@ -9,14 +9,15 @@ Last updated: 2 July 2026
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
 - Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was formally accepted and closed by the client on 1 July 2026 after signed-in retesting completed with no further acceptance comments.
 - All approved Phase 3B Milestones 1-3 are accepted and closed. No further Phase 3B implementation is authorised.
-- Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 is active and documentation-only.
+- Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 merged in [#78](https://github.com/LatinMaestro/SpendGrove/pull/78) as `cf9712c65ee0e6527e4a3e6ae12485237fbad99e`; PR 3C.1 is [#79](https://github.com/LatinMaestro/SpendGrove/pull/79).
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
 
 - Approved sequence: PRs 3C.0-3C.4.
-- PR 3C.0 freezes one optional Property per eligible transaction, explicit unlink-before-relink, normal/split-child eligibility, no copied financial/source fields, safe state/reason-code auditing and the existing transaction as the only cashflow record.
-- PR 3C.1 may add only the matching `PropertyTransactionLink` foundation and an unexecuted additive migration plan.
+- PR 3C.0 froze one optional Property per eligible transaction, explicit unlink-before-relink, normal/split-child eligibility, no copied financial/source fields, safe state/reason-code auditing and the existing transaction as the only cashflow record.
+- PR 3C.1 adds only the matching `PropertyTransactionLink` foundation and the unexecuted `docs/PHASE_3C_PREVIEW_MIGRATION_PLAN.md`.
+- PR 3C.1 verification: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and the production build passed.
 - No Phase 3C Preview migration has run. Stop after PR 3C.1 for explicit client approval. No Production migration is authorised.
 
 ## Milestone 3 progress
@@ -125,7 +126,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3C.0, then prepare PR 3C.1 with the exact matching schema and unexecuted Preview migration plan. Stop after PR 3C.1 before running any Preview migration. Do not begin PR 3C.2, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Review and explicitly approve `docs/PHASE_3C_PREVIEW_MIGRATION_PLAN.md` after PR #79 is merged and main is green. Until that approval, do not run a Preview migration or begin PR 3C.2. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 
