@@ -115,7 +115,19 @@ Completed Milestone 3 sequence:
 - PR 3B.12 - safer repayment cleanup flows;
 - PR 3B.13 - QA, Vercel review and client testing package.
 
-Milestone 3 implementation and QA are complete. Stop for client retesting after PR 3B.13. Do not start another milestone, tax/property reports, Home dashboard statistics, recurring, budgets, Basiq, AI, payments, Phase 4 or later modules.
+Phase 3B Milestone 3 was formally accepted and closed by the client on 1 July 2026.
+
+Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. The approved plan is `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`; the frozen contract is `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` after PR 3C.0 merges.
+
+Approved Milestone 1 sequence:
+
+- PR 3C.0 - property record-keeping contract;
+- PR 3C.1 - schema foundation and Preview migration plan;
+- PR 3C.2 - manual property link and unlink after the migration gate;
+- PR 3C.3 - property record-keeping activity view;
+- PR 3C.4 - QA and client review package.
+
+Stop after PR 3C.1 before any Preview migration. No Production migration is authorised. Do not begin PR 3C.2 until the client explicitly approves and the Preview migration succeeds. Do not implement tax/EOFY reports, deductibility decisions, property/Home statistics, automatic property matching, transaction allocation, Phase 4 or later modules.
 
 No Production migration is authorised.
 

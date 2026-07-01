@@ -275,6 +275,23 @@ Scope:
 
 The delivered Phase 3B milestones are a limited first slice of this broader scope. EOFY/property reporting and automated tax treatment are not included and remain unapproved.
 
+## Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations
+
+Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 is the active documentation-only contract slice.
+
+Objective: let an authenticated user manually link one eligible owned everyday transaction to one active owned Property as reversible supporting metadata, while preserving the transaction as the only cashflow record.
+
+Approved sequence:
+
+1. PR 3C.0 - property record-keeping contract.
+2. PR 3C.1 - exact minimal schema foundation and Preview migration plan.
+3. Stop before any Preview migration and obtain explicit client approval.
+4. PR 3C.2 - manual property link, unlink and relink after the approved Preview migration succeeds.
+5. PR 3C.3 - neutral Property record-keeping activity view.
+6. PR 3C.4 - QA, Vercel review and client testing package.
+
+The milestone excludes tax/EOFY/accountant reports, deductibility decisions, property/Home statistics, automatic matching, transaction allocation, new providers and all Phase 4 or later work. No Production migration is authorised.
+
 ## Phase 4 — Recurring, Budgets and Insights
 
 Only begin after client approval.
