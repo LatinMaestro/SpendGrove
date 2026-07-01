@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 1 July 2026
+Last updated: 2 July 2026
 
 ## Current phase and status
 
@@ -9,8 +9,15 @@ Last updated: 1 July 2026
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
 - Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was formally accepted and closed by the client on 1 July 2026 after signed-in retesting completed with no further acceptance comments.
 - All approved Phase 3B Milestones 1-3 are accepted and closed. No further Phase 3B implementation is authorised.
-- `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md` is proposal-only and awaits client review. No Phase 3C implementation has started.
+- Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 is active and documentation-only.
 - No Phase 4 or later-module implementation is authorised.
+
+## Phase 3C Milestone 1 progress
+
+- Approved sequence: PRs 3C.0-3C.4.
+- PR 3C.0 freezes one optional Property per eligible transaction, explicit unlink-before-relink, normal/split-child eligibility, no copied financial/source fields, safe state/reason-code auditing and the existing transaction as the only cashflow record.
+- PR 3C.1 may add only the matching `PropertyTransactionLink` foundation and an unexecuted additive migration plan.
+- No Phase 3C Preview migration has run. Stop after PR 3C.1 for explicit client approval. No Production migration is authorised.
 
 ## Milestone 3 progress
 
@@ -118,8 +125,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Review `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`. Do not begin Phase 3C Milestone 1, Phase 4, Home dashboard statistics, tax/EOFY reporting or any later module until the client explicitly approves a plan.
+Complete and merge PR 3C.0, then prepare PR 3C.1 with the exact matching schema and unexecuted Preview migration plan. Stop after PR 3C.1 before running any Preview migration. Do not begin PR 3C.2, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_SUMMARY.md`, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md` and `docs/DECISION_LOG.md`. Phase 3B Milestone 3 is closed. Await explicit client approval before any implementation and stop on every documented schema, migration, privacy, tax, financial-rule or later-module gate.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` when present and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.0-3C.1 sequence and stop before any Preview migration or PR 3C.2.

@@ -1,6 +1,6 @@
 # Phase 3C Milestone 1 Proposal - Property-Linked Record-Keeping Foundations
 
-Status: proposal only; client approval required before implementation
+Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode; PR 3C.0 active
 
 Date prepared: 1 July 2026
 
@@ -136,4 +136,4 @@ Stop and request approval if:
 
 ## Approval boundary
 
-This document is proposal-only. Do not create PR 3C.0 or begin implementation until the client explicitly approves the objective, PR sequence, scope, migration gates and stop conditions.
+The client approved this objective, PR sequence, scope, migration gates and stop conditions on 2 July 2026. PR 3C.0 may freeze the contract and PR 3C.1 may add only the matching schema and unexecuted migration plan. Stop after PR 3C.1 before any Preview migration. PR 3C.2 may not begin until the client explicitly approves the migration plan and the Preview migration succeeds. No Production migration is authorised.
