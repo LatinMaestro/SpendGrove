@@ -7,7 +7,9 @@ Last updated: 1 July 2026
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
-- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety implementation and QA are complete. Client acceptance hardening is active in PR [#76](https://github.com/LatinMaestro/SpendGrove/pull/76); Milestone 3 remains parked at client retesting and is not formally closed.
+- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was formally accepted and closed by the client on 1 July 2026 after signed-in retesting completed with no further acceptance comments.
+- All approved Phase 3B Milestones 1-3 are accepted and closed. No further Phase 3B implementation is authorised.
+- `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md` is proposal-only and awaits client review. No Phase 3C implementation has started.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Milestone 3 progress
@@ -17,7 +19,7 @@ Last updated: 1 July 2026
 - PR 3B.11 deliberate duplicate loan re-import safeguards merged in [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) as `3ea74c685bef3076aadae801ec421b270233622c`.
 - PR 3B.12 safer repayment cleanup merged in [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) as `e608a6af37c1f10b298f3d0536484cdbffbd40cd`.
 - PR 3B.13 final QA, Vercel review and client testing package merged in [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) as `d962136313ea6b00adb729428fe0deddadd0bb5e`.
-- Focused client acceptance hardening for loan CSV post-save navigation is active in [#76](https://github.com/LatinMaestro/SpendGrove/pull/76). A successful durable save now returns to `/loans` with safe aggregate completion copy; a failed save remains in review with its selections and warnings intact.
+- Focused client acceptance hardening for loan CSV post-save navigation merged in [#76](https://github.com/LatinMaestro/SpendGrove/pull/76) as `d47e3b2f26c18639c77f3083a1b4b37489a134a3`. A successful durable save now returns to `/loans` with safe aggregate completion copy; a failed save remains in review with its selections and warnings intact.
 - No Prisma schema or migration amendment has been needed.
 
 Delivered Milestone 3 behaviour:
@@ -57,6 +59,8 @@ Delivered behaviour:
 - Acceptance-hardening regression suite: 66 test files / 398 tests passed.
 - Acceptance-hardening TypeScript type-check: passed.
 - Acceptance-hardening Next.js production build: passed.
+- Final accepted Milestone 3 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/47tZxLxacyMGS814n9Dhbb2r8p4k
+- Final public smoke checks returned HTTP 200 for `/`, `/loans` and `/loans/import` with no internal server error.
 - PR #75 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4rEpVMNznLD32KFbeQ4YYejwvBT2
 - Final Milestone 3 regression suite: 65 test files / 394 tests passed.
 - Final Milestone 3 TypeScript type-check: passed.
@@ -114,8 +118,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR #76, verify the final main deployment, then stop for client retesting of the post-save return to Loans. Do not formally close Milestone 3 or begin another milestone or later module.
+Review `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`. Do not begin Phase 3C Milestone 1, Phase 4, Home dashboard statistics, tax/EOFY reporting or any later module until the client explicitly approves a plan.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`, `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify PR #76 and its final main deployment, then stop for client retesting. Stop on any documented schema, migration, privacy, financial-rule or later-module gate.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_SUMMARY.md`, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md` and `docs/DECISION_LOG.md`. Phase 3B Milestone 3 is closed. Await explicit client approval before any implementation and stop on every documented schema, migration, privacy, tax, financial-rule or later-module gate.

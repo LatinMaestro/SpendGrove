@@ -1,6 +1,6 @@
 # Phase 3B Milestone 3 Proposal - Repayment Corrections and Duplicate Re-import Safety
 
-Status: approved by the client on 30 June 2026 under Autonomous Phase Delivery Mode; PR 3B.9 active
+Status: delivered through PRs 3B.9-3B.13 plus acceptance hardening; formally accepted and closed by the client on 1 July 2026
 
 Date prepared: 30 June 2026
 

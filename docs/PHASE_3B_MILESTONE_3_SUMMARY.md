@@ -2,7 +2,7 @@
 
 Date implementation completed: 1 July 2026
 
-Status: implementation and QA complete; awaiting client retesting
+Status: formally accepted and closed by the client on 1 July 2026
 
 ## Delivered outcome
 
@@ -31,6 +31,7 @@ Everyday-account transactions remain the only cashflow/spending records. Correct
 | 3B.11 deliberate duplicate loan re-import safeguards | [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) | `3ea74c685bef3076aadae801ec421b270233622c` |
 | 3B.12 safer repayment cleanup | [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) | `e608a6af37c1f10b298f3d0536484cdbffbd40cd` |
 | 3B.13 QA, Vercel review and client testing package | [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) | `d962136313ea6b00adb729428fe0deddadd0bb5e` |
+| Client acceptance hardening - loan CSV save navigation | [#76](https://github.com/LatinMaestro/SpendGrove/pull/76) | `d47e3b2f26c18639c77f3083a1b4b37489a134a3` |
 
 ## Client acceptance hardening
 
@@ -98,6 +99,7 @@ The server repeats the exact check at commit time. If a selected exact match lac
 - Acceptance-hardening TypeScript type-check: passed.
 - Acceptance-hardening Next.js production build: passed.
 - PR 3B.13 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4rEpVMNznLD32KFbeQ4YYejwvBT2
+- Final accepted Milestone 3 main deployment: https://vercel.com/latinmaestros-projects/spendgrove/47tZxLxacyMGS814n9Dhbb2r8p4k
 - Final regression suite: 65 test files / 394 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
@@ -109,7 +111,7 @@ The server repeats the exact check at commit time. If a selected exact match lac
 - Production alias: https://spendgrove.vercel.app
 - Live public smoke checks returned HTTP 200 for `/`, `/loans` and `/loans/import`; both loan routes rendered their account-session shell and neither returned an internal server error.
 
-The PR #76 preview and merged-main deployment are recorded in the final client handoff after Vercel reports green.
+The final public smoke verification returned HTTP 200 for `/`, `/loans` and `/loans/import`; none returned an internal server error.
 
 ## Known limitations
 
@@ -159,10 +161,10 @@ Use fictional or synthetic values only.
 29. Use browser Back after a successful save and confirm it does not resubmit or create another repayment save.
 30. Re-import an exact duplicate and confirm it is still excluded by default unless **Save anyway** is confirmed for that row; confirm selected, excluded and saved counts remain correct.
 
-## Client review stop
+## Closure record
 
-Milestone 3 implementation is complete. Stop here for client retesting. Do not begin another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules without explicit approval.
+The client completed signed-in Milestone 3 retesting and reported no further acceptance comments on 1 July 2026. Phase 3B Milestone 3 is formally accepted and closed with the documented limitations preserved.
 
 ## Recommended next step
 
-Complete client retesting, formally accept and close Milestone 3 if no further comments remain, then prepare a separate proposal-only decision on the next approved scope. No next-phase implementation is authorised by this package.
+Review `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`. It proposes a separate, gated property-linked record-keeping foundation without tax reports, tax conclusions or dashboard statistics. Do not implement it or any later module without explicit client approval.
