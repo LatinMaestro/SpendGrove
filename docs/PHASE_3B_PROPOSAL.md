@@ -1,6 +1,6 @@
 # Phase 3B — Loans-First Foundations
 
-Status: Milestone 1 formally accepted and closed by the client on 26 June 2026. Milestone 2 was approved on 28 June 2026, delivered through PRs #62-#65 plus the PR 3B.8 review package, and is awaiting client retesting/acceptance.
+Status: Approved Milestones 1, 2 and 3 were formally accepted and closed by the client by 1 July 2026. No further Phase 3B implementation is authorised.
 
 Milestone 1 covered PRs 3B.0 through 3B.3 plus acceptance-hardening PRs #57 and #59. Milestone 2 delivered durable repayment commit, safe repayment history, reconciliation suggestions, manual link/unlink and no-double-count safeguards without a schema change or migration.
 
