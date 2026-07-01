@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   AlertTriangle,
@@ -250,6 +251,7 @@ export function LoanCsvReview({ accountPersistenceAvailable }: Readonly<{ accoun
 
 function AuthenticatedLoanCsvReview() {
   const { isLoaded, isSignedIn } = useUser();
+  const router = useRouter();
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [selectedLoanId, setSelectedLoanId] = useState("");
   const [document, setDocument] = useState<TransientCsvDocument | null>(null);
@@ -469,6 +471,7 @@ function AuthenticatedLoanCsvReview() {
         savedCount: result.summary!.savedCount,
         excludedCount: result.summary!.excludedCount,
       }, ...current].slice(0, 10));
+      router.replace(`/loans?loanImport=saved&saved=${result.summary.savedCount}`);
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "We could not save these repayments safely.");
     } finally {
