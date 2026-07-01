@@ -582,12 +582,26 @@ function LoansUnavailable() {
   );
 }
 
-export function LoansManager({ accountPersistenceAvailable }: Readonly<{ accountPersistenceAvailable: boolean }>) {
+export function LoansManager({
+  accountPersistenceAvailable,
+  loanImportCompleted = false,
+  loanImportSavedCount = null,
+}: Readonly<{
+  accountPersistenceAvailable: boolean;
+  loanImportCompleted?: boolean;
+  loanImportSavedCount?: number | null;
+}>) {
   if (!accountPersistenceAvailable) return <LoansUnavailable />;
-  return <AuthenticatedLoansManager />;
+  return <AuthenticatedLoansManager loanImportCompleted={loanImportCompleted} loanImportSavedCount={loanImportSavedCount} />;
 }
 
-function AuthenticatedLoansManager() {
+function AuthenticatedLoansManager({
+  loanImportCompleted,
+  loanImportSavedCount,
+}: Readonly<{
+  loanImportCompleted: boolean;
+  loanImportSavedCount: number | null;
+}>) {
   const { isLoaded, isSignedIn } = useUser();
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
@@ -895,6 +909,18 @@ function AuthenticatedLoansManager() {
           </div>
         </div>
       </section>
+
+      {loanImportCompleted && (
+        <div role="status" className="flex items-start gap-3 rounded-2xl border border-brand-green bg-brand-green/10 p-4 text-sm text-brand-deepTeal">
+          <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
+          <p>
+            <strong className="block">Loan CSV imported.</strong>
+            {loanImportSavedCount === null
+              ? "Repayment breakdowns were saved."
+              : `${loanImportSavedCount} repayment breakdown${loanImportSavedCount === 1 ? "" : "s"} saved.`}
+          </p>
+        </div>
+      )}
 
       {error && <div role="alert" className="flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="h-5 w-5 shrink-0 text-warning-amber" /><p>{error}</p></div>}
 
