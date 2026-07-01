@@ -1,6 +1,6 @@
 # Phase 3C Milestone 1 Proposal - Property-Linked Record-Keeping Foundations
 
-Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode; PR 3C.0 merged and PR 3C.1 active
+Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode; PR 3C.0 merged and PR 3C.1 is [#79](https://github.com/LatinMaestro/SpendGrove/pull/79)
 
 Date prepared: 1 July 2026
 
