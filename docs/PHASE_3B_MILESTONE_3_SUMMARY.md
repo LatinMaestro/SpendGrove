@@ -30,7 +30,13 @@ Everyday-account transactions remain the only cashflow/spending records. Correct
 | 3B.10 safe repayment correction | [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) | `d79bc24b2bebe277b39729d655e995d8c7d1253d` |
 | 3B.11 deliberate duplicate loan re-import safeguards | [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) | `3ea74c685bef3076aadae801ec421b270233622c` |
 | 3B.12 safer repayment cleanup | [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) | `e608a6af37c1f10b298f3d0536484cdbffbd40cd` |
-| 3B.13 QA, Vercel review and client testing package | [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) | Recorded in the final client handoff after merge |
+| 3B.13 QA, Vercel review and client testing package | [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) | `d962136313ea6b00adb729428fe0deddadd0bb5e` |
+
+## Client acceptance hardening
+
+PR [#76](https://github.com/LatinMaestro/SpendGrove/pull/76) fixes the client-reported post-save navigation gap without changing the durable commit contract. After the existing repayment save returns success, the browser replaces the import route with `/loans` and hands off only a bounded aggregate saved count. The Loans page shows general completion copy and the normal Loan Account list. Replacement navigation keeps browser Back from returning to and resubmitting the frozen review request.
+
+If save fails, the success branch is never reached: the user stays on the review screen with selected rows, warnings and the existing safe failure message. Frozen-request idempotency, commit-time duplicate rechecking, per-row duplicate override and selected/excluded counts are unchanged.
 
 ## Safe repayment correction
 
@@ -88,6 +94,10 @@ The server repeats the exact check at commit time. If a selected exact match lac
 
 ## Test, build and Vercel evidence
 
+- Acceptance-hardening regression suite: 66 test files / 398 tests passed.
+- Acceptance-hardening TypeScript type-check: passed.
+- Acceptance-hardening Next.js production build: passed.
+- PR 3B.13 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4rEpVMNznLD32KFbeQ4YYejwvBT2
 - Final regression suite: 65 test files / 394 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
@@ -99,7 +109,7 @@ The server repeats the exact check at commit time. If a selected exact match lac
 - Production alias: https://spendgrove.vercel.app
 - Live public smoke checks returned HTTP 200 for `/`, `/loans` and `/loans/import`; both loan routes rendered their account-session shell and neither returned an internal server error.
 
-The final PR 3B.13 preview and merged-main deployment are recorded in the final client handoff after Vercel reports green.
+The PR #76 preview and merged-main deployment are recorded in the final client handoff after Vercel reports green.
 
 ## Known limitations
 
@@ -143,6 +153,11 @@ Use fictional or synthetic values only.
 23. Confirm no filename, narration, account reference or exact address appears in saved repayment history.
 24. Confirm no tax advice, deductible claim, Home statistic, property report or later-module feature appears.
 25. Repeat the core correction, duplicate-warning and archive/restore checks on a phone-sized screen.
+26. Save selected synthetic repayment breakdowns and confirm the app automatically returns to **Loans**, not the import screen.
+27. Confirm the Loans page shows only a general success message and aggregate saved count, with the relevant Loan Account available to open for repayment history.
+28. Confirm a failed save remains on the review screen with selections, warnings and the safe error intact.
+29. Use browser Back after a successful save and confirm it does not resubmit or create another repayment save.
+30. Re-import an exact duplicate and confirm it is still excluded by default unless **Save anyway** is confirmed for that row; confirm selected, excluded and saved counts remain correct.
 
 ## Client review stop
 

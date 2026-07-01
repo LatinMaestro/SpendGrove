@@ -7,7 +7,7 @@ Last updated: 1 July 2026
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
-- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety implementation and QA are complete. PR 3B.13 is the active client review-package slice; client retesting is the next gate.
+- Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety implementation and QA are complete. Client acceptance hardening is active in PR [#76](https://github.com/LatinMaestro/SpendGrove/pull/76); Milestone 3 remains parked at client retesting and is not formally closed.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Milestone 3 progress
@@ -16,7 +16,8 @@ Last updated: 1 July 2026
 - PR 3B.10 safe repayment correction merged in [#72](https://github.com/LatinMaestro/SpendGrove/pull/72) as `d79bc24b2bebe277b39729d655e995d8c7d1253d`.
 - PR 3B.11 deliberate duplicate loan re-import safeguards merged in [#73](https://github.com/LatinMaestro/SpendGrove/pull/73) as `3ea74c685bef3076aadae801ec421b270233622c`.
 - PR 3B.12 safer repayment cleanup merged in [#74](https://github.com/LatinMaestro/SpendGrove/pull/74) as `e608a6af37c1f10b298f3d0536484cdbffbd40cd`.
-- PR 3B.13 final QA, Vercel review and client testing package is active in [#75](https://github.com/LatinMaestro/SpendGrove/pull/75).
+- PR 3B.13 final QA, Vercel review and client testing package merged in [#75](https://github.com/LatinMaestro/SpendGrove/pull/75) as `d962136313ea6b00adb729428fe0deddadd0bb5e`.
+- Focused client acceptance hardening for loan CSV post-save navigation is active in [#76](https://github.com/LatinMaestro/SpendGrove/pull/76). A successful durable save now returns to `/loans` with safe aggregate completion copy; a failed save remains in review with its selections and warnings intact.
 - No Prisma schema or migration amendment has been needed.
 
 Delivered Milestone 3 behaviour:
@@ -53,6 +54,10 @@ Delivered behaviour:
 
 ## Verification and deployment
 
+- Acceptance-hardening regression suite: 66 test files / 398 tests passed.
+- Acceptance-hardening TypeScript type-check: passed.
+- Acceptance-hardening Next.js production build: passed.
+- PR #75 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/4rEpVMNznLD32KFbeQ4YYejwvBT2
 - Final Milestone 3 regression suite: 65 test files / 394 tests passed.
 - Final Milestone 3 TypeScript type-check: passed.
 - Final Milestone 3 Next.js production build: passed.
@@ -109,8 +114,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3B.13, verify the final main deployment, then stop for client retesting. Do not begin another milestone or later module.
+Complete and merge PR #76, verify the final main deployment, then stop for client retesting of the post-save return to Loans. Do not formally close Milestone 3 or begin another milestone or later module.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`, `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify GitHub/Vercel state and continue the exact approved Milestone 3 PR sequence. Stop on any documented schema, migration, privacy, financial-rule or later-module gate.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3B_MILESTONE_3_SUMMARY.md`, `docs/PHASE_3B_MILESTONE_3_PROPOSAL.md`, `docs/PHASE_3B_MILESTONE_3_DATA_CONTRACT.md` and `docs/PHASE_3B_FINANCIAL_DATA_CONTRACT.md`. Verify PR #76 and its final main deployment, then stop for client retesting. Stop on any documented schema, migration, privacy, financial-rule or later-module gate.
