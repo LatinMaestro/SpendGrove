@@ -21,7 +21,8 @@ Last updated: 2 July 2026
 - Preview migration run `28552337732` completed successfully on commit `f3778c03b45981ac831066cfb9ae93f709075e84` using Preview-only Neon secrets. No Property-link row or application write existed at migration time.
 - No Production migration has run. PR 3C.1A, the development-only transaction reset utility, merged in [#80](https://github.com/LatinMaestro/SpendGrove/pull/80) as `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4`.
 - PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. The utility is fail-closed outside local development or Vercel Preview and has no schema/migration change.
-- PR 3C.2 manual Property link/unlink is in progress. Its current local verification is 69 test files / 413 tests, TypeScript and production build passed. It changes no schema or migration.
+- PR 3C.2 manual Property link/unlink merged in [#81](https://github.com/LatinMaestro/SpendGrove/pull/81) as `3577584b8c19f1c1c9cb4792325994e08dfd2454`. Verification: 69 test files / 413 tests, TypeScript and production build passed. It changed no schema or migration.
+- PR 3C.3 neutral Property record-keeping activity view is in progress. It reuses active everyday transactions, shows linked Loan Account context separately, and calculates no Property or Home statistics.
 
 ## Milestone 3 progress
 
@@ -129,7 +130,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3C.2 under the frozen contract, then continue PRs 3C.3-3C.4. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Complete and merge PR 3C.3 under the frozen contract, then complete PR 3C.4 QA and client review packaging. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 

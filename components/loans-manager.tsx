@@ -22,6 +22,7 @@ import {
 import type { LoanRepaymentBulkArchiveSummary, SafeLoanRepayment } from "@/lib/loan-repayment-history";
 import type { LoanReconciliationCandidate, ReconciliationCandidateMode } from "@/lib/loan-reconciliation";
 import { parseMoneyToCents } from "@/lib/validation/money";
+import { PropertyRecordKeepingActivity } from "@/components/property-record-keeping-activity";
 
 type LoanKind = "OWNER_OCCUPIER_HOME" | "INVESTMENT_PROPERTY" | "CAR" | "PERSONAL" | "OTHER";
 type PropertyUsage = "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
@@ -983,10 +984,13 @@ function AuthenticatedLoansManager({
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Properties support relevant loans. They are not the main entry point and contain no exact address.</p>
           <div className="mt-4 space-y-3">
             {properties.map((property) => (
-              <button key={property.id} type="button" onClick={() => openProperty(property)} className="flex min-h-14 w-full items-center justify-between gap-3 rounded-2xl bg-surface-mint px-4 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
-                <span><strong className="block text-brand-deepTeal">{property.nickname}</strong><span className="text-xs text-brand-deepTeal/65">{propertyUsageLabels[property.usage]}{property.isArchived ? " · Archived" : ""}</span></span>
-                <Pencil aria-hidden="true" className="h-4 w-4 text-brand-teal" />
-              </button>
+              <div key={property.id} className="space-y-2 rounded-2xl bg-surface-mint p-2">
+                <button type="button" onClick={() => openProperty(property)} className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-2 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
+                  <span><strong className="block text-brand-deepTeal">{property.nickname}</strong><span className="text-xs text-brand-deepTeal/65">{propertyUsageLabels[property.usage]}{property.isArchived ? " · Archived" : ""}</span></span>
+                  <span className="inline-flex items-center gap-2 text-xs font-bold text-brand-teal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</span>
+                </button>
+                <PropertyRecordKeepingActivity propertyId={property.id} />
+              </div>
             ))}
           </div>
         </section>
