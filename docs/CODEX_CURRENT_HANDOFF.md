@@ -11,7 +11,7 @@ Last updated: 3 July 2026
 - All approved Phase 3B Milestones 1-3 are accepted and closed. No further Phase 3B implementation is authorised.
 - Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was formally accepted and closed by the client on 3 July 2026 after signed-in retesting completed with no further acceptance comments.
 - All approved Phase 3A, Phase 3B Milestones 1-3 and Phase 3C Milestone 1 work is accepted and closed.
-- `docs/NEXT_MILESTONE_OPTIONS.md` is proposal-only. No next milestone is approved or active.
+- Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was approved on 3 July 2026. PR 3C.5 is documentation-only; PR 3C.6 must stop before any Preview migration.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -143,8 +143,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Present `docs/NEXT_MILESTONE_OPTIONS.md` for client selection. Do not implement either option until the client explicitly approves its objective, PR sequence, financial rules and migration gates.
+Complete and merge documentation-only PR 3C.5, then prepare PR 3C.6's exact minimum additive schema and Preview migration plan. Stop before running any Preview migration and present the plan for explicit client approval.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`, `docs/NEXT_MILESTONE_OPTIONS.md` and `docs/DECISION_LOG.md`. Phase 3C Milestone 1 is accepted and closed. No next milestone, Production migration, Phase 4 implementation, Home dashboard statistics, tax/EOFY reporting or later module is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.5/3C.6 gate. No Preview migration may run without explicit approval; no Production migration, Phase 4, Home dashboard statistics, Basiq, AI, payments or later module is authorised.

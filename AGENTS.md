@@ -119,7 +119,9 @@ Phase 3B Milestone 3 was formally accepted and closed by the client on 1 July 20
 
 Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was formally accepted and closed by the client on 3 July 2026 after signed-in retesting completed with no further acceptance comments. Its accepted plan, contract and closure evidence are in `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`.
 
-No implementation milestone is currently authorised. The proposal-only choices in `docs/NEXT_MILESTONE_OPTIONS.md` may be reviewed, but neither Phase 3C Milestone 2 nor Phase 4 may begin without explicit client approval. Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments and later modules remain unstarted and unauthorised.
+Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was approved by the client on 3 July 2026 under Autonomous Phase Delivery Mode. The approved sequence is PRs 3C.5-3C.9. PR 3C.5 is documentation-only and freezes the reporting rules in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. PR 3C.6 may prepare only the matching minimum additive schema and Preview migration plan; stop before running any Preview migration and obtain explicit client approval. PRs 3C.7-3C.9 remain blocked until that migration succeeds.
+
+No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, recurring, budgets, insights, Basiq, AI, payments, household mode, Phase 4 or later module is authorised.
 
 No Production migration is authorised.
 

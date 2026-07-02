@@ -302,7 +302,21 @@ The focused amendment permits only automatic reconciliation of exactly one reval
 
 Closure evidence: 71 test files / 424 tests, TypeScript type-check and production build passed. The final functional main deployment is https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ and the final documentation handoff deployment is https://vercel.com/latinmaestros-projects/spendgrove/D5Jk9T4ek1rfghB2JR7tafxhzwtq. Phase 3C used one approved Preview-only migration workflow run (`28552337732`) for Milestone 1; no Production migration has run.
 
-Next gate: `docs/NEXT_MILESTONE_OPTIONS.md` is proposal-only. Do not start Phase 3C Milestone 2, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules without explicit client approval.
+The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 2026. Option B remains unapproved; do not start Phase 4, recurring, budgets, insights, Home dashboard statistics, Basiq, AI, payments or later modules.
+
+## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
+
+Status: approved on 3 July 2026 under Autonomous Phase Delivery Mode. PR 3C.5 is documentation-only. PR 3C.6 must stop before any Preview migration; PRs 3C.7-3C.9 remain blocked until the migration plan is explicitly approved and the Preview migration succeeds.
+
+Approved sequence:
+
+1. PR 3C.5 - reporting and financial-rules contract.
+2. PR 3C.6 - exact schema foundation and Preview migration plan.
+3. PR 3C.7 - Property record review foundation.
+4. PR 3C.8 - approved summary/export foundation.
+5. PR 3C.9 - QA and client review package.
+
+The controlling financial, privacy, classification, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
 
 ## Phase 4 — Recurring, Budgets and Insights
 
