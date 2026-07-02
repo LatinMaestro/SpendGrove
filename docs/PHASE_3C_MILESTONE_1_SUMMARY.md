@@ -42,7 +42,7 @@ Client retesting found that confirming every clear repayment match was repetitiv
 | 3C.2 manual Property link and unlink | [#81](https://github.com/LatinMaestro/SpendGrove/pull/81) | `3577584b8c19f1c1c9cb4792325994e08dfd2454` |
 | 3C.3 Property record-keeping activity view | [#82](https://github.com/LatinMaestro/SpendGrove/pull/82) | `743d3d8f11b92d625b266f833f0b35cdff00ca3c` |
 | 3C.4 QA and client review package | [#83](https://github.com/LatinMaestro/SpendGrove/pull/83) | `601196634df666067b454328b61dfd193f40f33f` |
-| Client acceptance hardening | [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) | Pending green checks and merge |
+| Client acceptance hardening | [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) | `f1ad1b90184e24cbacdb249a37b36fdc9b832ed5` |
 
 ## Schema and migration status
 
@@ -112,7 +112,9 @@ Client retesting found that confirming every clear repayment match was repetitiv
 - Main after PR 3C.3: https://vercel.com/latinmaestros-projects/spendgrove/2CKHMQpQr5LtfsVj4yC3DpovkyjA
 - Production alias: https://spendgrove.vercel.app
 
-The final PR 3C.4 Preview and merged-main deployment are recorded in the delivery response after their checks complete.
+- PR #84 acceptance-hardening Preview: https://vercel.com/latinmaestros-projects/spendgrove/9MzRCWw6MZCJsdM5ijEZq32oG1Yh
+- PR #84 acceptance-hardening merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ
+- Public smoke checks returned HTTP 200 for `/`, `/loans`, `/loans/import`, `/transactions` and `/settings`, with no internal server error.
 
 ## Known limitations
 
@@ -169,7 +171,7 @@ Use fictional or synthetic values only.
 
 ## Milestone stop
 
-Phase 3C Milestone 1 is parked for client retesting after PR 3C.4. Do not formally close it or start another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or any later module without explicit client approval.
+Phase 3C Milestone 1 is parked for client retesting after acceptance-hardening PR #84. Do not formally close it or start another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or any later module without explicit client approval.
 
 ## Recommended next step
 
