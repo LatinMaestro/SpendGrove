@@ -117,17 +117,9 @@ Completed Milestone 3 sequence:
 
 Phase 3B Milestone 3 was formally accepted and closed by the client on 1 July 2026.
 
-Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. The approved plan is `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`; the frozen contract is `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` after PR 3C.0 merges.
+Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was formally accepted and closed by the client on 3 July 2026 after signed-in retesting completed with no further acceptance comments. Its accepted plan, contract and closure evidence are in `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`.
 
-Approved Milestone 1 sequence:
-
-- PR 3C.0 - property record-keeping contract;
-- PR 3C.1 - schema foundation and Preview migration plan;
-- PR 3C.2 - manual property link and unlink after the migration gate;
-- PR 3C.3 - property record-keeping activity view;
-- PR 3C.4 - QA and client review package.
-
-Stop after PR 3C.1 before any Preview migration. No Production migration is authorised. Do not begin PR 3C.2 until the client explicitly approves and the Preview migration succeeds. Do not implement tax/EOFY reports, deductibility decisions, property/Home statistics, automatic property matching, transaction allocation, Phase 4 or later modules.
+No implementation milestone is currently authorised. The proposal-only choices in `docs/NEXT_MILESTONE_OPTIONS.md` may be reviewed, but neither Phase 3C Milestone 2 nor Phase 4 may begin without explicit client approval. Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments and later modules remain unstarted and unauthorised.
 
 No Production migration is authorised.
 
