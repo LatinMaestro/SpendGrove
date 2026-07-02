@@ -22,7 +22,8 @@ Last updated: 2 July 2026
 - No Production migration has run. PR 3C.1A, the development-only transaction reset utility, merged in [#80](https://github.com/LatinMaestro/SpendGrove/pull/80) as `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4`.
 - PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. The utility is fail-closed outside local development or Vercel Preview and has no schema/migration change.
 - PR 3C.2 manual Property link/unlink merged in [#81](https://github.com/LatinMaestro/SpendGrove/pull/81) as `3577584b8c19f1c1c9cb4792325994e08dfd2454`. Verification: 69 test files / 413 tests, TypeScript and production build passed. It changed no schema or migration.
-- PR 3C.3 neutral Property record-keeping activity view is in progress. It reuses active everyday transactions, shows linked Loan Account context separately, and calculates no Property or Home statistics.
+- PR 3C.3 neutral Property record-keeping activity view merged in [#82](https://github.com/LatinMaestro/SpendGrove/pull/82) as `743d3d8f11b92d625b266f833f0b35cdff00ca3c`. It reuses active everyday transactions, shows linked Loan Account context separately, and calculates no Property or Home statistics.
+- PR 3C.4 QA and client review packaging is the final approved milestone task. Final functional verification is 70 test files / 416 tests, TypeScript and production build passed. `docs/PHASE_3C_MILESTONE_1_SUMMARY.md` is the client review package.
 
 ## Milestone 3 progress
 
@@ -130,8 +131,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3C.3 under the frozen contract, then complete PR 3C.4 QA and client review packaging. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Stop for Phase 3C Milestone 1 client retesting after PR 3C.4 merges green. Do not formally close the milestone or begin another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.2-3C.4 sequence. The approved Preview migration has succeeded; no Production migration is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/DECISION_LOG.md`. Phase 3C Milestone 1 is parked for client retesting after PR 3C.4. No further implementation, Production migration, Phase 4, Home dashboard statistics, tax/EOFY reporting or later module is authorised.

@@ -277,13 +277,13 @@ The delivered Phase 3B milestones are a limited first slice of this broader scop
 
 ## Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations
 
-Status: approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 merged in #78, PR 3C.1 merged in #79, the approved Preview migration succeeded, development-only reset utility PR 3C.1A merged in #80, and manual link/unlink PR 3C.2 merged in #81. PR 3C.3 is in progress.
+Status: implementation and QA complete under Autonomous Phase Delivery Mode; parked for client retesting after PR 3C.4. PRs 3C.0-3C.3 merged in #78-#82, and the approved Preview migration succeeded.
 
 PR 3C.1 verification before migration: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and production build passed.
 
 The client approved the Preview-only migration on 2 July 2026. Workflow run `28552337732` completed successfully from `main` at `f3778c03b45981ac831066cfb9ae93f709075e84` using Preview-only secrets. No Production migration ran and no application code had written the new table. The separately approved PR 3C.1A development-only transaction reset utility merged in #80 as `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4` before PR 3C.2.
 
-PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. It uses existing soft-delete and unlink lifecycle fields only and introduces no schema, migration, package, provider, secret or environment configuration. PR 3C.2 verification is 69 test files / 413 tests, TypeScript and production build passed, with no further schema or migration change. PR 3C.3 adds the neutral read-only activity view and no schema or migration change.
+PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. It uses existing soft-delete and unlink lifecycle fields only and introduces no schema, migration, package, provider, secret or environment configuration. PR 3C.2 verification is 69 test files / 413 tests. Final functional verification after PR 3C.3 is 70 test files / 416 tests, TypeScript and production build passed. PRs 3C.2-3C.4 require no further schema or migration change.
 
 Objective: let an authenticated user manually link one eligible owned everyday transaction to one active owned Property as reversible supporting metadata, while preserving the transaction as the only cashflow record.
 
