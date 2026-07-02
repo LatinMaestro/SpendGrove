@@ -13,8 +13,11 @@ Last updated: 3 July 2026
 - All approved Phase 3A, Phase 3B Milestones 1-3 and Phase 3C Milestone 1 work is accepted and closed.
 - Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was approved on 3 July 2026. PR 3C.5 is documentation-only; PR 3C.6 must stop before any Preview migration.
 - PR 3C.5 reporting and financial-rules contract merged in [#87](https://github.com/LatinMaestro/SpendGrove/pull/87) as `8410f785f53a32f673319143883bcb1468d0e7b5`.
-- PR 3C.6 prepares one neutral classification enum, one minimum owner-linked review table and the unexecuted Preview migration plan. No report rows or application reads/writes are included.
+- PR 3C.6 merged in [#88](https://github.com/LatinMaestro/SpendGrove/pull/88) as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. It prepares one neutral classification enum, one minimum owner-linked review table and the unexecuted Preview migration plan. No report rows or application reads/writes are included.
 - PR 3C.6 local verification: Prisma format/generation/validation passed; 72 test files / 429 tests passed; TypeScript type-check and production build passed.
+- PR #88 Preview: https://vercel.com/latinmaestros-projects/spendgrove/CWtfsKj8J6m1GbSBDy67tHfo3XPR
+- PR #88 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/2fsrjqx686Je643NbWcbNGi7gA8A
+- The Phase 3C Milestone 2 migration has not run in Preview or Production. No application code reads or writes `PropertyReportReview`.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -146,7 +149,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3C.6, then stop before running any Preview migration and present `docs/PHASE_3C_MILESTONE_2_PREVIEW_MIGRATION_PLAN.md` for explicit client approval. Do not begin PR 3C.7.
+Stop at the schema/migration gate and present `docs/PHASE_3C_MILESTONE_2_PREVIEW_MIGRATION_PLAN.md` for explicit client approval. Do not run the Preview migration and do not begin PR 3C.7.
 
 ## Resume instruction
 

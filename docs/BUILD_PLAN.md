@@ -314,6 +314,8 @@ PR 3C.6 schema proposal: one `PropertyRecordClassification` enum and one `Proper
 
 PR 3C.6 verification: Prisma format/generation/validation passed; 72 test files / 429 tests passed; TypeScript type-check and production build passed. No migration was run.
 
+PR 3C.6 merged in #88 as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. Its Vercel Preview and merged-main deployment are green. The Milestone 2 migration remains unexecuted in both Preview and Production. Stop for explicit approval of `docs/PHASE_3C_MILESTONE_2_PREVIEW_MIGRATION_PLAN.md`; do not begin PR 3C.7.
+
 Approved sequence:
 
 1. PR 3C.5 - reporting and financial-rules contract.
