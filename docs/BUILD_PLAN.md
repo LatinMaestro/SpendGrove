@@ -308,6 +308,12 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 Status: approved on 3 July 2026 under Autonomous Phase Delivery Mode. PR 3C.5 is documentation-only. PR 3C.6 must stop before any Preview migration; PRs 3C.7-3C.9 remain blocked until the migration plan is explicitly approved and the Preview migration succeeds.
 
+PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
+
+PR 3C.6 schema proposal: one `PropertyRecordClassification` enum and one `PropertyReportReview` table containing only generated ID, owner/Property/transaction IDs, classification and timestamps. The migration is additive, unexecuted and requires an explicit Preview-only approval gate.
+
+PR 3C.6 verification: Prisma format/generation/validation passed; 72 test files / 429 tests passed; TypeScript type-check and production build passed. No migration was run.
+
 Approved sequence:
 
 1. PR 3C.5 - reporting and financial-rules contract.

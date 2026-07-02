@@ -167,6 +167,16 @@ enum LoanReconciliationReason {
   MANUAL_OVERRIDE
 }
 
+enum PropertyRecordClassification {
+  PROPERTY_INCOME
+  PROPERTY_OUTGOING
+  REFUND_OR_REVERSAL
+  LOAN_PAYMENT_CONTEXT
+  TRANSFER_CONTEXT
+  OTHER_PROPERTY_RECORD
+  EXCLUDED
+}
+
 model User {
   id                 String        @id @default(cuid())
   authProvider       AuthProvider?
@@ -193,6 +203,7 @@ model User {
   loanRepayments           LoanRepayment[]
   loanReconciliationLinks  LoanReconciliationLink[]
   propertyTransactionLinks PropertyTransactionLink[]
+  propertyReportReviews    PropertyReportReview[]
   auditEvents              AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -276,6 +287,7 @@ model Transaction {
   importRowsCommitted     ImportRow[]              @relation("ImportRowCommittedTransaction")
   loanReconciliationLinks LoanReconciliationLink[]
   propertyLink            PropertyTransactionLink?
+  propertyReportReview    PropertyReportReview?
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -478,6 +490,7 @@ model Property {
   user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   loanAccounts     LoanAccount[]
   transactionLinks PropertyTransactionLink[]
+  reportReviews    PropertyReportReview[]
 
   @@unique([userId, nickname])
   @@index([userId, usage])
@@ -577,4 +590,21 @@ model PropertyTransactionLink {
 
   @@index([userId, propertyId, unlinkedAt])
   @@index([userId, unlinkedAt])
+}
+
+model PropertyReportReview {
+  id             String                       @id @default(cuid())
+  userId         String
+  propertyId     String
+  transactionId  String                       @unique
+  classification PropertyRecordClassification
+  createdAt      DateTime                     @default(now())
+  updatedAt      DateTime                     @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Restrict)
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, propertyId, classification])
+  @@index([userId, classification])
 }
