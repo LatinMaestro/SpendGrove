@@ -42,7 +42,7 @@ Client retesting found that confirming every clear repayment match was repetitiv
 | 3C.2 manual Property link and unlink | [#81](https://github.com/LatinMaestro/SpendGrove/pull/81) | `3577584b8c19f1c1c9cb4792325994e08dfd2454` |
 | 3C.3 Property record-keeping activity view | [#82](https://github.com/LatinMaestro/SpendGrove/pull/82) | `743d3d8f11b92d625b266f833f0b35cdff00ca3c` |
 | 3C.4 QA and client review package | [#83](https://github.com/LatinMaestro/SpendGrove/pull/83) | `601196634df666067b454328b61dfd193f40f33f` |
-| Client acceptance hardening | Focused hardening PR | Recorded in the final delivery response |
+| Client acceptance hardening | [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) | Pending green checks and merge |
 
 ## Schema and migration status
 

@@ -133,7 +133,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge the focused Phase 3C Milestone 1 acceptance-hardening PR, verify main, then stop for client retesting. Do not formally close the milestone or begin another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Complete and merge focused Phase 3C Milestone 1 acceptance-hardening PR [#84](https://github.com/LatinMaestro/SpendGrove/pull/84), verify main, then stop for client retesting. Do not formally close the milestone or begin another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 
