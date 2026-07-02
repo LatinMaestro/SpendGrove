@@ -277,7 +277,7 @@ The delivered Phase 3B milestones are a limited first slice of this broader scop
 
 ## Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations
 
-Status: implementation and QA completed through PR 3C.4/#83. A focused client-retesting acceptance-hardening pass is approved for unique high-confidence repayment reconciliation and clearer Loans/Property activity UI; park for client retesting after it merges.
+Status: formally accepted and closed on 3 July 2026 after client retesting completed with no further acceptance comments. PRs #78-#85 contain the implementation, acceptance hardening and permanent deployment handoff.
 
 PR 3C.1 verification before migration: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and production build passed.
 
@@ -299,6 +299,10 @@ Approved sequence:
 6. PR 3C.4 - QA, Vercel review and client testing package.
 
 The focused amendment permits only automatic reconciliation of exactly one revalidated high-confidence repayment candidate; it does not permit automatic Property matching or `PropertyTransactionLink` creation. The milestone still excludes tax/EOFY/accountant reports, deductibility decisions, property/Home statistics, transaction allocation, new providers and all Phase 4 or later work. No Production migration is authorised.
+
+Closure evidence: 71 test files / 424 tests, TypeScript type-check and production build passed. The final functional main deployment is https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ and the final documentation handoff deployment is https://vercel.com/latinmaestros-projects/spendgrove/D5Jk9T4ek1rfghB2JR7tafxhzwtq. Phase 3C used one approved Preview-only migration workflow run (`28552337732`) for Milestone 1; no Production migration has run.
+
+Next gate: `docs/NEXT_MILESTONE_OPTIONS.md` is proposal-only. Do not start Phase 3C Milestone 2, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or later modules without explicit client approval.
 
 ## Phase 4 — Recurring, Budgets and Insights
 

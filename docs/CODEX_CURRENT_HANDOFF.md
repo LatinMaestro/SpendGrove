@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 2 July 2026
+Last updated: 3 July 2026
 
 ## Current phase and status
 
@@ -9,10 +9,14 @@ Last updated: 2 July 2026
 - Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.
 - Phase 3B Milestone 3 - Repayment Corrections and Duplicate Re-import Safety was formally accepted and closed by the client on 1 July 2026 after signed-in retesting completed with no further acceptance comments.
 - All approved Phase 3B Milestones 1-3 are accepted and closed. No further Phase 3B implementation is authorised.
-- Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was approved by the client on 2 July 2026 under Autonomous Phase Delivery Mode. PR 3C.0 merged in [#78](https://github.com/LatinMaestro/SpendGrove/pull/78) as `cf9712c65ee0e6527e4a3e6ae12485237fbad99e`; PR 3C.1 merged in [#79](https://github.com/LatinMaestro/SpendGrove/pull/79) as `f3778c03b45981ac831066cfb9ae93f709075e84`.
+- Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was formally accepted and closed by the client on 3 July 2026 after signed-in retesting completed with no further acceptance comments.
+- All approved Phase 3A, Phase 3B Milestones 1-3 and Phase 3C Milestone 1 work is accepted and closed.
+- `docs/NEXT_MILESTONE_OPTIONS.md` is proposal-only. No next milestone is approved or active.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
+
+- Formal closure: accepted by the client on 3 July 2026 with no further acceptance comments.
 
 - Approved sequence: PRs 3C.0-3C.4.
 - PR 3C.0 froze one optional Property per eligible transaction, explicit unlink-before-relink, normal/split-child eligibility, no copied financial/source fields, safe state/reason-code auditing and the existing transaction as the only cashflow record.
@@ -27,8 +31,10 @@ Last updated: 2 July 2026
 - Client retesting approved one focused acceptance-hardening pass: automatically link exactly one revalidated high-confidence repayment candidate, show loan-reconciliation-derived transactions separately from manual Property links, and move Loan/Property editing onto active Loan Account cards. The existing schema is sufficient; no migration is required or authorised.
 - Acceptance-hardening verification: 71 test files / 424 tests passed; TypeScript type-check and production build passed. No Prisma schema, migration, package, provider, secret or environment change was introduced.
 - Acceptance hardening merged in [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) as `f1ad1b90184e24cbacdb249a37b36fdc9b832ed5`.
+- Permanent acceptance deployment handoff merged in [#85](https://github.com/LatinMaestro/SpendGrove/pull/85) as `5799f05ab7eefdc7df86c09debb97537a9028d8e`.
 - PR #84 Preview: https://vercel.com/latinmaestros-projects/spendgrove/9MzRCWw6MZCJsdM5ijEZq32oG1Yh
 - PR #84 merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ
+- Final permanent-handoff main deployment: https://vercel.com/latinmaestros-projects/spendgrove/D5Jk9T4ek1rfghB2JR7tafxhzwtq
 - Final public smoke checks returned HTTP 200 for `/`, `/loans`, `/loans/import`, `/transactions` and `/settings`, with no internal server error.
 
 ## Milestone 3 progress
@@ -137,8 +143,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Phase 3C Milestone 1 implementation, QA and focused acceptance hardening are complete and verified on main. Stop for client retesting. Do not formally close the milestone or begin another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Present `docs/NEXT_MILESTONE_OPTIONS.md` for client selection. Do not implement either option until the client explicitly approves its objective, PR sequence, financial rules and migration gates.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/DECISION_LOG.md`. Phase 3C Milestone 1 is parked for client retesting after PR #84. No Production migration, Phase 4, Home dashboard statistics, tax/EOFY reporting or later module is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`, `docs/NEXT_MILESTONE_OPTIONS.md` and `docs/DECISION_LOG.md`. Phase 3C Milestone 1 is accepted and closed. No next milestone, Production migration, Phase 4 implementation, Home dashboard statistics, tax/EOFY reporting or later module is authorised.

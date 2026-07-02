@@ -2,7 +2,9 @@
 
 Date implementation completed: 2 July 2026
 
-Status: implementation, QA and focused client acceptance hardening complete; parked for client retesting after the hardening PR
+Date formally accepted and closed: 3 July 2026
+
+Status: formally accepted and closed after client retesting completed with no further acceptance comments
 
 ## Delivered outcome
 
@@ -43,6 +45,7 @@ Client retesting found that confirming every clear repayment match was repetitiv
 | 3C.3 Property record-keeping activity view | [#82](https://github.com/LatinMaestro/SpendGrove/pull/82) | `743d3d8f11b92d625b266f833f0b35cdff00ca3c` |
 | 3C.4 QA and client review package | [#83](https://github.com/LatinMaestro/SpendGrove/pull/83) | `601196634df666067b454328b61dfd193f40f33f` |
 | Client acceptance hardening | [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) | `f1ad1b90184e24cbacdb249a37b36fdc9b832ed5` |
+| Permanent acceptance deployment handoff | [#85](https://github.com/LatinMaestro/SpendGrove/pull/85) | `5799f05ab7eefdc7df86c09debb97537a9028d8e` |
 
 ## Schema and migration status
 
@@ -114,6 +117,7 @@ Client retesting found that confirming every clear repayment match was repetitiv
 
 - PR #84 acceptance-hardening Preview: https://vercel.com/latinmaestros-projects/spendgrove/9MzRCWw6MZCJsdM5ijEZq32oG1Yh
 - PR #84 acceptance-hardening merged-main deployment: https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ
+- Final permanent-handoff main deployment after PR #85: https://vercel.com/latinmaestros-projects/spendgrove/D5Jk9T4ek1rfghB2JR7tafxhzwtq
 - Public smoke checks returned HTTP 200 for `/`, `/loans`, `/loans/import`, `/transactions` and `/settings`, with no internal server error.
 
 ## Known limitations
@@ -171,8 +175,8 @@ Use fictional or synthetic values only.
 
 ## Milestone stop
 
-Phase 3C Milestone 1 is parked for client retesting after acceptance-hardening PR #84. Do not formally close it or start another milestone, Phase 4, Home dashboard statistics, tax/EOFY reporting, Basiq, AI, payments or any later module without explicit client approval.
+Phase 3C Milestone 1 was formally accepted and closed by the client on 3 July 2026. Its delivered behavior, privacy controls and known limitations are accepted. No later milestone or module was started as part of closure.
 
 ## Recommended next step
 
-Client retesting should use the checklist above. After acceptance, formally close this milestone and prepare a separately approved proposal for any next work. Reports, tax treatment, Property statistics and Home dashboard statistics require their own future contract and approval.
+Review the proposal-only choices in `docs/NEXT_MILESTONE_OPTIONS.md`. Reports, tax treatment, Property statistics, recurring behavior, budgets, insights and Home dashboard statistics require a separately approved contract and implementation milestone.
