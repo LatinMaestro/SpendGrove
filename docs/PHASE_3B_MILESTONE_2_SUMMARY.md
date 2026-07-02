@@ -65,7 +65,7 @@ The UI labels repayment records as analytical breakdowns, not extra payments or 
 
 ## Reconciliation suggestions
 
-Suggestions are deterministic and never create a link automatically.
+Suggestions are deterministic. As a later client-approved Phase 3C Milestone 1 acceptance-hardening amendment, a newly saved repayment now links automatically only when exactly one current candidate satisfies the existing high-confidence band after server revalidation. Medium, manual, override, zero-candidate, multiple-candidate and uncertain-allocation cases remain manual.
 
 Approved bands:
 
@@ -83,7 +83,7 @@ For transactions outside the candidate bands, the user can deliberately search o
 
 ## Link, unlink, relink and no-double-count behaviour
 
-- Every link is initiated by the user.
+- Manual links remain user-initiated. The later approved automatic exception is limited to exactly one revalidated high-confidence candidate and uses the same serializable validation/no-double-count path.
 - Medium, manual and override links require an additional mismatch confirmation.
 - Ownership, active state, amount variance, date difference and existing split allocation are recalculated on the server immediately before the write.
 - Link writes run in a serializable database transaction.
@@ -147,7 +147,7 @@ Client signed-in end-to-end retesting completed on 30 June 2026 with no further 
 - A separate later import of the same source starts a new request; content-based repeat-import detection is not part of this milestone.
 - Saved repayment breakdowns can be archived/restored but not edited after commit.
 - Reconciliation suggestions depend on eligible existing everyday transactions already being present.
-- Matching is deterministic and user-driven; there is no automatic link.
+- Matching remains deterministic. Only one unambiguous, revalidated high-confidence match may link automatically after repayment save; every other case remains user-driven.
 - Out-of-band manual search uses an exact transaction date and safe date/amount context only; it does not search narration.
 - Balance-after values are stored review context and are not used to infer advice or automatically rewrite a Loan Account balance.
 - Loan repayment breakdowns do not feed spending, income, property, loan, net-worth or Home dashboard statistics.

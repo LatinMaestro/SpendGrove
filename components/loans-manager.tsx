@@ -264,7 +264,7 @@ function RepaymentHistory({
             {!repayment.isArchived && !repayment.linkedTransaction && (
               <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
                 <p className="text-xs font-bold text-brand-deepTeal">Possible everyday transaction match</p>
-                <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Suggestions compare the repayment total with the absolute transaction amount and approved date tolerances. Nothing is linked automatically.</p>
+                <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">One clear high-confidence match may be linked automatically when a repayment is saved. Ambiguous, medium and manual matches stay here for your review.</p>
                 {!candidateReviews[repayment.id] ? (
                   <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "SUGGESTED")} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">{candidateLoadingId === repayment.id ? "Checking…" : "Find possible matches"}</button>
                 ) : (
@@ -309,7 +309,7 @@ function RepaymentHistory({
                       <button type="button" disabled={!overrideDates[repayment.id] || candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "OVERRIDE", overrideDates[repayment.id])} className="mt-2 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-45">Search this exact date</button>
                       <p className="mt-2 text-xs text-brand-deepTeal/60">This is an explicit manual override search, not a likely-match suggestion. Any result requires mismatch confirmation.</p>
                     </div>
-                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Linking is user-confirmed and reversible. It never creates or changes an everyday transaction.</p>
+                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Manual links and automatic high-confidence links are reversible. Linking never creates or changes an everyday transaction.</p>
                   </div>
                 )}
               </div>
@@ -651,6 +651,14 @@ function AuthenticatedLoansManager({
 
   const activeLoans = useMemo(() => loans.filter((loan) => !loan.isArchived), [loans]);
   const archivedLoans = useMemo(() => loans.filter((loan) => loan.isArchived), [loans]);
+  const activeLoanPropertyIds = useMemo(
+    () => new Set(activeLoans.flatMap((loan) => loan.propertyId ? [loan.propertyId] : [])),
+    [activeLoans],
+  );
+  const otherProperties = useMemo(
+    () => properties.filter((property) => !activeLoanPropertyIds.has(property.id)),
+    [activeLoanPropertyIds, properties],
+  );
 
   function applyResult(result: LoanResult) {
     if (result.ok) {
@@ -940,6 +948,10 @@ function AuthenticatedLoansManager({
             {activeLoans.map((loan) => {
               const choice = choiceForLoan(loan);
               const Icon = choice.kind === "CAR" ? Car : choice.propertyRelevant ? Home : Landmark;
+              const loanRepayments = repayments.filter((repayment) => repayment.loanAccountId === loan.id);
+              const propertyActivityKey = loanRepayments
+                .map((repayment) => `${repayment.id}:${repayment.updatedAt}:${repayment.linkedTransaction?.transactionId ?? "none"}`)
+                .join("|");
               return (
                 <article key={loan.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
                   <div className="flex items-start justify-between gap-4">
@@ -947,10 +959,19 @@ function AuthenticatedLoansManager({
                       <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Icon aria-hidden="true" className="h-5 w-5" /></div>
                       <div className="min-w-0"><h3 className="truncate text-lg font-bold text-brand-deepTeal">{loan.nickname}</h3><span className="mt-2 inline-flex rounded-full bg-brand-green/10 px-3 py-1 text-xs font-bold text-brand-green">{choice.tag}</span></div>
                     </div>
+                    <button type="button" aria-label={`Edit ${loan.nickname} Loan Account`} onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-brand-teal text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /></button>
                   </div>
-                  {loan.property && <div className="mt-4 flex items-center gap-2 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal"><Building2 aria-hidden="true" className="h-4 w-4 text-brand-teal" /><span><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></div>}
+                  {loan.property && (
+                    <div className="mt-4 space-y-2">
+                      <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal">
+                        <span className="flex min-w-0 items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-teal" /><span className="truncate"><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></span>
+                        <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-brand-teal text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /></button>
+                      </div>
+                      <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} />
+                    </div>
+                  )}
                   <RepaymentHistory
-                    repayments={repayments.filter((repayment) => repayment.loanAccountId === loan.id)}
+                    repayments={loanRepayments}
                     isSaving={isSaving}
                     candidateReviews={candidateReviews}
                     candidateLoadingId={candidateLoadingId}
@@ -966,9 +987,8 @@ function AuthenticatedLoansManager({
                     onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
                     onUnlink={(repayment) => void unlinkRepayment(repayment)}
                   />
-                  <div className="mt-4 flex gap-2 border-t border-border pt-4">
-                    <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
-                    <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive</button>
+                  <div className="mt-4 border-t border-border pt-4">
+                    <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive Loan Account</button>
                   </div>
                 </article>
               );
@@ -977,13 +997,13 @@ function AuthenticatedLoansManager({
         </section>
       )}
 
-      {properties.length > 0 && (
+      {otherProperties.length > 0 && (
         <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft">
-          <p className="text-sm font-semibold text-brand-teal">Optional supporting records</p>
-          <h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Linked properties</h2>
-          <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Properties support relevant loans. They are not the main entry point and contain no exact address.</p>
+          <p className="text-sm font-semibold text-brand-teal">Property management</p>
+          <h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Other Properties</h2>
+          <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">These Properties are not linked to an active Loan Account. You can edit their safe nickname, usage and record-keeping links here.</p>
           <div className="mt-4 space-y-3">
-            {properties.map((property) => (
+            {otherProperties.map((property) => (
               <div key={property.id} className="space-y-2 rounded-2xl bg-surface-mint p-2">
                 <button type="button" onClick={() => openProperty(property)} className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-2 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
                   <span><strong className="block text-brand-deepTeal">{property.nickname}</strong><span className="text-xs text-brand-deepTeal/65">{propertyUsageLabels[property.usage]}{property.isArchived ? " · Archived" : ""}</span></span>

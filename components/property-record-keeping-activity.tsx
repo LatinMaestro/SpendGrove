@@ -13,12 +13,14 @@ type PropertyActivity = {
     merchantName: string | null;
     categoryName: string | null;
   }>;
-  loans: Array<{
+  loanTransactions: Array<{
     id: string;
-    nickname: string;
-    type: "HOME_LOAN" | "CAR_LOAN" | "PERSONAL_LOAN" | "OTHER";
-    purpose: "OWNER_OCCUPIER" | "INVESTMENT" | "PERSONAL" | "OTHER";
-    isArchived: boolean;
+    date: string;
+    amountCents: number;
+    type: "INCOME" | "EXPENSE";
+    merchantName: string | null;
+    categoryName: string | null;
+    loanAccounts: Array<{ id: string; nickname: string }>;
   }>;
 };
 
@@ -29,14 +31,6 @@ function money(cents: number) {
 function dateLabel(date: string) {
   return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" })
     .format(new Date(`${date}T00:00:00Z`));
-}
-
-function loanLabel(loan: PropertyActivity["loans"][number]) {
-  if (loan.type === "HOME_LOAN" && loan.purpose === "OWNER_OCCUPIER") return "Owner-occupier";
-  if (loan.type === "HOME_LOAN" && loan.purpose === "INVESTMENT") return "Investment";
-  if (loan.type === "CAR_LOAN") return "Car loan";
-  if (loan.type === "PERSONAL_LOAN") return "Personal loan";
-  return "Other loan";
 }
 
 export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propertyId: string }>) {
@@ -87,15 +81,16 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
           {activity && (
             <div className="mt-3 space-y-4">
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Linked everyday transactions</h4>
-                {activity.transactions.length === 0 ? (
-                  <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No transactions are linked to this Property.</p>
+                <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Linked through repayment breakdowns</h4>
+                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Loan repayment transactions are shown here because this loan belongs to this Property.</p>
+                {activity.loanTransactions.length === 0 ? (
+                  <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No active loan repayment transactions are connected yet.</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
-                    {activity.transactions.map((transaction) => (
+                    {activity.loanTransactions.map((transaction) => (
                       <li key={transaction.id} className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
                         <div className="flex items-start justify-between gap-3">
-                          <span><strong className="block">{transaction.merchantName ?? "Everyday transaction"}</strong><span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` - ${transaction.categoryName}` : ""}</span></span>
+                          <span><strong className="block">{transaction.merchantName ?? "Everyday transaction"}</strong><span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` - ${transaction.categoryName}` : ""}</span><span className="mt-1 block text-brand-teal">Connected via {transaction.loanAccounts.map((loan) => loan.nickname).join(", ")}</span></span>
                           <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
                         </div>
                       </li>
@@ -105,15 +100,24 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
               </div>
 
               <div className="border-t border-border pt-3">
-                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal"><Landmark aria-hidden="true" className="h-4 w-4" /> Linked Loan Account context</h4>
-                {activity.loans.length === 0 ? (
-                  <p className="mt-2 text-xs text-brand-deepTeal/65">No Loan Account is linked to this Property.</p>
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal"><Landmark aria-hidden="true" className="h-4 w-4" /> Manually linked property transactions</h4>
+                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Manual Property links are for other property-related transactions you choose to attach yourself.</p>
+                {activity.transactions.length === 0 ? (
+                  <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No transactions have been manually linked to this Property. Loan repayment connections above are unaffected.</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
-                    {activity.loans.map((loan) => <li key={loan.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-xs text-brand-deepTeal"><strong>{loan.nickname}</strong><span>{loanLabel(loan)}{loan.isArchived ? " - Archived" : ""}</span></li>)}
+                    {activity.transactions.map((transaction) => (
+                      <li key={transaction.id} className="rounded-xl border border-border p-3 text-xs text-brand-deepTeal">
+                        <div className="flex items-start justify-between gap-3">
+                          <span><strong className="block">{transaction.merchantName ?? "Everyday transaction"}</strong><span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` - ${transaction.categoryName}` : ""}</span></span>
+                          <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
+                        </div>
+                      </li>
+                    ))}
                   </ul>
                 )}
               </div>
+              <p className="border-t border-border pt-3 text-xs leading-5 text-brand-deepTeal/65">These links do not change your transaction, category, amount or tax treatment.</p>
             </div>
           )}
         </div>

@@ -2,7 +2,7 @@
 
 Date implementation completed: 2 July 2026
 
-Status: implementation and QA complete; parked for client retesting after PR 3C.4
+Status: implementation, QA and focused client acceptance hardening complete; parked for client retesting after the hardening PR
 
 ## Delivered outcome
 
@@ -19,6 +19,19 @@ Phase 3C Milestone 1 adds an optional, user-controlled Property link to an exist
 
 The separately approved development-testing utility can soft-delete all everyday transactions for the signed-in test account in local development or Vercel Preview only. It safely detaches active loan reconciliation and Property links while preserving Loan Accounts, repayment breakdowns, Properties, categories, settings, profiles and merchant rules.
 
+## Focused client acceptance hardening
+
+Client retesting found that confirming every clear repayment match was repetitive and that the separate loan-reconciliation and manual Property-link relationships were not obvious in the Loans UI.
+
+- After durable repayment save, SpendGrove automatically links only when exactly one current candidate is `HIGH`: exact remaining amount and zero-to-one-day difference.
+- The same serializable ownership, active-state, allocation and no-double-count validation used by manual linking runs immediately before the automatic write.
+- Zero, multiple, medium, manual, override, stale, incompatible or uncertain-allocation cases remain unlinked for manual review.
+- Automatic links use the existing `SUGGESTED`, `HIGH` and `EXACT_AMOUNT_NEAR_DATE` persisted values plus safe `AUTO_HIGH_CONFIDENCE` audit metadata; no schema change is required.
+- Automatic links remain reversible through the existing unlink flow and never create or modify an everyday transaction.
+- No automatic `PropertyTransactionLink` is created.
+- Property activity now separates **Linked through repayment breakdowns** from **Manually linked property transactions**.
+- Active Loan Account cards now hold the Loan edit pencil, linked Property edit pencil and Property record-keeping activity. A compact **Other Properties** area remains only for Properties not linked to an active loan.
+
 ## Completed PRs and merge commits
 
 | Work | PR | Merge commit |
@@ -28,7 +41,8 @@ The separately approved development-testing utility can soft-delete all everyday
 | 3C.1A development-only transaction reset utility | [#80](https://github.com/LatinMaestro/SpendGrove/pull/80) | `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4` |
 | 3C.2 manual Property link and unlink | [#81](https://github.com/LatinMaestro/SpendGrove/pull/81) | `3577584b8c19f1c1c9cb4792325994e08dfd2454` |
 | 3C.3 Property record-keeping activity view | [#82](https://github.com/LatinMaestro/SpendGrove/pull/82) | `743d3d8f11b92d625b266f833f0b35cdff00ca3c` |
-| 3C.4 QA and client review package | Final milestone PR | Recorded in the final delivery response |
+| 3C.4 QA and client review package | [#83](https://github.com/LatinMaestro/SpendGrove/pull/83) | `601196634df666067b454328b61dfd193f40f33f` |
+| Client acceptance hardening | [#84](https://github.com/LatinMaestro/SpendGrove/pull/84) | Pending green checks and merge |
 
 ## Schema and migration status
 
@@ -40,6 +54,7 @@ The separately approved development-testing utility can soft-delete all everyday
 - Preview workflow run `28552337732` succeeded at commit `f3778c03b45981ac831066cfb9ae93f709075e84` using Preview-only Neon secrets.
 - No manual SQL, reset, migration retry or Production secret was used.
 - No Production migration has run.
+- The focused acceptance hardening changes no Prisma model, enum, table, column, index or migration file.
 
 ## Manual link, unlink and relink behavior
 
@@ -53,11 +68,12 @@ The separately approved development-testing utility can soft-delete all everyday
 
 ## Property record-keeping activity view
 
-- The Loans page keeps Loan Accounts as the primary records and Properties as optional supporting records.
-- Each Property can open a neutral record-keeping panel.
+- The Loans page keeps Loan Accounts as the primary records, with Loan and linked Property edit controls on each active Loan Account card.
+- A compact **Other Properties** area appears only for Properties not linked to an active Loan Account.
+- Each linked Property can open a neutral record-keeping panel directly from its Loan Account card.
 - The panel reads existing active everyday transactions through active links; it creates no Property transaction copy.
 - Individual date, amount, safe merchant label and category can be displayed from the existing transaction.
-- Loan Account nickname/type context is queried and displayed separately.
+- Reconciled everyday transactions are derived separately through the Property's active Loan Accounts and active repayment links; manual Property links remain a distinct section.
 - The view computes no totals, percentages, income, expense, profit, yield, equity, valuation, net worth, tax or dashboard result.
 - Inactive/deleted transactions and unlinked relationships do not appear.
 
@@ -85,6 +101,7 @@ The separately approved development-testing utility can soft-delete all everyday
 ## Test, build and Vercel evidence
 
 - Final functional regression suite: 70 test files / 416 tests passed.
+- Focused acceptance-hardening regression suite: 71 test files / 424 tests passed.
 - TypeScript type-check: passed.
 - Next.js production build: passed.
 - PR 3C.0 Preview: https://vercel.com/latinmaestros-projects/spendgrove/6jcQRRsiZzFfbGcbZstLahADDstU
@@ -101,7 +118,8 @@ The final PR 3C.4 Preview and merged-main deployment are recorded in the deliver
 
 - One transaction can link to one Property only; there is no allocation across Properties.
 - A split child may link, but a split parent cannot.
-- Linking is entirely manual; there is no automatic Property suggestion or matching.
+- Property linking remains entirely manual; there is no automatic Property suggestion, matching or `PropertyTransactionLink` creation.
+- Loan repayment reconciliation auto-links only one unambiguous current high-confidence candidate; every other candidate remains manual.
 - Direct active relink is intentionally unavailable; unlink first.
 - The activity view is a record list, not a report, summary or Property profile.
 - Archived/deleted transactions are absent from active Property activity even though durable unlink history remains.
@@ -138,6 +156,16 @@ Use fictional or synthetic values only.
 23. Confirm the signed-in test account's everyday transactions leave the active app view while Loan Accounts, repayment breakdowns, Properties, categories, settings, profiles and merchant rules remain.
 24. Confirm affected loan reconciliation and Property links are safely detached.
 25. Repeat the main link, unlink and activity checks on a phone-sized screen.
+26. Save a synthetic repayment with exactly one eligible everyday transaction of the same amount dated zero or one day away.
+27. Confirm the repayment is linked automatically and can still be unlinked normally.
+28. Repeat with zero and then two exact high-confidence candidates; confirm neither case links automatically.
+29. Repeat with medium, manual and override-band candidates; confirm they remain in the existing review flow.
+30. Test a transaction with an uncertain existing split-loan allocation and confirm it remains manual.
+31. For a Property-linked Loan Account, confirm its reconciled everyday transaction appears under **Linked through repayment breakdowns**.
+32. Unlink the repayment and confirm that loan-derived activity disappears without changing the everyday transaction.
+33. Manually link another transaction to the Property and confirm it appears only under **Manually linked property transactions**.
+34. Confirm the Loan Account and linked Property edit pencils are available on the active Loan Account card.
+35. Confirm the old **Optional supporting records** wording is gone and unlinked Properties remain manageable under **Other Properties**.
 
 ## Milestone stop
 

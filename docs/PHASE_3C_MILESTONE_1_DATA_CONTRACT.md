@@ -39,7 +39,7 @@ Every read and write must scope the link, transaction and Property to the authen
 - **Unlink:** the user explicitly confirms removal. The link record remains durable with `unlinkedAt` set; no transaction or Property field changes.
 - **Relink:** an unlinked record may be pointed to another active owned Property and reactivated by clearing `unlinkedAt`. Directly changing an active link to another Property is forbidden; unlink must happen first.
 - Repeating the already-current requested state must be idempotent and must not create another link record.
-- No automatic link, unlink, relink, merge or allocation is permitted.
+- No automatic Property link, unlink, relink, merge or allocation is permitted. The separately approved automatic high-confidence loan repayment reconciliation amendment never creates a `PropertyTransactionLink`.
 
 Link and relink require active eligible records. Unlink remains available for an owned existing link if its Property was later archived or its transaction later became inactive/deleted, solely so the user can detach metadata safely. The server must still verify ownership and current state and must not restore or alter either record.
 
@@ -90,6 +90,7 @@ Audit metadata must not contain Property IDs or nicknames, old/new IDs, transact
 - It may display the existing transaction's already-authorised safe UI fields by joining through an active link; it must not persist a snapshot.
 - Linked Loan Account context is queried separately through the existing optional `LoanAccount.propertyId` relationship.
 - Loan Account context must not be presented as a transaction link or another payment.
+- Everyday transactions connected through active loan repayment reconciliation may be shown in a separate loan-derived section when the Loan Account belongs to the Property. This is a read-time relationship view only and does not create a Property link or transaction copy.
 - Copy must use neutral terms such as `Property record keeping`, `Linked transaction` and `Linked Loan Account`.
 - No deductible, tax, EOFY, income, expense, profit, yield, equity, valuation, net-worth or dashboard calculation is permitted.
 

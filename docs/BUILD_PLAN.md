@@ -277,13 +277,15 @@ The delivered Phase 3B milestones are a limited first slice of this broader scop
 
 ## Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations
 
-Status: implementation and QA complete under Autonomous Phase Delivery Mode; parked for client retesting after PR 3C.4. PRs 3C.0-3C.3 merged in #78-#82, and the approved Preview migration succeeded.
+Status: implementation and QA completed through PR 3C.4/#83. A focused client-retesting acceptance-hardening pass is approved for unique high-confidence repayment reconciliation and clearer Loans/Property activity UI; park for client retesting after it merges.
 
 PR 3C.1 verification before migration: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and production build passed.
 
 The client approved the Preview-only migration on 2 July 2026. Workflow run `28552337732` completed successfully from `main` at `f3778c03b45981ac831066cfb9ae93f709075e84` using Preview-only secrets. No Production migration ran and no application code had written the new table. The separately approved PR 3C.1A development-only transaction reset utility merged in #80 as `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4` before PR 3C.2.
 
 PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. It uses existing soft-delete and unlink lifecycle fields only and introduces no schema, migration, package, provider, secret or environment configuration. PR 3C.2 verification is 69 test files / 413 tests. Final functional verification after PR 3C.3 is 70 test files / 416 tests, TypeScript and production build passed. PRs 3C.2-3C.4 require no further schema or migration change.
+
+Focused acceptance-hardening verification: 71 test files / 424 tests passed; TypeScript and production build passed. The existing reconciliation and Property-link schemas remain unchanged.
 
 Objective: let an authenticated user manually link one eligible owned everyday transaction to one active owned Property as reversible supporting metadata, while preserving the transaction as the only cashflow record.
 
@@ -296,7 +298,7 @@ Approved sequence:
 5. PR 3C.3 - neutral Property record-keeping activity view.
 6. PR 3C.4 - QA, Vercel review and client testing package.
 
-The milestone excludes tax/EOFY/accountant reports, deductibility decisions, property/Home statistics, automatic matching, transaction allocation, new providers and all Phase 4 or later work. No Production migration is authorised.
+The focused amendment permits only automatic reconciliation of exactly one revalidated high-confidence repayment candidate; it does not permit automatic Property matching or `PropertyTransactionLink` creation. The milestone still excludes tax/EOFY/accountant reports, deductibility decisions, property/Home statistics, transaction allocation, new providers and all Phase 4 or later work. No Production migration is authorised.
 
 ## Phase 4 — Recurring, Budgets and Insights
 

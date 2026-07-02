@@ -17,6 +17,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { autoReconcileHighConfidenceRepayments } from "@/src/server/loan-auto-reconciliation";
 
 export class LoanRepaymentCommitConflictError extends Error {
   constructor() {
@@ -106,7 +107,7 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
       }
 
       try {
-        return await prisma.$transaction(async (tx) => {
+        const committed = await prisma.$transaction(async (tx) => {
           const loan = await tx.loanAccount.findFirst({
             where: { id: request.loanAccountId, userId, isArchived: false, deletedAt: null },
             select: { id: true },
@@ -143,9 +144,9 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
             },
           });
 
-          await tx.loanRepayment.createMany({
-            data: request.rows.map((row) => ({
-              id: randomUUID(),
+          const repaymentIds = request.rows.map(() => randomUUID());
+          const repaymentRows: Prisma.LoanRepaymentCreateManyInput[] = request.rows.map((row, index) => ({
+              id: repaymentIds[index],
               userId,
               loanAccountId: loan.id,
               importBatchId: batch.id,
@@ -157,9 +158,10 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
               balanceAfterCents: row.balanceAfterCents,
               source: "LOAN_CSV",
               reconciliationStatus: "UNMATCHED",
-            })),
+            }));
+          await tx.loanRepayment.createMany({
+            data: repaymentRows,
           });
-
           const auditMetadata = {
             totalCount: request.reviewedRowCount,
             savedCount: request.rows.length,
@@ -179,12 +181,14 @@ export function createPrismaLoanRepaymentStore(prisma: PrismaClient = getPrismaC
           });
           await tx.auditEvent.create({ data: { userId, entityType: "IMPORT_BATCH", entityId: batch.id, action: "IMPORTED", metadata: auditMetadata } });
 
-          return summaryFromBatch(batch, false);
+          return { summary: summaryFromBatch(batch, false), repaymentIds };
         }, {
           isolationLevel: Prisma.TransactionIsolationLevel.Serializable,
           maxWait: 10_000,
           timeout: 30_000,
         });
+        await autoReconcileHighConfidenceRepayments(prisma, userId, committed.repaymentIds);
+        return committed.summary;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const committed = await prisma.importBatch.findFirst({

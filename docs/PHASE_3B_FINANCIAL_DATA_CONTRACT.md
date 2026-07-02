@@ -166,12 +166,14 @@ Each loan repayment may link to at most one everyday transaction. One everyday t
 
 ### Candidate tolerance and confidence bands
 
-These bands create suggestions only. No confidence band may automatically create a durable link.
+These bands normally create review suggestions. The client-approved Phase 3C Milestone 1 acceptance-hardening amendment permits one narrow automatic exception: a newly saved repayment may link when exactly one current candidate remains `HIGH` after server-side ownership, active-state and allocation revalidation. All other bands and ambiguous high-confidence results remain manual.
 
 **High confidence**
 
 - amount variance is exactly 0 cents; and
 - date difference is 0–1 calendar days.
+
+Automatic use of this band requires exactly one eligible high-confidence candidate. Zero or multiple high-confidence candidates, allocation uncertainty, stale state and any non-high result remain unlinked for manual review. Automatic links use the existing `SUGGESTED` method, remain reversible and do not create or alter an everyday transaction or Property link.
 
 **Medium confidence**
 
