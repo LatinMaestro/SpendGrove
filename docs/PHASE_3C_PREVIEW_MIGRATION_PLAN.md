@@ -1,6 +1,6 @@
 # Phase 3C Preview Migration Plan
 
-Status: awaiting explicit client approval; not executed
+Status: approved and completed successfully in Preview
 
 Date prepared: 2 July 2026
 
@@ -9,6 +9,8 @@ Date prepared: 2 July 2026
 This plan accompanies PR 3C.1 and implements only `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md`. The migration must not run in Preview until PR 3C.1 is green, merged to `main` and explicitly approved by the client. PR 3C.2 must not begin before the approved Preview migration succeeds.
 
 No Production migration is proposed or authorised.
+
+The client approved this exact plan on 2 July 2026. The existing workflow ran once from `main` as run `28552337732` against commit `f3778c03b45981ac831066cfb9ae93f709075e84` and completed successfully. Every Preview confirmation, secret-presence, dependency, Prisma generation, validation, migrate-deploy and completion step was green. No Production workflow or connection was used.
 
 ## Migration
 

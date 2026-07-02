@@ -24,6 +24,7 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "auditEvent.write", pattern: /auditEvent\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "loanRepayment.write", pattern: /loanRepayment\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "loanReconciliationLink.write", pattern: /loanReconciliationLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "propertyTransactionLink.write", pattern: /propertyTransactionLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -107,6 +108,16 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     new Set([
       "loanRepayment.write",
       "loanReconciliationLink.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
+    "src/server/development-transaction-reset.ts",
+    new Set([
+      "transaction.updateMany",
+      "loanRepayment.write",
+      "loanReconciliationLink.write",
+      "propertyTransactionLink.write",
       "auditEvent.write",
     ]),
   ],
