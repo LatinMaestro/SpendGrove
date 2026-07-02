@@ -1,6 +1,6 @@
 # Next Milestone Options
 
-Status: proposal only; no implementation authorised
+Status: Option A approved on 3 July 2026 as Phase 3C Milestone 2; Option B remains unapproved
 
 Date prepared: 3 July 2026
 
@@ -136,4 +136,4 @@ Recommended sequence: **Option A first, narrowly scoped to its contract and repo
 
 ## Approval boundary
 
-This document authorises nothing. The client must explicitly select and approve one option, its objective, PR sequence, financial rules and migration gates before implementation starts. Home dashboard statistics require explicit approval within Option B. Tax/EOFY reporting requires explicit approval within Option A. No Basiq, AI, payments, household mode, document storage or later module is authorised.
+The client selected Option A on 3 July 2026. Its implementation is controlled by `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md` and the explicit PR 3C.6 migration gate. Option B remains unapproved: no Phase 4, recurring, budgets, insights or Home dashboard statistics may start. No Basiq, AI, payments, household mode, document storage or later module is authorised.
