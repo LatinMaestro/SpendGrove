@@ -36,6 +36,7 @@ export function createLoanReconciliationLinkAuditEvent(input: {
   methodCode: SafeReconciliationLink["method"];
   confidenceCode: SafeReconciliationLink["confidence"];
   reasonCode: SafeReconciliationLink["reasonCode"];
+  triggerCode?: "AUTO_HIGH_CONFIDENCE";
 }) {
   const audit = {
     userId: input.userId,
@@ -46,10 +47,109 @@ export function createLoanReconciliationLinkAuditEvent(input: {
       methodCode: input.methodCode,
       confidenceCode: input.confidenceCode,
       reasonCode: input.reasonCode,
+      ...(input.triggerCode ? { triggerCode: input.triggerCode } : {}),
     },
   };
   auditEventSchema.parse(audit);
   return audit;
+}
+
+export async function linkLoanRepaymentWithinTransaction(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  repaymentId: string,
+  request: ReconciliationLinkRequest,
+  triggerCode?: "AUTO_HIGH_CONFIDENCE",
+) {
+  const repayment = await tx.loanRepayment.findFirst({
+    where: { id: repaymentId, userId, isArchived: false, deletedAt: null },
+    select: {
+      id: true, userId: true, repaymentDate: true, totalPaymentCents: true,
+      reconciliationLink: { select: { id: true, unlinkedAt: true } },
+    },
+  });
+  if (!repayment || repayment.userId !== userId) throw new OwnershipError("active loan repayment");
+  if (repayment.reconciliationLink?.unlinkedAt === null) {
+    throw new LoanReconciliationConflictError("Unlink the current everyday transaction before choosing another one.");
+  }
+
+  const transaction = await tx.transaction.findFirst({
+    where: { id: request.transactionId, userId, type: "EXPENSE", status: "ACTIVE", deletedAt: null, splitRole: { not: "PARENT" }, amountCents: { not: 0 } },
+    select: {
+      id: true, userId: true, date: true, amountCents: true,
+      loanReconciliationLinks: {
+        where: { unlinkedAt: null, loanRepaymentId: { not: repayment.id } },
+        select: {
+          unlinkedAt: true,
+          loanRepayment: { select: { userId: true, totalPaymentCents: true, isArchived: true, deletedAt: true } },
+        },
+      },
+    },
+  });
+  if (!transaction || transaction.userId !== userId) throw new OwnershipError("eligible everyday transaction");
+
+  const existingAllocationCents = transaction.loanReconciliationLinks.reduce((sum, link) => {
+    const linked = link.loanRepayment;
+    if (link.unlinkedAt || linked.userId !== userId || linked.isArchived || linked.deletedAt) return sum;
+    return sum + linked.totalPaymentCents;
+  }, 0);
+  let decision: SafeReconciliationLink;
+  try {
+    decision = resolveReconciliationLinkDecision({
+      repaymentTotalCents: repayment.totalPaymentCents,
+      repaymentDate: dateOnly(repayment.repaymentDate),
+      transactionId: transaction.id,
+      transactionDate: dateOnly(transaction.date),
+      transactionAmountCents: transaction.amountCents,
+      existingAllocationCents,
+      mode: request.selectionMode,
+      selectionMode: request.selectionMode,
+      mismatchConfirmed: request.mismatchConfirmed,
+    });
+  } catch (error) {
+    throw new LoanReconciliationValidationError(error instanceof Error ? error.message : "Confirm this manual link before saving it.");
+  }
+  if (triggerCode === "AUTO_HIGH_CONFIDENCE" && decision.confidence !== "HIGH") {
+    throw new LoanReconciliationValidationError("Automatic reconciliation requires one current high-confidence match.");
+  }
+
+  const link = await tx.loanReconciliationLink.upsert({
+    where: { loanRepaymentId: repayment.id },
+    create: {
+      userId,
+      loanRepaymentId: repayment.id,
+      transactionId: transaction.id,
+      confidence: decision.confidence,
+      amountVarianceCents: decision.amountVarianceCents,
+      dateDifferenceDays: decision.dateDifferenceDays,
+      method: decision.method,
+      reason: decision.reasonCode,
+      unlinkedAt: null,
+    },
+    update: {
+      transactionId: transaction.id,
+      confidence: decision.confidence,
+      amountVarianceCents: decision.amountVarianceCents,
+      dateDifferenceDays: decision.dateDifferenceDays,
+      method: decision.method,
+      reason: decision.reasonCode,
+      unlinkedAt: null,
+    },
+    select: { id: true },
+  });
+  await tx.loanRepayment.update({ where: { id: repayment.id }, data: { reconciliationStatus: "LINKED" } });
+
+  const audit = createLoanReconciliationLinkAuditEvent({
+    userId,
+    linkId: link.id,
+    action: repayment.reconciliationLink ? "UPDATED" : "CREATED",
+    methodCode: decision.method,
+    confidenceCode: decision.confidence,
+    reasonCode: decision.reasonCode,
+    triggerCode,
+  });
+  await tx.auditEvent.create({ data: audit });
+  return decision;
 }
 
 export function createLoanReconciliationUnlinkAuditEvent(userId: string, linkId: string) {
@@ -72,91 +172,10 @@ export function createPrismaLoanReconciliationLinkStore(prisma: PrismaClient = g
   return {
     async link(userId, repaymentId, request, now) {
       try {
-        return await prisma.$transaction(async (tx) => {
-          const repayment = await tx.loanRepayment.findFirst({
-            where: { id: repaymentId, userId, isArchived: false, deletedAt: null },
-            select: {
-              id: true, userId: true, repaymentDate: true, totalPaymentCents: true,
-              reconciliationLink: { select: { id: true, unlinkedAt: true } },
-            },
-          });
-          if (!repayment || repayment.userId !== userId) throw new OwnershipError("active loan repayment");
-          if (repayment.reconciliationLink?.unlinkedAt === null) throw new LoanReconciliationConflictError("Unlink the current everyday transaction before choosing another one.");
-
-          const transaction = await tx.transaction.findFirst({
-            where: { id: request.transactionId, userId, status: "ACTIVE", deletedAt: null, splitRole: { not: "PARENT" }, amountCents: { not: 0 } },
-            select: {
-              id: true, userId: true, date: true, amountCents: true,
-              loanReconciliationLinks: {
-                where: { unlinkedAt: null, loanRepaymentId: { not: repayment.id } },
-                select: {
-                  unlinkedAt: true,
-                  loanRepayment: { select: { userId: true, totalPaymentCents: true, isArchived: true, deletedAt: true } },
-                },
-              },
-            },
-          });
-          if (!transaction || transaction.userId !== userId) throw new OwnershipError("eligible everyday transaction");
-
-          const existingAllocationCents = transaction.loanReconciliationLinks.reduce((sum, link) => {
-            const linked = link.loanRepayment;
-            if (link.unlinkedAt || linked.userId !== userId || linked.isArchived || linked.deletedAt) return sum;
-            return sum + linked.totalPaymentCents;
-          }, 0);
-          let decision: SafeReconciliationLink;
-          try {
-            decision = resolveReconciliationLinkDecision({
-              repaymentTotalCents: repayment.totalPaymentCents,
-              repaymentDate: dateOnly(repayment.repaymentDate),
-              transactionId: transaction.id,
-              transactionDate: dateOnly(transaction.date),
-              transactionAmountCents: transaction.amountCents,
-              existingAllocationCents,
-              mode: request.selectionMode,
-              selectionMode: request.selectionMode,
-              mismatchConfirmed: request.mismatchConfirmed,
-            });
-          } catch (error) {
-            throw new LoanReconciliationValidationError(error instanceof Error ? error.message : "Confirm this manual link before saving it.");
-          }
-
-          const link = await tx.loanReconciliationLink.upsert({
-            where: { loanRepaymentId: repayment.id },
-            create: {
-              userId,
-              loanRepaymentId: repayment.id,
-              transactionId: transaction.id,
-              confidence: decision.confidence,
-              amountVarianceCents: decision.amountVarianceCents,
-              dateDifferenceDays: decision.dateDifferenceDays,
-              method: decision.method,
-              reason: decision.reasonCode,
-              unlinkedAt: null,
-            },
-            update: {
-              transactionId: transaction.id,
-              confidence: decision.confidence,
-              amountVarianceCents: decision.amountVarianceCents,
-              dateDifferenceDays: decision.dateDifferenceDays,
-              method: decision.method,
-              reason: decision.reasonCode,
-              unlinkedAt: null,
-            },
-            select: { id: true },
-          });
-          await tx.loanRepayment.update({ where: { id: repayment.id }, data: { reconciliationStatus: "LINKED" } });
-
-          const audit = createLoanReconciliationLinkAuditEvent({
-            userId,
-            linkId: link.id,
-            action: repayment.reconciliationLink ? "UPDATED" : "CREATED",
-            methodCode: decision.method,
-            confidenceCode: decision.confidence,
-            reasonCode: decision.reasonCode,
-          });
-          await tx.auditEvent.create({ data: audit });
-          return decision;
-        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
+        return await prisma.$transaction(
+          (tx) => linkLoanRepaymentWithinTransaction(tx, userId, repaymentId, request),
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 },
+        );
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2002" || error.code === "P2034")) {
           throw new LoanReconciliationConflictError();

@@ -20,6 +20,10 @@ export type SafePropertyActivityLoan = {
   isArchived: boolean;
 };
 
+export type SafePropertyActivityLoanTransaction = SafePropertyActivityTransaction & {
+  loanAccounts: Array<{ id: string; nickname: string }>;
+};
+
 export type SafePropertyActivity = {
   property: {
     id: string;
@@ -28,6 +32,7 @@ export type SafePropertyActivity = {
     isArchived: boolean;
   };
   transactions: SafePropertyActivityTransaction[];
+  loanTransactions: SafePropertyActivityLoanTransaction[];
   loans: SafePropertyActivityLoan[];
 };
 
@@ -50,7 +55,7 @@ export function createPrismaPropertyActivityStore(
       });
       if (!property || property.userId !== userId) throw new OwnershipError("Property");
 
-      const [links, loans] = await Promise.all([
+      const [links, loanLinks, loans] = await Promise.all([
         prisma.propertyTransactionLink.findMany({
           where: {
             userId,
@@ -78,6 +83,45 @@ export function createPrismaPropertyActivityStore(
           },
           orderBy: { transaction: { date: "desc" } },
         }),
+        prisma.loanReconciliationLink.findMany({
+          where: {
+            userId,
+            unlinkedAt: null,
+            loanRepayment: {
+              userId,
+              isArchived: false,
+              deletedAt: null,
+              loanAccount: { userId, propertyId, isArchived: false, deletedAt: null },
+            },
+            transaction: {
+              userId,
+              status: "ACTIVE",
+              deletedAt: null,
+              splitRole: { not: "PARENT" },
+            },
+          },
+          select: {
+            userId: true,
+            transaction: {
+              select: {
+                id: true,
+                userId: true,
+                date: true,
+                amountCents: true,
+                type: true,
+                merchantName: true,
+                category: { select: { name: true } },
+              },
+            },
+            loanRepayment: {
+              select: {
+                userId: true,
+                loanAccount: { select: { id: true, userId: true, nickname: true } },
+              },
+            },
+          },
+          orderBy: { transaction: { date: "desc" } },
+        }),
         prisma.loanAccount.findMany({
           where: { userId, propertyId, deletedAt: null },
           select: { id: true, userId: true, nickname: true, type: true, purpose: true, isArchived: true },
@@ -85,8 +129,39 @@ export function createPrismaPropertyActivityStore(
         }),
       ]);
 
-      if (links.some((link) => link.transaction.userId !== userId) || loans.some((loan) => loan.userId !== userId)) {
+      if (
+        links.some((link) => link.transaction.userId !== userId)
+        || loanLinks.some((link) =>
+          link.userId !== userId
+          || link.transaction.userId !== userId
+          || link.loanRepayment.userId !== userId
+          || link.loanRepayment.loanAccount.userId !== userId
+        )
+        || loans.some((loan) => loan.userId !== userId)
+      ) {
         throw new OwnershipError("Property activity");
+      }
+
+      const loanTransactionsById = new Map<string, SafePropertyActivityLoanTransaction>();
+      for (const link of loanLinks) {
+        const existing = loanTransactionsById.get(link.transaction.id);
+        const loanAccount = {
+          id: link.loanRepayment.loanAccount.id,
+          nickname: link.loanRepayment.loanAccount.nickname,
+        };
+        if (existing) {
+          if (!existing.loanAccounts.some((loan) => loan.id === loanAccount.id)) existing.loanAccounts.push(loanAccount);
+          continue;
+        }
+        loanTransactionsById.set(link.transaction.id, {
+          id: link.transaction.id,
+          date: dateOnly(link.transaction.date),
+          amountCents: link.transaction.amountCents,
+          type: link.transaction.type,
+          merchantName: link.transaction.merchantName,
+          categoryName: link.transaction.category?.name ?? null,
+          loanAccounts: [loanAccount],
+        });
       }
 
       return {
@@ -104,6 +179,7 @@ export function createPrismaPropertyActivityStore(
           merchantName: transaction.merchantName,
           categoryName: transaction.category?.name ?? null,
         })),
+        loanTransactions: [...loanTransactionsById.values()],
         loans: loans.map((loan) => ({
           id: loan.id,
           nickname: loan.nickname,

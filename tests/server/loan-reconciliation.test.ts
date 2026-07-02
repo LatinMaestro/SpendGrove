@@ -19,19 +19,23 @@ function store(options: { linked?: boolean } = {}): LoanReconciliationCandidateS
       return [
         {
           id: "transaction_exact", userId, date: new Date("2026-06-19T00:00:00.000Z"), amountCents: -180000,
-          status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
+          type: "EXPENSE", status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
         },
         {
           id: "transaction_manual", userId, date: new Date("2026-06-25T00:00:00.000Z"), amountCents: -180050,
-          status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
+          type: "EXPENSE", status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
         },
         {
           id: "transaction_parent", userId, date: new Date("2026-06-18T00:00:00.000Z"), amountCents: -180000,
-          status: "ACTIVE", splitRole: "PARENT", deletedAt: null, loanReconciliationLinks: [],
+          type: "EXPENSE", status: "ACTIVE", splitRole: "PARENT", deletedAt: null, loanReconciliationLinks: [],
         },
         {
           id: "transaction_deleted", userId, date: new Date("2026-06-18T00:00:00.000Z"), amountCents: -180000,
-          status: "DELETED", splitRole: "NONE", deletedAt: new Date(), loanReconciliationLinks: [],
+          type: "EXPENSE", status: "DELETED", splitRole: "NONE", deletedAt: new Date(), loanReconciliationLinks: [],
+        },
+        {
+          id: "transaction_income", userId, date: new Date("2026-06-18T00:00:00.000Z"), amountCents: 180000,
+          type: "INCOME", status: "ACTIVE", splitRole: "NONE", deletedAt: null, loanReconciliationLinks: [],
         },
       ];
     },

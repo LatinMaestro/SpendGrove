@@ -23,6 +23,7 @@ type CandidateTransaction = {
   userId: string;
   date: Date;
   amountCents: number;
+  type: string;
   status: string;
   splitRole: string;
   deletedAt: Date | null;
@@ -49,6 +50,7 @@ export function createPrismaLoanReconciliationCandidateStore(prisma: PrismaClien
       return prisma.transaction.findMany({
         where: {
           userId,
+          type: "EXPENSE",
           status: "ACTIVE",
           deletedAt: null,
           splitRole: { not: "PARENT" },
@@ -58,7 +60,7 @@ export function createPrismaLoanReconciliationCandidateStore(prisma: PrismaClien
         orderBy: [{ date: "desc" }, { id: "asc" }],
         take: 50,
         select: {
-          id: true, userId: true, date: true, amountCents: true, status: true, splitRole: true, deletedAt: true,
+          id: true, userId: true, date: true, amountCents: true, type: true, status: true, splitRole: true, deletedAt: true,
           loanReconciliationLinks: {
             where: { unlinkedAt: null },
             select: { unlinkedAt: true, loanRepayment: { select: { userId: true, totalPaymentCents: true, isArchived: true, deletedAt: true } } },
@@ -96,7 +98,7 @@ export async function listLoanReconciliationCandidates(
   const transactions = await store.listTransactions(user.userId, dateFrom, dateTo);
 
   const candidates = transactions.flatMap((transaction) => {
-    if (transaction.userId !== user.userId || transaction.status !== "ACTIVE" || transaction.deletedAt || transaction.splitRole === "PARENT" || transaction.amountCents === 0) return [];
+    if (transaction.userId !== user.userId || transaction.type !== "EXPENSE" || transaction.status !== "ACTIVE" || transaction.deletedAt || transaction.splitRole === "PARENT" || transaction.amountCents === 0) return [];
     const existingAllocationCents = transaction.loanReconciliationLinks.reduce((sum, link) => {
       const linked = link.loanRepayment;
       if (link.unlinkedAt || linked.userId !== user.userId || linked.isArchived || linked.deletedAt) return sum;

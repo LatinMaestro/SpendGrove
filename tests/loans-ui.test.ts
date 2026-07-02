@@ -25,7 +25,7 @@ describe("Loans-first UI contract", () => {
 
     expect(manager).toContain("Optional property link");
     expect(manager).toContain("No property");
-    expect(manager).toContain("Properties support relevant loans");
+    expect(manager).toContain("Property details are always optional");
     expect(manager).toContain("No exact address is requested");
     expect(manager).not.toContain("Account number");
     expect(manager).not.toContain("Customer ID");
@@ -45,7 +45,7 @@ describe("Loans-first UI contract", () => {
     expect(manager).not.toContain("rawNarration");
   });
 
-  it("presents reconciliation as review-only suggestions with an explicit wider search", async () => {
+  it("auto-links only clear high-confidence matches and keeps wider cases in manual review", async () => {
     const manager = await readFile(managerPath, "utf8");
 
     expect(manager).toContain("Find possible matches");
@@ -54,7 +54,8 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("within $1 and 7 days");
     expect(manager).toContain("Exact-date manual override results");
     expect(manager).toContain("separate exact-date override below");
-    expect(manager).toContain("Nothing is linked automatically");
+    expect(manager).toContain("One clear high-confidence match may be linked automatically when a repayment is saved.");
+    expect(manager).toContain("Ambiguous, medium and manual matches stay here for your review.");
     expect(manager).toContain("High confidence");
     expect(manager).toContain("Possible match");
     expect(manager).toContain("Manual review");
@@ -62,9 +63,22 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("Unlink breakdown");
     expect(manager).toContain("Search this exact date");
     expect(manager).toContain("explicit manual override search, not a likely-match suggestion");
-    expect(manager).toContain("Linking is user-confirmed and reversible");
+    expect(manager).toContain("Manual links and automatic high-confidence links are reversible.");
     expect(manager).toContain("only cashflow and spending record");
-    expect(manager).not.toContain("automatic link");
+    expect(manager).not.toContain("Nothing is linked automatically");
+  });
+
+  it("keeps editing on active Loan Account cards and uses a compact area only for other Properties", async () => {
+    const manager = await readFile(managerPath, "utf8");
+
+    expect(manager).toContain("Edit ${loan.nickname} Loan Account");
+    expect(manager).toContain("Edit ${loan.property.nickname} Property");
+    expect(manager).toContain("Property management");
+    expect(manager).toContain("Other Properties");
+    expect(manager).toContain("not linked to an active Loan Account");
+    expect(manager).not.toContain("Optional supporting records");
+    expect(manager).toContain('propertyRelevant: false');
+    expect(manager).not.toMatch(/property profit|property yield|dashboard statistics|tax report/i);
   });
 
   it("offers structured repayment correction with unlink and restore safeguards", async () => {
