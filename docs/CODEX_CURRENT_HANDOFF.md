@@ -19,8 +19,9 @@ Last updated: 2 July 2026
 - PR 3C.1 adds only the matching `PropertyTransactionLink` foundation and the unexecuted `docs/PHASE_3C_PREVIEW_MIGRATION_PLAN.md`.
 - PR 3C.1 verification: Prisma format/generation/validation passed; 67 test files / 402 tests passed; TypeScript and the production build passed.
 - Preview migration run `28552337732` completed successfully on commit `f3778c03b45981ac831066cfb9ae93f709075e84` using Preview-only Neon secrets. No Property-link row or application write existed at migration time.
-- No Production migration has run. PR 3C.1A, the development-only transaction reset utility, is active before PR 3C.2.
-- PR 3C.1A local verification: 68 test files / 408 tests passed; TypeScript and production build passed. The utility is fail-closed outside local development or Vercel Preview and has no schema/migration change.
+- No Production migration has run. PR 3C.1A, the development-only transaction reset utility, merged in [#80](https://github.com/LatinMaestro/SpendGrove/pull/80) as `7eeb6f7f830d93b86e2e6786935c9f222a97d8c4`.
+- PR 3C.1A verification: 68 test files / 408 tests passed; TypeScript and production build passed. The utility is fail-closed outside local development or Vercel Preview and has no schema/migration change.
+- PR 3C.2 manual Property link/unlink is in progress. Its current local verification is 69 test files / 413 tests, TypeScript and production build passed. It changes no schema or migration.
 
 ## Milestone 3 progress
 
@@ -128,8 +129,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete and merge PR 3C.1A if its tests, build and Preview remain green, then continue PR 3C.2 under the frozen contract. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
+Complete and merge PR 3C.2 under the frozen contract, then continue PRs 3C.3-3C.4. Do not run a Production migration or begin Phase 4, Home dashboard statistics, tax/EOFY reporting or later modules.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` when present and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.0-3C.1 sequence and stop before any Preview migration or PR 3C.2.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.2-3C.4 sequence. The approved Preview migration has succeeded; no Production migration is authorised.

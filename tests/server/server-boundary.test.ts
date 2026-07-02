@@ -121,6 +121,13 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "auditEvent.write",
     ]),
   ],
+  [
+    "src/server/property-transaction-links.ts",
+    new Set([
+      "propertyTransactionLink.write",
+      "auditEvent.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
