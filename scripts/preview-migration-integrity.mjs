@@ -1,5 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
+import { primaryAndForeignKeyNames } from "./preview-migration-integrity-core.mjs";
 
 const EXPECTED_MIGRATION = "20260703090000_phase_3c_property_reporting_review";
 const EXPECTED_ENUM_VALUES = [
@@ -60,8 +61,12 @@ function parseArguments() {
   const mode = process.argv[2];
   const stateFlag = process.argv.indexOf("--state-file");
   const stateFile = stateFlag >= 0 ? process.argv[stateFlag + 1] : undefined;
-  if (!stateFile || (mode !== "pre" && mode !== "post")) fail("INVALID_MODE");
-  return { mode, stateFile };
+  const expectedCountsFlag = process.argv.indexOf("--expected-counts-json");
+  const expectedCountsJson = expectedCountsFlag >= 0 ? process.argv[expectedCountsFlag + 1] : undefined;
+  if ((mode !== "pre" && mode !== "post") || (mode === "pre" && !stateFile) || (mode === "post" && !stateFile && !expectedCountsJson)) {
+    fail("INVALID_MODE");
+  }
+  return { mode, stateFile, expectedCountsJson };
 }
 
 async function existingCounts(prisma) {
@@ -165,17 +170,34 @@ async function tableIndexes(prisma) {
 
 async function tableConstraints(prisma) {
   const rows = await prisma.$queryRaw`
-    SELECT c.conname AS "name"
+    SELECT c.conname AS "name", c.contype AS "type"
     FROM pg_catalog.pg_constraint c
     JOIN pg_catalog.pg_class r ON r.oid = c.conrelid
     JOIN pg_catalog.pg_namespace n ON n.oid = r.relnamespace
-    WHERE n.nspname = current_schema() AND r.relname = 'PropertyReportReview'
+    WHERE n.nspname = current_schema()
+      AND r.relname = 'PropertyReportReview'
+      AND c.contype IN ('p', 'f')
     ORDER BY c.conname
   `;
-  return rows.map((row) => row.name);
+  return primaryAndForeignKeyNames(rows);
 }
 
-async function runPost(prisma, stateFile) {
+async function beforeCounts(stateFile, expectedCountsJson) {
+  if (expectedCountsJson) {
+    try {
+      return JSON.parse(expectedCountsJson);
+    } catch {
+      fail("MISSING_PRE_MIGRATION_STATE");
+    }
+  }
+  try {
+    return JSON.parse(await readFile(stateFile, "utf8"));
+  } catch {
+    fail("MISSING_PRE_MIGRATION_STATE");
+  }
+}
+
+async function runPost(prisma, stateFile, expectedCountsJson) {
   const migrations = await migrationRows(prisma);
   assertNoFailedMigration(migrations);
   const applied = migrations.filter(
@@ -188,14 +210,9 @@ async function runPost(prisma, stateFile) {
   if (!equalValues(await tableConstraints(prisma), EXPECTED_CONSTRAINTS)) fail("REPORTING_CONSTRAINTS_MISMATCH");
   if (await prisma.propertyReportReview.count() !== 0) fail("REPORTING_TABLE_NOT_EMPTY");
 
-  let beforeCounts;
-  try {
-    beforeCounts = JSON.parse(await readFile(stateFile, "utf8"));
-  } catch {
-    fail("MISSING_PRE_MIGRATION_STATE");
-  }
+  const baselineCounts = await beforeCounts(stateFile, expectedCountsJson);
   const afterCounts = await existingCounts(prisma);
-  if (JSON.stringify(beforeCounts) !== JSON.stringify(afterCounts)) fail("EXISTING_ROW_COUNTS_CHANGED");
+  if (JSON.stringify(baselineCounts) !== JSON.stringify(afterCounts)) fail("EXISTING_ROW_COUNTS_CHANGED");
 
   reportCounts("Post-migration", afterCounts);
   console.log("Post-migration integrity checks passed: approved schema is exact, the new table is empty, and existing counts are unchanged.");
@@ -204,9 +221,9 @@ async function runPost(prisma, stateFile) {
 const prisma = new PrismaClient({ log: [] });
 
 try {
-  const { mode, stateFile } = parseArguments();
+  const { mode, stateFile, expectedCountsJson } = parseArguments();
   if (mode === "pre") await runPre(prisma, stateFile);
-  else await runPost(prisma, stateFile);
+  else await runPost(prisma, stateFile, expectedCountsJson);
 } catch (error) {
   const code = error instanceof Error && SAFE_FAILURE_CODES.has(error.message) ? error.message : "DATABASE_CHECK_FAILED";
   console.error(`Preview migration integrity check failed: ${code}. No private database details are printed.`);

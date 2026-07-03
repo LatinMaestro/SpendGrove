@@ -12,6 +12,14 @@ describe("Preview Prisma migration workflow integrity", () => {
     expect(workflow).not.toMatch(/secrets\.[A-Z0-9_]*PROD(?:UCTION)?[A-Z0-9_]*/i);
   });
 
+  it("requires an explicit mode-specific confirmation", () => {
+    expect(workflow).toContain("type: choice");
+    expect(workflow).toContain("- migrate");
+    expect(workflow).toContain("- verify-only");
+    expect(workflow).toContain('inputs.confirmation }}" != "RUN PREVIEW MIGRATION"');
+    expect(workflow).toContain('inputs.confirmation }}" != "VERIFY PREVIEW MIGRATION"');
+  });
+
   it("runs secret-safe integrity checks before and after one suppressed deploy", () => {
     const prePosition = workflow.indexOf("preview-migration-integrity.mjs pre");
     const deployPosition = workflow.indexOf("prisma migrate deploy");
@@ -20,6 +28,7 @@ describe("Preview Prisma migration workflow integrity", () => {
     expect(deployPosition).toBeGreaterThan(prePosition);
     expect(postPosition).toBeGreaterThan(deployPosition);
     expect(workflow.match(/prisma migrate deploy/g)).toHaveLength(1);
+    expect(workflow).toContain("if: ${{ inputs.mode == 'migrate' }}");
     expect(workflow).toContain('> "$RUNNER_TEMP/prisma-migrate-deploy.log" 2>&1');
     expect(workflow).not.toMatch(/cat .*prisma-migrate-deploy/i);
   });
@@ -36,8 +45,16 @@ describe("Preview Prisma migration workflow integrity", () => {
       "EXPECTED_CONSTRAINTS",
       "propertyReportReview.count() !== 0",
       "EXISTING_ROW_COUNTS_CHANGED",
+      "c.contype IN ('p', 'f')",
     ]) {
       expect(integrityScript).toContain(expected);
+    }
+  });
+
+  it("uses the safe pre-migration aggregate baseline for verification-only mode", () => {
+    expect(workflow).toContain("--expected-counts-json");
+    for (const table of ["User", "Transaction", "Property", "LoanAccount", "LoanRepayment", "LoanReconciliationLink", "PropertyTransactionLink"]) {
+      expect(workflow).toContain(`"${table}":`);
     }
   });
 
