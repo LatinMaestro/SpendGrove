@@ -3,8 +3,16 @@ name: Preview Prisma Migration
 on:
   workflow_dispatch:
     inputs:
+      mode:
+        description: "Choose migrate for a new approved migration or verify-only to check an already-applied migration"
+        required: true
+        default: migrate
+        type: choice
+        options:
+          - migrate
+          - verify-only
       confirmation:
-        description: "Type RUN PREVIEW MIGRATION to confirm this targets the Preview database only"
+        description: "Type RUN PREVIEW MIGRATION for migrate or VERIFY PREVIEW MIGRATION for verify-only"
         required: true
         type: string
 
@@ -28,15 +36,19 @@ jobs:
     steps:
       - name: Confirm Preview-only migration request
         run: |
-          if [ "${{ inputs.confirmation }}" != "RUN PREVIEW MIGRATION" ]; then
+          if [ "${{ inputs.mode }}" = "migrate" ] && [ "${{ inputs.confirmation }}" != "RUN PREVIEW MIGRATION" ]; then
             echo "Confirmation text did not match. No migration was run."
+            exit 1
+          fi
+          if [ "${{ inputs.mode }}" = "verify-only" ] && [ "${{ inputs.confirmation }}" != "VERIFY PREVIEW MIGRATION" ]; then
+            echo "Verification confirmation text did not match. No database action was run."
             exit 1
           fi
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "Preview migrations may run only from main. No migration was run."
             exit 1
           fi
-          echo "Preview migration confirmed. Secret values will not be printed."
+          echo "Preview ${{ inputs.mode }} request confirmed. Secret values will not be printed."
 
       - name: Check required Preview secrets are present
         run: |
@@ -68,9 +80,11 @@ jobs:
         run: npx prisma validate --schema prisma/schema.prisma
 
       - name: Run secret-safe pre-migration integrity checks
+        if: ${{ inputs.mode == 'migrate' }}
         run: node scripts/preview-migration-integrity.mjs pre --state-file "$RUNNER_TEMP/preview-migration-counts.json"
 
       - name: Apply Preview migrations
+        if: ${{ inputs.mode == 'migrate' }}
         run: |
           if ! npx prisma migrate deploy --schema prisma/schema.prisma > "$RUNNER_TEMP/prisma-migrate-deploy.log" 2>&1; then
             echo "Preview migration failed. Prisma output is withheld to protect connection details. Do not retry automatically."
@@ -79,7 +93,12 @@ jobs:
           rm -f "$RUNNER_TEMP/prisma-migrate-deploy.log"
 
       - name: Run secret-safe post-migration integrity checks
-        run: node scripts/preview-migration-integrity.mjs post --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+        run: |
+          if [ "${{ inputs.mode }}" = "verify-only" ]; then
+            node scripts/preview-migration-integrity.mjs post --expected-counts-json '{"User":1,"Transaction":1484,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":0}'
+          else
+            node scripts/preview-migration-integrity.mjs post --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+          fi
 
       - name: Confirm Preview migration completed
-        run: echo "Preview Prisma migration and secret-safe integrity checks completed successfully."
+        run: echo "Preview Prisma ${{ inputs.mode }} request and secret-safe integrity checks completed successfully."
