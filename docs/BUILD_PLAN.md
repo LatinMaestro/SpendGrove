@@ -306,15 +306,15 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: approved on 3 July 2026 under Autonomous Phase Delivery Mode. PR 3C.5 is documentation-only. PR 3C.6 must stop before any Preview migration; PRs 3C.7-3C.9 remain blocked until the migration plan is explicitly approved and the Preview migration succeeds.
+Status: in progress under Autonomous Phase Delivery Mode. PRs 3C.5 and 3C.6 are merged, and the approved Preview-only migration has been applied and verified. PR 3C.7 may continue.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
-PR 3C.6 schema proposal: one `PropertyRecordClassification` enum and one `PropertyReportReview` table containing only generated ID, owner/Property/transaction IDs, classification and timestamps. The migration is additive, unexecuted and requires an explicit Preview-only approval gate.
+PR 3C.6 schema foundation: one `PropertyRecordClassification` enum and one `PropertyReportReview` table containing only generated ID, owner/Property/transaction IDs, classification and timestamps. The additive migration is applied to Preview only and verified; no Production migration has run.
 
 PR 3C.6 verification: Prisma format/generation/validation passed; 72 test files / 429 tests passed; TypeScript type-check and production build passed. No migration was run.
 
-PR 3C.6 merged in #88 as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. Its Vercel Preview and merged-main deployment are green. The Milestone 2 migration remains unexecuted in both Preview and Production. Stop for explicit approval of `docs/PHASE_3C_MILESTONE_2_PREVIEW_MIGRATION_PLAN.md`; do not begin PR 3C.7.
+PR 3C.6 merged in #88 as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. Preview deploy run `28639135158` applied the approved migration once at workflow-hardening commit `ceefe0a5df3e1fb59d42cda0339d59f0ff72b2d3`. Verification-only run `28657045177` at correction commit `563498c1095baffedbcc3d12d0645c81dceb496a` skipped deploy and passed exact schema, empty-table and unchanged aggregate-count checks. The migration is Preview-only; no Production migration has run. PR 3C.7 may continue.
 
 Approved sequence:
 
