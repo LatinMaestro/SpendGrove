@@ -32,6 +32,10 @@ jobs:
             echo "Confirmation text did not match. No migration was run."
             exit 1
           fi
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Preview migrations may run only from main. No migration was run."
+            exit 1
+          fi
           echo "Preview migration confirmed. Secret values will not be printed."
 
       - name: Check required Preview secrets are present
@@ -40,7 +44,11 @@ jobs:
             echo "Missing required Preview database secret(s). Check repository secrets."
             exit 1
           fi
-          echo "Required Preview database secrets are present. Values are hidden."
+          if [ -n "${PRODUCTION_DATABASE_URL:-}" ] || [ -n "${NEON_PRODUCTION_DATABASE_URL:-}" ] || [ -n "${NEON_PRODUCTION_DIRECT_DATABASE_URL:-}" ]; then
+            echo "A Production database variable is present. No migration was run."
+            exit 1
+          fi
+          echo "Required Preview-only database secrets are present. Values are hidden. No Production secret is mapped."
 
       - name: Check out repository
         uses: actions/checkout@v4
@@ -59,8 +67,19 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate --schema prisma/schema.prisma
 
+      - name: Run secret-safe pre-migration integrity checks
+        run: node scripts/preview-migration-integrity.mjs pre --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+
       - name: Apply Preview migrations
-        run: npx prisma migrate deploy --schema prisma/schema.prisma
+        run: |
+          if ! npx prisma migrate deploy --schema prisma/schema.prisma > "$RUNNER_TEMP/prisma-migrate-deploy.log" 2>&1; then
+            echo "Preview migration failed. Prisma output is withheld to protect connection details. Do not retry automatically."
+            exit 1
+          fi
+          rm -f "$RUNNER_TEMP/prisma-migrate-deploy.log"
+
+      - name: Run secret-safe post-migration integrity checks
+        run: node scripts/preview-migration-integrity.mjs post --state-file "$RUNNER_TEMP/preview-migration-counts.json"
 
       - name: Confirm Preview migration completed
-        run: echo "Preview Prisma migration completed successfully."
+        run: echo "Preview Prisma migration and secret-safe integrity checks completed successfully."
