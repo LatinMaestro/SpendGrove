@@ -1,6 +1,6 @@
 # Phase 3C Milestone 2 Preview Migration Plan
 
-Status: prepared in PR 3C.6; not executed; explicit client approval required
+Status: applied once to Preview by run `28639135158` and verified by verification-only run `28657045177`; no Production migration
 
 Date prepared: 3 July 2026
 
@@ -114,4 +114,4 @@ This plan authorises Preview only after explicit approval. It does not authorise
 
 ## Approval gate
 
-Stop here. Do not dispatch the Preview workflow until the client explicitly approves this exact plan and migration. PRs 3C.7-3C.9 remain blocked until the approved Preview migration succeeds and its integrity checks pass.
+The client approved this plan on 3 July 2026. Run `28639135158` applied the migration once from `main`; verification-only run `28657045177` confirmed the expected migration, seven-value enum, seven-column empty table, approved primary key/indexes/foreign keys and unchanged aggregate counts. PRs 3C.7-3C.9 may continue in order. No Production migration is authorised.
