@@ -22,7 +22,7 @@ This milestone provides record keeping only. It does not provide tax advice, ded
 | 3C.7 Property record review foundation | [#93](https://github.com/LatinMaestro/SpendGrove/pull/93) | `4432d2ac615127ac853edcdf0445a4dd5d149002` |
 | 3C.8 approved summary and export foundation | [#94](https://github.com/LatinMaestro/SpendGrove/pull/94) | `9fd5dfab86d462666d490adc9c69d807950e77c1` |
 | 3C.9 QA and client review package | [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) | `86d039f69f6dc70a30fd13f4e4430edb93acbcfb` |
-| Classification-suggestion acceptance hardening | focused PR | pending merge |
+| Classification-suggestion acceptance hardening | [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) | pending merge |
 
 ## Client retesting and focused hardening
 
