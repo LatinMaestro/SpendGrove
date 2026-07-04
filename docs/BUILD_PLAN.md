@@ -306,7 +306,7 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: PRs 3C.5-3C.9 are merged and client retesting confirmed review/export and another bank CSV import worked. One focused deterministic, user-confirmed classification-suggestion acceptance-hardening pass is approved and in progress. The milestone is not formally closed and must stop for final client retesting after this hardening.
+Status: PRs 3C.5-3C.9 and suggestion hardening PR #96 are merged. Client retesting confirmed review/export and another bank CSV import worked, but rejected the extra report-only classification step. Focused linked-record reporting simplification PR #97 is in progress. The milestone is not formally closed and must stop for final client retesting.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
@@ -330,11 +330,13 @@ PR 3C.7 merged in #93 as `4432d2ac615127ac853edcdf0445a4dd5d149002`. PR 3C.8 der
 
 PR 3C.8 merged in #94 as `9fd5dfab86d462666d490adc9c69d807950e77c1`. PR 3C.9 completed the privacy, ownership, no-double-count, calculation, export and attached-sample compatibility audit. The 19 private-local supplied formats all reached review; ambiguous common headers remain generic rather than being falsely assigned to a bank. Final local verification: 76 test files / 453 tests, TypeScript and production build passed.
 
-PR 3C.9 merged in #95 as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. The focused acceptance hardening may suggest only deterministic compatible neutral classifications from safe current facts. Suggestions remain unpersisted until explicit individual or confirmed bulk save; all writes are server-recomputed and ownership/eligibility/stale-state checked. No navigation, schema, migration, calculation or tax-treatment change is authorised.
+PR 3C.9 merged in #95 as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. Suggestion hardening PR #96 merged as `6e70c8906cdd7f38e751ff2f0b257ab03b20136c` but is superseded in the normal UI by the simpler accepted direction: current eligible linked records feed reports and exports directly without a report-only classification save.
 
 Focused hardening verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed.
 
-The controlling financial, privacy, classification, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
+Linked-record simplification verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed. No schema, migration, package, environment or navigation change was introduced.
+
+The controlling current-state eligibility, privacy, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, including the client-approved linked-record simplification amendment. The existing review table remains dormant; no schema or migration change is authorised. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
 
 ## Phase 4 — Recurring, Budgets and Insights
 

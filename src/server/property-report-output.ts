@@ -1,4 +1,3 @@
-import type { PropertyRecordClassification } from "@prisma/client";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import {
   getPropertyRecordReview,
@@ -10,12 +9,11 @@ import {
 export type PropertyRecordSummaryGroup = { count: number; totalCents: number };
 
 export type SafePropertyRecordSummary = {
-  propertyIncome: PropertyRecordSummaryGroup;
-  propertyOutgoing: PropertyRecordSummaryGroup;
-  refundOrReversal: PropertyRecordSummaryGroup;
+  moneyIn: PropertyRecordSummaryGroup;
+  moneyOut: PropertyRecordSummaryGroup;
   loanPaymentCashflow: PropertyRecordSummaryGroup;
   transferContextCount: number;
-  otherPropertyRecordCount: number;
+  totalLinkedRecordCount: number;
 };
 
 function emptyGroup(): PropertyRecordSummaryGroup {
@@ -31,22 +29,20 @@ function addChecked(group: PropertyRecordSummaryGroup, cents: number) {
 
 export function summarizePropertyRecords(review: SafePropertyRecordReview): SafePropertyRecordSummary {
   const summary: SafePropertyRecordSummary = {
-    propertyIncome: emptyGroup(),
-    propertyOutgoing: emptyGroup(),
-    refundOrReversal: emptyGroup(),
+    moneyIn: emptyGroup(),
+    moneyOut: emptyGroup(),
     loanPaymentCashflow: emptyGroup(),
     transferContextCount: 0,
-    otherPropertyRecordCount: 0,
+    totalLinkedRecordCount: review.records.length,
   };
 
   for (const record of review.records) {
-    if (!record.classification || record.classificationNeedsReview) continue;
-    if (record.classification === "PROPERTY_INCOME") addChecked(summary.propertyIncome, record.amountCents);
-    if (record.classification === "PROPERTY_OUTGOING") addChecked(summary.propertyOutgoing, Math.abs(record.amountCents));
-    if (record.classification === "REFUND_OR_REVERSAL") addChecked(summary.refundOrReversal, record.amountCents);
-    if (record.classification === "LOAN_PAYMENT_CONTEXT") addChecked(summary.loanPaymentCashflow, Math.abs(record.amountCents));
-    if (record.classification === "TRANSFER_CONTEXT") summary.transferContextCount += 1;
-    if (record.classification === "OTHER_PROPERTY_RECORD") summary.otherPropertyRecordCount += 1;
+    if (record.type === "INCOME" && record.amountCents > 0) addChecked(summary.moneyIn, record.amountCents);
+    if (record.type === "EXPENSE" && record.amountCents < 0) addChecked(summary.moneyOut, Math.abs(record.amountCents));
+    if (record.type === "EXPENSE" && record.amountCents < 0 && record.provenance !== "MANUAL_PROPERTY_LINK") {
+      addChecked(summary.loanPaymentCashflow, Math.abs(record.amountCents));
+    }
+    if (record.type === "TRANSFER") summary.transferContextCount += 1;
   }
   return summary;
 }
@@ -59,7 +55,6 @@ const exportColumns = [
   "transaction_type",
   "amount_aud",
   "category_label",
-  "record_classification",
   "connection_source",
   "spendgrove_notice",
 ] as const;
@@ -74,12 +69,7 @@ function csvCell(value: string, protectFormula = false) {
   return `"${injectionSafe.replaceAll('"', '""')}"`;
 }
 
-function exportableClassification(classification: PropertyRecordClassification | null): classification is Exclude<PropertyRecordClassification, "EXCLUDED"> {
-  return classification !== null && classification !== "EXCLUDED";
-}
-
 function exportRow(review: SafePropertyRecordReview, record: SafePropertyReviewRecord) {
-  if (!exportableClassification(record.classification) || record.classificationNeedsReview) return null;
   return [
     csvCell(record.transactionId),
     csvCell(review.financialYear.label),
@@ -88,17 +78,13 @@ function exportRow(review: SafePropertyRecordReview, record: SafePropertyReviewR
     csvCell(record.type),
     csvCell(signedAud(record.amountCents)),
     csvCell(record.categoryName ?? "Uncategorised", true),
-    csvCell(record.classification),
     csvCell(record.provenance),
     csvCell("Record keeping only - not tax advice."),
   ].join(",");
 }
 
 export function createPropertyRecordCsv(review: SafePropertyRecordReview) {
-  const rows = review.records.flatMap((record) => {
-    const row = exportRow(review, record);
-    return row ? [row] : [];
-  });
+  const rows = review.records.map((record) => exportRow(review, record));
   return [exportColumns.map((column) => csvCell(column)).join(","), ...rows].join("\r\n");
 }
 
