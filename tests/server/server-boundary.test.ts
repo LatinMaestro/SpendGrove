@@ -25,6 +25,7 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "loanRepayment.write", pattern: /loanRepayment\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "loanReconciliationLink.write", pattern: /loanReconciliationLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "propertyTransactionLink.write", pattern: /propertyTransactionLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "propertyReportReview.write", pattern: /propertyReportReview\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -125,6 +126,13 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     "src/server/property-transaction-links.ts",
     new Set([
       "propertyTransactionLink.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
+    "src/server/property-report-review.ts",
+    new Set([
+      "propertyReportReview.write",
       "auditEvent.write",
     ]),
   ],

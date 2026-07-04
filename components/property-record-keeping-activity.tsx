@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Building2, ChevronDown, ChevronUp, Landmark } from "lucide-react";
+import { PropertyRecordReview } from "@/components/property-record-review";
 
 type PropertyActivity = {
   property: { id: string; nickname: string; usage: string; isArchived: boolean };
@@ -118,6 +119,7 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
                 )}
               </div>
               <p className="border-t border-border pt-3 text-xs leading-5 text-brand-deepTeal/65">These links do not change your transaction, category, amount or tax treatment.</p>
+              <PropertyRecordReview propertyId={propertyId} />
             </div>
           )}
         </div>
