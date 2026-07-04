@@ -7,6 +7,22 @@ async function fixture(name: string) {
 }
 
 describe("CSV parser regression formats", () => {
+  it("does not label an ambiguous generic signed layout as a specific bank", () => {
+    const document = parseCsvDocument([
+      "Date,Amount,Description,Balance",
+      "01/07/2026,-12.50,Synthetic purchase,100.00",
+    ].join("\n"));
+    const scan = scanCsvDocument(document);
+
+    expect(scan.profile).toMatchObject({
+      profileId: "generic-transaction-v1",
+      bankName: "Generic or custom CSV",
+      requiresManualMapping: true,
+    });
+    expect(scan.mappingIssues).toEqual([]);
+    expect(scan.previewRows[0]).toMatchObject({ date: "2026-07-01", amountCents: -1250 });
+  });
+
   it("suggests a complete reviewable mapping for a generic signed-amount file", async () => {
     const document = parseCsvDocument(await fixture("generic-headered-signed.csv"));
     const scan = scanCsvDocument(document);

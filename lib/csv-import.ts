@@ -110,8 +110,8 @@ const bankProfiles: BankProfileDefinition[] = [
     id: "commbank-everyday-v1",
     bankName: "Commonwealth Bank",
     displayName: "CommBank transaction CSV",
-    requiredHeaders: ["date", "amount", "description"],
-    optionalHeaders: ["balance", "account number"],
+    requiredHeaders: ["date", "amount", "description", "account number"],
+    optionalHeaders: ["balance"],
   },
   {
     id: "anz-everyday-v1",
@@ -610,7 +610,7 @@ export function scanCsvDocument(document: TransientCsvDocument, mapping?: CsvMap
   const suggestedMapping = mapping ?? buildSuggestedCsvMapping(columns);
   const sanitized = buildSanitizedCsvPreview(document, columns, suggestedMapping);
   const detectedProfile = document.hasHeader ? detectCsvProfile(document.headers) : null;
-  const profile = detectedProfile?.profileId
+  const profile = detectedProfile?.profileId && !detectedProfile.requiresManualMapping
     ? detectedProfile
     : createGenericProfile(document, columns, sanitized.mappingIssues);
   const privateColumnCount = columns.filter((column) => column.isPrivate).length;
