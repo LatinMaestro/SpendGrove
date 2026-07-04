@@ -21,7 +21,7 @@ This milestone provides record keeping only. It does not provide tax advice, ded
 | Permanent Preview verification handoff | [#92](https://github.com/LatinMaestro/SpendGrove/pull/92) | `46eb30f795e1334a73a21d92eed1cc1b2ccb239d` |
 | 3C.7 Property record review foundation | [#93](https://github.com/LatinMaestro/SpendGrove/pull/93) | `4432d2ac615127ac853edcdf0445a4dd5d149002` |
 | 3C.8 approved summary and export foundation | [#94](https://github.com/LatinMaestro/SpendGrove/pull/94) | `9fd5dfab86d462666d490adc9c69d807950e77c1` |
-| 3C.9 QA and client review package | pending PR publication | pending merge |
+| 3C.9 QA and client review package | [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) | pending merge |
 
 ## Preview migration evidence
 
@@ -120,7 +120,8 @@ Source names above are safe bank labels only. No original filenames are retained
 - Ownership, current eligibility, manual precedence, ambiguity exclusion, split-parent exclusion, stale-edit, classification compatibility, summary, no-double-count, exact export-field, no-store and privacy tests passed.
 - Importer regression tests confirm ambiguous generic layouts are not falsely assigned to a specific bank.
 - Local public smoke checks returned HTTP 200 for `/`, `/loans`, `/import`, `/transactions` and `/settings`, with no internal server error.
-- Vercel Preview and merged-main evidence will be recorded after PR 3C.9 publication and merge.
+- PR #95 Vercel Preview: https://vercel.com/latinmaestros-projects/spendgrove/4xbZEEEa4RA6Dzjq95DMphp65YEw (verification in progress at package publication).
+- Merged-main deployment will be verified after PR #95 merges.
 
 ## Mobile review notes
 

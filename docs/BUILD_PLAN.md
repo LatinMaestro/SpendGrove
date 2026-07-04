@@ -306,7 +306,7 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: implementation and local QA complete under Autonomous Phase Delivery Mode. PRs 3C.5-3C.8 are merged; PR 3C.9 is ready for Vercel verification and client review packaging. The milestone is not formally closed and must stop at client retesting.
+Status: implementation and local QA complete under Autonomous Phase Delivery Mode. PRs 3C.5-3C.8 are merged; PR 3C.9 is open as #95 for Vercel verification and client review packaging. The milestone is not formally closed and must stop at client retesting.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
