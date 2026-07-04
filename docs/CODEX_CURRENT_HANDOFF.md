@@ -21,8 +21,10 @@ Last updated: 4 July 2026
 - Verification correction PR #91 merged as `563498c1095baffedbcc3d12d0645c81dceb496a`. Verification-only run `28657045177` skipped all deploy steps and passed the exact enum, columns, primary key, indexes, foreign keys, empty-table and unchanged aggregate-count checks.
 - The Phase 3C Milestone 2 migration is applied to Preview only. `PropertyReportReview` was empty immediately after migration verification. No Production migration has run.
 - Public smoke checks returned HTTP 200 for `/`, `/loans`, `/transactions` and `/settings` with no internal server error.
-- PR 3C.7 implementation is ready for publication: authenticated Property-and-financial-year review resolves current manual and unambiguous loan-derived relationships, excludes split parents and ambiguous/cross-user/inactive records, and saves only explicit compatible neutral classifications with stale-edit protection. It calculates no totals and exposes no private source text.
-- PR 3C.7 verification: 75 test files / 447 tests passed; TypeScript type-check and the clean production build passed.
+- PR 3C.7 merged in [#93](https://github.com/LatinMaestro/SpendGrove/pull/93) as `4432d2ac615127ac853edcdf0445a4dd5d149002`. Authenticated Property-and-financial-year review resolves current manual and unambiguous loan-derived relationships, excludes split parents and ambiguous/cross-user/inactive records, and saves only explicit compatible neutral classifications with stale-edit protection.
+- PR 3C.7 verification: 75 test files / 447 tests passed; TypeScript type-check, clean production build and Vercel Preview passed.
+- PR 3C.8 implementation is in final verification. It derives only the approved four separate gross record groups plus transfer/other counts from the same revalidated review rows. Its user-confirmed CSV is ephemeral, excludes unclassified/explicitly excluded/incompatible rows, contains only the ten approved columns and protects user-entered safe labels against spreadsheet formulas.
+- PR 3C.8 local verification: 76 test files / 452 tests passed; TypeScript type-check and the clean production build passed.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -154,7 +156,7 @@ Delivered behaviour:
 
 ## Exact next action
 
-Publish and merge PR 3C.7 after final full-suite, production-build and Vercel verification. Then continue to PR 3C.8; do not implement anything outside the approved summaries and ephemeral safe-field export contract.
+Publish and merge PR 3C.8 after full-suite, production-build and Vercel verification. Then continue only to PR 3C.9 QA, private sample compatibility validation and client review packaging.
 
 ## Resume instruction
 

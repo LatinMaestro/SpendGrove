@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardCheck, RefreshCw, Save } from "lucide-react";
+import { ClipboardCheck, Download, RefreshCw, Save } from "lucide-react";
 
 const classificationOptions = [
   ["PROPERTY_INCOME", "Property income record"],
@@ -32,6 +32,15 @@ type Review = {
   property: { id: string; nickname: string; isArchived: boolean };
   financialYear: { endingYear: number; label: string; startDate: string; endDate: string };
   records: ReviewRecord[];
+};
+type SummaryGroup = { count: number; totalCents: number };
+type Summary = {
+  propertyIncome: SummaryGroup;
+  propertyOutgoing: SummaryGroup;
+  refundOrReversal: SummaryGroup;
+  loanPaymentCashflow: SummaryGroup;
+  transferContextCount: number;
+  otherPropertyRecordCount: number;
 };
 
 function currentEndingYear() {
@@ -67,11 +76,13 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
   const defaultYear = currentEndingYear();
   const [endingYear, setEndingYear] = useState(defaultYear);
   const [review, setReview] = useState<Review | null>(null);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [drafts, setDrafts] = useState<Record<string, Classification | "">>({});
   const [isLoading, setIsLoading] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [showExportWarning, setShowExportWarning] = useState(false);
   const years = Array.from({ length: 7 }, (_, index) => defaultYear - index);
 
   async function load(year = endingYear) {
@@ -83,9 +94,11 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
         method: "GET",
         cache: "no-store",
       });
-      const result = await response.json() as { ok: boolean; review?: Review; error?: string };
-      if (!response.ok || !result.ok || !result.review) throw new Error(result.error ?? "Property records could not be loaded safely.");
+      const result = await response.json() as { ok: boolean; review?: Review; summary?: Summary; error?: string };
+      if (!response.ok || !result.ok || !result.review || !result.summary) throw new Error(result.error ?? "Property records could not be loaded safely.");
       setReview(result.review);
+      setSummary(result.summary);
+      setShowExportWarning(false);
       setDrafts(Object.fromEntries(result.review.records.map((record) => [record.transactionId, record.classification ?? ""])));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Property records could not be loaded safely.");
@@ -126,6 +139,7 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
           ? { ...item, classification: result.result!.classification, reviewUpdatedAt: result.result!.updatedAt }
           : item),
       } : current);
+      await load();
       setMessage("Record classification saved.");
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : "The record review could not be saved safely.");
@@ -145,7 +159,7 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs font-bold text-brand-deepTeal">Financial year
-            <select value={endingYear} onChange={(event) => { const year = Number(event.target.value); setEndingYear(year); setReview(null); }} className="mt-1 block min-h-10 rounded-xl border border-border bg-white px-3 text-sm">
+            <select value={endingYear} onChange={(event) => { const year = Number(event.target.value); setEndingYear(year); setReview(null); setSummary(null); setShowExportWarning(false); }} className="mt-1 block min-h-10 rounded-xl border border-border bg-white px-3 text-sm">
               {years.map((year) => <option key={year} value={year}>{year - 1}-{String(year).slice(-2)}</option>)}
             </select>
           </label>
@@ -160,6 +174,39 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
       {message && <p role="status" className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-green">{message}</p>}
       {review && review.property.isArchived && <p className="mt-3 text-xs font-bold text-brand-teal">Archived Property context</p>}
       {review && review.records.length === 0 && <p className="mt-3 text-xs text-brand-deepTeal/65">No eligible connected records were found for {review.financialYear.label}.</p>}
+      {review && summary && (
+        <div className="mt-4 space-y-3 border-t border-border pt-4">
+          <div>
+            <h5 className="text-sm font-bold text-brand-deepTeal">Reviewed record summary</h5>
+            <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Separate gross record-keeping groups only. No net result, profit or tax outcome is calculated.</p>
+          </div>
+          <dl className="grid gap-2 sm:grid-cols-2">
+            {([
+              ["Property income records", summary.propertyIncome],
+              ["Property outgoing records", summary.propertyOutgoing],
+              ["Refund/reversal records", summary.refundOrReversal],
+              ["Loan payment cashflow records", summary.loanPaymentCashflow],
+            ] as const).map(([label, group]) => (
+              <div key={label} className="rounded-xl bg-surface-mint p-3">
+                <dt className="text-xs font-semibold text-brand-deepTeal/65">{label}</dt>
+                <dd className="mt-1 text-sm font-bold text-brand-deepTeal">{money(group.totalCents)} <span className="font-normal text-brand-deepTeal/60">· {group.count} record{group.count === 1 ? "" : "s"}</span></dd>
+              </div>
+            ))}
+          </dl>
+          <p className="text-xs text-brand-deepTeal/65">Transfer context: {summary.transferContextCount} · Other Property records: {summary.otherPropertyRecordCount}</p>
+          {!showExportWarning ? (
+            <button type="button" onClick={() => setShowExportWarning(true)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-teal"><Download aria-hidden="true" className="h-4 w-4" /> Prepare CSV export</button>
+          ) : (
+            <div className="rounded-2xl border border-brand-teal/30 bg-white p-3">
+              <p className="text-xs leading-5 text-brand-deepTeal">SpendGrove provides record-keeping information only, not tax advice. Review your records and speak with a qualified professional if needed.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <a href={`/api/account/properties/${encodeURIComponent(propertyId)}/report-export?financialYear=${endingYear}`} download className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-green px-4 text-xs font-bold text-white"><Download aria-hidden="true" className="h-4 w-4" /> Download reviewed CSV</a>
+                <button type="button" onClick={() => setShowExportWarning(false)} className="min-h-11 rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal">Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {review && review.records.length > 0 && (
         <ul className="mt-3 space-y-3">
           {review.records.map((record) => (

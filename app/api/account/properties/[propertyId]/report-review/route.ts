@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import { classifyPropertyRecord, getPropertyRecordReview } from "@/src/server/property-report-review";
+import { summarizePropertyRecords } from "@/src/server/property-report-output";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export async function GET(request: Request, { params }: RouteContext) {
     const context = await getCurrentUserContext();
     const endingYear = new URL(request.url).searchParams.get("financialYear");
     const review = await getPropertyRecordReview(context, params.propertyId, endingYear);
-    return NextResponse.json({ ok: true, review });
+    return NextResponse.json({ ok: true, review, summary: summarizePropertyRecords(review) });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });
   }
