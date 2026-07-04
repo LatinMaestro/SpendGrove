@@ -1,6 +1,6 @@
 # Phase 3C Milestone 2 Summary and Client Review Package
 
-Status: implementation and QA complete; parked for client retesting
+Status: focused classification-suggestion acceptance hardening in progress; not formally closed
 
 Last updated: 4 July 2026
 
@@ -21,7 +21,24 @@ This milestone provides record keeping only. It does not provide tax advice, ded
 | Permanent Preview verification handoff | [#92](https://github.com/LatinMaestro/SpendGrove/pull/92) | `46eb30f795e1334a73a21d92eed1cc1b2ccb239d` |
 | 3C.7 Property record review foundation | [#93](https://github.com/LatinMaestro/SpendGrove/pull/93) | `4432d2ac615127ac853edcdf0445a4dd5d149002` |
 | 3C.8 approved summary and export foundation | [#94](https://github.com/LatinMaestro/SpendGrove/pull/94) | `9fd5dfab86d462666d490adc9c69d807950e77c1` |
-| 3C.9 QA and client review package | [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) | pending merge |
+| 3C.9 QA and client review package | [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) | `86d039f69f6dc70a30fd13f4e4430edb93acbcfb` |
+| Classification-suggestion acceptance hardening | [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) | pending merge |
+
+## Client retesting and focused hardening
+
+Client retesting confirmed the Property review/report/export flow worked. A further bank CSV was also mapped, reviewed and imported successfully.
+
+The focused hardening adds deterministic suggestions without silently storing a classification. Suggestions use only current safe transaction type, amount sign, seeded category metadata and Property connection source. The user may change a suggestion, save one row manually or explicitly confirm a bounded bulk action. The server recomputes every suggestion and revalidates ownership, eligibility, relationship state, classification compatibility and stale timestamps before writing. Safe aggregate counts report applied, skipped and remaining-review records.
+
+The following suggestions are permitted:
+
+- a negative loan-reconciliation expense suggests `LOAN_PAYMENT_CONTEXT`;
+- a negative manually Property-linked expense suggests `PROPERTY_OUTGOING`;
+- a transfer suggests `TRANSFER_CONTEXT`;
+- positive income suggests `PROPERTY_INCOME` only for the exact seeded `Rental income` category;
+- positive income suggests `REFUND_OR_REVERSAL` only for the exact seeded `Refunds / rebates` category.
+
+Custom or ambiguous positive-income categories, relationship conflicts, stale rows, unsupported combinations and already classified records remain manual. Suggestions are review aids only, are not tax advice and are not included in summary/export until the user confirms and saves them.
 
 ## Preview migration evidence
 
@@ -42,7 +59,7 @@ This milestone provides record keeping only. It does not provide tax advice, ded
 - Manual and loan paths to the same Property produce one record with `BOTH` provenance.
 - Ambiguous cross-Property loan paths are excluded rather than duplicated or allocated.
 - Archived, non-deleted Property or Loan Account context is labelled; deleted source records are excluded.
-- A classification is always selected manually and must be compatible with the current transaction type/sign and relationship path.
+- A classification is always user-confirmed and must be compatible with the current transaction type/sign and relationship path. A deterministic suggestion may prefill the browser review control but is not persisted until manual or confirmed bulk save.
 - Transaction and review timestamps provide stale-edit protection.
 - A source edit that makes a saved classification incompatible marks it for re-review and excludes it from summaries/exports.
 - Reporting never creates, edits, duplicates, splits, recategorises or deletes an everyday transaction.
@@ -113,10 +130,12 @@ Source names above are safe bank labels only. No original filenames are retained
 
 ## QA evidence
 
+- Focused classification-suggestion hardening: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed.
 - Final local suite: 76 test files / 453 tests passed.
 - TypeScript type-check: passed.
 - Clean Next.js production build: passed.
 - Prisma schema and migration SQL: unchanged by PRs 3C.7-3C.9.
+- Prisma schema and migration SQL remain unchanged by the focused acceptance hardening; no new Preview or Production migration was run.
 - Ownership, current eligibility, manual precedence, ambiguity exclusion, split-parent exclusion, stale-edit, classification compatibility, summary, no-double-count, exact export-field, no-store and privacy tests passed.
 - Importer regression tests confirm ambiguous generic layouts are not falsely assigned to a specific bank.
 - Local public smoke checks returned HTTP 200 for `/`, `/loans`, `/import`, `/transactions` and `/settings`, with no internal server error.
@@ -146,7 +165,7 @@ Source names above are safe bank labels only. No original filenames are retained
 - Reports are current-state views; there is no historical relationship/report snapshot or filed-return version.
 - Cross-Property loan allocation is unsupported and ambiguous records are excluded.
 - Refunds and reversals are not automatically paired or netted.
-- Classification is manual and may require re-review after source edits or relinking.
+- Classification is user-confirmed. Deterministic suggestions cover only clear approved cases; unsupported or ambiguous records remain manual and source edits or relinking may require re-review.
 - Loan principal, interest, fee and balance values are not aggregated or exported.
 - Bank detection deliberately stays generic when headers are shared by multiple banks; users see and confirm the suggested mapping.
 - No address, document, receipt, merchant narration or account reference appears in review/export.
@@ -161,20 +180,28 @@ Use synthetic test data only.
 3. Confirm manually Property-linked transactions appear once.
 4. Confirm a transaction connected through a Property-linked Loan Account appears once and shows its connection source.
 5. Confirm an archived Property or Loan Account is clearly labelled where relevant.
-6. Choose each compatible neutral classification and save it; refresh and confirm it remains selected.
-7. Try changing the same source transaction in another tab, then save an older review and confirm the stale update is rejected or requires refresh.
-8. Confirm Property income, outgoing, refund/reversal and loan-payment values remain separate gross groups.
-9. Confirm transfer and other-Property records show counts only.
-10. Confirm there is no net result, profit/loss, deductible/taxable value, loan-component total or Home dashboard statistic.
-11. Choose **Prepare CSV export**, read the record-keeping warning, then download the CSV.
-12. Confirm the CSV has exactly the ten approved columns and omits unclassified and **Excluded** records.
-13. Confirm the CSV contains no merchant description, narration, filename, account/reference details, exact address, balance, email or hidden totals.
-14. Unlink a manual Property transaction or loan repayment reconciliation, refresh the review and confirm the current record disappears when no eligible path remains.
-15. Import one synthetic bank CSV with common generic headers and confirm SpendGrove asks you to check the suggested mapping instead of guessing a bank.
-16. Check `/loans` on a phone-sized screen: financial-year selection, summary cards, classification controls and export warning should remain readable without horizontal scrolling.
+6. Confirm loan-connected outgoing, manually Property-linked outgoing and transfer records show the expected neutral suggestion.
+7. Confirm only exact seeded rental-income and refund/rebate categories receive an income suggestion; ambiguous/custom income remains unclassified.
+8. Change one suggestion before saving and confirm the changed classification is preserved.
+9. Choose **Apply suggested classifications**, cancel once, then confirm; verify only eligible unchanged suggestions are saved and the result shows aggregate applied/skipped/remaining counts.
+10. Refresh and confirm saved classifications remain selected; confirm unconfirmed suggestions do not appear in summaries or CSV export.
+11. Try changing the same source transaction in another tab, then apply/save from the older review and confirm the stale row is skipped or requires refresh.
+12. Confirm Property income, outgoing, refund/reversal and loan-payment values remain separate gross groups.
+13. Confirm transfer and other-Property records show counts only.
+14. Confirm there is no net result, profit/loss, deductible/taxable value, loan-component total or Home dashboard statistic.
+15. Choose **Prepare CSV export**, read the record-keeping warning, then download the CSV.
+16. Confirm the CSV has exactly the ten approved columns and omits unclassified, suggestion-only and **Excluded** records.
+17. Confirm the CSV contains no merchant description, narration, filename, account/reference details, exact address, balance, email or hidden totals.
+18. Unlink a manual Property transaction or loan repayment reconciliation, refresh the review and confirm the current record disappears when no eligible path remains.
+19. Import one synthetic bank CSV with common generic headers and confirm SpendGrove asks you to check the suggested mapping instead of guessing a bank.
+20. Check `/loans` on a phone-sized screen: financial-year selection, suggestion controls, summary cards, classification controls and export warning should remain readable without horizontal scrolling.
+
+## Future navigation proposal only
+
+Keep Property reporting inside **Loans** for now. If reporting grows, prefer a later approved **Reports** area for Property/EOFY exports and future reporting workflows before adding a standalone **Properties** tab. A Properties tab should be reconsidered only if Property management becomes a major app pillar. No navigation change is included in this hardening.
 
 ## Stop point and recommendation
 
-Phase 3C Milestone 2 is parked for client retesting and is not formally closed. Do not start another milestone or Phase 4 until the client accepts this package and separately approves a proposal. The recommended next action is client retesting followed by formal Milestone 2 closure and a proposal-only choice between small reporting follow-up work and the previously deferred everyday budgeting milestone.
+Phase 3C Milestone 2 remains open and will be parked for final client retesting after the focused hardening is merged and main is verified. Do not start another milestone or Phase 4 until the client accepts this package and separately approves a proposal.
 
 No Phase 4, recurring, budgets, Home dashboard statistics, Basiq, AI, payments, household mode, document storage or later-module implementation has started.

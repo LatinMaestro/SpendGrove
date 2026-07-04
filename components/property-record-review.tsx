@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ClipboardCheck, Download, RefreshCw, Save } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, Download, RefreshCw, Save, Sparkles } from "lucide-react";
 
 const classificationOptions = [
   ["PROPERTY_INCOME", "Property income record"],
@@ -26,6 +26,8 @@ type ReviewRecord = {
   archivedLoanContext: boolean;
   classification: Classification | null;
   classificationNeedsReview: boolean;
+  suggestedClassification: Classification | null;
+  suggestionReasonCode: string | null;
   reviewUpdatedAt: string | null;
 };
 type Review = {
@@ -58,6 +60,10 @@ function connectionLabel(value: ReviewRecord["provenance"]) {
   return "Manual Property link";
 }
 
+function classificationLabel(value: Classification) {
+  return classificationOptions.find(([classification]) => classification === value)?.[1] ?? "Suggested record classification";
+}
+
 function availableClassifications(record: ReviewRecord) {
   const values = new Set<Classification>(["OTHER_PROPERTY_RECORD", "EXCLUDED"]);
   if (record.type === "INCOME" && record.amountCents > 0) {
@@ -83,7 +89,14 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [showExportWarning, setShowExportWarning] = useState(false);
+  const [showSuggestionConfirmation, setShowSuggestionConfirmation] = useState(false);
+  const [isBulkSaving, setIsBulkSaving] = useState(false);
   const years = Array.from({ length: 7 }, (_, index) => defaultYear - index);
+  const suggestedRecords = (review?.records ?? []).filter((record) =>
+    record.classification === null
+    && record.suggestedClassification !== null
+    && drafts[record.transactionId] === record.suggestedClassification
+  ).slice(0, 100);
 
   async function load(year = endingYear) {
     setIsLoading(true);
@@ -99,7 +112,11 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
       setReview(result.review);
       setSummary(result.summary);
       setShowExportWarning(false);
-      setDrafts(Object.fromEntries(result.review.records.map((record) => [record.transactionId, record.classification ?? ""])));
+      setShowSuggestionConfirmation(false);
+      setDrafts(Object.fromEntries(result.review.records.map((record) => [
+        record.transactionId,
+        record.classification ?? record.suggestedClassification ?? "",
+      ])));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Property records could not be loaded safely.");
     } finally {
@@ -148,6 +165,44 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
     }
   }
 
+  async function applySuggestedClassifications() {
+    if (suggestedRecords.length === 0) return;
+    setIsBulkSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch(`/api/account/properties/${encodeURIComponent(propertyId)}/report-review`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endingYear,
+          confirmed: true,
+          items: suggestedRecords.map((record) => ({
+            transactionId: record.transactionId,
+            expectedTransactionUpdatedAt: record.transactionUpdatedAt,
+            expectedReviewUpdatedAt: record.reviewUpdatedAt,
+          })),
+        }),
+      });
+      const result = await response.json() as {
+        ok: boolean;
+        result?: { classifiedCount: number; skippedCount: number; remainingReviewCount: number };
+        error?: string;
+      };
+      if (!response.ok || !result.ok || !result.result) {
+        throw new Error(result.error ?? "Suggested classifications could not be applied safely.");
+      }
+      await load();
+      const skippedCopy = result.result.skippedCount > 0 ? ` ${result.result.skippedCount} changed or unsupported record${result.result.skippedCount === 1 ? " was" : "s were"} skipped.` : "";
+      setMessage(`Applied suggested classifications to ${result.result.classifiedCount} record${result.result.classifiedCount === 1 ? "" : "s"}. ${result.result.remainingReviewCount} still need review.${skippedCopy}`);
+    } catch (bulkError) {
+      setError(bulkError instanceof Error ? bulkError.message : "Suggested classifications could not be applied safely.");
+    } finally {
+      setIsBulkSaving(false);
+      setShowSuggestionConfirmation(false);
+    }
+  }
+
   return (
     <section className="mt-4 border-t border-border pt-4" aria-labelledby={`property-review-${propertyId}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -155,7 +210,7 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
           <h4 id={`property-review-${propertyId}`} className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal">
             <ClipboardCheck aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Property record review
           </h4>
-          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Review connected records for one Australian financial year. No classification is chosen automatically.</p>
+          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Review connected records for one Australian financial year. Suggestions stay unconfirmed until you save them.</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs font-bold text-brand-deepTeal">Financial year
@@ -169,11 +224,32 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
         </div>
       </div>
 
-      <p className="mt-3 rounded-xl bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal/70">Record keeping only - not tax advice. Classifications do not change the original transaction, category, amount or cashflow treatment.</p>
+      <div className="mt-3 rounded-xl bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal/70">
+        <p className="font-bold text-brand-deepTeal">Review before export</p>
+        <p>Suggestions are based on transaction type, amount, category and connection source. They are not tax advice. You can change any classification before exporting.</p>
+        <p className="mt-1">Classifications do not change the original transaction, category, amount or cashflow treatment.</p>
+      </div>
       {error && <p role="alert" className="mt-3 rounded-xl bg-danger-red/10 p-3 text-xs font-semibold text-danger-red">{error}</p>}
       {message && <p role="status" className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-green">{message}</p>}
       {review && review.property.isArchived && <p className="mt-3 text-xs font-bold text-brand-teal">Archived Property context</p>}
       {review && review.records.length === 0 && <p className="mt-3 text-xs text-brand-deepTeal/65">No eligible connected records were found for {review.financialYear.label}.</p>}
+      {review && suggestedRecords.length > 0 && (
+        <div className="mt-4 rounded-2xl border border-brand-teal/30 bg-white p-3">
+          <p className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal"><Sparkles aria-hidden="true" className="h-4 w-4 text-brand-teal" /> {suggestedRecords.length} suggested classification{suggestedRecords.length === 1 ? "" : "s"} ready</p>
+          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Only unchanged suggestions are included. Rows you change remain available for individual review.</p>
+          {!showSuggestionConfirmation ? (
+            <button type="button" onClick={() => setShowSuggestionConfirmation(true)} className="mt-3 inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-teal"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> Apply suggested classifications</button>
+          ) : (
+            <div className="mt-3 rounded-xl bg-surface-mint p-3">
+              <p className="text-xs leading-5 text-brand-deepTeal">Confirm saving {suggestedRecords.length} suggested classification{suggestedRecords.length === 1 ? "" : "s"}. Ownership, eligibility and stale records will be checked again.</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button type="button" disabled={isBulkSaving} onClick={() => void applySuggestedClassifications()} className="min-h-11 rounded-full bg-brand-green px-4 text-xs font-bold text-white disabled:opacity-50">Confirm and apply</button>
+                <button type="button" disabled={isBulkSaving} onClick={() => setShowSuggestionConfirmation(false)} className="min-h-11 rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal">Cancel</button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       {review && summary && (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
           <div>
@@ -218,6 +294,9 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
               {record.archivedLoanContext && <p className="mt-2 text-xs font-semibold text-brand-teal">Connected through archived Loan Account context.</p>}
               {record.relationshipConflict && <p className="mt-2 text-xs font-semibold text-amber-700">The manual Property link controls this record; another loan connection points elsewhere.</p>}
               {record.classificationNeedsReview && <p className="mt-2 text-xs font-semibold text-amber-700">This transaction changed and its saved classification needs review.</p>}
+              {record.classification === null && record.suggestedClassification && (
+                <p className="mt-2 rounded-xl bg-brand-green/10 p-2 text-xs text-brand-deepTeal"><strong>Suggested classification:</strong> {classificationLabel(record.suggestedClassification)}. Review or change it before saving.</p>
+              )}
               <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
                 <label className="flex-1 text-xs font-bold text-brand-deepTeal">Record classification
                   <select value={drafts[record.transactionId] ?? ""} onChange={(event) => setDrafts((current) => ({ ...current, [record.transactionId]: event.target.value as Classification | "" }))} className="mt-1 block min-h-11 w-full rounded-xl border border-border bg-white px-3 text-sm">

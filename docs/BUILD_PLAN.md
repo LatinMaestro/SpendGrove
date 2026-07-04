@@ -306,7 +306,7 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: implementation and local QA complete under Autonomous Phase Delivery Mode. PRs 3C.5-3C.8 are merged; PR 3C.9 is open as #95 for Vercel verification and client review packaging. The milestone is not formally closed and must stop at client retesting.
+Status: PRs 3C.5-3C.9 are merged and client retesting confirmed review/export and another bank CSV import worked. One focused deterministic, user-confirmed classification-suggestion acceptance-hardening pass is approved and in progress. The milestone is not formally closed and must stop for final client retesting after this hardening.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
@@ -329,6 +329,10 @@ PR 3C.7 implements current-state review for one owned Property and Australian fi
 PR 3C.7 merged in #93 as `4432d2ac615127ac853edcdf0445a4dd5d149002`. PR 3C.8 derives only the contract-approved separate gross groups and counts from those revalidated rows and provides one user-confirmed, ephemeral CSV containing only the ten approved safe columns. It calculates no net result or tax outcome and stores no report/export snapshot.
 
 PR 3C.8 merged in #94 as `9fd5dfab86d462666d490adc9c69d807950e77c1`. PR 3C.9 completed the privacy, ownership, no-double-count, calculation, export and attached-sample compatibility audit. The 19 private-local supplied formats all reached review; ambiguous common headers remain generic rather than being falsely assigned to a bank. Final local verification: 76 test files / 453 tests, TypeScript and production build passed.
+
+PR 3C.9 merged in #95 as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. The focused acceptance hardening may suggest only deterministic compatible neutral classifications from safe current facts. Suggestions remain unpersisted until explicit individual or confirmed bulk save; all writes are server-recomputed and ownership/eligibility/stale-state checked. No navigation, schema, migration, calculation or tax-treatment change is authorised.
+
+Focused hardening verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed.
 
 The controlling financial, privacy, classification, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
 

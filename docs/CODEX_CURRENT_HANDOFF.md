@@ -26,10 +26,13 @@ Last updated: 4 July 2026
 - PR 3C.8 derives only the approved four separate gross record groups plus transfer/other counts from the same revalidated review rows. Its user-confirmed CSV is ephemeral, excludes unclassified/explicitly excluded/incompatible rows, contains only the ten approved columns and protects user-entered safe labels against spreadsheet formulas.
 - PR 3C.8 local verification: 76 test files / 452 tests passed; TypeScript type-check and the clean production build passed.
 - PR 3C.8 merged in [#94](https://github.com/LatinMaestro/SpendGrove/pull/94) as `9fd5dfab86d462666d490adc9c69d807950e77c1`; its Vercel Preview passed.
-- PR 3C.9 QA and client package is open in [#95](https://github.com/LatinMaestro/SpendGrove/pull/95). Final local verification is 76 test files / 453 tests, TypeScript and clean production build passed.
+- PR 3C.9 QA and client package merged in [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. Final local verification was 76 test files / 453 tests; TypeScript and the clean production build passed.
 - Private-local compatibility validation covered 19 supplied bank CSV formats: all 19 parsed and reached review with all rows structurally ready; sanitised review text had zero private-pattern leak flags. Raw files were not committed or uploaded.
 - QA hardening prevents ambiguous generic headers from being falsely labelled as one specific bank. Mapping remains complete and browser-local; no schema, migration, package, provider, secret or environment change was introduced.
-- `docs/PHASE_3C_MILESTONE_2_SUMMARY.md` is the controlling client review package. The milestone remains open and parked for client retesting.
+- Client retesting confirmed the Property review/report/export flow worked and another bank CSV mapped, reached review and imported successfully.
+- Focused acceptance-hardening PR [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) adds deterministic suggestions using only safe current transaction/relation facts. They remain unpersisted until user confirmation and may be bulk-confirmed with server-side ownership, eligibility, compatibility and stale-state revalidation. Ambiguous records remain manual.
+- Focused acceptance-hardening verification: 76 test files / 458 tests passed; TypeScript type-check and the clean production build passed. No Prisma schema, migration, package, provider, secret, environment or navigation change was introduced.
+- `docs/PHASE_3C_MILESTONE_2_SUMMARY.md` is the controlling client review package. The milestone remains open and must return to client retesting after this hardening; it is not formally closed.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -161,8 +164,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Publish and merge PR 3C.9 after Vercel verification, verify merged main and stop for client retesting. Do not begin another milestone or Phase 4.
+Complete, publish and merge the focused Phase 3C Milestone 2 classification-suggestion acceptance hardening, verify merged main and stop for final client retesting. Do not formally close the milestone or begin another milestone or Phase 4.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.7-3C.9 sequence. The Preview migration gate is complete; do not run another migration. No Production migration, Phase 4, Home dashboard statistics, Basiq, AI, payments or later module is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the focused classification-suggestion acceptance hardening and stop for client retesting. The Preview migration gate is complete; do not run another migration. No Production migration, Phase 4, Home dashboard statistics, tax advice, Basiq, AI, payments or later module is authorised.
