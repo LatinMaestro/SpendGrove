@@ -306,7 +306,7 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: PRs 3C.5-3C.9 and suggestion hardening PR #96 are merged. Client retesting confirmed review/export and another bank CSV import worked, but rejected the extra report-only classification step. One focused linked-record reporting simplification is in progress. The milestone is not formally closed and must stop for final client retesting.
+Status: PRs 3C.5-3C.9 and suggestion hardening PR #96 are merged. Client retesting confirmed review/export and another bank CSV import worked, but rejected the extra report-only classification step. Focused linked-record reporting simplification PR #97 is in progress. The milestone is not formally closed and must stop for final client retesting.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 

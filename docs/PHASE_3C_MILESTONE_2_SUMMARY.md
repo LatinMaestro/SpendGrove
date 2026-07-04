@@ -23,7 +23,7 @@ This is record keeping only. It does not provide tax advice, deductibility decis
 | 3C.8 approved summary and export foundation | [#94](https://github.com/LatinMaestro/SpendGrove/pull/94) | `9fd5dfab86d462666d490adc9c69d807950e77c1` |
 | 3C.9 QA and client review package | [#95](https://github.com/LatinMaestro/SpendGrove/pull/95) | `86d039f69f6dc70a30fd13f4e4430edb93acbcfb` |
 | Classification-suggestion hardening, now superseded in the normal workflow | [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) | `6e70c8906cdd7f38e751ff2f0b257ab03b20136c` |
-| Linked-record reporting simplification | focused acceptance PR | pending merge |
+| Linked-record reporting simplification | [#97](https://github.com/LatinMaestro/SpendGrove/pull/97) | pending merge |
 
 ## Client retesting and accepted simplification
 
