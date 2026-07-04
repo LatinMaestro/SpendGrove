@@ -306,7 +306,7 @@ The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 202
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: in progress under Autonomous Phase Delivery Mode. PRs 3C.5 and 3C.6 are merged, the approved Preview-only migration has been applied and verified, and PR 3C.7 Property record review is in final verification.
+Status: in progress under Autonomous Phase Delivery Mode. PRs 3C.5-3C.7 are merged, the approved Preview-only migration has been applied and verified, and PR 3C.8 approved summary/export is in final verification.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
@@ -325,6 +325,8 @@ Approved sequence:
 5. PR 3C.9 - QA and client review package.
 
 PR 3C.7 implements current-state review for one owned Property and Australian financial year. It permits only explicit compatible neutral classifications, applies ownership/active-state/relationship and stale-edit validation on every write, marks incompatible saved classifications for re-review, and calculates no summary or report value.
+
+PR 3C.7 merged in #93 as `4432d2ac615127ac853edcdf0445a4dd5d149002`. PR 3C.8 derives only the contract-approved separate gross groups and counts from those revalidated rows and provides one user-confirmed, ephemeral CSV containing only the ten approved safe columns. It calculates no net result or tax outcome and stores no report/export snapshot.
 
 The controlling financial, privacy, classification, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
 

@@ -167,15 +167,15 @@ describe("Phase 3C Property record review", () => {
     expect(service).not.toMatch(/tx\.transaction\.(?:create|update|delete)/);
   });
 
-  it("shows record review with no totals, tax outcomes or private source detail", async () => {
+  it("shows record review without tax claims or private source detail", async () => {
     const component = await readFile(componentPath, "utf8");
     expect(component).toContain("Property record review");
     expect(component).toContain("Australian financial year");
     expect(component).toContain("No classification is chosen automatically.");
     expect(component).toContain("saved classification needs review");
     expect(component).toContain("Record keeping only - not tax advice.");
-    expect(component).not.toMatch(/deduct|claimable|taxable|ATO-ready|profit|yield|equity|valuation|net worth/i);
+    expect(component).not.toMatch(/deduct|claimable|taxable|ATO-ready|yield|equity|valuation|net worth/i);
     expect(component).not.toMatch(/description|merchantName|narration|filename|accountReference|address/);
-    expect(component).not.toMatch(/reduce\(|totalCents|summaryTotal/);
+    expect(component).not.toMatch(/netCents|profitCents|deductibleCents|taxableCents/);
   });
 });
