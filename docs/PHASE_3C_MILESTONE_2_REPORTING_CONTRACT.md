@@ -12,6 +12,18 @@ SpendGrove is not a tax agent and does not provide tax advice. Nothing in this m
 
 The original everyday transaction remains the sole cashflow record. Reporting reads existing owned records and minimum safe user review metadata; it never creates, copies or changes a transaction.
 
+## Client-approved linked-record simplification amendment - 4 July 2026
+
+This amendment supersedes earlier contract clauses that required a `PropertyReportReview` classification before summary or export inclusion.
+
+- Every currently eligible Property-linked everyday transaction is included automatically after the ownership, active-state, financial-year, relationship-resolution, split and ambiguity checks below pass.
+- No report-only classification, suggestion confirmation or `PropertyReportReview` write is required in the normal user workflow.
+- Summaries use only safe current transaction type/sign and relationship provenance.
+- Exports include every eligible current linked record and omit `record_classification`.
+- Existing `PropertyReportReview` rows and the Preview-only table remain dormant. They are not dropped, deleted, backfilled, rewritten or used to gate output.
+- This amendment changes no schema, migration, transaction, Property link or cashflow record.
+- All no-tax-advice, privacy, ownership, no-double-count and forbidden-calculation boundaries remain in force.
+
 ## Australian financial-year boundaries
 
 - A financial year starts on 1 July and ends on 30 June of the following calendar year.
@@ -34,7 +46,7 @@ A reporting record is one existing everyday transaction resolved to one Property
 
 An archived but non-deleted Property may be reviewed for historical record keeping and must carry a clear `Archived` label. Archiving does not create, restore or alter a transaction link. Deleted Properties are excluded.
 
-Unclassified eligible records may appear in the review foundation but are excluded from summaries and exports until the user makes an explicit classification choice.
+Eligible records appear in the current report, summary and export without a separate report-only classification choice.
 
 ## Relationship precedence and provenance
 
@@ -42,7 +54,7 @@ Unclassified eligible records may appear in the review foundation but are exclud
 
 - A current manual relationship requires an owned `PropertyTransactionLink` with `unlinkedAt = null`.
 - The manual Property link is authoritative for reporting Property resolution.
-- A manual link never implies a classification or inclusion decision.
+- A current manual link is sufficient for neutral record-keeping inclusion after all other eligibility checks pass; it implies no tax treatment.
 - If loan reconciliation also resolves the same transaction to the same Property, the record appears once with provenance `BOTH`.
 - If loan reconciliation resolves it to another Property, reporting keeps the manual Property only and shows a neutral relationship-conflict warning. It must not copy or allocate the transaction to the other Property.
 
@@ -59,9 +71,9 @@ Archived but non-deleted Loan Accounts may provide historical context. Their rec
 
 When no manual Property link exists:
 
-- if every current eligible loan-derived path resolves to exactly one Property, the transaction may appear as one unclassified review candidate for that Property;
+- if every current eligible loan-derived path resolves to exactly one Property, the transaction appears once for that Property;
 - if current paths resolve to zero Properties, it is not a Property reporting record;
-- if current paths resolve to more than one Property, it is ambiguous and must remain review-only outside Property summaries and exports;
+- if current paths resolve to more than one Property, it is ambiguous and remains excluded from Property summaries and exports;
 - the user may resolve the reporting Property only through the existing deliberate manual Property-link flow; reporting must not allocate, split or automatically link it.
 
 Loan repayment principal, interest, fee and balance values remain analytical breakdown fields. Phase 3C Milestone 2 may show those reviewed values as source context, but it does not aggregate or export them and never treats any component as deductible.
@@ -83,18 +95,16 @@ Loan repayment principal, interest, fee and balance values remain analytical bre
 
 ## Transfers
 
-- A `TRANSFER` transaction may appear for review when it has an eligible Property relationship.
-- It may only be classified as `TRANSFER_CONTEXT`, `OTHER_PROPERTY_RECORD` or `EXCLUDED`.
+- A `TRANSFER` transaction appears as context when it has an eligible Property relationship.
 - Transfers are excluded from all approved summary totals.
-- A reviewed `TRANSFER_CONTEXT` row may appear in the export with its original signed amount and transaction type so the user can recognise account movement context.
+- It appears in the export with its original signed amount and transaction type so the user can recognise account movement context.
 - Reporting never infers whether a transfer is income, an expense, a loan payment or an internal account movement.
 
 ## Refunds and reversals
 
 - SpendGrove does not automatically pair a refund or reversal with an earlier transaction.
-- A user may classify an owned positive `INCOME` transaction as `REFUND_OR_REVERSAL`.
-- Refund/reversal amounts are shown in their own approved gross total and are not automatically subtracted from Property outgoings or added to Property income.
-- Negative, sign-inconsistent or otherwise unclear records remain unclassified until corrected in the normal transaction workflow.
+- Reporting does not infer or persist a refund/reversal label. Positive linked `INCOME` transactions appear in the simple money-in group and are never automatically paired or netted.
+- Sign-inconsistent or otherwise unclear records remain visible as linked records but contribute only to a summary group when their current type/sign matches that group's rule.
 - Reporting does not change the original transaction type, amount, category or date.
 
 ## Archived, deleted and inactive records
@@ -110,36 +120,22 @@ Loan repayment principal, interest, fee and balance values remain analytical bre
 
 - Reports are current-state views, not historical relationship snapshots.
 - Unlinking the relationship removes the transaction from that Property's current report without deleting the transaction or review metadata.
-- Relinking to the same Property requires current eligibility revalidation before prior classification can be used again.
-- Relinking to another Property invalidates the previous Property review context. The transaction is unclassified for the new Property until the user explicitly reviews it again.
-- A stale classification must never silently follow a transaction to another Property.
+- Relinking requires current eligibility and relationship revalidation before the transaction appears in the new current-state report.
+- Dormant classification metadata never controls or follows report inclusion.
 - Reporting does not preserve or display historical Property assignments.
 
-## Required user classifications
+## No report-only classification requirement
 
-Every record included in a summary or export requires one explicit user-selected neutral classification:
-
-- `PROPERTY_INCOME` - an `INCOME` transaction the user wants grouped as Property income record keeping;
-- `PROPERTY_OUTGOING` - an `EXPENSE` transaction the user wants grouped as Property outgoing record keeping;
-- `REFUND_OR_REVERSAL` - a positive `INCOME` transaction kept separate from income and outgoings;
-- `LOAN_PAYMENT_CONTEXT` - an `EXPENSE` transaction with a current eligible loan-derived path to the resolved Property;
-- `TRANSFER_CONTEXT` - a `TRANSFER` transaction kept as non-totalled context;
-- `OTHER_PROPERTY_RECORD` - a reviewed record retained without entering an approved financial total;
-- `EXCLUDED` - an explicit user decision to omit the record from summaries and exports.
-
-These are record-keeping codes only. They are not tax categories and must not be labelled deductible, assessable, capital, revenue, taxable or claimable.
-
-Server validation must enforce classification compatibility with current transaction type, sign and relationship provenance. Suggestions may be deterministic and visibly unconfirmed, but no classification may be persisted automatically.
+The normal Property report/export workflow has no classification controls or report-only save step. Existing classification metadata is dormant and does not include, exclude or regroup a current eligible record. Reporting groups records only from current safe transaction facts and relationship provenance. These groups are neutral record-keeping views, not tax categories or tax conclusions.
 
 ## Approved summary calculations
 
-PR 3C.8 may implement only the following Property-and-financial-year summaries from currently eligible, explicitly classified, user-owned transactions:
+The approved Property-and-financial-year summaries from currently eligible user-owned transactions are:
 
-- **Property income records:** sum `amountCents` for `PROPERTY_INCOME`; each value must be positive.
-- **Property outgoing records:** sum `abs(amountCents)` for `PROPERTY_OUTGOING`; each value must be a negative expense.
-- **Refund/reversal records:** sum `amountCents` for `REFUND_OR_REVERSAL`; each value must be positive.
-- **Loan payment cashflow records:** sum `abs(amountCents)` once per everyday transaction classified `LOAN_PAYMENT_CONTEXT`; each value must be a negative expense with an eligible loan-derived path.
-- **Record counts:** count the rows contributing to each classification above and separately count `TRANSFER_CONTEXT` and `OTHER_PROPERTY_RECORD` rows.
+- **Money in records:** sum positive current `INCOME` transaction amounts.
+- **Money out records:** sum the absolute value of negative current `EXPENSE` transaction amounts.
+- **Linked loan payment cashflow records:** show the count and gross amount of the negative `EXPENSE` subset connected through an eligible loan-reconciliation path. This is context within money out and is not added as another cashflow total.
+- **Record counts:** total linked records and transfer-context count.
 
 All arithmetic uses integer cents and formats AUD only at the presentation/export boundary. The implementation must use database-safe integer aggregation or checked integer addition and must reject unsafe numeric overflow.
 
@@ -158,7 +154,7 @@ The milestone must not calculate or display:
 
 PR 3C.8 may generate one user-initiated CSV for one owned Property and one selected financial year. It is generated from the same revalidated rows as the on-screen report and is not stored by SpendGrove.
 
-The export contains one row per eligible, classified transaction except `EXCLUDED`. Approved columns only:
+The export contains one row per eligible current linked transaction. Approved columns only:
 
 - `record_id` - generated transaction ID for traceability;
 - `financial_year` - derived label;
@@ -167,11 +163,10 @@ The export contains one row per eligible, classified transaction except `EXCLUDE
 - `transaction_type` - `INCOME`, `EXPENSE` or `TRANSFER`;
 - `amount_aud` - exact signed amount derived from integer cents;
 - `category_label` - existing safe category label, or `Uncategorised`;
-- `record_classification` - one approved neutral classification code;
 - `connection_source` - `MANUAL_PROPERTY_LINK`, `LOAN_RECONCILIATION` or `BOTH`;
 - `spendgrove_notice` - `Record keeping only - not tax advice.`
 
-The export excludes unclassified and `EXCLUDED` records. It includes no summary/footer rows, formulas, hidden columns or report snapshots.
+The export does not consult classification metadata. It includes no summary/footer rows, formulas, hidden columns or report snapshots.
 
 Before download, the UI must warn: `SpendGrove provides record-keeping information only, not tax advice. Review your records and speak with a qualified professional if needed.`
 
@@ -182,10 +177,9 @@ Forbidden export fields include merchant or description text, notes, raw narrati
 - Reports and exports are calculated from current source records at request time; no report snapshot is persisted.
 - Editing a transaction through the existing transaction workflow immediately affects its future report date, amount, type and category.
 - Reporting cannot edit the original transaction.
-- If an edit makes the classification incompatible, the record is excluded from summaries/exports and marked for user re-review.
-- Classification changes require current ownership/eligibility validation and stale-edit protection using existing `updatedAt` values.
+- A source edit affects the next report after current ownership, eligibility, type/sign and relationship revalidation; no report-only review is required.
 - Loan repayment correction retains the accepted unlink-before-edit rule. An unlinked repayment provides no loan-derived Property path.
-- Classification audit metadata may record changed classification codes and safe state/reason codes only. It must not contain amounts, dates, nicknames, source content or before/after transaction values.
+- Existing classification audit history remains untouched and dormant. This simplified workflow creates no new classification audit event.
 - There is no immutable report version, filed-return state or historical financial snapshot in this milestone.
 
 ## No-double-count invariants
@@ -196,19 +190,18 @@ Forbidden export fields include merchant or description text, notes, raw narrati
 - One transaction may contribute to at most one Property summary/export.
 - Split parents contribute nothing; eligible split children contribute individually.
 - Transfer context contributes to no approved financial total.
-- Refund/reversal totals remain separate and are never silently netted.
+- Positive income and negative expenses remain separate and are never silently netted.
 - Repeating a report or export changes no durable financial data.
 
 ## Wording and disclaimers
 
 Approved neutral terms include:
 
-- `Property record review`;
+- `Property records`;
 - `Financial year`;
-- `Property income records`;
-- `Property outgoing records`;
-- `Refund/reversal records`;
-- `Loan payment cashflow records`;
+- `Money in records`;
+- `Money out records`;
+- `Linked loan payment cashflow records`;
 - `Record keeping only`;
 - `Review before export`.
 
@@ -233,8 +226,8 @@ The exact model, enum, indexes and foreign keys belong to PR 3C.6 and must be ad
 
 ## Ownership, privacy and security
 
-- Every read, classification write, summary and export revalidates the authenticated user's ownership of the Property, transaction and current relationship path.
-- Client-supplied user IDs, Property IDs, transaction IDs or classifications are never trusted without server validation.
+- Every read, summary and export revalidates the authenticated user's ownership of the Property, transaction and current relationship path.
+- Client-supplied user IDs, Property IDs or transaction IDs are never trusted without server validation.
 - Cross-user records must not appear in candidates, summaries, counts, exports, logs or errors.
 - Raw CSV files, rows, filenames and narration remain outside reporting persistence and logs.
 - Errors and audit events use generated IDs plus safe state/reason codes only where operationally necessary.
@@ -268,7 +261,7 @@ No Preview migration may run without explicit client approval. No Production mig
 - Cross-Property loan allocation is unsupported and excluded when ambiguous.
 - Refunds/reversals are not automatically paired or netted.
 - Loan principal, interest and fee values may be reviewed as context but are not aggregated or exported.
-- Classification is manual and must be repeated when a record moves to another Property or becomes incompatible.
+- There is no report-only classification step; relationship changes affect the next current-state report automatically.
 - No exact address, document, receipt, merchant narration or account reference is available in reports/exports.
 - Exports are record-keeping CSVs only and do not map to ATO forms or tax-return labels.
 

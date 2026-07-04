@@ -71,15 +71,17 @@ describe("Phase 3C Property record review", () => {
     )[0]).toMatchObject({ provenance: "MANUAL_PROPERTY_LINK", relationshipConflict: true });
   });
 
-  it("excludes ambiguous loan paths, split parents, inactive records and cross-user records", () => {
+  it("excludes ambiguous, unlinked, split-parent, inactive, deleted and cross-user records", () => {
     const source = transaction();
     const ambiguous: PropertyReviewLoanPath[] = [
       { propertyId: "property_1", loanArchived: false, transaction: source },
       { propertyId: "property_2", loanArchived: false, transaction: source },
     ];
     expect(resolvePropertyReviewRecords("user_1", "property_1", [], ambiguous)).toEqual([]);
+    expect(resolvePropertyReviewRecords("user_1", "property_1", [], [])).toEqual([]);
     expect(resolvePropertyReviewRecords("user_1", "property_1", [{ propertyId: "property_1", transaction: transaction({ splitRole: "PARENT" }) }], [])).toEqual([]);
     expect(resolvePropertyReviewRecords("user_1", "property_1", [{ propertyId: "property_1", transaction: transaction({ status: "NEEDS_REVIEW" }) }], [])).toEqual([]);
+    expect(resolvePropertyReviewRecords("user_1", "property_1", [{ propertyId: "property_1", transaction: transaction({ deletedAt: new Date("2026-07-04T00:00:00.000Z") }) }], [])).toEqual([]);
     expect(resolvePropertyReviewRecords("user_1", "property_1", [{ propertyId: "property_1", transaction: transaction({ userId: "user_2" }) }], [])).toEqual([]);
   });
 
@@ -285,15 +287,15 @@ describe("Phase 3C Property record review", () => {
 
   it("shows record review without tax claims or private source detail", async () => {
     const component = await readFile(componentPath, "utf8");
-    expect(component).toContain("Property record review");
+    expect(component).toContain("Property records");
     expect(component).toContain("Australian financial year");
-    expect(component).toContain("Suggestions stay unconfirmed until you save them.");
-    expect(component).toContain("Suggested classification");
-    expect(component).toContain("Apply suggested classifications");
-    expect(component).toContain("Confirm and apply");
-    expect(component).toContain("You can change any classification before exporting.");
-    expect(component).toContain("saved classification needs review");
-    expect(component).toContain("They are not tax advice.");
+    expect(component).toContain("Linked records are included automatically");
+    expect(component).toContain("Included because this transaction is linked to this Property");
+    expect(component).toContain("Included through a linked loan repayment");
+    expect(component).toContain("Record keeping only - not tax advice.");
+    expect(component).not.toContain("Suggested classification");
+    expect(component).not.toContain("Apply suggested classifications");
+    expect(component).not.toContain("Record classification");
     expect(component).not.toMatch(/deduct|claimable|taxable|ATO-ready|yield|equity|valuation|net worth/i);
     expect(component).not.toMatch(/description|merchantName|narration|filename|accountReference|address/);
     expect(component).not.toMatch(/netCents|profitCents|deductibleCents|taxableCents/);

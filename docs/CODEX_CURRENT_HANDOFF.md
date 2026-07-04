@@ -30,9 +30,12 @@ Last updated: 4 July 2026
 - Private-local compatibility validation covered 19 supplied bank CSV formats: all 19 parsed and reached review with all rows structurally ready; sanitised review text had zero private-pattern leak flags. Raw files were not committed or uploaded.
 - QA hardening prevents ambiguous generic headers from being falsely labelled as one specific bank. Mapping remains complete and browser-local; no schema, migration, package, provider, secret or environment change was introduced.
 - Client retesting confirmed the Property review/report/export flow worked and another bank CSV mapped, reached review and imported successfully.
-- Focused acceptance-hardening PR [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) adds deterministic suggestions using only safe current transaction/relation facts. They remain unpersisted until user confirmation and may be bulk-confirmed with server-side ownership, eligibility, compatibility and stale-state revalidation. Ambiguous records remain manual.
+- Focused acceptance-hardening PR [#96](https://github.com/LatinMaestro/SpendGrove/pull/96) merged as `6e70c8906cdd7f38e751ff2f0b257ab03b20136c`. Its classification-suggestion UI is now superseded by the client-approved simpler linked-record reporting direction.
 - Focused acceptance-hardening verification: 76 test files / 458 tests passed; TypeScript type-check and the clean production build passed. No Prisma schema, migration, package, provider, secret, environment or navigation change was introduced.
-- `docs/PHASE_3C_MILESTONE_2_SUMMARY.md` is the controlling client review package. The milestone remains open and must return to client retesting after this hardening; it is not formally closed.
+- Client retesting rejected the additional report-only classification step as too much user effort. The focused simplification now makes all currently eligible linked records available to summary/export without classification; classification controls and write routes are removed from the normal reporting workflow.
+- The existing Preview-only `PropertyReportReview` table remains dormant and untouched. No schema change, migration, data rewrite, backfill or deletion is required.
+- Simplification verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed. Prisma schema, migrations, packages and environment configuration are unchanged.
+- `docs/PHASE_3C_MILESTONE_2_SUMMARY.md` is the controlling client review package. The milestone remains open and must return to client retesting after the simplification; it is not formally closed.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -164,8 +167,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Complete, publish and merge the focused Phase 3C Milestone 2 classification-suggestion acceptance hardening, verify merged main and stop for final client retesting. Do not formally close the milestone or begin another milestone or Phase 4.
+Complete, publish and merge the focused Phase 3C Milestone 2 linked-record reporting simplification, verify merged main and stop for final client retesting. Do not formally close the milestone or begin another milestone or Phase 4.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the focused classification-suggestion acceptance hardening and stop for client retesting. The Preview migration gate is complete; do not run another migration. No Production migration, Phase 4, Home dashboard statistics, tax advice, Basiq, AI, payments or later module is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the focused linked-record reporting simplification and stop for client retesting. The Preview migration gate is complete; do not run another migration. No Production migration, Phase 4, Home dashboard statistics, tax advice, Basiq, AI, payments or later module is authorised.

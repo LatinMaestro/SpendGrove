@@ -14,6 +14,7 @@ import { createTestUserContext } from "@/tests/server/auth-test-helpers";
 
 const outputPath = new URL("../../src/server/property-report-output.ts", import.meta.url);
 const exportRoutePath = new URL("../../app/api/account/properties/[propertyId]/report-export/route.ts", import.meta.url);
+const reviewRoutePath = new URL("../../app/api/account/properties/[propertyId]/report-review/route.ts", import.meta.url);
 const componentPath = new URL("../../components/property-record-review.tsx", import.meta.url);
 
 function record(overrides: Partial<SafePropertyReviewRecord> = {}): SafePropertyReviewRecord {
@@ -45,46 +46,43 @@ function review(records: SafePropertyReviewRecord[]): SafePropertyRecordReview {
 }
 
 describe("Phase 3C approved Property summary and export", () => {
-  it("calculates only the approved separate gross groups and counts", () => {
+  it("calculates simple linked-record groups without report classifications", () => {
     const summary = summarizePropertyRecords(review([
-      record({ transactionId: "income", type: "INCOME", amountCents: 20000, classification: "PROPERTY_INCOME" }),
-      record({ transactionId: "outgoing", amountCents: -12500, classification: "PROPERTY_OUTGOING" }),
-      record({ transactionId: "refund", type: "INCOME", amountCents: 3000, classification: "REFUND_OR_REVERSAL" }),
-      record({ transactionId: "loan", amountCents: -45000, provenance: "LOAN_RECONCILIATION", classification: "LOAN_PAYMENT_CONTEXT" }),
-      record({ transactionId: "transfer", type: "TRANSFER", amountCents: -5000, classification: "TRANSFER_CONTEXT" }),
-      record({ transactionId: "other", classification: "OTHER_PROPERTY_RECORD" }),
-      record({ transactionId: "excluded", classification: "EXCLUDED" }),
-      record({ transactionId: "unclassified", classification: null, suggestedClassification: "PROPERTY_OUTGOING", suggestionReasonCode: "MANUAL_PROPERTY_EXPENSE" }),
-      record({ transactionId: "stale", classificationNeedsReview: true }),
+      record({ transactionId: "income", type: "INCOME", amountCents: 20000, classification: null }),
+      record({ transactionId: "outgoing", amountCents: -12500, classification: null }),
+      record({ transactionId: "loan", amountCents: -45000, provenance: "LOAN_RECONCILIATION", classification: null }),
+      record({ transactionId: "both", amountCents: -10000, provenance: "BOTH", classification: "EXCLUDED" }),
+      record({ transactionId: "transfer", type: "TRANSFER", amountCents: -5000, classificationNeedsReview: true }),
     ]));
     expect(summary).toEqual({
-      propertyIncome: { count: 1, totalCents: 20000 },
-      propertyOutgoing: { count: 1, totalCents: 12500 },
-      refundOrReversal: { count: 1, totalCents: 3000 },
-      loanPaymentCashflow: { count: 1, totalCents: 45000 },
+      moneyIn: { count: 1, totalCents: 20000 },
+      moneyOut: { count: 3, totalCents: 67500 },
+      loanPaymentCashflow: { count: 2, totalCents: 55000 },
       transferContextCount: 1,
-      otherPropertyRecordCount: 1,
+      totalLinkedRecordCount: 5,
     });
     expect(summary).not.toHaveProperty("net");
     expect(summary).not.toHaveProperty("profit");
     expect(summary).not.toHaveProperty("deductible");
   });
 
-  it("exports exactly the approved columns and omits excluded, unclassified and stale rows", () => {
+  it("exports every eligible linked record without a report classification", () => {
     const csv = createPropertyRecordCsv(review([
-      record(),
+      record({ classification: null }),
       record({ transactionId: "excluded", classification: "EXCLUDED" }),
-      record({ transactionId: "unclassified", classification: null }),
+      record({ transactionId: "unclassified", classification: null, provenance: "LOAN_RECONCILIATION" }),
       record({ transactionId: "stale", classificationNeedsReview: true }),
     ]));
     const lines = csv.split("\r\n");
-    expect(lines).toHaveLength(2);
-    expect(lines[0]).toBe('"record_id","financial_year","property_nickname","transaction_date","transaction_type","amount_aud","category_label","record_classification","connection_source","spendgrove_notice"');
+    expect(lines).toHaveLength(5);
+    expect(lines[0]).toBe('"record_id","financial_year","property_nickname","transaction_date","transaction_type","amount_aud","category_label","connection_source","spendgrove_notice"');
     expect(lines[1]).toContain('"-125.00"');
     expect(lines[1]).toContain('"Record keeping only - not tax advice."');
-    expect(csv).not.toContain("excluded");
-    expect(csv).not.toContain("unclassified");
-    expect(csv).not.toContain("stale");
+    expect(csv).toContain('"excluded"');
+    expect(csv).toContain('"unclassified"');
+    expect(csv).toContain('"LOAN_RECONCILIATION"');
+    expect(csv).toContain('"stale"');
+    expect(csv).not.toContain("record_classification");
   });
 
   it("neutralises spreadsheet formula prefixes in user-reviewed safe labels", () => {
@@ -116,9 +114,10 @@ describe("Phase 3C approved Property summary and export", () => {
   });
 
   it("keeps export ephemeral, no-store and free of forbidden source fields", async () => {
-    const [output, route, component] = await Promise.all([
+    const [output, route, reviewRoute, component] = await Promise.all([
       readFile(outputPath, "utf8"),
       readFile(exportRoutePath, "utf8"),
+      readFile(reviewRoutePath, "utf8"),
       readFile(componentPath, "utf8"),
     ]);
     expect(route).toContain('"Cache-Control": "private, no-store, max-age=0"');
@@ -126,9 +125,13 @@ describe("Phase 3C approved Property summary and export", () => {
     expect(output).not.toMatch(/merchant|description|notes|narration|filename|accountReference|userId|email|address|balance/i);
     expect(output).not.toMatch(/propertyReportReview\.(?:create|update|upsert|delete)/);
     expect(component).toContain("Prepare CSV export");
-    expect(component).toContain("Download reviewed CSV");
-    expect(component).toContain("SpendGrove provides record-keeping information only, not tax advice.");
-    expect(component).toContain("No net result, profit or tax outcome is calculated.");
+    expect(component).toContain("Download linked records CSV");
+    expect(component).toContain("Record keeping only - not tax advice.");
+    expect(component).toContain("Linked records are included automatically");
+    expect(component).not.toContain("Record classification");
+    expect(component).not.toContain("Suggested classification");
+    expect(component).not.toContain("Apply suggested classifications");
+    expect(reviewRoute).not.toMatch(/export async function (?:PUT|POST)/);
     expect(component).not.toMatch(/deductible|claimable|ATO-ready|yield|equity|valuation|net worth/i);
   });
 });
