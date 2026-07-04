@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 3 July 2026
+Last updated: 4 July 2026
 
 ## Current phase and status
 
@@ -21,6 +21,8 @@ Last updated: 3 July 2026
 - Verification correction PR #91 merged as `563498c1095baffedbcc3d12d0645c81dceb496a`. Verification-only run `28657045177` skipped all deploy steps and passed the exact enum, columns, primary key, indexes, foreign keys, empty-table and unchanged aggregate-count checks.
 - The Phase 3C Milestone 2 migration is applied to Preview only. `PropertyReportReview` was empty immediately after migration verification. No Production migration has run.
 - Public smoke checks returned HTTP 200 for `/`, `/loans`, `/transactions` and `/settings` with no internal server error.
+- PR 3C.7 implementation is ready for publication: authenticated Property-and-financial-year review resolves current manual and unambiguous loan-derived relationships, excludes split parents and ambiguous/cross-user/inactive records, and saves only explicit compatible neutral classifications with stale-edit protection. It calculates no totals and exposes no private source text.
+- PR 3C.7 verification: 75 test files / 447 tests passed; TypeScript type-check and the clean production build passed.
 - No Phase 4 or later-module implementation is authorised.
 
 ## Phase 3C Milestone 1 progress
@@ -152,8 +154,8 @@ Delivered behaviour:
 
 ## Exact next action
 
-Continue PR 3C.7 - Property record review foundation under the frozen reporting contract. Do not implement PR 3C.8 summaries/exports until PR 3C.7 is green and merged.
+Publish and merge PR 3C.7 after final full-suite, production-build and Vercel verification. Then continue to PR 3C.8; do not implement anything outside the approved summaries and ephemeral safe-field export contract.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.5/3C.6 gate. No Preview migration may run without explicit approval; no Production migration, Phase 4, Home dashboard statistics, Basiq, AI, payments or later module is authorised.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue only the approved PR 3C.7-3C.9 sequence. The Preview migration gate is complete; do not run another migration. No Production migration, Phase 4, Home dashboard statistics, Basiq, AI, payments or later module is authorised.
