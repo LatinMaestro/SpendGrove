@@ -29,6 +29,8 @@ function record(overrides: Partial<SafePropertyReviewRecord> = {}): SafeProperty
     archivedLoanContext: false,
     classification: "PROPERTY_OUTGOING",
     classificationNeedsReview: false,
+    suggestedClassification: null,
+    suggestionReasonCode: null,
     reviewUpdatedAt: "2026-07-04T00:00:00.000Z",
     ...overrides,
   };
@@ -52,7 +54,7 @@ describe("Phase 3C approved Property summary and export", () => {
       record({ transactionId: "transfer", type: "TRANSFER", amountCents: -5000, classification: "TRANSFER_CONTEXT" }),
       record({ transactionId: "other", classification: "OTHER_PROPERTY_RECORD" }),
       record({ transactionId: "excluded", classification: "EXCLUDED" }),
-      record({ transactionId: "unclassified", classification: null }),
+      record({ transactionId: "unclassified", classification: null, suggestedClassification: "PROPERTY_OUTGOING", suggestionReasonCode: "MANUAL_PROPERTY_EXPENSE" }),
       record({ transactionId: "stale", classificationNeedsReview: true }),
     ]));
     expect(summary).toEqual({
@@ -102,6 +104,9 @@ describe("Phase 3C approved Property summary and export", () => {
         return review([record()]);
       },
       async classify() {
+        throw new Error("not used");
+      },
+      async applySuggestions() {
         throw new Error("not used");
       },
     };

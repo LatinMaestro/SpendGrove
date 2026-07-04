@@ -29,7 +29,35 @@ export const propertyRecordReviewRequestSchema = z.object({
   expectedReviewUpdatedAt: z.string().datetime().nullable(),
 }).strict();
 
+const bulkSuggestionItemSchema = z.object({
+  transactionId: z.string().trim().min(1),
+  expectedTransactionUpdatedAt: z.string().datetime(),
+  expectedReviewUpdatedAt: z.string().datetime().nullable(),
+}).strict();
+
+export type PropertyBulkSuggestionItem = z.infer<typeof bulkSuggestionItemSchema>;
+
+export const propertyBulkSuggestionRequestSchema = z.object({
+  endingYear: propertyFinancialYearSchema,
+  confirmed: z.literal(true),
+  items: z.array(bulkSuggestionItemSchema).min(1).max(100),
+}).strict().superRefine((value, context) => {
+  const ids = new Set<string>();
+  value.items.forEach((item, index) => {
+    if (ids.has(item.transactionId)) {
+      context.addIssue({ code: "custom", path: ["items", index, "transactionId"], message: "Choose each record once." });
+    }
+    ids.add(item.transactionId);
+  });
+});
+
 export type PropertyRecordProvenance = "MANUAL_PROPERTY_LINK" | "LOAN_RECONCILIATION" | "BOTH";
+export type PropertyClassificationSuggestionReason =
+  | "LOAN_RECONCILIATION_EXPENSE"
+  | "MANUAL_PROPERTY_EXPENSE"
+  | "SEEDED_RENTAL_INCOME"
+  | "SEEDED_REFUND_OR_REBATE"
+  | "TRANSFER_RECORD";
 
 export type SafePropertyReviewRecord = {
   transactionId: string;
@@ -43,6 +71,8 @@ export type SafePropertyReviewRecord = {
   archivedLoanContext: boolean;
   classification: PropertyRecordClassification | null;
   classificationNeedsReview: boolean;
+  suggestedClassification: PropertyRecordClassification | null;
+  suggestionReasonCode: PropertyClassificationSuggestionReason | null;
   reviewUpdatedAt: string | null;
 };
 
@@ -62,7 +92,7 @@ type CandidateTransaction = {
   splitRole: "NONE" | "PARENT" | "CHILD";
   deletedAt: Date | null;
   updatedAt: Date;
-  category: { name: string } | null;
+  category: { name: string; isSeeded: boolean } | null;
   propertyReportReview: {
     propertyId: string;
     classification: PropertyRecordClassification;
@@ -105,6 +135,48 @@ export function isClassificationCompatible(
   return record.type === "EXPENSE"
     && record.amountCents < 0
     && (record.provenance === "LOAN_RECONCILIATION" || record.provenance === "BOTH");
+}
+
+export function suggestPropertyRecordClassification(record: Pick<
+  SafePropertyReviewRecord,
+  "type" | "amountCents" | "provenance" | "relationshipConflict" | "classification" | "classificationNeedsReview"
+> & { categoryName: string | null; categoryIsSeeded: boolean }) {
+  if (record.classification !== null || record.classificationNeedsReview || record.relationshipConflict) return null;
+  if (record.type === "TRANSFER") {
+    return { classification: "TRANSFER_CONTEXT" as const, reasonCode: "TRANSFER_RECORD" as const };
+  }
+  if (record.type === "EXPENSE" && record.amountCents < 0) {
+    if (record.provenance === "LOAN_RECONCILIATION" || record.provenance === "BOTH") {
+      return { classification: "LOAN_PAYMENT_CONTEXT" as const, reasonCode: "LOAN_RECONCILIATION_EXPENSE" as const };
+    }
+    return { classification: "PROPERTY_OUTGOING" as const, reasonCode: "MANUAL_PROPERTY_EXPENSE" as const };
+  }
+  if (record.type === "INCOME" && record.amountCents > 0 && record.categoryIsSeeded) {
+    const category = record.categoryName?.trim().toLocaleLowerCase("en-AU");
+    if (category === "rental income") {
+      return { classification: "PROPERTY_INCOME" as const, reasonCode: "SEEDED_RENTAL_INCOME" as const };
+    }
+    if (category === "refunds / rebates") {
+      return { classification: "REFUND_OR_REVERSAL" as const, reasonCode: "SEEDED_REFUND_OR_REBATE" as const };
+    }
+  }
+  return null;
+}
+
+export function selectApplicablePropertySuggestions(
+  records: SafePropertyReviewRecord[],
+  items: PropertyBulkSuggestionItem[],
+) {
+  const currentRecords = new Map(records.map((record) => [record.transactionId, record]));
+  return items.flatMap((item) => {
+    const record = currentRecords.get(item.transactionId);
+    if (!record || record.classification !== null || record.classificationNeedsReview
+      || !record.suggestedClassification || record.relationshipConflict
+      || record.transactionUpdatedAt !== item.expectedTransactionUpdatedAt
+      || record.reviewUpdatedAt !== item.expectedReviewUpdatedAt
+      || !isClassificationCompatible(record.suggestedClassification, record)) return [];
+    return [{ item, record, classification: record.suggestedClassification }];
+  });
 }
 
 export function resolvePropertyReviewRecords(
@@ -157,10 +229,18 @@ export function resolvePropertyReviewRecords(
       archivedLoanContext: loanPathsForTransaction.some((path) => path.loanArchived),
       classification: review?.classification ?? null,
       classificationNeedsReview: false,
+      suggestedClassification: null,
+      suggestionReasonCode: null,
       reviewUpdatedAt: review?.updatedAt.toISOString() ?? null,
     };
     record.classificationNeedsReview = record.classification !== null
       && !isClassificationCompatible(record.classification, record);
+    const suggestion = suggestPropertyRecordClassification({
+      ...record,
+      categoryIsSeeded: transaction.category?.isSeeded ?? false,
+    });
+    record.suggestedClassification = suggestion?.classification ?? null;
+    record.suggestionReasonCode = suggestion?.reasonCode ?? null;
     records.push(record);
   }
   return records.sort((left, right) => right.date.localeCompare(left.date) || left.transactionId.localeCompare(right.transactionId));
@@ -185,13 +265,14 @@ export function createPropertyReviewAuditEvent(
   transactionId: string,
   classification: PropertyRecordClassification,
   state: "CREATED" | "UPDATED",
+  reasonCode: "MANUAL_USER_REVIEW" | "CONFIRMED_SUGGESTION" = "MANUAL_USER_REVIEW",
 ) {
   const audit = {
     userId,
     entityType: "TRANSACTION" as const,
     entityId: transactionId,
     action: "UPDATED" as const,
-    metadata: { propertyReviewState: state, classification, reasonCode: "MANUAL_USER_REVIEW" },
+    metadata: { propertyReviewState: state, classification, reasonCode },
   };
   auditEventSchema.parse(audit);
   return audit;
@@ -207,7 +288,7 @@ const transactionSelect = {
   splitRole: true,
   deletedAt: true,
   updatedAt: true,
-  category: { select: { name: true } },
+  category: { select: { name: true, isSeeded: true } },
   propertyReportReview: { select: { propertyId: true, classification: true, updatedAt: true } },
 } as const;
 
@@ -218,6 +299,15 @@ export type PropertyRecordReviewStore = {
     propertyId: string,
     input: z.infer<typeof propertyRecordReviewRequestSchema>,
   ): Promise<{ classification: PropertyRecordClassification; updatedAt: string }>;
+  applySuggestions(
+    userId: string,
+    propertyId: string,
+    input: z.infer<typeof propertyBulkSuggestionRequestSchema>,
+  ): Promise<{
+    classifiedCount: number;
+    skippedCount: number;
+    remainingReviewCount: number;
+  }>;
 };
 
 async function readWithPrisma(
@@ -349,6 +439,67 @@ export function createPrismaPropertyRecordReviewStore(
         throw error;
       }
     },
+    async applySuggestions(userId, propertyId, rawInput) {
+      const input = propertyBulkSuggestionRequestSchema.parse(rawInput);
+      try {
+        return await prisma.$transaction(async (tx) => {
+          const review = await readWithPrisma(tx, userId, propertyId, input.endingYear);
+          const applicable = selectApplicablePropertySuggestions(review.records, input.items);
+          let classifiedCount = 0;
+
+          for (const { item, record, classification } of applicable) {
+            const existing = await tx.propertyReportReview.findUnique({
+              where: { transactionId: item.transactionId },
+              select: { id: true, userId: true, propertyId: true, updatedAt: true },
+            });
+            if (existing && existing.userId !== userId) throw new OwnershipError("Property review");
+            const currentExpected = existing?.propertyId === propertyId ? existing.updatedAt.toISOString() : null;
+            if (currentExpected !== item.expectedReviewUpdatedAt) continue;
+
+            if (existing) {
+              await tx.propertyReportReview.update({
+                where: { id: existing.id },
+                data: { propertyId, classification },
+              });
+            } else {
+              await tx.propertyReportReview.create({
+                data: {
+                  userId,
+                  propertyId,
+                  transactionId: item.transactionId,
+                  classification,
+                },
+              });
+            }
+            await tx.auditEvent.create({
+              data: createPropertyReviewAuditEvent(
+                userId,
+                item.transactionId,
+                classification,
+                existing ? "UPDATED" : "CREATED",
+                "CONFIRMED_SUGGESTION",
+              ),
+            });
+            classifiedCount += 1;
+          }
+
+          const refreshed = await readWithPrisma(tx, userId, propertyId, input.endingYear);
+          const remainingReviewCount = refreshed.records.filter((record) =>
+            record.classification === null || record.classificationNeedsReview
+          ).length;
+          return {
+            classifiedCount,
+            skippedCount: input.items.length - classifiedCount,
+            remainingReviewCount,
+          };
+        }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable, maxWait: 10_000, timeout: 30_000 });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && (error.code === "P2002" || error.code === "P2034")) {
+          throw new PropertyRecordReviewConflictError("Some records changed. Refresh the review before applying suggestions again.");
+        }
+        throw error;
+      }
+    },
   };
 }
 
@@ -370,4 +521,14 @@ export async function classifyPropertyRecord(
 ) {
   const user = requireAuthenticatedUserContext(context);
   return store.classify(user.userId, propertyId, propertyRecordReviewRequestSchema.parse(input));
+}
+
+export async function applyPropertyRecordSuggestions(
+  context: AuthenticatedUserContext | null | undefined,
+  propertyId: string,
+  input: unknown,
+  store: PropertyRecordReviewStore = createPrismaPropertyRecordReviewStore(),
+) {
+  const user = requireAuthenticatedUserContext(context);
+  return store.applySuggestions(user.userId, propertyId, propertyBulkSuggestionRequestSchema.parse(input));
 }

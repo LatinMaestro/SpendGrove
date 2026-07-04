@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { getCurrentUserContext } from "@/src/server/auth/current-user";
-import { classifyPropertyRecord, getPropertyRecordReview } from "@/src/server/property-report-review";
+import {
+  applyPropertyRecordSuggestions,
+  classifyPropertyRecord,
+  getPropertyRecordReview,
+} from "@/src/server/property-report-review";
 import { summarizePropertyRecords } from "@/src/server/property-report-output";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +41,16 @@ export async function PUT(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const result = await classifyPropertyRecord(context, params.propertyId, await request.json());
+    return NextResponse.json({ ok: true, result });
+  } catch (error) {
+    return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });
+  }
+}
+
+export async function POST(request: Request, { params }: RouteContext) {
+  try {
+    const context = await getCurrentUserContext();
+    const result = await applyPropertyRecordSuggestions(context, params.propertyId, await request.json());
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });
