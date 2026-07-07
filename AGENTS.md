@@ -123,7 +123,11 @@ Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was form
 
 The accepted Phase 3C Milestone 2 workflow is a simple current-state Property record/export foundation: current eligible linked Property records feed summaries and exports automatically, without a report-only classification step. The Preview-only `PropertyReportReview` table remains dormant and untouched. No new Preview migration or Production migration has run after the accepted simplification.
 
-The next milestone options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`. Do not implement Phase 3C Milestone 3, Phase 4, Production readiness work or any other next module until the client explicitly approves a new milestone.
+Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode. The approved sequence is PR 3C.10 import-review Property-linking contract, PR 3C.11 schema and migration assessment, PR 3C.12 import-review Property link UI, PR 3C.13 commit integration and safety checks, PR 3C.14 manual transaction and workflow polish, and PR 3C.15 QA and client review package. PR 3C.10 is documentation-only and must freeze the contract in `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md` before implementation or schema assessment work.
+
+For Phase 3C Milestone 3, preferred implementation uses the existing `PropertyTransactionLink` only after a transaction is committed and owned by the authenticated user. Stop before continuing if schema changes, migrations, durable staging state, Merge-row pre-commit linking, private source fields, automatic Property matching, tax wording, exact addresses, allocation/split logic, export/report calculation changes, new packages/providers/secrets, Production migration, navigation changes, Home dashboard statistics, Phase 4 or later modules are needed.
+
+Options B and C in `docs/NEXT_MILESTONE_OPTIONS.md` remain proposal-only. Do not implement Phase 4, Production readiness work or any other next module until the client explicitly approves it.
 
 No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, recurring, budgets, insights, Basiq, AI, payments, household mode, Phase 4 or later module is authorised.
 

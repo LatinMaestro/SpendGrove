@@ -338,7 +338,50 @@ Linked-record simplification verification: 76 test files / 458 tests passed; Typ
 
 The controlling current-state eligibility, privacy, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, including the client-approved linked-record simplification amendment. The existing Preview-only review table remains dormant and untouched; no schema or migration change is required. The accepted export has exactly `record_id`, `financial_year`, `property_nickname`, `transaction_date`, `transaction_type`, `amount_aud`, `category_label`, `connection_source` and `spendgrove_notice`; it excludes `record_classification`, merchant descriptions, narration, filenames, raw rows, account references, identifiers, exact addresses, balances, emails, audit data, hidden columns and totals. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
 
-Closure evidence is in `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`. The next milestone options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`; do not implement any next option without explicit client approval.
+Closure evidence is in `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`.
+
+## Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish
+
+Status: approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode. PR 3C.10 must be documentation-only and freeze the import-review Property-linking contract before implementation or schema assessment work.
+
+Objective:
+
+Make the accepted Property reporting workflow easier by letting users link transactions to Properties earlier, especially during everyday CSV import review, while preserving user control, privacy-first CSV handling and the no-tax-advice boundary.
+
+Target workflow:
+
+1. Upload bank CSV.
+2. Review transactions.
+3. Categorise transactions.
+4. Link relevant transactions to a Property during review where appropriate.
+5. Commit reviewed rows.
+6. Property records/reports automatically include linked records later.
+7. Loan CSV repayments continue to reconcile to everyday transactions and appear in Property records where the Loan Account belongs to that Property.
+
+Approved sequence:
+
+1. PR 3C.10 - Import-review Property-linking contract.
+2. PR 3C.11 - Schema and migration assessment.
+3. PR 3C.12 - Import-review Property link UI.
+4. PR 3C.13 - Commit integration and safety checks.
+5. PR 3C.14 - Manual transaction and workflow polish.
+6. PR 3C.15 - QA and client review package.
+
+PR 3C.10 contract rules:
+
+- eligible import-review Property-linking is limited to reviewed everyday bank CSV `Import` rows that can become one future committed transaction;
+- `Skip` rows never create transactions or Property links;
+- Merge rows are not eligible for pre-commit Property-link selection in this milestone because they point at an existing transaction instead of creating one new future transaction;
+- Property links are created only after successful transaction commit and server-side ownership/active-state validation;
+- split parents are excluded and eligible split children may be linked;
+- manual transaction create/edit Property-link support may be added only if it fits without schema changes or migration;
+- copy must remain neutral, such as `Include in property records`, `Link to property` and `Record keeping only - not tax advice`.
+
+Schema/migration gate:
+
+PR 3C.11 must assess whether the existing `PropertyTransactionLink` table can support post-commit links created from import review. Preferred outcome is no schema change, no migration and no durable staging table. Stop if schema changes, Preview migration, Production migration, durable staging state, data rewrite, backfill, table drop, package, provider, secret or environment change is needed.
+
+Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
 ## Phase 4 — Recurring, Budgets and Insights
 

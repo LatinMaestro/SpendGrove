@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 7 July 2026
+Last updated: 8 July 2026
 
 ## Current phase and status
 
@@ -8,7 +8,8 @@ Last updated: 7 July 2026
 - Phase 3B Milestones 1, 2 and 3 are formally accepted and closed.
 - Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations is formally accepted and closed.
 - Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations is formally accepted and closed by the client on 7 July 2026 after Vercel retesting completed with no further acceptance comments.
-- No implementation is currently authorised. The next milestone is proposal-only until the client explicitly approves one option.
+- Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode.
+- Active approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
 
 ## Latest accepted delivery
 
@@ -81,9 +82,29 @@ Final accepted testing evidence:
 - No Production migration has run.
 - The Preview-only `PropertyReportReview` table remains dormant and untouched. It is not dropped, backfilled, rewritten or required by the normal workflow.
 
-## Future direction notes, proposal only
+## Active Phase 3C Milestone 3 objective
 
-Future import-review workflow idea:
+Make the accepted Property reporting workflow easier by letting users link transactions to Properties earlier, especially during everyday CSV import review, while preserving user control, privacy-first CSV handling and the no-tax-advice boundary.
+
+Target workflow:
+
+1. Upload bank CSV.
+2. Review transactions.
+3. Categorise transactions.
+4. Link relevant transactions to a Property during review where appropriate.
+5. Commit reviewed rows.
+6. Property records/reports automatically include linked records later.
+7. Loan CSV repayments continue to reconcile to everyday transactions and appear in Property records where the Loan Account belongs to that Property.
+
+Current PR:
+
+- PR 3C.10 is documentation-only and creates `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`.
+- No implementation code or schema work is authorised until the contract is merged.
+- PR 3C.11 must assess whether existing `PropertyTransactionLink` supports the workflow without schema changes or migration.
+
+## Future direction notes preserved from Milestone 2
+
+Future import-review workflow direction now active for Phase 3C Milestone 3, subject to the contract and stop conditions:
 
 - during everyday CSV import review, the user could link a transaction to a Property before commit;
 - a neutral user-controlled flag may be considered later, such as `Include in property records`, `Potential property tax record` or `For accountant review`;
@@ -101,12 +122,12 @@ Future navigation idea:
 
 ## Exact next action
 
-Stop. Wait for the client to approve a next milestone option from `docs/NEXT_MILESTONE_OPTIONS.md`.
+Complete, publish and merge PR 3C.10 as a documentation-only contract, then continue to PR 3C.11 unless a stop condition is triggered.
 
 ## Explicit exclusions
 
-Do not begin a Production migration, new Preview migration, schema change, table drop, data backfill, data rewrite, tax advice, automatic deductibility, deductible percentage, ATO integration, pre-filled tax return, tax lodgement workflow, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistic, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4 implementation, recurring/budget/insight implementation, new navigation tab or later module without explicit client approval.
+Do not begin a Production migration, new Preview migration, schema change, table drop, data backfill, data rewrite, durable staging state, tax advice, automatic deductibility, deductible percentage, ATO integration, pre-filled tax return, tax lodgement workflow, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistic, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4 implementation, recurring/budget/insight implementation, new navigation tab or later module without explicit client approval.
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`, `docs/NEXT_MILESTONE_OPTIONS.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Do not implement anything until the client approves the next milestone.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue the approved Phase 3C Milestone 3 sequence only. Stop if schema, migration, durable staging state, Production migration, private source fields, automatic Property matching, tax wording, navigation changes, Home dashboard statistics, Phase 4 or later modules enter scope.

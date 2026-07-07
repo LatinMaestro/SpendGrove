@@ -1,18 +1,20 @@
 # Next Milestone Options
 
-Status: proposal-only; no option is approved for implementation
+Status: Option A approved on 8 July 2026 as Phase 3C Milestone 3; Options B and C remain proposal-only
 
 Date prepared: 7 July 2026
 
 ## Decision requested
 
-Choose one next milestone for a separate approval. Do not combine reporting, everyday budgeting and production-readiness work into one delivery milestone: they have different financial, privacy, schema and client-review gates.
+The client selected Option A on 8 July 2026. Implementation is authorised only for the approved Phase 3C Milestone 3 sequence and stop gates.
 
-No implementation, schema work, migration, navigation change, Phase 4 work or Production migration is authorised by this document.
+Do not combine import-review Property linking, everyday budgeting and production-readiness work into one delivery milestone: they have different financial, privacy, schema and client-review gates.
+
+Options B and C remain proposal-only. No Phase 4 work, recurring, budgets, everyday insights, Production readiness implementation, navigation change, Production migration or later module is authorised by this document.
 
 ## Recommendation
 
-Recommended next step: **Option A - Phase 3C Milestone 3: Import-review Property linking and property-record workflow polish.**
+Selected next step: **Option A - Phase 3C Milestone 3: Import-review Property linking and property-record workflow polish.**
 
 Why: Phase 3C Milestone 2 proved that the simpler linked-record reporting/export workflow is the right direction. The biggest remaining friction is getting transactions linked to Properties earlier, during the normal CSV import/review flow, so reports become useful without another reporting-only task.
 
@@ -191,6 +193,6 @@ Stop for approval if legal commitments are unclear; data export/delete would req
 
 ## Approval boundary
 
-This document proposes options only. The client must explicitly approve one option, objective and PR sequence before any implementation starts.
+Option A is approved for implementation under the PR sequence and stop gates in the client approval and `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`.
 
-Until then: no Phase 4, recurring, budgets, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage, Production migration, new navigation tab or later-module work is authorised.
+Options B and C remain proposal-only. No Phase 4, recurring, budgets, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage, Production migration, new navigation tab, Production readiness implementation or later-module work is authorised.
