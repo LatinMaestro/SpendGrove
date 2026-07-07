@@ -1,8 +1,8 @@
 # Phase 3C Milestone 2 Reporting and Financial-Rules Contract
 
-Status: approved implementation contract for PR 3C.5
+Status: accepted final contract for closed Phase 3C Milestone 2
 
-Date: 3 July 2026
+Date: 3 July 2026; final simplification accepted 7 July 2026
 
 ## Purpose and boundary
 
@@ -265,6 +265,8 @@ No Preview migration may run without explicit client approval. No Production mig
 - No exact address, document, receipt, merchant narration or account reference is available in reports/exports.
 - Exports are record-keeping CSVs only and do not map to ATO forms or tax-return labels.
 
-## Approval boundary
+## Closure boundary
 
-The client approved this Milestone 2 objective and PR sequence on 3 July 2026. This PR 3C.5 contract freezes the rules above before schema or application work. PR 3C.6 may prepare only the matching additive schema and unexecuted Preview migration plan. Stop at that gate for explicit migration approval. PRs 3C.7-3C.9 remain blocked until the approved Preview migration succeeds.
+The client approved this Milestone 2 objective and PR sequence on 3 July 2026. The approved Preview-only migration ran once and was verified by workflow runs `28639135158` and `28657045177`. The client accepted the final simplified linked-record workflow on 7 July 2026 after Vercel retesting of PR #97.
+
+Phase 3C Milestone 2 is closed. This contract now records the accepted current-state reporting/export rules and limitations. Do not add reporting calculations, schema changes, migrations, navigation changes, tax treatment or next-milestone work without separate client approval.

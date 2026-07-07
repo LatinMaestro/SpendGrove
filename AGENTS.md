@@ -119,7 +119,11 @@ Phase 3B Milestone 3 was formally accepted and closed by the client on 1 July 20
 
 Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations was formally accepted and closed by the client on 3 July 2026 after signed-in retesting completed with no further acceptance comments. Its accepted plan, contract and closure evidence are in `docs/PHASE_3C_MILESTONE_1_PROPOSAL.md`, `docs/PHASE_3C_MILESTONE_1_DATA_CONTRACT.md` and `docs/PHASE_3C_MILESTONE_1_SUMMARY.md`.
 
-Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was approved by the client on 3 July 2026 under Autonomous Phase Delivery Mode. PR 3C.5 merged in #87 and froze the reporting rules in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`. PR 3C.6 merged in #88 with the matching minimum additive schema and `docs/PHASE_3C_MILESTONE_2_PREVIEW_MIGRATION_PLAN.md`. Preview deploy run `28639135158` applied the migration once and verification-only run `28657045177` passed all secret-safe integrity checks. PRs 3C.7-3C.9 may now continue in order; stop after PR 3C.9 for client retesting.
+Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations was formally accepted and closed by the client on 7 July 2026 after Vercel retesting completed with no further acceptance comments. Its accepted rules, migration evidence, final PR chain and limitations are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md` and `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`.
+
+The accepted Phase 3C Milestone 2 workflow is a simple current-state Property record/export foundation: current eligible linked Property records feed summaries and exports automatically, without a report-only classification step. The Preview-only `PropertyReportReview` table remains dormant and untouched. No new Preview migration or Production migration has run after the accepted simplification.
+
+The next milestone options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`. Do not implement Phase 3C Milestone 3, Phase 4, Production readiness work or any other next module until the client explicitly approves a new milestone.
 
 No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, recurring, budgets, insights, Basiq, AI, payments, household mode, Phase 4 or later module is authorised.
 
