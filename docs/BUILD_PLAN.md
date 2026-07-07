@@ -302,11 +302,11 @@ The focused amendment permits only automatic reconciliation of exactly one reval
 
 Closure evidence: 71 test files / 424 tests, TypeScript type-check and production build passed. The final functional main deployment is https://vercel.com/latinmaestros-projects/spendgrove/7jPxdoX8ptmf72bP3MKiuCiTLezZ and the final documentation handoff deployment is https://vercel.com/latinmaestros-projects/spendgrove/D5Jk9T4ek1rfghB2JR7tafxhzwtq. Phase 3C used one approved Preview-only migration workflow run (`28552337732`) for Milestone 1; no Production migration has run.
 
-The client selected Option A from `docs/NEXT_MILESTONE_OPTIONS.md` on 3 July 2026. Option B remains unapproved; do not start Phase 4, recurring, budgets, insights, Home dashboard statistics, Basiq, AI, payments or later modules.
+The client selected the then-proposed Phase 3C Milestone 2 reporting option on 3 July 2026. That milestone is now formally accepted and closed. Current next options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`; do not start Phase 4, recurring, budgets, insights, Home dashboard statistics, Basiq, AI, payments or later modules without explicit approval.
 
 ## Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations
 
-Status: PRs 3C.5-3C.9 and suggestion hardening PR #96 are merged. Client retesting confirmed review/export and another bank CSV import worked, but rejected the extra report-only classification step. Focused linked-record reporting simplification PR #97 is in progress. The milestone is not formally closed and must stop for final client retesting.
+Status: formally accepted and closed on 7 July 2026 after client Vercel retesting completed with no further acceptance comments.
 
 PR 3C.5 merged in #87 as `8410f785f53a32f673319143883bcb1468d0e7b5`. Its contract permits only explicit neutral classifications, four separate gross record-keeping summaries plus counts, and an ephemeral safe-field CSV; it forbids net/profit, deductibility, tax, loan-component and Home dashboard calculations.
 
@@ -314,9 +314,9 @@ PR 3C.6 schema foundation: one `PropertyRecordClassification` enum and one `Prop
 
 PR 3C.6 verification: Prisma format/generation/validation passed; 72 test files / 429 tests passed; TypeScript type-check and production build passed. No migration was run.
 
-PR 3C.6 merged in #88 as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. Preview deploy run `28639135158` applied the approved migration once at workflow-hardening commit `ceefe0a5df3e1fb59d42cda0339d59f0ff72b2d3`. Verification-only run `28657045177` at correction commit `563498c1095baffedbcc3d12d0645c81dceb496a` skipped deploy and passed exact schema, empty-table and unchanged aggregate-count checks. The migration is Preview-only; no Production migration has run. PR 3C.7 may continue.
+PR 3C.6 merged in #88 as `7e7e918872bcfece6acb566beee86a55d4d89e3d`. Preview deploy run `28639135158` applied the approved migration once at workflow-hardening commit `ceefe0a5df3e1fb59d42cda0339d59f0ff72b2d3`. Verification-only run `28657045177` at correction commit `563498c1095baffedbcc3d12d0645c81dceb496a` skipped deploy and passed exact schema, empty-table and unchanged aggregate-count checks. The migration is Preview-only; no Production migration has run.
 
-Approved sequence:
+Completed sequence:
 
 1. PR 3C.5 - reporting and financial-rules contract.
 2. PR 3C.6 - exact schema foundation and Preview migration plan.
@@ -330,13 +330,15 @@ PR 3C.7 merged in #93 as `4432d2ac615127ac853edcdf0445a4dd5d149002`. PR 3C.8 der
 
 PR 3C.8 merged in #94 as `9fd5dfab86d462666d490adc9c69d807950e77c1`. PR 3C.9 completed the privacy, ownership, no-double-count, calculation, export and attached-sample compatibility audit. The 19 private-local supplied formats all reached review; ambiguous common headers remain generic rather than being falsely assigned to a bank. Final local verification: 76 test files / 453 tests, TypeScript and production build passed.
 
-PR 3C.9 merged in #95 as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. Suggestion hardening PR #96 merged as `6e70c8906cdd7f38e751ff2f0b257ab03b20136c` but is superseded in the normal UI by the simpler accepted direction: current eligible linked records feed reports and exports directly without a report-only classification save.
+PR 3C.9 merged in #95 as `86d039f69f6dc70a30fd13f4e4430edb93acbcfb`. Suggestion hardening PR #96 merged as `6e70c8906cdd7f38e751ff2f0b257ab03b20136c` but is superseded/de-emphasised in the normal UI by the simpler accepted direction. Final linked-record simplification PR #97 merged as `3fa62d4f2ee387754198a317ca112314aad4725f`: current eligible linked records feed reports and exports directly without a report-only classification save.
 
 Focused hardening verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed.
 
-Linked-record simplification verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed. No schema, migration, package, environment or navigation change was introduced.
+Linked-record simplification verification: 76 test files / 458 tests passed; TypeScript type-check and clean production build passed. Live `/`, `/loans` and `/transactions` returned HTTP 200 without internal errors. Final accepted main deployment: https://vercel.com/latinmaestros-projects/spendgrove/BXE1ynjLmCEuxDXL8NhZc79bSsBr
 
-The controlling current-state eligibility, privacy, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, including the client-approved linked-record simplification amendment. The existing review table remains dormant; no schema or migration change is authorised. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
+The controlling current-state eligibility, privacy, calculation, export and no-double-count rules are in `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md`, including the client-approved linked-record simplification amendment. The existing Preview-only review table remains dormant and untouched; no schema or migration change is required. The accepted export has exactly `record_id`, `financial_year`, `property_nickname`, `transaction_date`, `transaction_type`, `amount_aud`, `category_label`, `connection_source` and `spendgrove_notice`; it excludes `record_classification`, merchant descriptions, narration, filenames, raw rows, account references, identifiers, exact addresses, balances, emails, audit data, hidden columns and totals. No tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, Phase 4 or later module is authorised.
+
+Closure evidence is in `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`. The next milestone options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`; do not implement any next option without explicit client approval.
 
 ## Phase 4 — Recurring, Budgets and Insights
 

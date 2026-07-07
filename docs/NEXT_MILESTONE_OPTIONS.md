@@ -1,109 +1,114 @@
 # Next Milestone Options
 
-Status: Option A approved on 3 July 2026 as Phase 3C Milestone 2; Option B remains unapproved
+Status: proposal-only; no option is approved for implementation
 
-Date prepared: 3 July 2026
+Date prepared: 7 July 2026
 
 ## Decision requested
 
-Choose one next milestone for a separate approval. Do not combine both options into one delivery milestone: reporting rules and everyday budgeting rules have different financial, privacy, schema and client-review gates. They can be delivered sequentially after separate approvals.
+Choose one next milestone for a separate approval. Do not combine reporting, everyday budgeting and production-readiness work into one delivery milestone: they have different financial, privacy, schema and client-review gates.
 
-## Option A - Phase 3C Milestone 2: Property/EOFY reporting contract and reporting foundations
+No implementation, schema work, migration, navigation change, Phase 4 work or Production migration is authorised by this document.
+
+## Recommendation
+
+Recommended next step: **Option A - Phase 3C Milestone 3: Import-review Property linking and property-record workflow polish.**
+
+Why: Phase 3C Milestone 2 proved that the simpler linked-record reporting/export workflow is the right direction. The biggest remaining friction is getting transactions linked to Properties earlier, during the normal CSV import/review flow, so reports become useful without another reporting-only task.
+
+Option B is valuable when the client wants SpendGrove to feel more like a complete everyday budgeting app. Option C is prudent before any real public release, but it is better after the core user workflows are a little more settled.
+
+## Option A - Phase 3C Milestone 3: Import-review Property linking and property-record workflow polish
 
 ### Objective
 
-Define a privacy-safe, user-controlled reporting contract on top of the accepted Property links, then build only the reporting foundations explicitly approved by that contract. The milestone would support neutral record review and future EOFY preparation without tax advice or automatic deductibility decisions.
+Make the accepted Property reporting workflow easier by letting users link transactions to Properties earlier, especially during everyday CSV import review, while preserving user control and the no-tax-advice boundary.
 
 ### User value
 
-- Gives users a structured view of Property-linked records by Australian financial year.
-- Reduces manual gathering while keeping every source transaction visible and reviewable.
-- Establishes clear calculation and classification rules before any report can imply a tax outcome.
-- Makes the accepted Property-linking foundation useful without changing the original transactions.
+- Reduces after-the-fact cleanup because Property links can be applied during the normal review-before-commit workflow.
+- Makes Property reports/exports more useful immediately after CSV import.
+- Keeps SpendGrove simple: upload CSV, review/categorise/link, then export linked Property records.
+- Preserves the current accepted rule that reports use linked records automatically without another classification step.
 
 ### Recommended PR sequence
 
-1. **PR 3C.5 - Reporting and financial-rules contract.** Documentation only. Define financial-year boundaries, eligible records, transfers/refunds, split children, loan repayment treatment, missing data, user classifications, amendment behavior, disclaimers and forbidden claims.
-2. **PR 3C.6 - Exact schema foundation and Preview migration plan.** Propose only the minimum additive model required by the approved contract. Stop before any migration.
-3. **PR 3C.7 - Property record review foundation.** After migration approval, provide financial-year filtering and transaction-level review using existing records; no totals not expressly approved in PR 3C.5.
-4. **PR 3C.8 - Approved summary/export foundation.** Implement only approved calculations and privacy-safe export fields. Keep every result traceable to user-reviewed records and clearly non-advisory.
-5. **PR 3C.9 - QA and client review package.** Verify calculation fixtures, ownership, reversibility, no-double-count behavior, privacy, Vercel and migration status; stop for client retesting.
+1. **PR 3C.10 - Import-review Property-linking contract.** Documentation only. Define what can be linked before commit, eligible rows, split handling, neutral copy, audit codes, user confirmation, no-tax boundaries and rollback behaviour.
+2. **PR 3C.11 - Schema and migration assessment.** Confirm whether existing durable `PropertyTransactionLink` can support post-commit creation from import review without schema changes. Stop if any schema or migration is needed.
+3. **PR 3C.12 - Import-review Property link UI.** Let users choose `Include in property records` for eligible rows and select one active owned Property before commit. Keep every row reviewable and editable.
+4. **PR 3C.13 - Commit integration and safety checks.** On commit, create only validated owned Property links for newly committed eligible transactions. Keep original transaction date, amount, category, merchant and cashflow unchanged.
+5. **PR 3C.14 - Manual transaction and workflow polish.** Consider a similarly neutral Property-link control for manual transaction creation/editing if it fits the accepted contract without schema changes.
+6. **PR 3C.15 - QA and client review package.** Verify import, manual links, reports/exports, unlink/relink, split-child handling, privacy, mobile layout, Vercel and no-double-count behaviour; stop for client retesting.
 
 ### Expected schema and migration needs
 
-A small additive schema change is likely if durable user classifications, reporting exclusions or review states are approved. The exact model cannot be selected before PR 3C.5 freezes calculation and lifecycle rules. It must not copy narration, merchant text, amounts, filenames, addresses or source rows into reporting metadata.
+Likely none if existing `PropertyTransactionLink` can safely support links created after transaction commit. The contract should explicitly confirm this before implementation.
 
-Any migration requires a separately presented Preview plan and explicit approval. It must preserve all Phase 3A-3C Milestone 1 data. No Production migration is proposed.
+Stop before implementation if the design needs a new field, staging table, review-state table, durable import-row Property choice, migration or data rewrite.
 
 ### Privacy and data risks
 
-- A report may expose sensitive financial patterns or imply an unsupported tax conclusion.
-- Copied transaction snapshots could retain private source data after the original changes.
-- Incorrect inclusion, split, refund or loan rules could double count values.
-- Exports may leave SpendGrove's protected environment.
-
-Controls should use owned existing records, generated IDs, minimum classification codes, explicit user review, safe aggregate audit metadata, synthetic fixtures and clear export warnings. Raw CSV content, narration, account references and exact addresses remain forbidden.
+- Import review may expose Property context beside transaction details, so copy must stay neutral and concise.
+- Durable links must be created only after a transaction is safely committed and owned by the authenticated user.
+- Temporary import-review selections must not persist raw CSV rows, filenames, narration, account identifiers or private bank values.
+- Property labels must remain safe nicknames only, not exact addresses.
 
 ### Exclusions
 
-- Tax advice or accountant certification.
-- Automatic deductibility decisions, percentages or claims.
-- Lodgement, ATO integration or pre-filled tax returns.
-- Property profit, yield, equity, valuation or net-worth features unless separately contracted.
-- Home dashboard statistics.
-- Automatic Property matching, transaction allocation or splitting.
-- Documents, receipts or storage.
-- Basiq, AI, payments, household mode and later modules.
+- Tax advice, deductibility, claimability, percentages or ATO labels.
+- Automatic Property matching.
+- Transaction allocation or splitting.
+- New report calculations or Home dashboard statistics.
+- Schema/migration work unless separately approved after the contract gate.
+- Documents, receipts, Basiq, AI, payments, household mode, Phase 4 or later modules.
 
 ### Stop conditions
 
-Stop for approval if calculation rules are ambiguous; tax treatment is requested; classification or allocation needs change; a schema or migration plan is ready; existing data could be rewritten; private source fields are proposed; an export could expose identifiers; new packages/providers/secrets are needed; or any Production migration is proposed.
+Stop for approval if import-review linking requires schema changes, a migration, durable staging state, private source fields, automatic matching, tax wording, allocation/split logic, exact addresses, new packages/providers/secrets, Production migration or navigation changes.
 
 ### Vercel and client review points
 
-- Contract review before code or schema work.
-- Migration-plan review before Preview migration.
-- Synthetic financial-year boundary, refund, transfer, split-child and loan no-double-count scenarios.
-- Trace each displayed value to an owned active transaction without copied cashflow.
-- Confirm neutral wording, correction behavior and phone/desktop usability.
-- Confirm exports contain only approved safe fields and no private source details.
+- CSV import review on mobile and desktop.
+- Linking one eligible row to one Property before commit.
+- Confirming committed linked transactions appear automatically in Property records/export.
+- Unlinking/relinking after commit.
+- Split-parent exclusion and split-child eligibility.
+- Clear neutral wording: `Include in property records`; no `tax deductible`.
 
 ## Option B - Phase 4 Milestone 1: Recurring, budgets and everyday insights
 
 ### Objective
 
-Make SpendGrove more useful for everyday budgeting through user-reviewable recurring patterns, category budgets, carefully defined dashboard refinement and trend insights, while preserving CSV-first privacy and user control.
+Make SpendGrove more complete for everyday users through user-reviewable recurring/subscription detection, category budgets, dashboard refinement and simple trend insights.
 
 ### User value
 
-- Helps users anticipate regular commitments and subscriptions.
-- Lets users set practical category budgets and understand progress.
-- Makes the everyday experience feel more complete between CSV imports.
-- Surfaces understandable trends without bank connections or AI profiling.
+- Helps users understand regular commitments and subscriptions.
+- Lets users set practical category budgets.
+- Makes the app more useful between CSV imports.
+- Adds beginner-friendly everyday insight without live bank connections or AI advice.
 
 ### Recommended PR sequence
 
 1. **PR 4.0 - Recurring, budget and insight contract.** Documentation only. Define recurrence evidence, confirmation states, budget periods, rollover, refunds/transfers, split handling, calculation rules, dashboard metrics and wording.
-2. **PR 4.1 - Exact schema foundation and Preview migration plan.** Propose additive user-owned budget and confirmed-pattern records only; stop before migration.
+2. **PR 4.1 - Schema foundation and Preview migration plan.** Propose additive user-owned budget and confirmed-pattern records only; stop before migration.
 3. **PR 4.2 - Reviewable recurring/subscription patterns.** Show deterministic suggestions and require user confirmation before durable recurring status or reminders.
-4. **PR 4.3 - Category budgets.** Add explicit user-entered budgets, clear progress rules and safe correction/archive behavior.
+4. **PR 4.3 - Category budgets.** Add explicit user-entered budgets, clear progress rules and safe correction/archive behaviour.
 5. **PR 4.4 - Everyday dashboard and trend insights.** Implement only metrics approved in PR 4.0, with transparent periods and no Property/loan/tax statistics.
 6. **PR 4.5 - QA and client review package.** Verify calculations, ownership, privacy, mobile UX, Vercel and migration status; stop for client retesting.
 
 ### Expected schema and migration needs
 
-Additive schema work is likely for user-owned budgets, periods and confirmed recurring-pattern state. Trend calculations may remain derived from existing active transactions; persistent snapshots should be avoided unless separately justified.
+Additive schema work is likely for user-owned budgets, budget periods and confirmed recurring-pattern state. Trend calculations may remain derived from active transactions; persistent snapshots should be avoided unless separately justified.
 
-PR 4.1 must present exact fields, constraints, indexes, rollback notes and data-integrity checks. Stop before any Preview migration. No Production migration is proposed.
+Any migration must be Preview-only first and separately approved. No Production migration is proposed.
 
 ### Privacy and data risks
 
-- Recurrence detection can reveal sensitive behavioral patterns.
-- Merchant-based grouping can misclassify irregular or private transactions.
+- Recurrence detection can reveal sensitive behavioural patterns.
+- Merchant/category grouping can misclassify private or irregular transactions.
 - Budget and trend totals can be wrong if transfers, refunds, split parents or loan breakdowns are counted incorrectly.
 - Dashboard summaries increase shoulder-surfing exposure.
-
-Controls should use existing safe merchant/category fields, deterministic explainable rules, explicit confirmation, user ownership, hidden-by-default sensitive detail where appropriate, and no narration/raw-source persistence. Loan repayments remain analytical and must not inflate spending.
 
 ### Exclusions
 
@@ -128,12 +133,64 @@ Stop for approval if recurrence thresholds, budget rollover, refunds/transfers, 
 - Confirm budget periods and progress are understandable on phone-sized screens.
 - Confirm loan repayment records do not create extra spending and no excluded statistics appear.
 
-## Should both be done?
+## Option C - Production readiness planning
 
-Both may be valuable, but not in one milestone. Combining them would mix tax-adjacent reporting rules with recurring and budget calculations, enlarge the schema gate and make client acceptance harder to isolate.
+### Objective
 
-Recommended sequence: **Option A first, narrowly scoped to its contract and reporting foundations, then Option B under a separate Phase 4 approval.** This completes the current Property record-keeping arc while its ownership, linkage and no-double-count rules are fresh. If the immediate product priority is everyday engagement rather than reporting continuity, Option B is a reasonable alternative, but it should explicitly defer Option A rather than absorb it.
+Prepare SpendGrove for a future real release without running Production migrations or beginning a public launch.
+
+### User value
+
+- Reduces release risk before real users and real Production data enter the system.
+- Clarifies privacy, security and support obligations.
+- Creates a controlled path for Production migration planning later.
+- Helps decide what must be true before App Store or public web rollout.
+
+### Recommended PR sequence
+
+1. **PR P.0 - Production readiness contract.** Documentation only. Define release readiness, environments, privacy obligations, support boundaries, migration gates and explicit non-goals.
+2. **PR P.1 - Privacy policy and terms planning.** Draft product-specific policy/terms checklists for legal review; do not present them as legal advice.
+3. **PR P.2 - Account export/delete planning.** Define user data export/delete requirements, retention, audit boundaries and safe deletion semantics.
+4. **PR P.3 - Security and operational review.** Audit auth, ownership checks, logging, CSV privacy, error handling, dependency posture and Vercel configuration without adding new providers.
+5. **PR P.4 - Production migration plan only.** Prepare an exact Production migration checklist and rollback/verification plan; do not execute it.
+6. **PR P.5 - Release readiness review package.** Summarise risks, blockers, required approvals, user-facing documents and next decisions.
+
+### Expected schema and migration needs
+
+Planning may identify future schema or migration needs, especially for account export/delete or operational audit controls. This option should not implement those changes unless a separate implementation milestone is approved.
+
+No Production migration is authorised. Any future Production migration requires explicit approval after a complete plan.
+
+### Privacy and data risks
+
+- Policy/terms text can create obligations or promises that the product does not yet satisfy.
+- Account deletion/export touches sensitive data and must be designed carefully.
+- Operational logging/error monitoring must not expose private transaction, CSV, loan, Property or account details.
+- Production migration planning must keep Preview and Production secrets separate.
+
+### Exclusions
+
+- Production migration execution.
+- Legal advice or final legal documents without professional review.
+- New monitoring providers, secrets, packages or paid services unless separately approved.
+- App Store submission.
+- Basiq, AI, payments, household mode, document storage or later modules.
+- Product features beyond planning and readiness review.
+
+### Stop conditions
+
+Stop for approval if legal commitments are unclear; data export/delete would require schema changes; a provider/package/secret is proposed; logging might expose private data; Production database access is needed; a Production migration is proposed for execution; or release decisions depend on external legal/security advice.
+
+### Vercel and client review points
+
+- Review readiness checklist and risk register.
+- Confirm environment separation and migration gates.
+- Confirm privacy policy/terms are draft-only and need professional review.
+- Confirm account export/delete plan matches the client’s release expectations.
+- Confirm no Production migration or public launch action has occurred.
 
 ## Approval boundary
 
-The client selected Option A on 3 July 2026. Its implementation is controlled by `docs/PHASE_3C_MILESTONE_2_REPORTING_CONTRACT.md` and the explicit PR 3C.6 migration gate. Option B remains unapproved: no Phase 4, recurring, budgets, insights or Home dashboard statistics may start. No Basiq, AI, payments, household mode, document storage or later module is authorised.
+This document proposes options only. The client must explicitly approve one option, objective and PR sequence before any implementation starts.
+
+Until then: no Phase 4, recurring, budgets, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage, Production migration, new navigation tab or later-module work is authorised.
