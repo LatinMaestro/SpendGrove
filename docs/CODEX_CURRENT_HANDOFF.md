@@ -10,6 +10,7 @@ Last updated: 8 July 2026
 - Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations is formally accepted and closed by the client on 7 July 2026 after Vercel retesting completed with no further acceptance comments.
 - Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode.
 - Active approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
+- PR 3C.10 merged in [#99](https://github.com/LatinMaestro/SpendGrove/pull/99) as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`.
 
 ## Latest accepted delivery
 
@@ -98,9 +99,9 @@ Target workflow:
 
 Current PR:
 
-- PR 3C.10 is documentation-only and creates `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`.
-- No implementation code or schema work is authorised until the contract is merged.
-- PR 3C.11 must assess whether existing `PropertyTransactionLink` supports the workflow without schema changes or migration.
+- PR 3C.11 is a documentation/code-inspection assessment in `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md`.
+- Assessment conclusion: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
+- No Preview migration or Production migration is required or authorised.
 
 ## Future direction notes preserved from Milestone 2
 
@@ -122,7 +123,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.10 as a documentation-only contract, then continue to PR 3C.11 unless a stop condition is triggered.
+Complete, publish and merge PR 3C.11 as a schema/migration assessment, then continue to PR 3C.12 unless a stop condition is triggered.
 
 ## Explicit exclusions
 
