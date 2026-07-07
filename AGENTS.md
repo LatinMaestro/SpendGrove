@@ -127,6 +127,8 @@ Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workfl
 
 For Phase 3C Milestone 3, preferred implementation uses the existing `PropertyTransactionLink` only after a transaction is committed and owned by the authenticated user. Stop before continuing if schema changes, migrations, durable staging state, Merge-row pre-commit linking, private source fields, automatic Property matching, tax wording, exact addresses, allocation/split logic, export/report calculation changes, new packages/providers/secrets, Production migration, navigation changes, Home dashboard statistics, Phase 4 or later modules are needed.
 
+PR 3C.10 merged in #99 as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`. PR 3C.11 assessment in `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md` concludes no Prisma schema change, migration, durable staging table, data rewrite, package, provider, secret or environment change is needed if implementation follows the contract.
+
 Options B and C in `docs/NEXT_MILESTONE_OPTIONS.md` remain proposal-only. Do not implement Phase 4, Production readiness work or any other next module until the client explicitly approves it.
 
 No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, recurring, budgets, insights, Basiq, AI, payments, household mode, Phase 4 or later module is authorised.

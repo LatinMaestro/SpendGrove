@@ -344,6 +344,8 @@ Closure evidence is in `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`.
 
 Status: approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode. PR 3C.10 must be documentation-only and freeze the import-review Property-linking contract before implementation or schema assessment work.
 
+PR 3C.10 merged in #99 as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`. It created `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`, confirmed Import rows as eligible, Skip rows as ineligible and Merge rows as post-merge/manual-link only for this milestone.
+
 Objective:
 
 Make the accepted Property reporting workflow easier by letting users link transactions to Properties earlier, especially during everyday CSV import review, while preserving user control, privacy-first CSV handling and the no-tax-advice boundary.
@@ -380,6 +382,8 @@ PR 3C.10 contract rules:
 Schema/migration gate:
 
 PR 3C.11 must assess whether the existing `PropertyTransactionLink` table can support post-commit links created from import review. Preferred outcome is no schema change, no migration and no durable staging table. Stop if schema changes, Preview migration, Production migration, durable staging state, data rewrite, backfill, table drop, package, provider, secret or environment change is needed.
+
+PR 3C.11 assessment conclusion: `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md` confirms the existing `PropertyTransactionLink`, Property-link service and import commit path are sufficient for PRs 3C.12-3C.15 if the implementation creates links only after imported transactions exist and remain owned/eligible. No Prisma schema change, migration, durable staging table, data rewrite, package, provider, secret or environment change is needed.
 
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
