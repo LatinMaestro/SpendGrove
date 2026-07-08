@@ -12,7 +12,8 @@ Last updated: 8 July 2026
 - Active approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
 - PR 3C.10 merged in [#99](https://github.com/LatinMaestro/SpendGrove/pull/99) as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`.
 - PR 3C.11 merged in [#100](https://github.com/LatinMaestro/SpendGrove/pull/100) as `b47adba443d6cd475e2011b234bb15c9d951476a`.
-- PR 3C.12 is in progress: import-review Property link UI only, with transient browser review state and no commit persistence until PR 3C.13.
+- PR 3C.12 merged in [#101](https://github.com/LatinMaestro/SpendGrove/pull/101) as `38572d6b8620ec7a82bc982092353b97d970a58a`.
+- PR 3C.13 is in progress: commit integration and safety checks for creating `PropertyTransactionLink` only after successful reviewed transaction commit.
 
 ## Latest accepted delivery
 
@@ -101,10 +102,10 @@ Target workflow:
 
 Current PR:
 
-- PR 3C.12 adds a neutral optional `Include in property records` control to eligible everyday CSV import-review rows.
-- The control loads active owned Property options from existing Loans metadata and displays only safe Property nicknames/usages.
-- The selected Property is transient review state only in PR 3C.12. It is not durably persisted, does not create a `PropertyTransactionLink`, and does not alter transactions until PR 3C.13 commit integration is implemented and merged.
-- `Skip` rows clear/do not create Property-link selections. `Merge` rows remain post-merge/manual-link only under the accepted contract.
+- PR 3C.13 extends the existing idempotent reviewed import commit request with an optional safe `propertyLinkPropertyId` on `IMPORT` rows only.
+- The server revalidates active owned Properties inside the same import transaction, creates the everyday transaction first, then creates `PropertyTransactionLink` rows and safe audit reason code `IMPORT_REVIEW_PROPERTY_LINK`.
+- `Skip` rows still create no transaction or Property link. `Merge` rows remain post-merge/manual-link only under the accepted contract.
+- Property links are not created from raw CSV rows, filenames, narration, account identifiers, exact addresses, balances or private source fields.
 - Assessment conclusion from PR 3C.11 remains active: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
 - No Preview migration or Production migration is required or authorised.
 
@@ -128,7 +129,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.12 as UI-only import-review Property link selection, then continue to PR 3C.13 commit integration unless a stop condition is triggered.
+Complete, publish and merge PR 3C.13 as import commit Property-link integration, then continue to PR 3C.14 manual transaction/workflow polish unless a stop condition is triggered.
 
 ## Explicit exclusions
 

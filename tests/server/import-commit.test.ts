@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createImportCommitRequest, importCommitRequestSchema, type ImportCommitRequest } from "@/lib/import-commit";
 import type { ImportReviewRow } from "@/lib/import-review";
@@ -133,6 +134,45 @@ describe("durable import commit", () => {
     });
     expect(warningOnly.rows[0]).not.toHaveProperty("targetTransactionId");
     expect(warningOnly.rows[0].warningCodes).toContain("POSSIBLE_SAME_IMPORT_DUPLICATE");
+  });
+
+  it("carries safe Property link intent only for imported rows", () => {
+    const reviewRows: ImportReviewRow[] = [
+      { id: "csv-row-1", rowNumber: 1, date: "2026-06-18", amountCents: -1234, description: "Safe grocer", merchantName: "Safe grocer", categoryId: "everyday-spending-groceries-expense", action: "IMPORT", warningCodes: [], suggestionSource: "FALLBACK", suggestionConfidence: "LOW", suggestionReason: "Review", categoryConfirmed: true, merchantEdited: false, reviewState: "MANUALLY_REVIEWED", propertyLinkPropertyId: "property_1" },
+      { id: "csv-row-2", rowNumber: 2, date: "2026-06-18", amountCents: -500, description: "Skipped", merchantName: "Skipped", categoryId: "everyday-spending-groceries-expense", action: "SKIP", warningCodes: [], suggestionSource: "FALLBACK", suggestionConfidence: "LOW", suggestionReason: "Review", categoryConfirmed: true, merchantEdited: false, reviewState: "MANUALLY_REVIEWED", propertyLinkPropertyId: "property_1" },
+      { id: "csv-row-3", rowNumber: 3, date: "2026-06-18", amountCents: -600, description: "Merged", merchantName: "Merged", categoryId: "everyday-spending-groceries-expense", action: "MERGE", warningCodes: [], suggestionSource: "FALLBACK", suggestionConfidence: "LOW", suggestionReason: "Review", categoryConfirmed: true, merchantEdited: false, reviewState: "MANUALLY_REVIEWED", propertyLinkPropertyId: "property_1" },
+    ];
+    const built = createImportCommitRequest({
+      requestId: "44444444-4444-4444-8444-444444444444",
+      rows: reviewRows,
+      mergeSelections: {
+        "csv-row-3": {
+          rowId: "csv-row-3",
+          targetTransactionId: "manual_target",
+          selectedAt: "2026-06-18T00:00:00.000Z",
+          status: "REVIEW_ONLY",
+        },
+      },
+      metadata: { ...request.metadata, parsedRowCount: 3 },
+    });
+
+    expect(built.rows[0]).toMatchObject({ action: "IMPORT", propertyLinkPropertyId: "property_1" });
+    expect(built.rows[1]).toEqual({ rowNumber: 2, action: "SKIP", warningCodes: [] });
+    expect(built.rows[2]).not.toHaveProperty("propertyLinkPropertyId");
+    expect(JSON.stringify(built)).not.toMatch(/rawCsv|rawRow|filename|narration|account|bsb|balance|address/i);
+  });
+
+  it("integrates Property links after transaction creation without schema changes or private fields", () => {
+    const service = readFileSync(new URL("../../src/server/import-commit.ts", import.meta.url), "utf8");
+
+    expect(service.indexOf("await tx.transaction.createMany")).toBeLessThan(service.indexOf("await tx.propertyTransactionLink.createMany"));
+    expect(service).toContain('isArchived: false');
+    expect(service).toContain("deletedAt: null");
+    expect(service).toContain("throw new OwnershipError(\"active Property\")");
+    expect(service).toContain("\"IMPORT_REVIEW_PROPERTY_LINK\"");
+    const validationSnippet = service.slice(service.indexOf("const propertyLinkPropertyIds"), service.indexOf("const normalizedMerchantByRow"));
+    const createSnippet = service.slice(service.indexOf("if (row.propertyLinkPropertyId)"), service.indexOf("importRowCreates.push({", service.indexOf("if (row.propertyLinkPropertyId)")));
+    expect(`${validationSnippet}\n${createSnippet}`).not.toMatch(/rawCsv|rawRow|filename|narration|accountNumber|bsb|exactAddress|merchantName|description|amountCents/i);
   });
 
   it("records likely existing duplicates as safe skipped outcomes without creating transactions", async () => {

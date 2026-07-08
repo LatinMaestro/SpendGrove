@@ -57,6 +57,7 @@ export function createPropertyLinkAuditEvent(
   userId: string,
   transactionId: string,
   state: "LINKED" | "UNLINKED" | "RELINKED",
+  reasonCode: "MANUAL_USER_ACTION" | "IMPORT_REVIEW_PROPERTY_LINK" = "MANUAL_USER_ACTION",
 ) {
   const audit = {
     userId,
@@ -65,7 +66,7 @@ export function createPropertyLinkAuditEvent(
     action: "UPDATED" as const,
     metadata: {
       propertyLinkState: state,
-      reasonCode: "MANUAL_USER_ACTION",
+      reasonCode,
     },
   };
   auditEventSchema.parse(audit);

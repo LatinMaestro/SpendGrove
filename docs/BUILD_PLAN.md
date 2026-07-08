@@ -387,6 +387,8 @@ PR 3C.11 assessment conclusion: `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md`
 
 PR 3C.12 implementation note: add the import-review UI affordance only. Eligible `Import` rows can choose `Include in property records` and select one active owned Property by safe nickname/usage. The choice is transient review state and is cleared/ignored for `Skip` and `Merge` rows. No `PropertyTransactionLink` row is created until PR 3C.13 commit integration, and no schema change or migration is introduced.
 
+PR 3C.13 implementation note: extend the existing reviewed import commit request with an optional safe `propertyLinkPropertyId` on `Import` rows only. The commit path must create the transaction first, revalidate active owned Property state server-side, then create the `PropertyTransactionLink` and safe audit code in the same atomic transaction. `Skip` and `Merge` rows must not create Property links. No schema change, migration, staging table, raw CSV persistence or private source-field persistence is introduced.
+
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
 ## Phase 4 — Recurring, Budgets and Insights
