@@ -1,8 +1,10 @@
 # Phase 3C Milestone 3 Summary - Import-Review Property Linking and Workflow Polish
 
-Status: parked for client retesting after PR 3C.15
+Status: formally accepted and closed
 
 Last updated: 8 July 2026
+
+Closure: client Vercel retesting completed on 8 July 2026 with no further acceptance comments.
 
 ## Milestone objective
 
@@ -29,7 +31,7 @@ This milestone remains neutral record keeping only. It does not provide tax advi
 | 3C.12 import-review Property link UI | [#101](https://github.com/LatinMaestro/SpendGrove/pull/101) | `38572d6b8620ec7a82bc982092353b97d970a58a` | Added transient `Include in property records` selection for eligible Import rows only. |
 | 3C.13 commit integration and safety checks | [#102](https://github.com/LatinMaestro/SpendGrove/pull/102) | `be1234c37c6213e12abf1b8fb526828aa1728aa1` | Creates the everyday transaction first, then a Property link in the same safe import commit transaction. |
 | 3C.14 manual transaction and workflow polish | [#103](https://github.com/LatinMaestro/SpendGrove/pull/103) | `2c2d5608bb6707148d94fc810951f73b14e4d8f5` | Adds the same neutral Property-link control to manual transaction create/edit using existing link/unlink validation. |
-| 3C.15 QA and client review package | pending | pending | This summary and final handoff package. |
+| 3C.15 QA and client review package | [#104](https://github.com/LatinMaestro/SpendGrove/pull/104) | `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111` | Final QA package, handoff update and client retesting checklist. |
 
 ## Vercel evidence so far
 
@@ -37,7 +39,12 @@ This milestone remains neutral record keeping only. It does not provide tax advi
 - PR #102 Vercel Preview: https://vercel.com/latinmaestros-projects/spendgrove/AhuxiNxJkhaZXGu99ug4eTqJw9v5
 - PR #103 Vercel Preview: https://vercel.com/latinmaestros-projects/spendgrove/6i4AyfGHJceXLKhnA129SQmDpgd1
 
-Final PR 3C.15 and merged-main Vercel evidence will be reported after PR 3C.15 is merged.
+Final accepted main deployment:
+
+- PR #104 merge commit: `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111`
+- Main Vercel deployment: https://vercel.com/latinmaestros-projects/spendgrove/8UCAm6Z6KfHKtKfcTUeJfhH3gHP5
+- Live alias: https://spendgrove.vercel.app
+- Live route smoke checks passed for `/`, `/loans` and `/transactions`: HTTP 200.
 
 ## Schema and migration status
 
@@ -46,6 +53,7 @@ Final PR 3C.15 and merged-main Vercel evidence will be reported after PR 3C.15 i
 - No Preview migration was run for Phase 3C Milestone 3.
 - No Production migration has run.
 - No durable staging table, data rewrite, backfill, table drop, package, provider, secret or environment change was introduced.
+- No Phase 4, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage or later-module work started.
 
 ## Import-review Property-linking behaviour
 
@@ -209,6 +217,10 @@ Use synthetic/demo data only.
 
 ## Recommended next step
 
-Stop for client retesting after PR 3C.15 is merged and the final Vercel deployment is verified.
+Phase 3C Milestone 3 is closed. Review the proposal-only next milestone options in `docs/NEXT_MILESTONE_OPTIONS.md`.
 
-Do not formally close Phase 3C Milestone 3 until the client confirms retesting is complete.
+Do not begin Phase 4, Production readiness implementation, another Phase 3C follow-up, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage, new navigation tabs or later modules until explicitly approved.
+
+## Vercel usage note for future delivery
+
+The client noted that Vercel usage is capped while multiple apps are being developed at once. Future phases should prefer larger safe development batches before each Vercel push where this does not weaken scope control, tests, review gates or mandatory stop conditions.

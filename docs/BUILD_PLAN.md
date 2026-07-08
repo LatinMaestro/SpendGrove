@@ -12,6 +12,8 @@ The agent must stop for the client when a stop condition in `docs/AUTONOMOUS_DEL
 
 Each phase must end with a complete Phase Summary Report and non-technical user-testing checklist before the agent recommends formal closure.
 
+Vercel usage note: as of 8 July 2026, the client is also running several apps and Vercel usage is constrained. For future approved implementation phases, prefer larger safe development batches before each Vercel push where this does not weaken scope control, tests, review gates, privacy boundaries or mandatory stop conditions.
+
 ## Phase 1 — MVP Foundation
 
 Status: closed and accepted by the client.
@@ -342,7 +344,7 @@ Closure evidence is in `docs/PHASE_3C_MILESTONE_2_SUMMARY.md`.
 
 ## Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish
 
-Status: approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode. PR 3C.10 must be documentation-only and freeze the import-review Property-linking contract before implementation or schema assessment work.
+Status: formally accepted and closed on 8 July 2026 after client Vercel retesting completed with no further acceptance comments.
 
 PR 3C.10 merged in #99 as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`. It created `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`, confirmed Import rows as eligible, Skip rows as ineligible and Merge rows as post-merge/manual-link only for this milestone.
 
@@ -391,7 +393,15 @@ PR 3C.13 merged in #102 as `be1234c37c6213e12abf1b8fb526828aa1728aa1`. It extend
 
 PR 3C.14 merged in #103 as `2c2d5608bb6707148d94fc810951f73b14e4d8f5`. It adds the same neutral Property-link control to manual transaction create/edit because this fits the accepted contract without schema changes or migration. The transaction remains the only cashflow record; the Property link remains optional supporting metadata; no tax wording, automatic Property matching or reporting calculation changes were introduced.
 
-PR 3C.15 is the QA and client review package in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`. After it is merged and main is verified, stop for client retesting. Do not formally close Phase 3C Milestone 3 until the client confirms retesting is complete.
+PR 3C.15 merged in #104 as `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111`. It is the QA and client review package in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`.
+
+Final accepted evidence:
+
+- Final main Vercel deployment: https://vercel.com/latinmaestros-projects/spendgrove/8UCAm6Z6KfHKtKfcTUeJfhH3gHP5
+- Live route checks passed for `/`, `/loans` and `/transactions`: HTTP 200.
+- Final verification: 77 test files / 468 tests passed; TypeScript type-check passed; production build passed.
+- No schema change, new Preview migration, Production migration, durable staging table, data rewrite, backfill, table drop, package/provider/secret/env change occurred.
+- No Phase 4, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage or later-module work started.
 
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
