@@ -8,6 +8,7 @@ import { assertNoPrivateBankIdentifiers, sanitizeBankDescription, sanitizeTransa
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { createPropertyLinkAuditEvent } from "@/src/server/property-transaction-links";
 
 export class ImportCommitConflictError extends Error {
   constructor(message = "This reviewed import is already being committed. Please refresh before trying again.") {
@@ -157,6 +158,23 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             throw new OwnershipError("manual merge target");
           }
 
+          const propertyLinkPropertyIds = Array.from(new Set(request.rows.flatMap((row) => (
+            row.action === "IMPORT" && row.propertyLinkPropertyId ? [row.propertyLinkPropertyId] : []
+          ))));
+          const propertyLinkProperties = propertyLinkPropertyIds.length === 0 ? [] : await tx.property.findMany({
+            where: {
+              id: { in: propertyLinkPropertyIds },
+              userId,
+              isArchived: false,
+              deletedAt: null,
+            },
+            select: { id: true },
+          });
+          const activePropertyIds = new Set(propertyLinkProperties.map((property) => property.id));
+          if (propertyLinkPropertyIds.some((propertyId) => !activePropertyIds.has(propertyId))) {
+            throw new OwnershipError("active Property");
+          }
+
           const normalizedMerchantByRow = new Map<number, string>();
           reviewedRows.forEach((row) => {
             try { normalizedMerchantByRow.set(row.rowNumber, normalizeMerchantName(row.merchantName)); } catch { /* no profile link */ }
@@ -170,6 +188,8 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
 
           const transactionCreates: Prisma.TransactionCreateManyInput[] = [];
           const importRowCreates: Prisma.ImportRowCreateManyInput[] = [];
+          const propertyLinkCreates: Prisma.PropertyTransactionLinkCreateManyInput[] = [];
+          const propertyLinkAuditCreates: Prisma.AuditEventCreateManyInput[] = [];
 
           for (const row of request.rows) {
             if (row.action === "SKIP") {
@@ -229,6 +249,19 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               merchantName,
               reviewedAt: now,
             });
+            if (row.propertyLinkPropertyId) {
+              propertyLinkCreates.push({
+                userId,
+                transactionId,
+                propertyId: row.propertyLinkPropertyId,
+              });
+              propertyLinkAuditCreates.push(createPropertyLinkAuditEvent(
+                userId,
+                transactionId,
+                "LINKED",
+                "IMPORT_REVIEW_PROPERTY_LINK",
+              ));
+            }
             importRowCreates.push({
               userId,
               importBatchId: batch.id,
@@ -246,7 +279,9 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
           }
 
           if (transactionCreates.length > 0) await tx.transaction.createMany({ data: transactionCreates });
+          if (propertyLinkCreates.length > 0) await tx.propertyTransactionLink.createMany({ data: propertyLinkCreates });
           if (importRowCreates.length > 0) await tx.importRow.createMany({ data: importRowCreates });
+          if (propertyLinkAuditCreates.length > 0) await tx.auditEvent.createMany({ data: propertyLinkAuditCreates });
 
           const auditMetadata = {
             totalCount: request.rows.length,

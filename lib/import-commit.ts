@@ -16,6 +16,7 @@ const rowBase = {
   rowNumber: z.number().int().positive(),
   warningCodes: z.array(warningCodeSchema).max(20).default([]),
 };
+const propertyLinkPropertyIdSchema = z.string().trim().min(1).max(128);
 
 export const importCommitRowSchema = z.discriminatedUnion("action", [
   z.object({
@@ -26,6 +27,7 @@ export const importCommitRowSchema = z.discriminatedUnion("action", [
     description: safeTextSchema,
     merchantName: safeTextSchema,
     categoryId: z.string().trim().min(1).max(128),
+    propertyLinkPropertyId: propertyLinkPropertyIdSchema.optional(),
   }).strict(),
   z.object({
     ...rowBase,
@@ -121,7 +123,11 @@ export function createImportCommitRequest(input: {
         }
         return { ...reviewed, action: "MERGE" as const, targetTransactionId: selection.targetTransactionId };
       }
-      return { ...reviewed, action: "IMPORT" as const };
+      return {
+        ...reviewed,
+        action: "IMPORT" as const,
+        ...(row.propertyLinkPropertyId ? { propertyLinkPropertyId: row.propertyLinkPropertyId } : {}),
+      };
     }),
     metadata: input.metadata,
   });

@@ -88,6 +88,16 @@ describe("Property transaction links", () => {
         reasonCode: "MANUAL_USER_ACTION",
       },
     });
+    expect(createPropertyLinkAuditEvent("user_1", "transaction_2", "LINKED", "IMPORT_REVIEW_PROPERTY_LINK")).toMatchObject({
+      entityType: "TRANSACTION",
+      entityId: "transaction_2",
+      action: "UPDATED",
+      metadata: {
+        propertyLinkState: "LINKED",
+        reasonCode: "IMPORT_REVIEW_PROPERTY_LINK",
+      },
+    });
+    expect(JSON.stringify(createPropertyLinkAuditEvent("user_1", "transaction_2", "LINKED", "IMPORT_REVIEW_PROPERTY_LINK"))).not.toMatch(/amount|merchant|description|filename|narration|address|account/i);
   });
 
   it("revalidates active ownership and never mutates the transaction", async () => {
