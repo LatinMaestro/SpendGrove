@@ -8,6 +8,7 @@ import {
   Cloud,
   Copy,
   FileSearch,
+  Home,
   LockKeyhole,
   Pencil,
   Plus,
@@ -31,6 +32,11 @@ import { ManualTransactions } from "@/components/manual-transactions";
 import { TransactionPropertyLinkPanel } from "@/components/transaction-property-link-panel";
 
 type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
+type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
+type PropertyOptionsStatus = "LOADING" | "READY" | "UNAVAILABLE";
+type PropertyLinkSnapshotResult =
+  | { ok: true; snapshot: { link: { property: PropertyOption } | null; properties: PropertyOption[] } }
+  | { ok: false; error: string };
 
 const typeLabels: Record<ManualTransactionType, string> = {
   EXPENSE: "Expense",
@@ -39,8 +45,18 @@ const typeLabels: Record<ManualTransactionType, string> = {
 };
 
 type AccountTransactionResult =
-  | { ok: true; transactions: AccountTransaction[] }
+  | { ok: true; transactions: AccountTransaction[]; savedTransaction?: AccountTransaction }
   | { ok: false; error: string };
+
+type LoanMetadataResult =
+  | { ok: true; properties: PropertyOption[] }
+  | { ok: false; error: string };
+
+const propertyUsageLabels: Record<PropertyOption["usage"], string> = {
+  OWNER_OCCUPIED: "Owner-occupied",
+  INVESTMENT: "Investment",
+  OTHER: "Other",
+};
 
 function localDateInputValue() {
   const today = new Date();
@@ -67,6 +83,9 @@ type EditorState = {
   mode: "create" | "edit" | "duplicate";
   transactionId?: string;
   draft: ManualTransactionDraft;
+  propertyLinkPropertyId: string | null;
+  initialPropertyLinkPropertyId: string | null;
+  propertyLinkStatus: PropertyOptionsStatus;
 };
 
 async function readAccountTransactionResponse(response: Response): Promise<AccountTransactionResult> {
@@ -108,11 +127,51 @@ async function deleteAccountTransaction(transactionId: string) {
   }));
 }
 
+async function listActiveProperties(): Promise<{ ok: true; properties: PropertyOption[] } | { ok: false; error: string }> {
+  try {
+    const response = await fetch("/api/account/loans", { cache: "no-store" });
+    const payload = await response.json() as LoanMetadataResult;
+    if (!response.ok || !payload.ok) return { ok: false, error: payload.ok === false ? payload.error : "Properties could not be loaded safely." };
+    return { ok: true, properties: payload.properties.filter((property) => !property.isArchived) };
+  } catch {
+    return { ok: false, error: "Properties could not be loaded safely." };
+  }
+}
+
+async function getTransactionPropertySnapshot(transactionId: string): Promise<PropertyLinkSnapshotResult> {
+  try {
+    const response = await fetch(`/api/account/manual-transactions/${encodeURIComponent(transactionId)}/property-link`, { cache: "no-store" });
+    const payload = await response.json() as PropertyLinkSnapshotResult;
+    if (!response.ok || !payload.ok) return { ok: false, error: payload.ok === false ? payload.error : "Property link could not be loaded safely." };
+    return payload;
+  } catch {
+    return { ok: false, error: "Property link could not be loaded safely." };
+  }
+}
+
+async function setTransactionPropertyLink(transactionId: string, propertyId: string | null, initialPropertyId: string | null) {
+  if (propertyId === initialPropertyId) return { ok: true as const };
+  if (initialPropertyId) {
+    const unlink = await fetch(`/api/account/manual-transactions/${encodeURIComponent(transactionId)}/property-link`, { method: "DELETE" });
+    const unlinkResult = await unlink.json() as { ok?: boolean; error?: string };
+    if (!unlink.ok || !unlinkResult.ok) return { ok: false as const, error: unlinkResult.error ?? "Property link could not be updated safely." };
+  }
+  if (!propertyId) return { ok: true as const };
+  const link = await fetch(`/api/account/manual-transactions/${encodeURIComponent(transactionId)}/property-link`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ propertyId }),
+  });
+  const linkResult = await link.json() as { ok?: boolean; error?: string };
+  if (!link.ok || !linkResult.ok) return { ok: false as const, error: linkResult.error ?? "Property link could not be updated safely." };
+  return { ok: true as const };
+}
+
 function ModalFrame({ title, description, onClose, children }: Readonly<{ title: string; description: string; onClose: () => void; children: React.ReactNode }>) {
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-deepTeal/55 p-0 backdrop-blur-sm sm:items-center sm:p-6"><section role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-[2rem] bg-surface-base p-5 shadow-2xl sm:rounded-[2rem] sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 id="transaction-modal-title" className="text-2xl font-bold text-brand-deepTeal">{title}</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{description}</p></div><button type="button" onClick={onClose} aria-label="Close" className="rounded-full border border-border p-3 text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><X aria-hidden="true" className="h-5 w-5" /></button></div>{children}</section></div>;
 }
 
-function TransactionEditor({ editor, duplicateCount, error, isSaving, onChange, onCancel, onSubmit }: Readonly<{ editor: EditorState; duplicateCount: number; error: string; isSaving: boolean; onChange: (draft: ManualTransactionDraft) => void; onCancel: () => void; onSubmit: () => void }>) {
+function TransactionEditor({ editor, duplicateCount, error, isSaving, propertyOptions, onChange, onPropertyLinkChange, onCancel, onSubmit }: Readonly<{ editor: EditorState; duplicateCount: number; error: string; isSaving: boolean; propertyOptions: PropertyOption[]; onChange: (draft: ManualTransactionDraft) => void; onPropertyLinkChange: (propertyId: string | null) => void; onCancel: () => void; onSubmit: () => void }>) {
   const categoryGroups = getManualCategoryGroups(editor.draft.type);
   const heading = editor.mode === "edit" ? "Edit transaction" : editor.mode === "duplicate" ? "Review duplicated draft" : "Add transaction";
   const description = editor.mode === "duplicate" ? "This is an unsaved manual copy. Review it before choosing Save transaction." : "Saved to your SpendGrove account as cleaned fields and integer cents.";
@@ -129,6 +188,18 @@ function TransactionEditor({ editor, duplicateCount, error, isSaving, onChange, 
       <label className="block text-sm font-bold text-brand-deepTeal">Description<input disabled={isSaving} value={editor.draft.description} onChange={(event) => onChange({ ...editor.draft, description: event.target.value })} maxLength={300} placeholder="What was this transaction for?" required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label>
       <label className="block text-sm font-bold text-brand-deepTeal">Category<select disabled={isSaving} value={editor.draft.categoryId} onChange={(event) => onChange({ ...editor.draft, categoryId: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">{categoryGroups.map((group) => <optgroup key={group.name} label={group.name}>{group.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</optgroup>)}</select></label>
       <label className="block text-sm font-bold text-brand-deepTeal">Notes (optional)<textarea disabled={isSaving} value={editor.draft.notes} onChange={(event) => onChange({ ...editor.draft, notes: event.target.value })} maxLength={300} rows={3} className="mt-2 w-full rounded-2xl border border-border bg-white px-4 py-3 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label>
+      <section className="rounded-2xl border border-border bg-white p-4" aria-label="Property record link">
+        <div className="flex items-start gap-3"><Home aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" /><div><p className="text-sm font-bold text-brand-deepTeal">Include in property records</p><p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Optional. This helps the transaction appear in Property records later. Record keeping only - not tax advice.</p></div></div>
+        {editor.propertyLinkStatus === "READY" && propertyOptions.length > 0 ? (
+          <label className="mt-3 block text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Link to property<select disabled={isSaving} value={editor.propertyLinkPropertyId ?? ""} onChange={(event) => onPropertyLinkChange(event.target.value || null)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-normal normal-case tracking-normal text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"><option value="">No Property link</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.nickname} · {propertyUsageLabels[property.usage]}</option>)}</select></label>
+        ) : editor.propertyLinkStatus === "LOADING" ? (
+          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Loading active Properties…</p>
+        ) : editor.propertyLinkStatus === "UNAVAILABLE" ? (
+          <p className="mt-3 text-xs font-semibold text-warning-amber">Property options could not be loaded. You can save now and link from transaction details later.</p>
+        ) : (
+          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">No active Properties are available. You can save this transaction without a Property link.</p>
+        )}
+      </section>
       <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-4 text-sm text-brand-deepTeal"><input disabled={isSaving} type="checkbox" checked={editor.draft.csvMatchHint} onChange={(event) => onChange({ ...editor.draft, csvMatchHint: event.target.checked })} className="mt-1 h-5 w-5 accent-brand-green" /><span><strong className="block">May match a future CSV row</strong><span className="mt-1 block leading-5 text-brand-deepTeal/70">A review hint only. It does not upload or inspect a CSV.</span></span></label>
       {duplicateCount > 0 && <div role="status" className="flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p><strong>Possible duplicate.</strong> {duplicateCount} active transaction{duplicateCount === 1 ? " has" : "s have"} the same date, amount and description. You can still save.</p></div>}
       {error && <p role="alert" className="rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
@@ -150,24 +221,51 @@ function DurableManualTransactionsExperience() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
+  const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("LOADING");
 
   useEffect(() => { let cancelled = false; async function loadTransactions() { setIsReady(false); setAccountWarning(""); const result = await listAccountTransactions(); if (cancelled) return; if (result.ok) setTransactions(result.transactions); else { setTransactions([]); setAccountWarning(result.error); } setIsReady(true); } void loadTransactions(); return () => { cancelled = true; }; }, []);
+  useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
   const duplicateCount = useMemo(() => { if (!editor) return 0; try { const candidate = validateManualTransactionDraft(editor.draft); return findManualTransactionDuplicates(transactions as ManualTransaction[], candidate, editor.transactionId).length; } catch { return 0; } }, [editor, transactions]);
 
-  function openCreate() { setEditorError(""); setEditor({ mode: "create", draft: createEmptyDraft() }); }
-  function openEdit(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "edit", transactionId: transaction.id, draft: duplicateManualTransactionToDraft(transaction as ManualTransaction) }); }
-  function openDuplicate(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "duplicate", draft: duplicateManualTransactionToDraft(transaction as ManualTransaction) }); }
+  function openCreate() { setEditorError(""); setEditor({ mode: "create", draft: createEmptyDraft(), propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
+  function openEdit(transaction: AccountTransaction) {
+    setDetailId(null);
+    setEditorError("");
+    setEditor({ mode: "edit", transactionId: transaction.id, draft: duplicateManualTransactionToDraft(transaction as ManualTransaction), propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: "LOADING" });
+    void getTransactionPropertySnapshot(transaction.id).then((result) => {
+      setEditor((current) => {
+        if (!current || current.transactionId !== transaction.id) return current;
+        const propertyId = result.ok ? result.snapshot.link?.property.id ?? null : null;
+        return { ...current, propertyLinkPropertyId: propertyId, initialPropertyLinkPropertyId: propertyId, propertyLinkStatus: result.ok ? propertyOptionsStatus : "UNAVAILABLE" };
+      });
+    });
+  }
+  function openDuplicate(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "duplicate", draft: duplicateManualTransactionToDraft(transaction as ManualTransaction), propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
 
   async function saveEditor() {
     if (!editor || isSaving) return;
     setIsSaving(true); setEditorError("");
     const result = editor.mode === "edit" && editor.transactionId ? await updateAccountTransaction(editor.transactionId, editor.draft) : await createAccountManualTransaction(editor.draft);
+    if (!result.ok) { setIsSaving(false); setEditorError(result.error); return; }
+    setTransactions(result.transactions);
+    const savedTransactionId = result.savedTransaction?.id;
+    if (savedTransactionId) {
+      const linkResult = await setTransactionPropertyLink(savedTransactionId, editor.propertyLinkPropertyId, editor.initialPropertyLinkPropertyId);
+      setIsSaving(false);
+      if (!linkResult.ok) {
+        setEditor(null);
+        setEditorError("");
+        setAccountWarning("The transaction was saved, but the Property link could not be updated safely. Open the transaction details to link it later.");
+        return;
+      }
+    }
     setIsSaving(false);
-    if (result.ok) { setTransactions(result.transactions); setEditor(null); setEditorError(""); setAccountWarning(""); } else setEditorError(result.error);
+    setEditor(null); setEditorError(""); setAccountWarning("");
   }
 
   async function confirmDelete() {
@@ -181,7 +279,7 @@ function DurableManualTransactionsExperience() {
     {accountWarning && <div role="status" className="flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm leading-6 text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p>{accountWarning}</p></div>}
     {!isReady ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking your account transactions…</p></section> : activeTransactions.length === 0 ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-mint text-brand-green"><ReceiptText aria-hidden="true" className="h-7 w-7" /></div><h2 className="mt-5 text-2xl font-bold text-brand-deepTeal">No transactions yet.</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-brand-deepTeal/70">Add a manual transaction or commit a reviewed CSV import; both will appear here.</p><button type="button" onClick={openCreate} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Plus aria-hidden="true" className="h-5 w-5" /> Add first transaction</button></section> : <section aria-labelledby="transaction-list-heading"><div className="flex items-end justify-between gap-4 px-1"><div><p className="text-sm font-semibold text-brand-teal">Your entries</p><h2 id="transaction-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeTransactions.length} active transaction{activeTransactions.length === 1 ? "" : "s"}</h2></div><span className="rounded-full bg-surface-mint px-3 py-2 text-xs font-bold text-brand-deepTeal">AUD · Account</span></div><div className="mt-4 space-y-3">{activeTransactions.map((transaction) => { const category = getManualCategory(transaction.categoryId); return <article key={transaction.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate text-lg font-bold text-brand-deepTeal">{transaction.description}</p><p className="mt-1 text-sm text-brand-deepTeal/65">{formatAustralianTransactionDate(transaction.date)} · {category?.name ?? "Category unavailable"}</p></div><p className={`shrink-0 text-lg font-bold ${transaction.amountCents < 0 ? "text-brand-deepTeal" : "text-brand-green"}`}>{formatAudFromCents(transaction.amountCents)}</p></div><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-semibold text-brand-deepTeal">{typeLabels[transaction.type]}</span><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${transaction.source === "IMPORTED" ? "bg-brand-green/10 text-brand-green" : "bg-surface-mint text-brand-teal"}`}>{transaction.source === "IMPORTED" ? "Imported" : "Manual"}</span>{transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> CSV match hint</span>}</div><button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">View details</button></div></article>; })}</div></section>}
     <section className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Privacy boundary</p><p className="mt-2">Account transactions contain cleaned reviewed fields only. They are user-owned; deleted entries are soft-deleted and excluded from the active list. ImportBatch and ImportRow history remains intact.</p></section>
-    {editor && <TransactionEditor editor={editor} duplicateCount={duplicateCount} error={editorError} isSaving={isSaving} onChange={(draft) => { setEditor({ ...editor, draft }); setEditorError(""); }} onCancel={() => setEditor(null)} onSubmit={saveEditor} />}
+    {editor && <TransactionEditor editor={editor} duplicateCount={duplicateCount} error={editorError} isSaving={isSaving} propertyOptions={propertyOptions} onChange={(draft) => { setEditor({ ...editor, draft }); setEditorError(""); }} onPropertyLinkChange={(propertyId) => setEditor({ ...editor, propertyLinkPropertyId: propertyId })} onCancel={() => setEditor(null)} onSubmit={saveEditor} />}
     {detailTransaction && <ModalFrame title="Transaction details" description={detailTransaction.source === "IMPORTED" ? "A cleaned transaction created from a reviewed import." : "A manual account entry."} onClose={() => setDetailId(null)}><dl className="mt-6 space-y-4 rounded-3xl bg-surface-mint p-5"><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Description</dt><dd className="mt-1 text-lg font-bold text-brand-deepTeal">{detailTransaction.description}</dd></div><div className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Amount</dt><dd className="mt-1 font-bold text-brand-deepTeal">{formatAudFromCents(detailTransaction.amountCents)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Date</dt><dd className="mt-1 font-bold text-brand-deepTeal">{formatAustralianTransactionDate(detailTransaction.date)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Category</dt><dd className="mt-1 font-bold text-brand-deepTeal">{getManualCategory(detailTransaction.categoryId)?.name}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Source</dt><dd className="mt-1 font-bold text-brand-deepTeal">{detailTransaction.source === "IMPORTED" ? "Imported · Account storage" : "Manual · Account storage"}</dd></div></div>{detailTransaction.notes && <div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Notes</dt><dd className="mt-1 text-brand-deepTeal">{detailTransaction.notes}</dd></div>}{detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}</dl><TransactionPropertyLinkPanel transactionId={detailTransaction.id} /><div className="mt-5 grid gap-3 sm:grid-cols-3"><button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button><button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button><button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-danger-red px-4 text-sm font-bold text-danger-red focus:outline-none focus:ring-2 focus:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button></div></ModalFrame>}
     {deleteTransaction && <ModalFrame title="Delete transaction?" description="This entry will be soft-deleted from your active account list. Import history is kept." onClose={() => setDeleteId(null)}><div className="mt-6 rounded-3xl bg-danger-red/10 p-5"><p className="font-bold text-brand-deepTeal">{deleteTransaction.description}</p><p className="mt-1 text-sm text-brand-deepTeal/70">{formatAustralianTransactionDate(deleteTransaction.date)} · {formatAudFromCents(deleteTransaction.amountCents)}</p></div>{accountWarning && <p role="alert" className="mt-4 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{accountWarning}</p>}<div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button disabled={isSaving} type="button" onClick={() => setDeleteId(null)} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Keep transaction</button><button disabled={isSaving} type="button" onClick={confirmDelete} className="min-h-12 rounded-full bg-danger-red px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">{isSaving ? "Deleting…" : "Delete from active list"}</button></div></ModalFrame>}
   </div>;

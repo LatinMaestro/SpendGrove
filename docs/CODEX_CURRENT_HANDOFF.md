@@ -13,7 +13,8 @@ Last updated: 8 July 2026
 - PR 3C.10 merged in [#99](https://github.com/LatinMaestro/SpendGrove/pull/99) as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`.
 - PR 3C.11 merged in [#100](https://github.com/LatinMaestro/SpendGrove/pull/100) as `b47adba443d6cd475e2011b234bb15c9d951476a`.
 - PR 3C.12 merged in [#101](https://github.com/LatinMaestro/SpendGrove/pull/101) as `38572d6b8620ec7a82bc982092353b97d970a58a`.
-- PR 3C.13 is in progress: commit integration and safety checks for creating `PropertyTransactionLink` only after successful reviewed transaction commit.
+- PR 3C.13 merged in [#102](https://github.com/LatinMaestro/SpendGrove/pull/102) as `be1234c37c6213e12abf1b8fb526828aa1728aa1`.
+- PR 3C.14 is in progress: manual transaction and workflow polish for optional Property record links from manual create/edit.
 
 ## Latest accepted delivery
 
@@ -102,9 +103,9 @@ Target workflow:
 
 Current PR:
 
-- PR 3C.13 extends the existing idempotent reviewed import commit request with an optional safe `propertyLinkPropertyId` on `IMPORT` rows only.
-- The server revalidates active owned Properties inside the same import transaction, creates the everyday transaction first, then creates `PropertyTransactionLink` rows and safe audit reason code `IMPORT_REVIEW_PROPERTY_LINK`.
-- `Skip` rows still create no transaction or Property link. `Merge` rows remain post-merge/manual-link only under the accepted contract.
+- PR 3C.14 adds the same neutral `Include in property records` control to manual transaction create/edit, where it fits the accepted contract without schema changes.
+- Manual transaction save still creates/updates the everyday transaction first, then uses the existing authenticated Property-link endpoint to link, unlink or relink one active owned Property.
+- If the transaction saves but the optional Property-link update cannot be completed safely, the app shows a safe aggregate warning and leaves the existing transaction available for later manual linking from transaction details.
 - Property links are not created from raw CSV rows, filenames, narration, account identifiers, exact addresses, balances or private source fields.
 - Assessment conclusion from PR 3C.11 remains active: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
 - No Preview migration or Production migration is required or authorised.
@@ -129,7 +130,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.13 as import commit Property-link integration, then continue to PR 3C.14 manual transaction/workflow polish unless a stop condition is triggered.
+Complete, publish and merge PR 3C.14 as manual transaction Property-link polish, then continue to PR 3C.15 QA and client review package unless a stop condition is triggered.
 
 ## Explicit exclusions
 

@@ -49,9 +49,9 @@ export async function POST(request: Request) {
   try {
     const context = await getCurrentUserContext();
     const draft = await request.json() as ManualTransactionDraft;
-    await createDurableManualTransaction(context, draft);
+    const savedTransaction = await createDurableManualTransaction(context, draft);
     const transactions = await listDurableManualTransactions(context);
-    return NextResponse.json({ ok: true, transactions }, { status: 201 });
+    return NextResponse.json({ ok: true, transactions, savedTransaction }, { status: 201 });
   } catch (error) {
     return errorResponse(error);
   }
