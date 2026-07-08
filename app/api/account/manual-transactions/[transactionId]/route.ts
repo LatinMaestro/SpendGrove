@@ -46,9 +46,9 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const draft = await request.json() as ManualTransactionDraft;
-    await updateDurableManualTransaction(context, params.transactionId, draft);
+    const savedTransaction = await updateDurableManualTransaction(context, params.transactionId, draft);
     const transactions = await listDurableManualTransactions(context);
-    return NextResponse.json({ ok: true, transactions });
+    return NextResponse.json({ ok: true, transactions, savedTransaction });
   } catch (error) {
     return errorResponse(error);
   }
