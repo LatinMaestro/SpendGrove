@@ -385,6 +385,8 @@ PR 3C.11 must assess whether the existing `PropertyTransactionLink` table can su
 
 PR 3C.11 assessment conclusion: `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md` confirms the existing `PropertyTransactionLink`, Property-link service and import commit path are sufficient for PRs 3C.12-3C.15 if the implementation creates links only after imported transactions exist and remain owned/eligible. No Prisma schema change, migration, durable staging table, data rewrite, package, provider, secret or environment change is needed.
 
+PR 3C.12 implementation note: add the import-review UI affordance only. Eligible `Import` rows can choose `Include in property records` and select one active owned Property by safe nickname/usage. The choice is transient review state and is cleared/ignored for `Skip` and `Merge` rows. No `PropertyTransactionLink` row is created until PR 3C.13 commit integration, and no schema change or migration is introduced.
+
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
 ## Phase 4 — Recurring, Budgets and Insights

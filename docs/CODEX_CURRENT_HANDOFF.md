@@ -11,6 +11,8 @@ Last updated: 8 July 2026
 - Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode.
 - Active approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
 - PR 3C.10 merged in [#99](https://github.com/LatinMaestro/SpendGrove/pull/99) as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`.
+- PR 3C.11 merged in [#100](https://github.com/LatinMaestro/SpendGrove/pull/100) as `b47adba443d6cd475e2011b234bb15c9d951476a`.
+- PR 3C.12 is in progress: import-review Property link UI only, with transient browser review state and no commit persistence until PR 3C.13.
 
 ## Latest accepted delivery
 
@@ -99,8 +101,11 @@ Target workflow:
 
 Current PR:
 
-- PR 3C.11 is a documentation/code-inspection assessment in `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md`.
-- Assessment conclusion: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
+- PR 3C.12 adds a neutral optional `Include in property records` control to eligible everyday CSV import-review rows.
+- The control loads active owned Property options from existing Loans metadata and displays only safe Property nicknames/usages.
+- The selected Property is transient review state only in PR 3C.12. It is not durably persisted, does not create a `PropertyTransactionLink`, and does not alter transactions until PR 3C.13 commit integration is implemented and merged.
+- `Skip` rows clear/do not create Property-link selections. `Merge` rows remain post-merge/manual-link only under the accepted contract.
+- Assessment conclusion from PR 3C.11 remains active: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
 - No Preview migration or Production migration is required or authorised.
 
 ## Future direction notes preserved from Milestone 2
@@ -123,7 +128,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.11 as a schema/migration assessment, then continue to PR 3C.12 unless a stop condition is triggered.
+Complete, publish and merge PR 3C.12 as UI-only import-review Property link selection, then continue to PR 3C.13 commit integration unless a stop condition is triggered.
 
 ## Explicit exclusions
 

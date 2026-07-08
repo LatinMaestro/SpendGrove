@@ -12,6 +12,7 @@ import {
   summarizeImportReview,
   updateImportReviewAction,
   updateImportReviewDetails,
+  updateImportReviewPropertyLink,
 } from "@/lib/import-review";
 
 function syntheticReviewSource(rowCount = 3) {
@@ -67,6 +68,21 @@ describe("import review foundation", () => {
       mergeCount: 1,
       warningCount: 0,
     });
+  });
+
+  it("keeps import-review Property choices transient and only on Import rows", () => {
+    const { document, scan } = syntheticReviewSource();
+    const initialRows = createTransientImportReviewRows(document, scan.columns, scan.mapping);
+    const linked = updateImportReviewPropertyLink(initialRows, initialRows[0].id, "property_1");
+
+    expect(linked[0].propertyLinkPropertyId).toBe("property_1");
+
+    const skipped = updateImportReviewAction(linked, linked[0].id, "SKIP");
+    expect(skipped[0].propertyLinkPropertyId).toBeNull();
+    expect(updateImportReviewPropertyLink(skipped, skipped[0].id, "property_1")[0].propertyLinkPropertyId).toBeNull();
+
+    const importedAgain = updateImportReviewAction(skipped, skipped[0].id, "IMPORT");
+    expect(updateImportReviewPropertyLink(importedAgain, importedAgain[0].id, null)[0].propertyLinkPropertyId).toBeNull();
   });
 
   it("allows safe merchant and seeded-category edits without retaining private fragments", () => {
