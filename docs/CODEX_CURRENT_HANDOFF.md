@@ -14,7 +14,8 @@ Last updated: 8 July 2026
 - PR 3C.11 merged in [#100](https://github.com/LatinMaestro/SpendGrove/pull/100) as `b47adba443d6cd475e2011b234bb15c9d951476a`.
 - PR 3C.12 merged in [#101](https://github.com/LatinMaestro/SpendGrove/pull/101) as `38572d6b8620ec7a82bc982092353b97d970a58a`.
 - PR 3C.13 merged in [#102](https://github.com/LatinMaestro/SpendGrove/pull/102) as `be1234c37c6213e12abf1b8fb526828aa1728aa1`.
-- PR 3C.14 is in progress: manual transaction and workflow polish for optional Property record links from manual create/edit.
+- PR 3C.14 merged in [#103](https://github.com/LatinMaestro/SpendGrove/pull/103) as `2c2d5608bb6707148d94fc810951f73b14e4d8f5`.
+- PR 3C.15 is in progress: QA and client review package in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`.
 
 ## Latest accepted delivery
 
@@ -103,9 +104,9 @@ Target workflow:
 
 Current PR:
 
-- PR 3C.14 adds the same neutral `Include in property records` control to manual transaction create/edit, where it fits the accepted contract without schema changes.
-- Manual transaction save still creates/updates the everyday transaction first, then uses the existing authenticated Property-link endpoint to link, unlink or relink one active owned Property.
-- If the transaction saves but the optional Property-link update cannot be completed safely, the app shows a safe aggregate warning and leaves the existing transaction available for later manual linking from transaction details.
+- PR 3C.15 prepares the QA and client retesting package only.
+- `docs/PHASE_3C_MILESTONE_3_SUMMARY.md` records the completed PR chain, Vercel evidence, schema/migration status, import-review Property-linking behaviour, manual transaction polish, privacy/security evidence, known limitations and non-technical retesting checklist.
+- No application behaviour, schema or migration change is introduced in PR 3C.15.
 - Property links are not created from raw CSV rows, filenames, narration, account identifiers, exact addresses, balances or private source fields.
 - Assessment conclusion from PR 3C.11 remains active: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
 - No Preview migration or Production migration is required or authorised.
@@ -130,7 +131,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.14 as manual transaction Property-link polish, then continue to PR 3C.15 QA and client review package unless a stop condition is triggered.
+Complete, publish and merge PR 3C.15 as the QA and client review package, verify main, then stop for client retesting. Do not formally close Phase 3C Milestone 3 until the client confirms retesting is complete.
 
 ## Explicit exclusions
 
