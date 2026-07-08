@@ -45,6 +45,7 @@ export type ImportReviewRow = {
   categoryConfirmed: boolean;
   merchantEdited: boolean;
   reviewState: ImportReviewDecisionState;
+  propertyLinkPropertyId?: string | null;
 };
 
 export type ImportReviewSummary = {
@@ -98,6 +99,7 @@ const importReviewRowSchema = z.object({
   categoryConfirmed: z.boolean(),
   merchantEdited: z.boolean(),
   reviewState: reviewStateSchema,
+  propertyLinkPropertyId: z.string().trim().min(1).nullable().default(null),
 }).strict().superRefine((row, context) => {
   if (!getManualCategory(row.categoryId)) {
     context.addIssue({
@@ -178,6 +180,7 @@ export function createTransientImportReviewRows(
         categoryConfirmed: false,
         merchantEdited: false,
         reviewState: "UNREVIEWED",
+        propertyLinkPropertyId: null,
       }));
     });
   }
@@ -192,7 +195,25 @@ export function updateImportReviewAction(
 ) {
   const validatedAction = reviewActionSchema.parse(action);
   return rows.map((row) => row.id === rowId
-    ? importReviewRowSchema.parse({ ...row, action: validatedAction })
+    ? importReviewRowSchema.parse({
+        ...row,
+        action: validatedAction,
+        propertyLinkPropertyId: validatedAction === "IMPORT" ? row.propertyLinkPropertyId ?? null : null,
+      })
+    : row);
+}
+
+export function updateImportReviewPropertyLink(
+  rows: ImportReviewRow[],
+  rowId: string,
+  propertyId: string | null,
+) {
+  const safePropertyId = propertyId === null ? null : z.string().trim().min(1).parse(propertyId);
+  return rows.map((row) => row.id === rowId
+    ? importReviewRowSchema.parse({
+        ...row,
+        propertyLinkPropertyId: row.action === "IMPORT" ? safePropertyId : null,
+      })
     : row);
 }
 

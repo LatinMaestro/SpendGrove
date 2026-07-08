@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ChevronDown, ChevronUp, Link2, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Home, Link2, Pencil } from "lucide-react";
 import { ReviewCategoryPicker } from "@/components/review-category-picker";
 import type { CustomCategory } from "@/lib/custom-categories";
 import { getReviewCategory } from "@/lib/custom-categories";
@@ -12,6 +12,17 @@ import type { ManualCategoryType } from "@/lib/manual-categories";
 import { formatAudFromCents } from "@/lib/money";
 
 const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [{ value: "IMPORT", label: "Import" }, { value: "SKIP", label: "Skip" }, { value: "MERGE", label: "Merge" }];
+const propertyUsageLabels = {
+  OWNER_OCCUPIED: "Owner-occupied",
+  INVESTMENT: "Investment",
+  OTHER: "Other",
+} as const;
+
+export type ImportReviewPropertyOption = {
+  id: string;
+  nickname: string;
+  usage: keyof typeof propertyUsageLabels;
+};
 
 function formatReviewDate(date: string | null) {
   if (!date) return "Date needs review";
@@ -43,9 +54,9 @@ function DuplicateCandidateDetails({ candidate, isSelected, onChoose }: { candid
   return <article className="rounded-2xl bg-white p-3 text-xs leading-5 text-brand-deepTeal/70"><div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><p className="font-bold text-brand-deepTeal">{title}</p><p className="mt-1">{candidate.source === "SAME_IMPORT" ? `Row ${candidate.rowNumber ?? "nearby"}` : candidate.merchantName} · {formatReviewDate(candidate.date)} · {formatAudFromCents(candidate.amountCents)}</p><p className="mt-1 font-semibold text-brand-teal">{candidate.reasons.join(" · ")}</p></div>{candidate.canMergeTarget ? <button type="button" onClick={() => onChoose(candidate)} disabled={isSelected} className="min-h-10 shrink-0 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal disabled:border-brand-green disabled:bg-surface-mint disabled:text-brand-green">{isSelected ? "Merge target selected" : "Choose this as the merge target"}</button> : <span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-bold text-brand-teal">Warning only</span>}</div>{candidate.source === "SAME_IMPORT" && <p className="mt-2 text-brand-deepTeal/60">Rows from the same CSV cannot be merge targets.</p>}{candidate.transactionSource === "IMPORTED" && <p className="mt-2 text-brand-deepTeal/60">SpendGrove recommends Skip so another copy is not created.</p>}{candidate.canMergeTarget && <p className="mt-2 text-brand-deepTeal/60">This only marks your review choice until you confirm the import.</p>}</article>;
 }
 
-export function ImportReviewRowCard({ row, customCategories, matchingRowCount, duplicateCandidates, selectedMergeTargetId, isPotentiallyDeductible, needsAttention, blockerMessage, ambiguousTransfer, sourceDetails, onAction, onDetails, onCreateCategory, onTaxChange, onApplySameMerchant, onChooseMergeTarget, onMerchantNameCommit }: {
-  row: ImportReviewRow; customCategories: CustomCategory[]; matchingRowCount: number; duplicateCandidates: DuplicateCandidate[]; selectedMergeTargetId?: string; isPotentiallyDeductible: boolean; needsAttention: boolean; blockerMessage: string; ambiguousTransfer: boolean; sourceDetails?: ImportReviewSourceDetails;
-  onAction(action: ImportReviewAction): void; onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void; onCreateCategory(input: { name: string; type: ManualCategoryType }): CustomCategory; onTaxChange(value: boolean): void; onApplySameMerchant(): void; onChooseMergeTarget(candidate: DuplicateCandidate): void; onMerchantNameCommit(previousMerchantName: string): void;
+export function ImportReviewRowCard({ row, customCategories, matchingRowCount, duplicateCandidates, selectedMergeTargetId, isPotentiallyDeductible, needsAttention, blockerMessage, ambiguousTransfer, sourceDetails, propertyOptions, propertyOptionsStatus, onAction, onDetails, onCreateCategory, onTaxChange, onPropertyLinkChange, onApplySameMerchant, onChooseMergeTarget, onMerchantNameCommit }: {
+  row: ImportReviewRow; customCategories: CustomCategory[]; matchingRowCount: number; duplicateCandidates: DuplicateCandidate[]; selectedMergeTargetId?: string; isPotentiallyDeductible: boolean; needsAttention: boolean; blockerMessage: string; ambiguousTransfer: boolean; sourceDetails?: ImportReviewSourceDetails; propertyOptions: ImportReviewPropertyOption[]; propertyOptionsStatus: "SIGNED_OUT" | "LOADING" | "READY" | "UNAVAILABLE";
+  onAction(action: ImportReviewAction): void; onDetails(details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }): void; onCreateCategory(input: { name: string; type: ManualCategoryType }): CustomCategory; onTaxChange(value: boolean): void; onPropertyLinkChange(propertyId: string | null): void; onApplySameMerchant(): void; onChooseMergeTarget(candidate: DuplicateCandidate): void; onMerchantNameCommit(previousMerchantName: string): void;
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showMerchantEdit, setShowMerchantEdit] = useState(false);
@@ -68,7 +79,25 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
     {blockerMessage && <p className="mt-2 text-xs font-semibold text-warning-amber">{blockerMessage}</p>}
     <ReviewCategoryPicker row={row} customCategories={customCategories} onDetails={onDetails} onCreate={onCreateCategory} />
     {ambiguousTransfer && <p className="mt-3 text-xs font-semibold leading-5 text-brand-teal">This may be a transfer. Check the source details in More options if you are unsure.</p>}
-    <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3"><input type="checkbox" checked={isPotentiallyDeductible} onChange={(event) => onTaxChange(event.target.checked)} className="mt-1 h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green" /><span><span className="block text-sm font-bold text-brand-deepTeal">Potentially deductible?</span><span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">For record-keeping only—not tax advice. This choice is not saved as a transaction.</span></span></label>
+    <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3"><input type="checkbox" checked={isPotentiallyDeductible} onChange={(event) => onTaxChange(event.target.checked)} className="mt-1 h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green" /><span><span className="block text-sm font-bold text-brand-deepTeal">Needs record-keeping review?</span><span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">Optional note for this browser review only. This choice is not saved as a transaction.</span></span></label>
+    <section className="mt-4 rounded-2xl border border-border bg-white p-3" aria-label="Property record link for this import row">
+      <div className="flex items-start gap-3"><Home aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" /><div className="min-w-0 flex-1"><p className="text-sm font-bold text-brand-deepTeal">Include in property records</p><p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Optional. This will help this transaction appear in property records later. Record keeping only - not tax advice.</p></div></div>
+      {row.action === "IMPORT" ? (
+        propertyOptionsStatus === "READY" && propertyOptions.length > 0 ? (
+          <label className="mt-3 block text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Link to property<select value={row.propertyLinkPropertyId ?? ""} onChange={(event) => onPropertyLinkChange(event.target.value || null)} className="mt-2 min-h-11 w-full rounded-2xl border border-border bg-white px-3 text-sm font-normal normal-case tracking-normal text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><option value="">No Property link</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.nickname} · {propertyUsageLabels[property.usage]}</option>)}</select></label>
+        ) : propertyOptionsStatus === "LOADING" ? (
+          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Loading active Properties…</p>
+        ) : propertyOptionsStatus === "SIGNED_OUT" ? (
+          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Sign in before importing to choose a Property link.</p>
+        ) : propertyOptionsStatus === "UNAVAILABLE" ? (
+          <p className="mt-3 text-xs font-semibold text-warning-amber">Property options could not be loaded. You can still import and link this transaction later.</p>
+        ) : (
+          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">No active Properties are available. Create one from Loans first, or import without a Property link.</p>
+        )
+      ) : (
+        <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">{row.action === "SKIP" ? "Skipped rows do not create transactions or Property links." : "Merge rows are linked after import by editing the existing transaction."}</p>
+      )}
+    </section>
     {row.categoryConfirmed && row.action !== "SKIP" && matchingRowCount > 0 && <button type="button" onClick={onApplySameMerchant} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal"><Link2 aria-hidden="true" className="h-4 w-4" /> Apply to {matchingRowCount} matching transaction{matchingRowCount === 1 ? "" : "s"}</button>}
     <fieldset className="mt-4"><legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">What should happen?</legend><div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">{reviewActions.map((action) => <button key={action.value} type="button" onClick={() => onAction(action.value)} aria-pressed={row.action === action.value} className={`min-h-10 rounded-xl border px-3 py-2 text-sm font-bold ${row.action === action.value ? "border-brand-green bg-white text-brand-deepTeal" : "border-transparent text-brand-deepTeal/70"}`}>{action.label}</button>)}</div>{row.action === "MERGE" && <div role="status" className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal"><p className="font-bold">Merge selected</p><p className="mt-1">Choose an eligible existing manual transaction below before final account save. Rows from this CSV cannot be merge targets.</p></div>}</fieldset>
     {topDuplicateCandidate?.source === "EXISTING_TRANSACTION" && topDuplicateCandidate.confidence === "LIKELY" && row.action === "SKIP" && <p className="mt-3 rounded-2xl bg-warning-amber/10 p-3 text-xs font-semibold leading-5 text-brand-deepTeal">Skip was selected because this looks already saved. Choose Import only if you deliberately want another copy.</p>}
