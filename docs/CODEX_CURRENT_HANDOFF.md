@@ -8,14 +8,15 @@ Last updated: 8 July 2026
 - Phase 3B Milestones 1, 2 and 3 are formally accepted and closed.
 - Phase 3C Milestone 1 - Property-Linked Record-Keeping Foundations is formally accepted and closed.
 - Phase 3C Milestone 2 - Property/EOFY Reporting Contract and Foundations is formally accepted and closed by the client on 7 July 2026 after Vercel retesting completed with no further acceptance comments.
-- Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode.
-- Active approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
+- Phase 3C Milestone 3 - Import-review Property Linking and Property-Record Workflow Polish is formally accepted and closed by the client on 8 July 2026 after Vercel retesting completed with no further acceptance comments.
+- Completed approved sequence: PR 3C.10 import-review Property-linking contract; PR 3C.11 schema and migration assessment; PR 3C.12 import-review Property link UI; PR 3C.13 commit integration and safety checks; PR 3C.14 manual transaction and workflow polish; PR 3C.15 QA and client review package.
 - PR 3C.10 merged in [#99](https://github.com/LatinMaestro/SpendGrove/pull/99) as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`.
 - PR 3C.11 merged in [#100](https://github.com/LatinMaestro/SpendGrove/pull/100) as `b47adba443d6cd475e2011b234bb15c9d951476a`.
 - PR 3C.12 merged in [#101](https://github.com/LatinMaestro/SpendGrove/pull/101) as `38572d6b8620ec7a82bc982092353b97d970a58a`.
 - PR 3C.13 merged in [#102](https://github.com/LatinMaestro/SpendGrove/pull/102) as `be1234c37c6213e12abf1b8fb526828aa1728aa1`.
 - PR 3C.14 merged in [#103](https://github.com/LatinMaestro/SpendGrove/pull/103) as `2c2d5608bb6707148d94fc810951f73b14e4d8f5`.
-- PR 3C.15 is in progress: QA and client review package in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`.
+- PR 3C.15 merged in [#104](https://github.com/LatinMaestro/SpendGrove/pull/104) as `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111`.
+- Next milestone options are proposal-only in `docs/NEXT_MILESTONE_OPTIONS.md`. No next implementation is authorised until the client explicitly approves it.
 
 ## Latest accepted delivery
 
@@ -88,37 +89,49 @@ Final accepted testing evidence:
 - No Production migration has run.
 - The Preview-only `PropertyReportReview` table remains dormant and untouched. It is not dropped, backfilled, rewritten or required by the normal workflow.
 
-## Active Phase 3C Milestone 3 objective
+## Phase 3C Milestone 3 accepted delivery
 
-Make the accepted Property reporting workflow easier by letting users link transactions to Properties earlier, especially during everyday CSV import review, while preserving user control, privacy-first CSV handling and the no-tax-advice boundary.
+Phase 3C Milestone 3 is accepted as a simple import-review and manual-transaction Property-linking polish milestone.
 
-Target workflow:
+Accepted behaviour:
 
-1. Upload bank CSV.
-2. Review transactions.
-3. Categorise transactions.
-4. Link relevant transactions to a Property during review where appropriate.
-5. Commit reviewed rows.
-6. Property records/reports automatically include linked records later.
-7. Loan CSV repayments continue to reconcile to everyday transactions and appear in Property records where the Loan Account belongs to that Property.
+- everyday CSV Import rows can be marked `Include in property records`;
+- one active owned Property can be selected by safe nickname;
+- Property links are created only after the imported transaction is committed and owned;
+- Skip rows create no transaction or Property link;
+- Merge rows remain post-merge/manual-link only;
+- manual transaction create/edit supports optional Property linking;
+- linked imported/manual transactions appear automatically in Property records/export;
+- Property reports/exports still require no report-only classification step.
 
-Current PR:
+Final accepted delivery evidence:
 
-- PR 3C.15 prepares the QA and client retesting package only.
-- `docs/PHASE_3C_MILESTONE_3_SUMMARY.md` records the completed PR chain, Vercel evidence, schema/migration status, import-review Property-linking behaviour, manual transaction polish, privacy/security evidence, known limitations and non-technical retesting checklist.
-- No application behaviour, schema or migration change is introduced in PR 3C.15.
-- Property links are not created from raw CSV rows, filenames, narration, account identifiers, exact addresses, balances or private source fields.
-- Assessment conclusion from PR 3C.11 remains active: existing `PropertyTransactionLink` can support import-review Property linking after transaction commit without a Prisma schema change, migration, durable staging table or data rewrite.
-- No Preview migration or Production migration is required or authorised.
+- PR #104 merge commit: `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111`.
+- Final main Vercel deployment: https://vercel.com/latinmaestros-projects/spendgrove/8UCAm6Z6KfHKtKfcTUeJfhH3gHP5
+- Live alias: https://spendgrove.vercel.app
+- Live route checks passed for `/`, `/loans` and `/transactions`: HTTP 200.
+- Final verification: 77 test files / 468 tests passed; TypeScript type-check passed; production build passed.
+- Client Vercel retesting completed with no further acceptance comments.
 
-## Future direction notes preserved from Milestone 2
+Schema, migration and operational status:
 
-Future import-review workflow direction now active for Phase 3C Milestone 3, subject to the contract and stop conditions:
+- No Prisma schema change was made for Phase 3C Milestone 3.
+- No new Preview migration was run for Phase 3C Milestone 3.
+- No Production migration has run.
+- No durable staging table, data rewrite, backfill, table drop, package/provider/secret/env change occurred.
+- No Phase 4, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage or later-module work started.
 
-- during everyday CSV import review, the user could link a transaction to a Property before commit;
-- a neutral user-controlled flag may be considered later, such as `Include in property records`, `Potential property tax record` or `For accountant review`;
+Delivery workflow note:
+
+- The client has noted Vercel usage limits while running multiple apps. Future implementation should prefer larger safe development batches before each Vercel push where this does not weaken scope control, tests, review gates or stop conditions.
+
+## Future direction notes preserved from Milestone 3
+
+The accepted import-review workflow is now delivered for eligible Import rows. Remaining future ideas are proposal-only:
+
+- a deliberate merge-target Property-link flow may be considered later if it can preserve user control and avoid hidden relinking;
+- a neutral user-controlled flag may be considered later, such as `Potential property tax record` or `For accountant review`;
 - avoid the phrase `tax deductible` until a separate tax/EOFY contract is explicitly approved;
-- linked transactions should automatically appear in Property records/reports without another classification step;
 - loan CSV repayments should continue to reconcile to everyday transactions and then appear in linked Property records automatically where the Loan Account belongs to that Property.
 
 Future navigation idea:
@@ -131,7 +144,7 @@ Future navigation idea:
 
 ## Exact next action
 
-Complete, publish and merge PR 3C.15 as the QA and client review package, verify main, then stop for client retesting. Do not formally close Phase 3C Milestone 3 until the client confirms retesting is complete.
+Wait for the client to approve the next milestone. Do not begin Phase 4, Production readiness implementation, another Phase 3C follow-up, Home dashboard statistics, tax advice, automatic deductibility, Basiq, AI, payments, household mode, document storage, new navigation tabs or later modules until explicitly approved.
 
 ## Explicit exclusions
 
@@ -139,4 +152,4 @@ Do not begin a Production migration, new Preview migration, schema change, table
 
 ## Resume instruction
 
-Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/PHASE_3C_MILESTONE_3_IMPORT_PROPERTY_LINKING_CONTRACT.md`, `docs/BUILD_PLAN.md` and `docs/DECISION_LOG.md`. Continue the approved Phase 3C Milestone 3 sequence only. Stop if schema, migration, durable staging state, Production migration, private source fields, automatic Property matching, tax wording, navigation changes, Home dashboard statistics, Phase 4 or later modules enter scope.
+Resume from repository truth: read `AGENTS.md`, `docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md`, this file, `docs/BUILD_PLAN.md`, `docs/DECISION_LOG.md`, `docs/PHASE_3C_MILESTONE_3_SUMMARY.md` and `docs/NEXT_MILESTONE_OPTIONS.md`. Phase 3C Milestone 3 is closed; next implementation is not authorised until the client approves a proposal. Stop if schema, migration, Production migration, private source fields, automatic Property matching, tax wording, navigation changes, Home dashboard statistics, Phase 4 or later modules enter scope without explicit approval.
