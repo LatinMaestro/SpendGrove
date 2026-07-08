@@ -389,7 +389,9 @@ PR 3C.12 implementation note: add the import-review UI affordance only. Eligible
 
 PR 3C.13 merged in #102 as `be1234c37c6213e12abf1b8fb526828aa1728aa1`. It extends the existing reviewed import commit request with an optional safe `propertyLinkPropertyId` on `Import` rows only. The commit path creates the transaction first, revalidates active owned Property state server-side, then creates the `PropertyTransactionLink` and safe audit code in the same atomic transaction. `Skip` and `Merge` rows do not create Property links. No schema change, migration, staging table, raw CSV persistence or private source-field persistence was introduced.
 
-PR 3C.14 is in progress. It may add the same neutral Property-link control to manual transaction create/edit only because this fits the accepted contract without schema changes or migration. The transaction remains the only cashflow record; the Property link remains optional supporting metadata; no tax wording, automatic Property matching or reporting calculation changes are authorised.
+PR 3C.14 merged in #103 as `2c2d5608bb6707148d94fc810951f73b14e4d8f5`. It adds the same neutral Property-link control to manual transaction create/edit because this fits the accepted contract without schema changes or migration. The transaction remains the only cashflow record; the Property link remains optional supporting metadata; no tax wording, automatic Property matching or reporting calculation changes were introduced.
+
+PR 3C.15 is the QA and client review package in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`. After it is merged and main is verified, stop for client retesting. Do not formally close Phase 3C Milestone 3 until the client confirms retesting is complete.
 
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
