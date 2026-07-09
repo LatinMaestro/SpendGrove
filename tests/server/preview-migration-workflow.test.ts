@@ -33,17 +33,23 @@ describe("Preview Prisma migration workflow integrity", () => {
     expect(workflow).not.toMatch(/cat .*prisma-migrate-deploy/i);
   });
 
-  it("checks migration state, exact schema objects, empty review state and stable aggregate counts", () => {
+  it("checks migration state, exact schema objects, empty target tables and stable aggregate counts", () => {
     for (const expected of [
       "FAILED_OR_UNRESOLVED_MIGRATION",
       "TARGET_MIGRATION_ALREADY_PRESENT",
-      "PropertyReportReview",
-      "PropertyRecordClassification",
-      "EXPECTED_ENUM_VALUES",
-      "EXPECTED_COLUMNS",
-      "EXPECTED_INDEXES",
-      "EXPECTED_CONSTRAINTS",
-      "propertyReportReview.count() !== 0",
+      "20260708090000_phase_4_recurring_budgets_foundation",
+      "RecurringItem",
+      "RecurringSuggestionDismissal",
+      "CategoryBudget",
+      "RecurringCadence",
+      "RecurringItemStatus",
+      "BudgetPeriod",
+      "BudgetStatus",
+      "EXPECTED_ENUM_MISMATCH",
+      "EXPECTED_COLUMNS_MISMATCH",
+      "EXPECTED_INDEXES_MISMATCH",
+      "EXPECTED_CONSTRAINTS_MISMATCH",
+      "EXPECTED_TABLE_NOT_EMPTY",
       "EXISTING_ROW_COUNTS_CHANGED",
       "c.contype IN ('p', 'f')",
     ]) {
@@ -58,18 +64,21 @@ describe("Preview Prisma migration workflow integrity", () => {
     }
   });
 
-  it("counts only the seven approved existing models and emits no row query", () => {
-    for (const model of [
-      "prisma.user.count()",
-      "prisma.transaction.count()",
-      "prisma.property.count()",
-      "prisma.loanAccount.count()",
-      "prisma.loanRepayment.count()",
-      "prisma.loanReconciliationLink.count()",
-      "prisma.propertyTransactionLink.count()",
+  it("counts only approved existing models and emits no row query", () => {
+    for (const expected of [
+      "EXISTING_COUNT_DELEGATES",
+      '["User", "user"]',
+      '["Transaction", "transaction"]',
+      '["Property", "property"]',
+      '["LoanAccount", "loanAccount"]',
+      '["LoanRepayment", "loanRepayment"]',
+      '["LoanReconciliationLink", "loanReconciliationLink"]',
+      '["PropertyTransactionLink", "propertyTransactionLink"]',
+      '["PropertyReportReview", "propertyReportReview"]',
     ]) {
-      expect(integrityScript).toContain(model);
+      expect(integrityScript).toContain(expected);
     }
+    expect(integrityScript).toContain("await prisma[delegate].count()");
     expect(integrityScript).not.toMatch(/\.findMany\(|\.findFirst\(|\.findUnique\(/);
     expect(integrityScript).not.toMatch(/DATABASE_URL|DIRECT_DATABASE_URL|description|narration|merchantName|amountCents/);
   });

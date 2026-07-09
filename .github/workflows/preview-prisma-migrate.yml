@@ -32,6 +32,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.NEON_PREVIEW_DATABASE_URL }}
       DIRECT_DATABASE_URL: ${{ secrets.NEON_PREVIEW_DIRECT_DATABASE_URL }}
+      PREVIEW_MIGRATION_NAME: 20260708090000_phase_4_recurring_budgets_foundation
 
     steps:
       - name: Confirm Preview-only migration request
@@ -48,7 +49,7 @@ jobs:
             echo "Preview migrations may run only from main. No migration was run."
             exit 1
           fi
-          echo "Preview ${{ inputs.mode }} request confirmed. Secret values will not be printed."
+          echo "Preview ${{ inputs.mode }} request confirmed for $PREVIEW_MIGRATION_NAME. Secret values will not be printed."
 
       - name: Check required Preview secrets are present
         run: |
@@ -81,7 +82,7 @@ jobs:
 
       - name: Run secret-safe pre-migration integrity checks
         if: ${{ inputs.mode == 'migrate' }}
-        run: node scripts/preview-migration-integrity.mjs pre --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+        run: node scripts/preview-migration-integrity.mjs pre --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
 
       - name: Apply Preview migrations
         if: ${{ inputs.mode == 'migrate' }}
@@ -95,10 +96,10 @@ jobs:
       - name: Run secret-safe post-migration integrity checks
         run: |
           if [ "${{ inputs.mode }}" = "verify-only" ]; then
-            node scripts/preview-migration-integrity.mjs post --expected-counts-json '{"User":1,"Transaction":1484,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":0}'
+            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json '{"User":1,"Transaction":1484,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":0}'
           else
-            node scripts/preview-migration-integrity.mjs post --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
           fi
 
       - name: Confirm Preview migration completed
-        run: echo "Preview Prisma ${{ inputs.mode }} request and secret-safe integrity checks completed successfully."
+        run: echo "Preview Prisma ${{ inputs.mode }} request and secret-safe integrity checks completed successfully for $PREVIEW_MIGRATION_NAME."
