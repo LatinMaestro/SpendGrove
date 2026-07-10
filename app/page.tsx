@@ -4,8 +4,14 @@ import { AppShell } from "@/components/app-shell";
 import { FeatureCard } from "@/components/feature-card";
 import { HomeTransactionStatus } from "@/components/home-transaction-status";
 import { OnboardingPrompt } from "@/components/onboarding-prompt";
+import { RecurringSuggestions } from "@/components/recurring-suggestions";
+import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
 
 export default function HomePage() {
+  const clerkStatus = getBuildSafeClerkEnvStatus();
+  const databaseStatus = getBuildSafeDatabaseEnvStatus();
+  const accountPersistenceAvailable = clerkStatus.clerkConfigured && databaseStatus.runtimeDatabaseConfigured;
+
   return (
     <AppShell>
       <OnboardingPrompt />
@@ -27,6 +33,7 @@ export default function HomePage() {
       </section>
 
       <HomeTransactionStatus />
+      <RecurringSuggestions accountPersistenceAvailable={accountPersistenceAvailable} />
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <FeatureCard title="Simple Mode first" body="Australian defaults and core transaction/import paths stay prominent, while unfinished advanced modules remain hidden or clearly disabled.">
