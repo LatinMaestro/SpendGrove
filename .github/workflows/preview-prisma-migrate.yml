@@ -96,7 +96,7 @@ jobs:
       - name: Run secret-safe post-migration integrity checks
         run: |
           if [ "${{ inputs.mode }}" = "verify-only" ]; then
-            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json '{"User":1,"Transaction":1484,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":0}'
+            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json '{"User":1,"Category":51,"Transaction":1500,"ImportBatch":15,"ImportRow":1568,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":6,"PropertyReportReview":11}'
           else
             node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
           fi
