@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { FileUp, ShieldCheck } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { CategoryBudgets } from "@/components/category-budgets";
 import { FeatureCard } from "@/components/feature-card";
 import { HomeTransactionStatus } from "@/components/home-transaction-status";
 import { OnboardingPrompt } from "@/components/onboarding-prompt";
@@ -34,6 +35,7 @@ export default function HomePage() {
 
       <HomeTransactionStatus />
       <RecurringSuggestions accountPersistenceAvailable={accountPersistenceAvailable} />
+      <CategoryBudgets accountPersistenceAvailable={accountPersistenceAvailable} />
 
       <div className="mt-5 grid gap-4 lg:grid-cols-2">
         <FeatureCard title="Simple Mode first" body="Australian defaults and core transaction/import paths stay prominent, while unfinished advanced modules remain hidden or clearly disabled.">

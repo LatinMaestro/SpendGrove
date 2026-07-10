@@ -148,6 +148,13 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "auditEvent.write",
     ]),
   ],
+  [
+    "src/server/category-budgets.ts",
+    new Set([
+      "categoryBudget.write",
+      "auditEvent.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
