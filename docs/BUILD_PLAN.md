@@ -405,16 +405,50 @@ Final accepted evidence:
 
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
-## Phase 4 — Recurring, Budgets and Insights
+## Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights
 
-Only begin after client approval.
+Status: active and approved under Autonomous Phase Delivery Mode.
 
-Scope:
+Controlling contract: `docs/PHASE_4_MILESTONE_1_CONTRACT.md`.
 
-- recurring/subscription detection;
-- budgets;
-- dashboard refinement;
-- trends and reminders.
+Approved sequence:
+
+1. PR 4.0 - recurring, budget and insight contract.
+2. PR 4.1 / 4.1A - schema foundation and exact Preview migration plan/files.
+3. PR 4.2 - reviewable recurring/subscription suggestions.
+4. PR 4.3 - category budgets.
+5. PR 4.4 - everyday dashboard and trend insight foundation.
+6. PR 4.5 - QA and client review package.
+
+Schema and migration gate evidence:
+
+- PR #108 schema foundation merged as `f2d5e040294e05dd4c2d7641f171727aaad944cd`.
+- Preview deploy run `29060523217` applied `20260708090000_phase_4_recurring_budgets_foundation` once.
+- Checker correction PR #110 merged as `be53523040ba9a13b48d42408968fabf4b91c922`.
+- Verification-only run `29072916307` completed green from `main`, confirming exact approved schema, empty `RecurringItem`, `RecurringSuggestionDismissal` and `CategoryBudget` tables, and unchanged existing aggregate counts.
+- Preview-only secrets were used and masked; no Production secret was mapped.
+- No Production migration ran. Do not run the Phase 4 migration again.
+
+PR 4.2 implementation rule:
+
+- deterministic suggestions only;
+- same active owned safe merchant profile and category;
+- same transaction type and exact signed integer-cent amount for the conservative initial amount threshold;
+- weekly 6-8 day, fortnightly 13-16 day and monthly 27-34 day interval windows;
+- three or more matching occurrences produce a high-confidence suggestion;
+- two matching occurrences produce a review suggestion;
+- ambiguous evidence produces no suggestion;
+- user confirmation is required before durable recurring state;
+- user may dismiss, edit and archive;
+- no private source fields, biller contact, money movement, forecast guarantee, Basiq or AI.
+
+Remaining scope:
+
+- PR 4.3 monthly category budgets;
+- PR 4.4 contract-approved everyday dashboard and transparent trend insights;
+- PR 4.5 QA and client review package.
+
+Strict exclusions remain: no Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, loan-balance forecasting, debt or credit advice, Basiq, AI, payments, household mode, document storage, new navigation tabs or later modules.
 
 ## Phase 5 — Production Readiness
 

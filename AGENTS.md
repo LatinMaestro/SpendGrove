@@ -129,9 +129,20 @@ Phase 3C Milestone 3 used the existing `PropertyTransactionLink` only after a tr
 
 PR 3C.10 merged in #99 as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`. PR 3C.11 merged in #100 as `b47adba443d6cd475e2011b234bb15c9d951476a`; its assessment in `docs/PHASE_3C_MILESTONE_3_SCHEMA_ASSESSMENT.md` concluded no Prisma schema change, migration, durable staging table, data rewrite, package, provider, secret or environment change was needed. PR 3C.12 merged in #101 as `38572d6b8620ec7a82bc982092353b97d970a58a`; import-review rows may hold a transient `Include in property records` Property choice. PR 3C.13 merged in #102 as `be1234c37c6213e12abf1b8fb526828aa1728aa1`; durable Property links are created only after reviewed imported transactions are created and owned in the same atomic commit path. PR 3C.14 merged in #103 as `2c2d5608bb6707148d94fc810951f73b14e4d8f5`; neutral manual transaction create/edit Property-link polish was added within the accepted no-schema/no-migration contract. PR 3C.15 merged in #104 as `5acd4ace3a4612b1b6a2ba6fafe5cc56dc2d5111`; the QA package is in `docs/PHASE_3C_MILESTONE_3_SUMMARY.md`.
 
-Next milestone options in `docs/NEXT_MILESTONE_OPTIONS.md` remain proposal-only. Do not implement Phase 4, Production readiness work, another Phase 3C follow-up or any other next module until the client explicitly approves it.
+Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights was approved by the client on 8 July 2026 under Autonomous Phase Delivery Mode. The controlling contract is `docs/PHASE_4_MILESTONE_1_CONTRACT.md`.
 
-No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, recurring, budgets, insights, Basiq, AI, payments, household mode, Phase 4 or later module is authorised.
+Approved sequence:
+
+- PR 4.0 - recurring, budget and insight contract;
+- PR 4.1 / 4.1A - schema foundation and exact Preview migration plan/files;
+- PR 4.2 - reviewable recurring/subscription suggestions;
+- PR 4.3 - category budgets;
+- PR 4.4 - everyday dashboard and trend insight foundation;
+- PR 4.5 - QA and client review package.
+
+The additive Phase 4 Preview migration `20260708090000_phase_4_recurring_budgets_foundation` was applied once by run `29060523217`. Verification-only run `29072916307` on main commit `be53523040ba9a13b48d42408968fabf4b91c922` confirmed the approved schema, empty new tables and unchanged existing aggregate counts. PR 4.2 may proceed. No further Preview migration and no Production migration are authorised.
+
+No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, Basiq, AI, payments, household mode or later module is authorised.
 
 No Production migration is authorised.
 
