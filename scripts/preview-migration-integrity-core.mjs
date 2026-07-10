@@ -139,6 +139,13 @@ export function migrationProfileFor(migrationName) {
   return migrationProfiles[migrationName];
 }
 
+export function exactNameSetMatches(actual, expected) {
+  const sortedActual = [...actual].sort();
+  const sortedExpected = [...expected].sort();
+  return sortedActual.length === sortedExpected.length
+    && sortedActual.every((value, index) => value === sortedExpected[index]);
+}
+
 export function primaryAndForeignKeyNames(rows) {
   return rows
     .filter((row) => row.type === "p" || row.type === "f")
