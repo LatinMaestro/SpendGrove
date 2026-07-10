@@ -26,6 +26,9 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "loanReconciliationLink.write", pattern: /loanReconciliationLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "propertyTransactionLink.write", pattern: /propertyTransactionLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "propertyReportReview.write", pattern: /propertyReportReview\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "recurringItem.write", pattern: /recurringItem\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "recurringSuggestionDismissal.write", pattern: /recurringSuggestionDismissal\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "categoryBudget.write", pattern: /categoryBudget\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -134,6 +137,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     "src/server/property-report-review.ts",
     new Set([
       "propertyReportReview.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
+    "src/server/recurring-suggestions.ts",
+    new Set([
+      "recurringItem.write",
+      "recurringSuggestionDismissal.write",
       "auditEvent.write",
     ]),
   ],
