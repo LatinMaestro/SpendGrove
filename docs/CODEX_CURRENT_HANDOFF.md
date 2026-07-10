@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 10 July 2026
+Last updated: 11 July 2026
 
 ## Current phase and status
 
@@ -57,7 +57,8 @@ Current online branch changes include the server detector/lifecycle service, aut
 - The first PR #111 Vercel attempt was blocked before build by the documented account build-rate limit; this was not an application failure.
 - A later build on commit `bef5bbee96adcc93c90ffd71528db81e853f36ab` ran 80 test files / 490 tests: 79 files / 489 tests passed and one server-write allowlist assertion failed.
 - The allowlist correction is committed at `d25513aaa55b0f66487127b189998be7c3b77c80`; it approves only the recurring service's recurring-item, dismissal and safe audit writes while keeping category-budget writes blocked until PR 4.3.
-- A fresh Vercel build of the corrected head is required before merge.
+- The 10 July retry was blocked before build by Vercel's rolling account build-rate limit.
+- A fresh 11 July Vercel build of the corrected head is required before merge.
 - No Vercel status should be treated as green until tests, type-check and production build complete.
 
 ## Exact next action
