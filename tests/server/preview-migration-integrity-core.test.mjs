@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  exactNameSetMatches,
   migrationProfileFor,
   migrationProfiles,
   primaryAndForeignKeyNames,
@@ -23,6 +24,29 @@ describe("Preview migration constraint filtering", () => {
       "PropertyReportReview_transactionId_fkey",
       "PropertyReportReview_userId_fkey",
     ]);
+  });
+});
+
+describe("Preview migration exact name-set matching", () => {
+  const expectedIndexes = [
+    "RecurringItem_pkey",
+    "RecurringItem_userId_categoryId_idx",
+    "RecurringItem_userId_cadence_idx",
+    "RecurringItem_userId_status_idx",
+  ];
+
+  it("accepts the approved index set regardless of database return order", () => {
+    expect(exactNameSetMatches([
+      "RecurringItem_userId_status_idx",
+      "RecurringItem_userId_cadence_idx",
+      "RecurringItem_userId_categoryId_idx",
+      "RecurringItem_pkey",
+    ], expectedIndexes)).toBe(true);
+  });
+
+  it("still rejects missing or extra index names", () => {
+    expect(exactNameSetMatches(expectedIndexes.slice(0, -1), expectedIndexes)).toBe(false);
+    expect(exactNameSetMatches([...expectedIndexes, "unexpected_idx"], expectedIndexes)).toBe(false);
   });
 });
 
