@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import {
+  exactNameSetMatches,
   migrationProfileFor,
   primaryAndForeignKeyNames,
 } from "./preview-migration-integrity-core.mjs";
@@ -222,7 +223,7 @@ async function runPost(prisma, stateFile, expectedCountsJson, profile) {
   }
   for (const [tableName, expected] of Object.entries(profile.tables)) {
     if (!equalValues(await tableColumns(prisma, tableName), expected.columns)) fail("EXPECTED_COLUMNS_MISMATCH");
-    if (!equalValues(await tableIndexes(prisma, tableName), expected.indexes)) fail("EXPECTED_INDEXES_MISMATCH");
+    if (!exactNameSetMatches(await tableIndexes(prisma, tableName), expected.indexes)) fail("EXPECTED_INDEXES_MISMATCH");
     if (!equalValues(await tableConstraints(prisma, tableName), expected.constraints)) fail("EXPECTED_CONSTRAINTS_MISMATCH");
     if (await prisma[expected.delegate].count() !== 0) fail("EXPECTED_TABLE_NOT_EMPTY");
   }
