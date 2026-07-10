@@ -110,7 +110,9 @@ function BudgetExperience() {
     setCategories(snapshot.categories);
     setBudgets(snapshot.budgets);
     setArchivedCount(snapshot.archivedCount);
-    setCategoryId((current) => current || snapshot.categories[0]?.id || "");
+    const budgeted = new Set(snapshot.budgets.filter((budget) => budget.status === "ACTIVE").map((budget) => budget.categoryId));
+    const available = snapshot.categories.filter((category) => !budgeted.has(category.id));
+    setCategoryId((current) => available.some((category) => category.id === current) ? current : available[0]?.id || "");
   }
 
   useEffect(() => {
