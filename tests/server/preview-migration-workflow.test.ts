@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 
 const workflow = readFileSync(new URL("../../.github/workflows/preview-prisma-migrate.yml", import.meta.url), "utf8");
 const integrityScript = readFileSync(new URL("../../scripts/preview-migration-integrity.mjs", import.meta.url), "utf8");
+const integrityCore = readFileSync(new URL("../../scripts/preview-migration-integrity-core.mjs", import.meta.url), "utf8");
+const integritySources = `${integrityScript}\n${integrityCore}`;
 
 describe("Preview Prisma migration workflow integrity", () => {
   it("is main-only and maps Preview-only secrets", () => {
@@ -54,7 +56,7 @@ describe("Preview Prisma migration workflow integrity", () => {
       "c.contype IN ('p', 'f')",
       "exactNameSetMatches",
     ]) {
-      expect(integrityScript).toContain(expected);
+      expect(integritySources).toContain(expected);
     }
   });
 
