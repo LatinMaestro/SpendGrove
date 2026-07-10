@@ -1,12 +1,25 @@
 # Phase 4 Milestone 1 Preview Migration Plan
 
-Status: exact schema and unexecuted migration files prepared in PR 4.1A; awaiting explicit client approval before any Preview migration
+Status: Preview migration applied once and verified; PR 4.2 may proceed; no Production migration
 
-Date: 9 July 2026
+Date: 10 July 2026
 
 Related contract: `docs/PHASE_4_MILESTONE_1_CONTRACT.md`
 
 Schema PR: PR 4.1A / GitHub PR #108
+
+## Execution and verification evidence
+
+- PR #108 merged as `f2d5e040294e05dd4c2d7641f171727aaad944cd`.
+- Workflow checker update PR #109 merged as `06d88cf147ccce03f261c5a109a768c56d192017`.
+- Original Preview workflow run `29060523217` passed preflight and `prisma migrate deploy`, applying `20260708090000_phase_4_recurring_budgets_foundation` once. Its post-check stopped at the safe false-negative code `EXPECTED_INDEXES_MISMATCH`.
+- Order-insensitive verification correction PR #110 merged as `be53523040ba9a13b48d42408968fabf4b91c922`.
+- A first verify-only input attempt, run `29072876988`, failed at confirmation because the migrate confirmation phrase was supplied; every database step was skipped.
+- Corrected verification-only run `29072916307` completed green from `main` at `be53523040ba9a13b48d42408968fabf4b91c922`.
+- The corrected run confirmed the expected migration once, no failed migration state, exact approved enums/tables/indexes/foreign keys, zero rows in all three new Phase 4 tables and unchanged safe aggregate counts for existing tables.
+- Preview-only secrets were present and masked. No Production secret was mapped.
+- The verify-only run skipped both pre-migration and `prisma migrate deploy` steps.
+- No Production migration ran.
 
 ## Purpose
 
@@ -252,10 +265,8 @@ No Production migration is authorised.
 
 Do not use Production secrets, Production database URLs, `prisma migrate dev`, `prisma migrate reset`, manual SQL, automatic retry, rollback SQL or migration history resolution without explicit approval.
 
-## Stop point
+## Gate resolution
 
-Stop after PR #108 is merged.
+The Preview migration gate is resolved.
 
-Do not dispatch any Preview migration workflow until the client explicitly approves the exact committed migration files.
-
-Do not begin PR 4.2 until the Preview migration succeeds and is verified.
+PR 4.2 may proceed under the approved Phase 4 Milestone 1 contract. Do not run migrate mode again for this migration. No further Preview migration and no Production migration are authorised without separate explicit approval.
