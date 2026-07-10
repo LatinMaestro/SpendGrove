@@ -40,12 +40,14 @@ function evidence(input: {
     categoryId,
     merchantProfile: merchantProfileId ? {
       id: merchantProfileId,
+      userId: input.userId ?? "user_1",
       name: "Stream Service",
       isActive: true,
       deletedAt: null,
     } : null,
     category: categoryId ? {
       id: categoryId,
+      userId: input.userId ?? "user_1",
       name: "Streaming / subscriptions",
       isArchived: false,
       deletedAt: null,
@@ -198,6 +200,13 @@ describe("deterministic recurring suggestions", () => {
       evidence({ id: "parent", date: "2026-04-01T00:00:00.000Z", splitRole: "PARENT" }),
       evidence({ id: "transfer", date: "2026-04-01T00:00:00.000Z", type: "TRANSFER" }),
       evidence({ id: "no_merchant", date: "2026-04-01T00:00:00.000Z", merchantProfileId: null }),
+      {
+        ...evidence({ id: "foreign_relation", date: "2026-04-01T00:00:00.000Z" }),
+        merchantProfile: {
+          ...evidence({ id: "merchant_helper", date: "2026-04-01T00:00:00.000Z" }).merchantProfile!,
+          userId: "user_2",
+        },
+      },
     ];
 
     const suggestions = detectRecurringSuggestions("user_1", [
