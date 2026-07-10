@@ -52,6 +52,7 @@ describe("Preview Prisma migration workflow integrity", () => {
       "EXPECTED_TABLE_NOT_EMPTY",
       "EXISTING_ROW_COUNTS_CHANGED",
       "c.contype IN ('p', 'f')",
+      "exactNameSetMatches",
     ]) {
       expect(integrityScript).toContain(expected);
     }
@@ -59,8 +60,21 @@ describe("Preview Prisma migration workflow integrity", () => {
 
   it("uses the safe pre-migration aggregate baseline for verification-only mode", () => {
     expect(workflow).toContain("--expected-counts-json");
-    for (const table of ["User", "Transaction", "Property", "LoanAccount", "LoanRepayment", "LoanReconciliationLink", "PropertyTransactionLink"]) {
-      expect(workflow).toContain(`"${table}":`);
+    const expectedBaseline = {
+      User: 1,
+      Category: 51,
+      Transaction: 1500,
+      ImportBatch: 15,
+      ImportRow: 1568,
+      Property: 2,
+      LoanAccount: 3,
+      LoanRepayment: 23,
+      LoanReconciliationLink: 22,
+      PropertyTransactionLink: 6,
+      PropertyReportReview: 11,
+    };
+    for (const [table, count] of Object.entries(expectedBaseline)) {
+      expect(workflow).toContain(`"${table}":${count}`);
     }
   });
 
