@@ -24,12 +24,14 @@ export type RecurringEvidenceRecord = {
   categoryId: string | null;
   merchantProfile: {
     id: string;
+    userId: string;
     name: string;
     isActive: boolean;
     deletedAt?: Date | string | null;
   } | null;
   category: {
     id: string;
+    userId: string;
     name: string;
     isArchived: boolean;
     deletedAt?: Date | string | null;
@@ -280,9 +282,12 @@ export function detectRecurringSuggestions(
       || !record.merchantProfileId
       || !record.categoryId
       || !record.merchantProfile?.isActive
+      || record.merchantProfile.userId !== userId
       || record.merchantProfile.deletedAt
-      || record.category?.isArchived
-      || record.category?.deletedAt
+      || !record.category
+      || record.category.userId !== userId
+      || record.category.isArchived
+      || record.category.deletedAt
       || !evidenceMatchesType(record)
       || !Number.isInteger(record.amountCents)
     ) {
@@ -455,6 +460,7 @@ export function createPrismaRecurringStore(prisma: PrismaClient = getPrismaClien
           merchantProfile: {
             select: {
               id: true,
+              userId: true,
               name: true,
               isActive: true,
               deletedAt: true,
@@ -463,6 +469,7 @@ export function createPrismaRecurringStore(prisma: PrismaClient = getPrismaClien
           category: {
             select: {
               id: true,
+              userId: true,
               name: true,
               isArchived: true,
               deletedAt: true,
