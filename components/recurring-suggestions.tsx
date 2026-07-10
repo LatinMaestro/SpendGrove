@@ -95,6 +95,17 @@ async function readSnapshot(response: Response): Promise<RecurringSnapshotResult
   }
 }
 
+async function requestSnapshot(init?: RequestInit): Promise<RecurringSnapshotResult> {
+  try {
+    return readSnapshot(await fetch("/api/account/recurring", {
+      cache: "no-store",
+      ...init,
+    }));
+  } catch {
+    return { ok: false, error: "Recurring items could not be loaded safely. Check your connection and try again." };
+  }
+}
+
 function SignedOutRecurringCard() {
   return (
     <section className="mt-5 rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6">
@@ -145,7 +156,7 @@ function RecurringExperience() {
     let cancelled = false;
     async function load() {
       setIsReady(false);
-      const result = await readSnapshot(await fetch("/api/account/recurring", { cache: "no-store" }));
+      const result = await requestSnapshot();
       if (cancelled) return;
       if (result.ok) applySnapshot(result);
       else setError(result.error);
@@ -163,11 +174,11 @@ function RecurringExperience() {
     setBusyKey(busy);
     setError("");
     setMessage("");
-    const result = await readSnapshot(await fetch("/api/account/recurring", {
+    const result = await requestSnapshot({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
-    }));
+    });
     setBusyKey(null);
     if (!result.ok) {
       setError(result.error);
@@ -284,7 +295,7 @@ function RecurringExperience() {
         </div>
         <div>
           <p className="text-sm font-semibold text-brand-teal">Recurring and subscriptions</p>
-          <h2 id="recurring-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review recurring payments</h2>
+          <h2 id="recurring-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review recurring items</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
             Suggestions use matching cleaned merchants, categories, amounts and repeat intervals. Nothing becomes recurring until you confirm it.
           </p>
