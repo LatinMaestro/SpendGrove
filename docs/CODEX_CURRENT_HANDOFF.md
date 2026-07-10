@@ -34,7 +34,7 @@ Last updated: 10 July 2026
 
 ## Active PR 4.2 work
 
-Branch: `codex/phase-4-recurring-suggestions`.
+PR: [#111](https://github.com/LatinMaestro/SpendGrove/pull/111) from branch `codex/phase-4-recurring-suggestions`.
 
 Approved implementation:
 
@@ -54,8 +54,9 @@ Current online branch changes include the server detector/lifecycle service, aut
 ## Verification status
 
 - PR #110 verification: 78 test files / 477 tests passed and production build passed on Vercel.
-- PR 4.2 branch verification is pending publication/checks.
-- No Vercel status should be treated as green until the branch deployment completes or a documented account-rate limit is confirmed.
+- The first PR #111 Vercel attempt was blocked before build by the documented account build-rate limit; this was not an application failure.
+- A fresh Vercel build is required before merge.
+- No Vercel status should be treated as green until tests, type-check and production build complete.
 
 ## Exact next action
 
