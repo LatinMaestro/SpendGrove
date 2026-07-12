@@ -76,9 +76,11 @@ function createMemoryStore() {
 
   const store: CategoryBudgetPersistenceStore & {
     budgets: DbCategoryBudget[];
+    categories: typeof categories;
     audits: Array<Record<string, unknown>>;
   } = {
     budgets,
+    categories,
     audits,
     async listCategories(userId) {
       return categories
@@ -147,6 +149,18 @@ function createMemoryStore() {
       const item = budgets.find((candidate) => candidate.id === budgetId && candidate.userId === userId && candidate.status === "ACTIVE");
       if (!item || new Date(item.updatedAt).getTime() !== expectedUpdatedAt.getTime()) return null;
       Object.assign(item, { status: "ARCHIVED", archivedAt: now, updatedAt: now });
+      audits.push(audit);
+      return item;
+    },
+    async restore(userId, budgetId, expectedUpdatedAt, now, audit) {
+      const item = budgets.find((candidate) => candidate.id === budgetId && candidate.userId === userId && candidate.status === "ARCHIVED");
+      if (!item || new Date(item.updatedAt).getTime() !== expectedUpdatedAt.getTime()) return null;
+      const categoryRecord = categories.find((candidate) => candidate.id === item.categoryId && candidate.userId === userId && candidate.active);
+      if (!categoryRecord) throw new Error("Choose an active expense category before restoring this budget.");
+      if (budgets.some((candidate) => candidate.id !== budgetId && candidate.userId === userId && candidate.categoryId === item.categoryId && candidate.status === "ACTIVE")) {
+        throw new CategoryBudgetDuplicateError();
+      }
+      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: now });
       audits.push(audit);
       return item;
     },
@@ -238,6 +252,28 @@ describe("category budget lifecycle", () => {
     expect(snapshot.budgets[0].status).toBe("ARCHIVED");
     expect(snapshot.archivedCount).toBe(1);
 
+    const archived = snapshot.budgets[0];
+    snapshot = await applyCategoryBudgetMutation(context, {
+      action: "RESTORE",
+      budgetId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store, new Date("2026-07-11T03:00:00.000Z"));
+    expect(snapshot.budgets[0]).toMatchObject({
+      status: "ACTIVE",
+      categoryLabel: "Other spending",
+      amountCents: 65000,
+    });
+    expect(snapshot.archivedCount).toBe(0);
+    expect(store.audits.at(-1)).toMatchObject({
+      entityType: "CATEGORY_BUDGET",
+      action: "RESTORED",
+      metadata: {
+        reasonCode: "BUDGET_RESTORED",
+        periodCode: "MONTHLY",
+        methodCode: "USER_RESTORED",
+      },
+    });
+
     expect(JSON.stringify(store.audits)).not.toMatch(/50000|65000|Groceries|Other spending|transaction/i);
   });
 
@@ -270,6 +306,56 @@ describe("category budget lifecycle", () => {
       categoryId: budget.categoryId,
       amountCents: 60000,
     }, store)).rejects.toThrow(/changed since/i);
+  });
+
+  it("rejects stale, cross-user, inactive-category and duplicate-active budget restores", async () => {
+    const store = createMemoryStore();
+    const context = createTestUserContext("user_1");
+    let snapshot = await applyCategoryBudgetMutation(context, {
+      action: "CREATE",
+      categoryId: "category_groceries",
+      amountCents: 50000,
+    }, store, new Date("2026-07-01T00:00:00.000Z"));
+    const active = snapshot.budgets[0];
+    snapshot = await applyCategoryBudgetMutation(context, {
+      action: "ARCHIVE",
+      budgetId: active.id,
+      updatedAt: active.updatedAt,
+    }, store, new Date("2026-07-11T00:00:00.000Z"));
+    const archived = snapshot.budgets[0];
+
+    await expect(applyCategoryBudgetMutation(context, {
+      action: "RESTORE",
+      budgetId: archived.id,
+      updatedAt: "2026-07-10T00:00:00.000Z",
+    }, store)).rejects.toThrow(/changed since/i);
+
+    await expect(applyCategoryBudgetMutation(createTestUserContext("user_2"), {
+      action: "RESTORE",
+      budgetId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store)).rejects.toThrow(/changed since/i);
+
+    const categoryRecord = store.categories.find((item) => item.id === archived.categoryId)!;
+    categoryRecord.active = false;
+    await expect(applyCategoryBudgetMutation(context, {
+      action: "RESTORE",
+      budgetId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store)).rejects.toThrow(/active expense category/i);
+    categoryRecord.active = true;
+
+    store.budgets.push(budgetRecord({
+      id: "budget_duplicate",
+      categoryId: archived.categoryId,
+      status: "ACTIVE",
+      archivedAt: null,
+    }));
+    await expect(applyCategoryBudgetMutation(context, {
+      action: "RESTORE",
+      budgetId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store)).rejects.toThrow(/already exists/i);
   });
 
   it("accepts positive integer cents only", async () => {

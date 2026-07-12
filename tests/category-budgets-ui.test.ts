@@ -17,11 +17,13 @@ describe("category budget UI and API boundaries", () => {
       "Over budget",
       "Save budget changes",
       "Archive this monthly budget?",
+      "Archived budgets",
+      "Restore budget",
       "You choose each amount",
     ]) {
       expect(component).toContain(copy);
     }
-    expect(component).not.toMatch(/automatic budget|rollover|weekly budget|fortnightly budget|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation/i);
+    expect(component).not.toMatch(/automatic budget|rollover|weekly budget|fortnightly budget|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation|due soon|overdue|reminder/i);
   });
 
   it("places budgets on Home without adding a navigation tab", async () => {

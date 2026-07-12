@@ -4,6 +4,7 @@ import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import {
   applyRecurringMutation,
   getRecurringSnapshot,
+  RecurringItemDuplicateError,
 } from "@/src/server/recurring-suggestions";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +17,11 @@ function safeRecurringError(error: unknown) {
     if (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError") {
       return "Sign in to review recurring suggestions.";
     }
-    if (error.name === "RecurringSuggestionUnavailableError" || error.name === "RecurringItemConflictError") {
+    if (
+      error.name === "RecurringSuggestionUnavailableError"
+      || error.name === "RecurringItemConflictError"
+      || error instanceof RecurringItemDuplicateError
+    ) {
       return error.message;
     }
     if (

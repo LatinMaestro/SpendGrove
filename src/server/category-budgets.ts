@@ -74,6 +74,7 @@ export type CategoryBudgetPersistenceStore = {
   create(userId: string, input: BudgetWrite, audit: SafeAuditWrite, now: Date): Promise<DbCategoryBudget>;
   update(userId: string, budgetId: string, expectedUpdatedAt: Date, input: BudgetWrite, audit: SafeAuditWrite): Promise<DbCategoryBudget | null>;
   archive(userId: string, budgetId: string, expectedUpdatedAt: Date, now: Date, audit: SafeAuditWrite): Promise<DbCategoryBudget | null>;
+  restore(userId: string, budgetId: string, expectedUpdatedAt: Date, audit: SafeAuditWrite): Promise<DbCategoryBudget | null>;
 };
 
 export class CategoryBudgetConflictError extends Error {
@@ -109,6 +110,11 @@ export const categoryBudgetMutationSchema = z.discriminatedUnion("action", [
   }).strict(),
   z.object({
     action: z.literal("ARCHIVE"),
+    budgetId: budgetIdSchema,
+    updatedAt: z.string().datetime(),
+  }).strict(),
+  z.object({
+    action: z.literal("RESTORE"),
     budgetId: budgetIdSchema,
     updatedAt: z.string().datetime(),
   }).strict(),
@@ -354,6 +360,57 @@ export function createPrismaCategoryBudgetStore(
         }) as unknown as DbCategoryBudget;
       });
     },
+    async restore(userId, budgetId, expectedUpdatedAt, audit) {
+      return prisma.$transaction(async (transaction) => {
+        const archived = await transaction.categoryBudget.findFirst({
+          where: {
+            id: budgetId,
+            userId,
+            status: "ARCHIVED",
+            updatedAt: expectedUpdatedAt,
+          },
+          include: { category: true },
+        });
+        if (!archived) return null;
+        if (
+          archived.category.userId !== userId
+          || archived.category.type !== "EXPENSE"
+          || archived.category.isArchived
+          || archived.category.deletedAt
+        ) {
+          throw new Error("Restore is unavailable because this expense category is no longer active.");
+        }
+        const duplicate = await transaction.categoryBudget.findFirst({
+          where: {
+            userId,
+            id: { not: budgetId },
+            categoryId: archived.categoryId,
+            period: "MONTHLY",
+            status: "ACTIVE",
+          },
+          select: { id: true },
+        });
+        if (duplicate) throw new CategoryBudgetDuplicateError();
+        const result = await transaction.categoryBudget.updateMany({
+          where: {
+            id: budgetId,
+            userId,
+            status: "ARCHIVED",
+            updatedAt: expectedUpdatedAt,
+          },
+          data: {
+            status: "ACTIVE",
+            archivedAt: null,
+          },
+        });
+        if (result.count !== 1) return null;
+        await transaction.auditEvent.create({ data: audit });
+        return transaction.categoryBudget.findFirst({
+          where: { id: budgetId, userId },
+          include: { category: true },
+        }) as unknown as DbCategoryBudget;
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    },
   };
 }
 
@@ -445,6 +502,18 @@ export async function applyCategoryBudgetMutation(
       }),
     );
     if (!archived) throw new CategoryBudgetConflictError();
+  }
+
+  if (request.action === "RESTORE") {
+    const restored = await store.restore(
+      user.userId,
+      request.budgetId,
+      new Date(request.updatedAt),
+      safeAudit(user.userId, "UPDATED", "BUDGET_RESTORED", request.budgetId, {
+        stateCode: "ACTIVE",
+      }),
+    );
+    if (!restored) throw new CategoryBudgetConflictError();
   }
 
   return snapshotForUser(user.userId, store, now);

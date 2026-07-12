@@ -125,6 +125,12 @@ function createMemoryStore(initialEvidence = monthlyEvidence()) {
       dismissed.add(suggestionKey);
       audits.push({ ...audit, entityId: "dismissal_1" });
     },
+    async undoDismissal(_userId, suggestionKey, audit) {
+      if (!dismissed.has(suggestionKey)) return null;
+      dismissed.delete(suggestionKey);
+      audits.push({ ...audit, entityId: "dismissal_1" });
+      return { id: "dismissal_1" };
+    },
     async update(userId, itemId, expectedUpdatedAt, input, audit) {
       const item = items.find((candidate) => (
         candidate.id === itemId
@@ -146,6 +152,25 @@ function createMemoryStore(initialEvidence = monthlyEvidence()) {
       ));
       if (!item) return null;
       Object.assign(item, { status: "ARCHIVED", archivedAt: now, updatedAt: now });
+      audits.push(audit);
+      return item;
+    },
+    async restore(userId, itemId, expectedUpdatedAt, now, audit) {
+      const item = items.find((candidate) => (
+        candidate.id === itemId
+        && candidate.userId === userId
+        && candidate.status === "ARCHIVED"
+        && new Date(candidate.updatedAt).getTime() === expectedUpdatedAt.getTime()
+      ));
+      if (!item) return null;
+      const duplicate = items.some((candidate) => (
+        candidate.id !== item.id
+        && candidate.userId === userId
+        && candidate.status === "ACTIVE"
+        && candidate.label.trim().toLowerCase() === item.label.trim().toLowerCase()
+      ));
+      if (duplicate) throw new Error("An equivalent active recurring item already exists.");
+      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: now });
       audits.push(audit);
       return item;
     },
@@ -265,12 +290,30 @@ describe("recurring suggestion lifecycle", () => {
     }, store);
 
     expect(snapshot.suggestions).toEqual([]);
+    expect(snapshot.dismissedSuggestions).toMatchObject([{ key: suggestion.key }]);
     expect(store.items).toEqual([]);
     expect(store.dismissed).toContain(suggestion.key);
     expect(store.audits[0]).toMatchObject({
       entityType: "RECURRING_SUGGESTION_DISMISSAL",
       metadata: { reasonCode: "RECURRING_SUGGESTION_DISMISSED" },
     });
+
+    const restored = await applyRecurringMutation(context, {
+      action: "UNDO_DISMISSAL",
+      suggestionKey: suggestion.key,
+    }, store);
+
+    expect(restored.dismissedSuggestions).toEqual([]);
+    expect(restored.suggestions).toMatchObject([{ key: suggestion.key }]);
+    expect(store.audits[1]).toMatchObject({
+      entityType: "RECURRING_SUGGESTION_DISMISSAL",
+      action: "DELETED",
+      metadata: {
+        reasonCode: "RECURRING_SUGGESTION_DISMISSAL_UNDONE",
+        methodCode: "USER_UNDO",
+      },
+    });
+    expect(JSON.stringify(store.audits[1])).not.toContain(suggestion.key);
   });
 
   it("supports safe edit, stale-edit rejection and archive", async () => {
@@ -315,6 +358,74 @@ describe("recurring suggestion lifecycle", () => {
       updatedAt: current.updatedAt,
     }, store, new Date("2026-07-10T02:00:00.000Z"));
     expect(snapshot.items[0].status).toBe("ARCHIVED");
+
+    const archived = snapshot.items[0];
+    snapshot = await applyRecurringMutation(context, {
+      action: "RESTORE",
+      itemId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store, new Date("2026-07-10T03:00:00.000Z"));
+    expect(snapshot.items[0]).toMatchObject({
+      status: "ACTIVE",
+      label: "Edited recurring item",
+      expectedAmountCents: -1600,
+      cadence: "MONTHLY",
+      nextExpectedDate: "2026-04-02",
+    });
+    expect(store.audits.at(-1)).toMatchObject({
+      entityType: "RECURRING_ITEM",
+      action: "RESTORED",
+      metadata: {
+        reasonCode: "RECURRING_ITEM_RESTORED",
+        methodCode: "USER_RESTORED",
+      },
+    });
+  });
+
+  it("rejects stale, cross-user and duplicate-active recurring restores", async () => {
+    const store = createMemoryStore();
+    const context = createTestUserContext("user_1");
+    const suggestion = (await getRecurringSnapshot(context, store)).suggestions[0];
+    let snapshot = await applyRecurringMutation(context, {
+      action: "CONFIRM",
+      suggestionKey: suggestion.key,
+      label: suggestion.label,
+      expectedAmountCents: suggestion.expectedAmountCents,
+      cadence: suggestion.cadence,
+      nextExpectedDate: suggestion.nextExpectedDate,
+    }, store, new Date("2026-07-10T00:00:00.000Z"));
+    const active = snapshot.items[0];
+    snapshot = await applyRecurringMutation(context, {
+      action: "ARCHIVE",
+      itemId: active.id,
+      updatedAt: active.updatedAt,
+    }, store, new Date("2026-07-10T01:00:00.000Z"));
+    const archived = snapshot.items[0];
+
+    await expect(applyRecurringMutation(context, {
+      action: "RESTORE",
+      itemId: archived.id,
+      updatedAt: "2026-07-09T00:00:00.000Z",
+    }, store)).rejects.toThrow(/changed since/i);
+
+    await expect(applyRecurringMutation(createTestUserContext("user_2"), {
+      action: "RESTORE",
+      itemId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store)).rejects.toThrow(/changed since/i);
+
+    store.items.push({
+      ...store.items[0],
+      id: "recurring_duplicate",
+      status: "ACTIVE",
+      archivedAt: null,
+      updatedAt: "2026-07-10T02:00:00.000Z",
+    });
+    await expect(applyRecurringMutation(context, {
+      action: "RESTORE",
+      itemId: archived.id,
+      updatedAt: archived.updatedAt,
+    }, store)).rejects.toThrow(/equivalent active recurring item/i);
   });
 
   it("rejects private identifiers in user-confirmed labels", () => {
