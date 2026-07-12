@@ -434,7 +434,7 @@ The client is temporarily away from the Vercel environment and explicitly deferr
 
 ### Milestone 2 - Recurring and Budget Lifecycle Recovery
 
-Status: active and authorised under Autonomous Phase Delivery Mode.
+Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Objective:
 
@@ -450,17 +450,25 @@ Controlling documents:
 - docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md;
 - docs/DEFERRED_CLIENT_RETESTING.md.
 
-Approved sequence:
+Completed sequence:
 
-1. PR 4.6 - contract, no-schema assessment and deferred testing register.
-2. PR 4.7 - recurring and budget lifecycle recovery.
-3. PR 4.8 - regression hardening, QA and consolidated deferred client package.
+1. PR 4.6 - contract, no-schema assessment and deferred testing register: #115, merge `9dde5423db6934718e369e66cc9b3f1759bf26ce`.
+2. PR 4.7 - recurring and budget lifecycle recovery: #116, merge `71f0b5a50cf6ec65839b83935e779ea5c2ccb59f`.
+3. PR 4.8 - regression QA and consolidated deferred client package.
+
+Evidence:
+
+- 84 test files / 513 tests passed;
+- TypeScript/lint validity and clean production build passed;
+- Preview deployment `CnC9hWFjjRmwx9p4rKhHdVxxmHrC` is Ready;
+- main deployment `91RcdUep4v6E21iFRvnt5TTHX8Bx` is Ready;
+- public Home, Transactions, Import and Loans routes returned HTTP 200.
 
 Schema assessment: no schema change or migration is required. Use existing ACTIVE/ARCHIVED, archivedAt, updatedAt and owned dismissal-key fields. Stop if this changes.
 
 No reminder behaviour is included. nextExpectedDate remains display context only. No push, email, SMS, due-status threshold, background schedule or external provider is authorised.
 
-After PR 4.8, Milestones 1 and 2 remain open pending deferred client retesting. Do not formally accept or close either milestone on the client's behalf.
+Milestones 1 and 2 remain open pending deferred client retesting. Do not formally accept or close either milestone on the client's behalf.
 
 Strict exclusions: no Preview or Production migration, changed recurring thresholds, fuzzy matching, changed budget formulas, rollover, automatic transaction linking, reminder infrastructure, new navigation, tax advice, Property/net-worth statistics, loan forecasting, Basiq, AI, payments, household mode, document storage, package/provider/secret/environment change or unrelated later module.
 

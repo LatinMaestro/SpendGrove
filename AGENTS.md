@@ -131,9 +131,9 @@ PR 3C.10 merged in #99 as `96262b347c5ae0d99366bd4d0ab73e2e54f45ef7`. PR 3C.11 m
 
 Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights completed implementation and QA on 12 July 2026. It is technically verified but remains open because client Vercel retesting is deferred. The client explicitly authorised continued development before acceptance. Preserve all Milestone 1 features and the checklist in docs/DEFERRED_CLIENT_RETESTING.md.
 
-Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery is active under Autonomous Phase Delivery Mode. Its controlling contract is docs/PHASE_4_MILESTONE_2_CONTRACT.md and its no-schema assessment is docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md.
+Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery completed implementation and technical QA on 12 July 2026. It remains open because client Vercel retesting is deferred. Its controlling contract is docs/PHASE_4_MILESTONE_2_CONTRACT.md, its no-schema assessment is docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md, and its QA evidence is docs/PHASE_4_MILESTONE_2_SUMMARY.md.
 
-Approved Milestone 2 sequence:
+Completed Milestone 2 sequence:
 
 - PR 4.6 - lifecycle contract, no-schema assessment and deferred testing register;
 - PR 4.7 - recurring and budget lifecycle recovery;
@@ -142,6 +142,8 @@ Approved Milestone 2 sequence:
 Milestone 2 may use only existing RecurringItem, RecurringSuggestionDismissal and CategoryBudget lifecycle fields. It may restore archived recurring items and budgets and explicitly undo an owned dismissal preference. It must not change recurring thresholds, budget/dashboard formulas, split/transfer/refund rules or no-double-count behaviour.
 
 No reminder or notification behaviour is authorised. No push, email, SMS, background scheduling, due-status threshold, new provider, package, secret, environment variable, navigation change, schema change or migration is authorised.
+
+PR #115 merged as `9dde5423db6934718e369e66cc9b3f1759bf26ce`. PR #116 merged as `71f0b5a50cf6ec65839b83935e779ea5c2ccb59f`; 84 test files / 513 tests, TypeScript/lint validity and the production build passed, and main deployment `91RcdUep4v6E21iFRvnt5TTHX8Bx` is Ready.
 
 Both Phase 4 Milestones 1 and 2 must remain open pending explicit client acceptance after deferred retesting.
 

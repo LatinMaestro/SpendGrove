@@ -91,7 +91,16 @@ Status: pending deferred client retesting
 
 ## Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery
 
-Status: add implementation results and final links after PR 4.8
+Status: implemented, merged, deployed and technically verified; pending deferred client retesting
+
+Delivery evidence:
+
+- contract/no-schema PR #115 merged as `9dde5423db6934718e369e66cc9b3f1759bf26ce`;
+- lifecycle recovery PR #116 merged as `71f0b5a50cf6ec65839b83935e779ea5c2ccb59f`;
+- 84 test files / 513 tests passed;
+- TypeScript/lint validity and clean production build passed;
+- canonical review URL: https://spendgrove.vercel.app;
+- main deployment `91RcdUep4v6E21iFRvnt5TTHX8Bx` is Ready.
 
 ### Recurring lifecycle recovery
 
