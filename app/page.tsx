@@ -16,9 +16,9 @@ export default function HomePage() {
     <AppShell>
       <OnboardingPrompt />
 
-      <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
+      <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft" aria-labelledby="home-overview-heading">
         <p className="text-sm font-semibold text-white/75">Your everyday money</p>
-        <h2 className="mt-2 text-3xl font-bold leading-tight">See what matters this month.</h2>
+        <h2 id="home-overview-heading" className="mt-2 text-3xl font-bold leading-tight">See what matters this month.</h2>
         <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">
           Review your spending, budgets and regular payments without connecting your bank.
         </p>
