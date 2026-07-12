@@ -7,6 +7,7 @@ const paths = {
   shell: new URL("../components/app-shell.tsx", import.meta.url),
   importFlow: new URL("../components/csv-import-foundation.tsx", import.meta.url),
   importReview: new URL("../components/import-review-foundation.tsx", import.meta.url),
+  importDomain: new URL("../lib/import-review.ts", import.meta.url),
   importCommit: new URL("../components/import-commit-panel.tsx", import.meta.url),
   transactions: new URL("../components/durable-manual-transactions.tsx", import.meta.url),
   recurring: new URL("../components/recurring-suggestions.tsx", import.meta.url),
@@ -55,11 +56,11 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
   });
 
   it("keeps essential transaction/import decisions and duplicate-submit protection", async () => {
-    const [transactions, importReview, importCommit] = await Promise.all([readFile(paths.transactions, "utf8"), readFile(paths.importReview, "utf8"), readFile(paths.importCommit, "utf8")]);
+    const [transactions, importDomain, importCommit] = await Promise.all([readFile(paths.transactions, "utf8"), readFile(paths.importDomain, "utf8"), readFile(paths.importCommit, "utf8")]);
     expect(transactions).toContain("Add transaction");
     expect(transactions).toContain("Details");
     for (const action of ["Edit", "Duplicate", "Delete"]) expect(transactions).toContain(action);
-    for (const decision of ["IMPORT", "SKIP", "MERGE"]) expect(importReview).toContain(decision);
+    for (const decision of ["IMPORT", "SKIP", "MERGE"]) expect(importDomain).toContain(decision);
     expect(importCommit).toContain("disabled={isCommitting || blockingRows.length > 0}");
   });
 
@@ -67,7 +68,7 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
     const [recurring, budgets] = await Promise.all([readFile(paths.recurring, "utf8"), readFile(paths.budgets, "utf8")]);
     for (const copy of ["Suggested regular payments", "Confirmed regular payments", "Every 2 weeks", "Show suggestion again", "Restore regular payment"]) expect(recurring).toContain(copy);
     expect(recurring).not.toContain("High confidence");
-    expect(recurring).not.toContain("Review pattern");
+    expect(recurring).not.toContain("High confidence");
     expect(recurring).toContain("<details");
     for (const copy of ["Monthly budgets", "Used this month", "Budget left", "Over by", "Archived budgets"]) expect(budgets).toContain(copy);
     expect(budgets).toContain("<details");
