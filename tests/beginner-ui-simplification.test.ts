@@ -37,6 +37,7 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
     expect(home).toContain("Import transactions");
     expect(home).toContain("Review transactions");
     expect(home).toContain("See what matters this month.");
+    expect(home).toContain('aria-labelledby="home-overview-heading"');
     expect(home).not.toContain("<FeatureCard");
     expect(home).not.toContain("Privacy stays visible");
     expect(navigation).not.toContain('label: "Reports"');
