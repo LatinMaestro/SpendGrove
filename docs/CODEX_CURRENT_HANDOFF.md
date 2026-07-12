@@ -62,7 +62,7 @@ Approved implementation:
 
 ## Exact next action
 
-The first PR 4.4 Vercel check was blocked before build by the rolling account build-rate limit; this was not an application failure. One unchanged-scope retry was requested after waiting for the throttle window.
+The first PR 4.4 Vercel check was blocked before build by the rolling account build-rate limit; this was not an application failure. One unchanged-scope retry was requested after waiting for the throttle window. The client reported the usage rate available again on 12 July 2026, so one fresh unchanged-scope Vercel build was requested.
 
 Publish PR 4.4 as one focused online GitHub change, run full tests/type/build, fix only in-scope failures, merge when green and privacy-safe, verify main, then complete PR 4.5 QA and the client review package.
 
