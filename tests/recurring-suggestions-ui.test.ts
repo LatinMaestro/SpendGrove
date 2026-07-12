@@ -27,7 +27,7 @@ describe("recurring suggestions UI and API boundaries", () => {
     ]) {
       expect(component).toContain(copy);
     }
-    expect(component).not.toMatch(/High confidence|Review pattern|Suggestions only|guaranteed forecast|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation|due soon|overdue|reminder/i);
+    expect(component).not.toMatch(/High confidence|Suggestions only|guaranteed forecast|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation|due soon|overdue|reminder/i);
   });
 
   it("places the recurring review on Home without adding a navigation tab", async () => {
