@@ -50,7 +50,8 @@ describe("Property record-keeping activity", () => {
     expect(component).toContain("Transactions you chose to link to this property.");
     expect(component).toContain("Linking does not change the transaction, category or amount.");
     expect(component).toContain("Nothing is counted twice.");
-    expect(component).not.toMatch(/deduct|EOFY|tax advice|profit|yield|equity|valuation|net worth/i);
+    expect(component).toContain("Record keeping only - not tax advice.");
+    expect(component).not.toMatch(/deduct|EOFY|profit|yield|equity|valuation|net worth/i);
     expect(component).not.toMatch(/reduce\(|totalCents|average|percentage/);
   });
 });
