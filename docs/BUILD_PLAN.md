@@ -407,46 +407,50 @@ Strict exclusions remain: no Production migration, new Preview migration without
 
 ## Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights
 
-Status: active and approved under Autonomous Phase Delivery Mode.
+Status: implementation and QA complete; parked for client retesting. Not formally closed.
 
-Controlling contract: `docs/PHASE_4_MILESTONE_1_CONTRACT.md`.
+Controlling contract: docs/PHASE_4_MILESTONE_1_CONTRACT.md.
 
-Approved sequence:
+Completed sequence:
 
-1. PR 4.0 - recurring, budget and insight contract.
-2. PR 4.1 / 4.1A - schema foundation and exact Preview migration plan/files.
-3. PR 4.2 - reviewable recurring/subscription suggestions.
-4. PR 4.3 - category budgets.
-5. PR 4.4 - everyday dashboard and trend insight foundation.
-6. PR 4.5 - QA and client review package.
+1. PR 4.0 contract merged in #106.
+2. PR 4.1 migration-plan document merged in #107.
+3. PR 4.1A exact schema and unexecuted migration merged in #108.
+4. Preview checker hardening merged in #109 and #110.
+5. PR 4.2 recurring suggestions merged in #111.
+6. PR 4.3 category budgets merged in #112.
+7. PR 4.4 everyday dashboard/trends merged in #113.
+8. PR 4.5 QA and client review package is in docs/PHASE_4_MILESTONE_1_SUMMARY.md.
 
-Schema and migration gate evidence:
+Schema and migration evidence:
 
-- PR #108 schema foundation merged as `f2d5e040294e05dd4c2d7641f171727aaad944cd`.
-- Preview deploy run `29060523217` applied `20260708090000_phase_4_recurring_budgets_foundation` once.
-- Checker correction PR #110 merged as `be53523040ba9a13b48d42408968fabf4b91c922`.
-- Verification-only run `29072916307` completed green from `main`, confirming exact approved schema, empty `RecurringItem`, `RecurringSuggestionDismissal` and `CategoryBudget` tables, and unchanged existing aggregate counts.
+- Preview migration 20260708090000_phase_4_recurring_budgets_foundation was applied once by run 29060523217.
+- Verification-only run 29072916307 confirmed the exact approved schema, empty new tables and unchanged existing aggregate counts.
 - Preview-only secrets were used and masked; no Production secret was mapped.
-- No Production migration ran. Do not run the Phase 4 migration again.
+- No further Preview migration ran for functional PRs.
+- No Production migration has run.
 
-PR 4.2 implementation rule:
+Delivered:
 
-- deterministic suggestions only;
-- same active owned safe merchant profile and category;
-- same transaction type and exact signed integer-cent amount for the conservative initial amount threshold;
-- weekly 6-8 day, fortnightly 13-16 day and monthly 27-34 day interval windows;
-- three or more matching occurrences produce a high-confidence suggestion;
-- two matching occurrences produce a review suggestion;
-- ambiguous evidence produces no suggestion;
-- user confirmation is required before durable recurring state;
-- user may dismiss, edit and archive;
-- no private source fields, biller contact, money movement, forecast guarantee, Basiq or AI.
+- deterministic user-reviewed recurring/subscription suggestions;
+- safe confirm, dismiss, edit and archive lifecycle;
+- user-entered monthly category budgets;
+- explicit active-owned everyday expense budget progress;
+- current-month spending and category overview;
+- active budget progress and confirmed recurring list on Home;
+- transparent previous-month comparison;
+- preserved split, transfer, refund and loan no-double-count rules.
 
-Remaining scope:
+Final functional evidence:
 
-- PR 4.3 monthly category budgets;
-- PR 4.4 contract-approved everyday dashboard and transparent trend insights;
-- PR 4.5 QA and client review package.
+- PR #113 merge commit 67a185839b3c67fd136fb9abbdd528944107aea9;
+- 84 test files / 511 tests passed;
+- TypeScript/lint validity and clean production build passed;
+- main deployment Cqz59vm8BQ1TtHjTS94otLGnaFZf is Ready;
+- canonical https://spendgrove.vercel.app;
+- public /, /transactions, /import and /loans routes returned HTTP 200.
+
+Stop for client retesting. Do not formally close the milestone or begin another milestone without client acceptance and separate approval.
 
 Strict exclusions remain: no Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, loan-balance forecasting, debt or credit advice, Basiq, AI, payments, household mode, document storage, new navigation tabs or later modules.
 
