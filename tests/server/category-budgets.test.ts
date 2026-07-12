@@ -152,7 +152,7 @@ function createMemoryStore() {
       audits.push(audit);
       return item;
     },
-    async restore(userId, budgetId, expectedUpdatedAt, now, audit) {
+    async restore(userId, budgetId, expectedUpdatedAt, audit) {
       const item = budgets.find((candidate) => candidate.id === budgetId && candidate.userId === userId && candidate.status === "ARCHIVED");
       if (!item || new Date(item.updatedAt).getTime() !== expectedUpdatedAt.getTime()) return null;
       const categoryRecord = categories.find((candidate) => candidate.id === item.categoryId && candidate.userId === userId && candidate.active);
@@ -160,7 +160,7 @@ function createMemoryStore() {
       if (budgets.some((candidate) => candidate.id !== budgetId && candidate.userId === userId && candidate.categoryId === item.categoryId && candidate.status === "ACTIVE")) {
         throw new CategoryBudgetDuplicateError();
       }
-      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: now });
+      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: new Date("2026-07-11T03:00:00.000Z") });
       audits.push(audit);
       return item;
     },
@@ -266,11 +266,11 @@ describe("category budget lifecycle", () => {
     expect(snapshot.archivedCount).toBe(0);
     expect(store.audits.at(-1)).toMatchObject({
       entityType: "CATEGORY_BUDGET",
-      action: "RESTORED",
+      action: "UPDATED",
       metadata: {
         reasonCode: "BUDGET_RESTORED",
         periodCode: "MONTHLY",
-        methodCode: "USER_RESTORED",
+        stateCode: "ACTIVE",
       },
     });
 

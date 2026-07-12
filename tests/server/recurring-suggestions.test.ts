@@ -126,10 +126,10 @@ function createMemoryStore(initialEvidence = monthlyEvidence()) {
       audits.push({ ...audit, entityId: "dismissal_1" });
     },
     async undoDismissal(_userId, suggestionKey, audit) {
-      if (!dismissed.has(suggestionKey)) return null;
+      if (!dismissed.has(suggestionKey)) return false;
       dismissed.delete(suggestionKey);
       audits.push({ ...audit, entityId: "dismissal_1" });
-      return { id: "dismissal_1" };
+      return true;
     },
     async update(userId, itemId, expectedUpdatedAt, input, audit) {
       const item = items.find((candidate) => (
@@ -155,7 +155,7 @@ function createMemoryStore(initialEvidence = monthlyEvidence()) {
       audits.push(audit);
       return item;
     },
-    async restore(userId, itemId, expectedUpdatedAt, now, audit) {
+    async restore(userId, itemId, expectedUpdatedAt, audit) {
       const item = items.find((candidate) => (
         candidate.id === itemId
         && candidate.userId === userId
@@ -170,7 +170,7 @@ function createMemoryStore(initialEvidence = monthlyEvidence()) {
         && candidate.label.trim().toLowerCase() === item.label.trim().toLowerCase()
       ));
       if (duplicate) throw new Error("An equivalent active recurring item already exists.");
-      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: now });
+      Object.assign(item, { status: "ACTIVE", archivedAt: null, updatedAt: new Date("2026-07-10T03:00:00.000Z") });
       audits.push(audit);
       return item;
     },
@@ -374,10 +374,10 @@ describe("recurring suggestion lifecycle", () => {
     });
     expect(store.audits.at(-1)).toMatchObject({
       entityType: "RECURRING_ITEM",
-      action: "RESTORED",
+      action: "UPDATED",
       metadata: {
         reasonCode: "RECURRING_ITEM_RESTORED",
-        methodCode: "USER_RESTORED",
+        stateCode: "ACTIVE",
       },
     });
   });
