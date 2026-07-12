@@ -116,10 +116,10 @@ describe("Property transaction links", () => {
   it("keeps UI wording neutral and requires explicit unlink confirmation", async () => {
     const panel = await readFile(panelPath, "utf8");
 
-    expect(panel).toContain("Property record keeping");
+    expect(panel).toContain("Property records");
     expect(panel).toContain("Link transaction to Property");
     expect(panel).toContain("Confirm unlink");
-    expect(panel).toContain("does not change this transaction or create another payment");
+    expect(panel).toContain("The transaction and Property will remain unchanged.");
     expect(panel).not.toMatch(/deduct|EOFY|tax advice|profit|yield|equity|valuation|net worth/i);
   });
 });
