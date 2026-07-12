@@ -15,6 +15,7 @@ const paths = {
   property: new URL("../components/property-record-keeping-activity.tsx", import.meta.url),
   settings: new URL("../components/settings-panel.tsx", import.meta.url),
   settingsPage: new URL("../app/settings/page.tsx", import.meta.url),
+  navigation: new URL("../components/bottom-nav.tsx", import.meta.url),
   recurringServer: new URL("../src/server/recurring-suggestions.ts", import.meta.url),
   budgetServer: new URL("../src/server/category-budgets.ts", import.meta.url),
 };
@@ -32,12 +33,14 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
   });
 
   it("gives Home one dominant entry action and removes repeated feature cards", async () => {
-    const home = await readFile(paths.home, "utf8");
+    const [home, navigation] = await Promise.all([readFile(paths.home, "utf8"), readFile(paths.navigation, "utf8")]);
     expect(home).toContain("Import transactions");
     expect(home).toContain("Review transactions");
     expect(home).toContain("See what matters this month.");
     expect(home).not.toContain("<FeatureCard");
     expect(home).not.toContain("Privacy stays visible");
+    expect(navigation).not.toContain('label: "Reports"');
+    expect(navigation).not.toContain('label: "Properties"');
   });
 
   it("uses progressive disclosure for mapping, review options and advanced tools", async () => {
