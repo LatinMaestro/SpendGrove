@@ -17,12 +17,16 @@ describe("recurring suggestions UI and API boundaries", () => {
       "Dismiss suggestion",
       "Save changes",
       "Archive",
+      "Dismissed suggestions",
+      "Show suggestion again",
+      "Archived recurring items",
+      "Restore recurring item",
       "Nothing becomes recurring until you confirm it",
       "do not move money",
     ]) {
       expect(component).toContain(copy);
     }
-    expect(component).not.toMatch(/guaranteed forecast|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation/i);
+    expect(component).not.toMatch(/guaranteed forecast|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation|due soon|overdue|reminder/i);
   });
 
   it("places the recurring review on Home without adding a navigation tab", async () => {

@@ -21,7 +21,10 @@ function safeBudgetError(error: unknown) {
     if (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError") {
       return "Sign in to manage category budgets.";
     }
-    if (error.message === "Choose an active expense category.") return error.message;
+    if (
+      error.message === "Choose an active expense category."
+      || error.message === "Restore is unavailable because this expense category is no longer active."
+    ) return error.message;
   }
   return "We could not update category budgets safely. Refresh and try again.";
 }

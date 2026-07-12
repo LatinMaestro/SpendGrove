@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Archive, CalendarClock, CheckCircle2, Pencil, Repeat2, X } from "lucide-react";
+import { Archive, CalendarClock, CheckCircle2, Pencil, Repeat2, RotateCcw, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
@@ -35,7 +35,7 @@ type RecurringItem = {
 };
 
 type RecurringSnapshotResult =
-  | { ok: true; suggestions: Suggestion[]; items: RecurringItem[] }
+  | { ok: true; suggestions: Suggestion[]; dismissedSuggestions: Suggestion[]; items: RecurringItem[] }
   | { ok: false; error: string };
 
 type RecurringDraft = {
@@ -132,6 +132,7 @@ function SignedOutRecurringCard() {
 
 function RecurringExperience() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [dismissedSuggestions, setDismissedSuggestions] = useState<Suggestion[]>([]);
   const [items, setItems] = useState<RecurringItem[]>([]);
   const [drafts, setDrafts] = useState<Record<string, RecurringDraft>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -142,10 +143,11 @@ function RecurringExperience() {
 
   function applySnapshot(snapshot: Extract<RecurringSnapshotResult, { ok: true }>) {
     setSuggestions(snapshot.suggestions);
+    setDismissedSuggestions(snapshot.dismissedSuggestions);
     setItems(snapshot.items);
     setDrafts((current) => {
       const next = { ...current };
-      for (const suggestion of snapshot.suggestions) {
+      for (const suggestion of [...snapshot.suggestions, ...snapshot.dismissedSuggestions]) {
         next[suggestion.key] ??= suggestionDraft(suggestion);
       }
       return next;
@@ -167,7 +169,7 @@ function RecurringExperience() {
   }, []);
 
   const activeItems = useMemo(() => items.filter((item) => item.status === "ACTIVE"), [items]);
-  const archivedCount = items.length - activeItems.length;
+  const archivedItems = useMemo(() => items.filter((item) => item.status === "ARCHIVED"), [items]);
 
   async function mutate(payload: Record<string, unknown>, busy: string, successMessage: string) {
     if (busyKey) return;
@@ -237,6 +239,21 @@ function RecurringExperience() {
       itemId: item.id,
       updatedAt: item.updatedAt,
     }, item.id, "Recurring item archived.");
+  }
+
+  function restoreItem(item: RecurringItem) {
+    void mutate({
+      action: "RESTORE",
+      itemId: item.id,
+      updatedAt: item.updatedAt,
+    }, item.id, "Recurring item restored. No transaction or payment was created.");
+  }
+
+  function undoDismissal(suggestion: Suggestion) {
+    void mutate({
+      action: "UNDO_DISMISSAL",
+      suggestionKey: suggestion.key,
+    }, suggestion.key, "The suggestion is available for review again.");
   }
 
   function DraftFields({ draftKey, draft, disabled }: Readonly<{ draftKey: string; draft: RecurringDraft; disabled: boolean }>) {
@@ -359,7 +376,32 @@ function RecurringExperience() {
           </div>
 
           <div className="mt-6 border-t border-border pt-5">
-            <p className="text-sm font-semibold text-brand-teal">Confirmed items</p>
+            <p className="text-sm font-semibold text-brand-teal">Dismissed suggestions</p>
+            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{dismissedSuggestions.length} still match current data</h3>
+            {dismissedSuggestions.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">No dismissed suggestion currently matches an active recurring pattern.</p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {dismissedSuggestions.map((suggestion) => (
+                  <article key={suggestion.key} className="rounded-3xl border border-border bg-surface-mint/50 p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-lg font-bold text-brand-deepTeal">{suggestion.label}</p>
+                        <p className="mt-1 text-sm text-brand-deepTeal/65">{suggestion.categoryLabel} · {formatAudFromCents(suggestion.expectedAmountCents)} · {cadenceLabels[suggestion.cadence]}</p>
+                        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">This pattern is still present in current reviewed transactions.</p>
+                      </div>
+                      <button type="button" disabled={busyKey === suggestion.key} onClick={() => undoDismissal(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                        <RotateCcw aria-hidden="true" className="h-4 w-4" /> Show suggestion again
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-6 border-t border-border pt-5">
+            <p className="text-sm font-semibold text-brand-teal">Active recurring items</p>
             <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{activeItems.length} active</h3>
             {activeItems.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Confirmed recurring items will appear here. They are planning records and do not move money.</p>
@@ -406,7 +448,31 @@ function RecurringExperience() {
                 })}
               </div>
             )}
-            {archivedCount > 0 && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">{archivedCount} archived recurring item{archivedCount === 1 ? "" : "s"} kept outside the active list.</p>}
+          </div>
+
+          <div className="mt-6 border-t border-border pt-5">
+            <p className="text-sm font-semibold text-brand-teal">Archived recurring items</p>
+            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{archivedItems.length} archived</h3>
+            {archivedItems.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived recurring items will appear here and can be restored.</p>
+            ) : (
+              <div className="mt-3 space-y-3">
+                {archivedItems.map((item) => (
+                  <article key={item.id} className="rounded-3xl border border-border p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-lg font-bold text-brand-deepTeal">{item.label}</p>
+                        <p className="mt-1 text-sm text-brand-deepTeal/65">{item.categoryLabel ?? "Category unavailable"} · {item.expectedAmountCents === null ? "Amount not set" : formatAudFromCents(item.expectedAmountCents)} · {cadenceLabels[item.cadence]}</p>
+                        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Restore first if you want to edit this planning record.</p>
+                      </div>
+                      <button type="button" disabled={busyKey === item.id} onClick={() => restoreItem(item)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                        <RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore recurring item
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

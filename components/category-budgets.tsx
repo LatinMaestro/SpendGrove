@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Archive, Pencil, PiggyBank, Plus } from "lucide-react";
+import { Archive, Pencil, PiggyBank, Plus, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
@@ -94,7 +94,6 @@ function BudgetExperience() {
   const [monthLabel, setMonthLabel] = useState("");
   const [categories, setCategories] = useState<BudgetCategory[]>([]);
   const [budgets, setBudgets] = useState<CategoryBudget[]>([]);
-  const [archivedCount, setArchivedCount] = useState(0);
   const [categoryId, setCategoryId] = useState("");
   const [amountInput, setAmountInput] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -109,7 +108,6 @@ function BudgetExperience() {
     setMonthLabel(snapshot.month.label);
     setCategories(snapshot.categories);
     setBudgets(snapshot.budgets);
-    setArchivedCount(snapshot.archivedCount);
     const budgeted = new Set(snapshot.budgets.filter((budget) => budget.status === "ACTIVE").map((budget) => budget.categoryId));
     const available = snapshot.categories.filter((category) => !budgeted.has(category.id));
     setCategoryId((current) => available.some((category) => category.id === current) ? current : available[0]?.id || "");
@@ -130,6 +128,10 @@ function BudgetExperience() {
 
   const activeBudgets = useMemo(
     () => budgets.filter((budget) => budget.status === "ACTIVE"),
+    [budgets],
+  );
+  const archivedBudgets = useMemo(
+    () => budgets.filter((budget) => budget.status === "ARCHIVED"),
     [budgets],
   );
   const budgetedCategoryIds = useMemo(
@@ -202,6 +204,14 @@ function BudgetExperience() {
       budgetId: budget.id,
       updatedAt: budget.updatedAt,
     }, budget.id, "Monthly category budget archived.");
+  }
+
+  function restoreBudget(budget: CategoryBudget) {
+    void mutate({
+      action: "RESTORE",
+      budgetId: budget.id,
+      updatedAt: budget.updatedAt,
+    }, budget.id, "Monthly category budget restored. No transaction was changed.");
   }
 
   return (
@@ -309,7 +319,31 @@ function BudgetExperience() {
                 })}
               </div>
             )}
-            {archivedCount > 0 && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">{archivedCount} archived budget{archivedCount === 1 ? "" : "s"} kept outside the active list.</p>}
+          </div>
+
+          <div className="mt-6 border-t border-border pt-5">
+            <p className="text-sm font-semibold text-brand-teal">Archived budgets</p>
+            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{archivedBudgets.length} archived</h3>
+            {archivedBudgets.length === 0 ? (
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived monthly budgets will appear here and can be restored.</p>
+            ) : (
+              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+                {archivedBudgets.map((budget) => (
+                  <article key={budget.id} className="rounded-3xl border border-border p-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-lg font-bold text-brand-deepTeal">{budget.categoryLabel}</p>
+                        <p className="mt-1 text-sm text-brand-deepTeal/65">{formatAudFromCents(budget.amountCents)} monthly budget</p>
+                        <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Restore first if you want to edit this planning target.</p>
+                      </div>
+                      <button type="button" disabled={busyKey === budget.id} onClick={() => restoreBudget(budget)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                        <RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore budget
+                      </button>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

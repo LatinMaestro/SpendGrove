@@ -101,7 +101,7 @@ type SafeAuditWrite = {
   userId: string;
   entityType: "RECURRING_ITEM" | "RECURRING_SUGGESTION_DISMISSAL";
   entityId?: string;
-  action: "CREATED" | "UPDATED" | "ARCHIVED";
+  action: "CREATED" | "UPDATED" | "ARCHIVED" | "DELETED";
   metadata: Prisma.InputJsonObject;
 };
 
@@ -113,6 +113,8 @@ export type RecurringPersistenceStore = {
   dismiss(userId: string, suggestionKey: string, audit: SafeAuditWrite, now: Date): Promise<void>;
   update(userId: string, itemId: string, expectedUpdatedAt: Date, input: RecurringItemWrite, audit: SafeAuditWrite): Promise<DbRecurringItem | null>;
   archive(userId: string, itemId: string, expectedUpdatedAt: Date, now: Date, audit: SafeAuditWrite): Promise<DbRecurringItem | null>;
+  restore(userId: string, itemId: string, expectedUpdatedAt: Date, audit: SafeAuditWrite): Promise<DbRecurringItem | null>;
+  undoDismissal(userId: string, suggestionKey: string, audit: SafeAuditWrite): Promise<boolean>;
 };
 
 export class RecurringSuggestionUnavailableError extends Error {
@@ -126,6 +128,13 @@ export class RecurringItemConflictError extends Error {
   constructor() {
     super("That recurring item changed since you opened it. Refresh before trying again.");
     this.name = "RecurringItemConflictError";
+  }
+}
+
+export class RecurringItemDuplicateError extends Error {
+  constructor() {
+    super("An equivalent active recurring item already exists. Keep this item archived or edit the active item.");
+    this.name = "RecurringItemDuplicateError";
   }
 }
 
@@ -168,6 +177,15 @@ export const recurringMutationSchema = z.discriminatedUnion("action", [
     action: z.literal("ARCHIVE"),
     itemId: itemIdSchema,
     updatedAt: z.string().datetime(),
+  }).strict(),
+  z.object({
+    action: z.literal("RESTORE"),
+    itemId: itemIdSchema,
+    updatedAt: z.string().datetime(),
+  }).strict(),
+  z.object({
+    action: z.literal("UNDO_DISMISSAL"),
+    suggestionKey: suggestionKeySchema,
   }).strict(),
 ]);
 
@@ -408,14 +426,18 @@ async function loadRecurringState(userId: string, store: RecurringPersistenceSto
     store.listDismissedKeys(userId),
     store.listItems(userId),
   ]);
-  const detected = detectRecurringSuggestions(userId, evidence, dismissedKeys);
-  return { detected, items };
+  const allDetected = detectRecurringSuggestions(userId, evidence);
+  const dismissed = new Set(dismissedKeys);
+  const detected = allDetected.filter((suggestion) => !dismissed.has(suggestion.key));
+  const dismissedDetected = allDetected.filter((suggestion) => dismissed.has(suggestion.key));
+  return { detected, dismissedDetected, items };
 }
 
 async function snapshotForUser(userId: string, store: RecurringPersistenceStore) {
-  const { detected, items } = await loadRecurringState(userId, store);
+  const { detected, dismissedDetected, items } = await loadRecurringState(userId, store);
   return {
     suggestions: withoutConfirmedSuggestions(detected, items),
+    dismissedSuggestions: withoutConfirmedSuggestions(dismissedDetected, items),
     items: items.map(toItemView).sort((left, right) => (
       Number(left.status === "ARCHIVED") - Number(right.status === "ARCHIVED")
       || left.label.localeCompare(right.label)
@@ -573,6 +595,53 @@ export function createPrismaRecurringStore(prisma: PrismaClient = getPrismaClien
         }) as unknown as Promise<DbRecurringItem | null>;
       });
     },
+    async restore(userId, itemId, expectedUpdatedAt, audit) {
+      return prisma.$transaction(async (tx) => {
+        const archived = await tx.recurringItem.findFirst({
+          where: { id: itemId, userId, status: "ARCHIVED", updatedAt: expectedUpdatedAt },
+          include: recurringItemInclude,
+        });
+        if (!archived) return null;
+        const activeCandidates = await tx.recurringItem.findMany({
+          where: {
+            userId,
+            status: "ACTIVE",
+            categoryId: archived.categoryId,
+            transactionType: archived.transactionType,
+            expectedAmountCents: archived.expectedAmountCents,
+            cadence: archived.cadence,
+          },
+          select: { label: true },
+        });
+        if (activeCandidates.some((candidate) => normalizedLabel(candidate.label) === normalizedLabel(archived.label))) {
+          throw new RecurringItemDuplicateError();
+        }
+        const result = await tx.recurringItem.updateMany({
+          where: { id: itemId, userId, status: "ARCHIVED", updatedAt: expectedUpdatedAt },
+          data: { status: "ACTIVE", archivedAt: null },
+        });
+        if (result.count !== 1) return null;
+        await tx.auditEvent.create({ data: audit });
+        return tx.recurringItem.findFirst({
+          where: { id: itemId, userId },
+          include: recurringItemInclude,
+        }) as unknown as Promise<DbRecurringItem | null>;
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    },
+    async undoDismissal(userId, suggestionKey, audit) {
+      return prisma.$transaction(async (tx) => {
+        const existing = await tx.recurringSuggestionDismissal.findUnique({
+          where: { userId_suggestionKey: { userId, suggestionKey } },
+          select: { id: true },
+        });
+        if (!existing) return false;
+        await tx.recurringSuggestionDismissal.delete({
+          where: { userId_suggestionKey: { userId, suggestionKey } },
+        });
+        await tx.auditEvent.create({ data: { ...audit, entityId: existing.id } });
+        return true;
+      });
+    },
   };
 }
 
@@ -667,6 +736,37 @@ export async function applyRecurringMutation(
       }),
     );
     if (!archived) throw new RecurringItemConflictError();
+  }
+
+  if (request.action === "RESTORE") {
+    const restored = await store.restore(
+      user.userId,
+      request.itemId,
+      new Date(request.updatedAt),
+      safeAudit(user.userId, "RECURRING_ITEM", "UPDATED", "RECURRING_ITEM_RESTORED", request.itemId, {
+        stateCode: "ACTIVE",
+      }),
+    );
+    if (!restored) throw new RecurringItemConflictError();
+  }
+
+  if (request.action === "UNDO_DISMISSAL") {
+    const snapshot = await snapshotForUser(user.userId, store);
+    const suggestion = snapshot.dismissedSuggestions.find((candidate) => candidate.key === request.suggestionKey);
+    if (!suggestion) throw new RecurringSuggestionUnavailableError();
+    const undone = await store.undoDismissal(
+      user.userId,
+      request.suggestionKey,
+      safeAudit(
+        user.userId,
+        "RECURRING_SUGGESTION_DISMISSAL",
+        "DELETED",
+        "RECURRING_SUGGESTION_DISMISSAL_UNDONE",
+        undefined,
+        { methodCode: "USER_UNDO" },
+      ),
+    );
+    if (!undone) throw new RecurringSuggestionUnavailableError();
   }
 
   return snapshotForUser(user.userId, store);
