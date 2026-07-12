@@ -405,54 +405,64 @@ Final accepted evidence:
 
 Strict exclusions remain: no Production migration, new Preview migration without separate approval, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Home dashboard statistics, automatic Property matching, transaction allocation/splitting, documents/receipts/storage, Basiq, AI, payments, household mode, Phase 4, recurring, budgets, insights, new navigation tabs or later modules.
 
-## Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights
+## Phase 4 - Recurring, Budgets and Everyday Insights
 
-Status: implementation and QA complete; parked for client retesting. Not formally closed.
+### Milestone 1 - Foundations
 
-Controlling contract: docs/PHASE_4_MILESTONE_1_CONTRACT.md.
-
-Completed sequence:
-
-1. PR 4.0 contract merged in #106.
-2. PR 4.1 migration-plan document merged in #107.
-3. PR 4.1A exact schema and unexecuted migration merged in #108.
-4. Preview checker hardening merged in #109 and #110.
-5. PR 4.2 recurring suggestions merged in #111.
-6. PR 4.3 category budgets merged in #112.
-7. PR 4.4 everyday dashboard/trends merged in #113.
-8. PR 4.5 QA and client review package is in docs/PHASE_4_MILESTONE_1_SUMMARY.md.
-
-Schema and migration evidence:
-
-- Preview migration 20260708090000_phase_4_recurring_budgets_foundation was applied once by run 29060523217.
-- Verification-only run 29072916307 confirmed the exact approved schema, empty new tables and unchanged existing aggregate counts.
-- Preview-only secrets were used and masked; no Production secret was mapped.
-- No further Preview migration ran for functional PRs.
-- No Production migration has run.
+Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Delivered:
 
-- deterministic user-reviewed recurring/subscription suggestions;
+- deterministic reviewable recurring/subscription suggestions;
 - safe confirm, dismiss, edit and archive lifecycle;
 - user-entered monthly category budgets;
-- explicit active-owned everyday expense budget progress;
-- current-month spending and category overview;
-- active budget progress and confirmed recurring list on Home;
-- transparent previous-month comparison;
-- preserved split, transfer, refund and loan no-double-count rules.
+- current-month budget progress;
+- everyday Home spending/category/budget/recurring overview;
+- explicit previous-month comparison;
+- preserved privacy and no-double-count rules.
 
-Final functional evidence:
+Evidence:
 
-- PR #113 merge commit 67a185839b3c67fd136fb9abbdd528944107aea9;
-- 84 test files / 511 tests passed;
+- completed PRs #106-#114;
+- latest verification 84 test files / 511 tests;
 - TypeScript/lint validity and clean production build passed;
-- main deployment Cqz59vm8BQ1TtHjTS94otLGnaFZf is Ready;
-- canonical https://spendgrove.vercel.app;
-- public /, /transactions, /import and /loans routes returned HTTP 200.
+- final main deployment EQhMvit4s8b4SdhsSdZFyE3bMwtZ is Ready;
+- Preview migration 20260708090000_phase_4_recurring_budgets_foundation applied once and verified;
+- no Production migration ran.
 
-Stop for client retesting. Do not formally close the milestone or begin another milestone without client acceptance and separate approval.
+The client is temporarily away from the Vercel environment and explicitly deferred retesting without rejecting or accepting the milestone. The client authorised continued development. Preserve Milestone 1 testability and record any later acceptance feedback as focused hardening.
 
-Strict exclusions remain: no Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, loan-balance forecasting, debt or credit advice, Basiq, AI, payments, household mode, document storage, new navigation tabs or later modules.
+### Milestone 2 - Recurring and Budget Lifecycle Recovery
+
+Status: active and authorised under Autonomous Phase Delivery Mode.
+
+Objective:
+
+- restore archived recurring items;
+- review and undo still-relevant dismissed recurring suggestions;
+- restore archived monthly budgets;
+- make active/archived lifecycle states clear;
+- preserve every Milestone 1 formula and boundary.
+
+Controlling documents:
+
+- docs/PHASE_4_MILESTONE_2_CONTRACT.md;
+- docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md;
+- docs/DEFERRED_CLIENT_RETESTING.md.
+
+Approved sequence:
+
+1. PR 4.6 - contract, no-schema assessment and deferred testing register.
+2. PR 4.7 - recurring and budget lifecycle recovery.
+3. PR 4.8 - regression hardening, QA and consolidated deferred client package.
+
+Schema assessment: no schema change or migration is required. Use existing ACTIVE/ARCHIVED, archivedAt, updatedAt and owned dismissal-key fields. Stop if this changes.
+
+No reminder behaviour is included. nextExpectedDate remains display context only. No push, email, SMS, due-status threshold, background schedule or external provider is authorised.
+
+After PR 4.8, Milestones 1 and 2 remain open pending deferred client retesting. Do not formally accept or close either milestone on the client's behalf.
+
+Strict exclusions: no Preview or Production migration, changed recurring thresholds, fuzzy matching, changed budget formulas, rollover, automatic transaction linking, reminder infrastructure, new navigation, tax advice, Property/net-worth statistics, loan forecasting, Basiq, AI, payments, household mode, document storage, package/provider/secret/environment change or unrelated later module.
 
 ## Phase 5 — Production Readiness
 

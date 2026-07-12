@@ -7,101 +7,108 @@ Last updated: 12 July 2026
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestones 1, 2 and 3 are formally accepted and closed.
 - Phase 3C Milestones 1, 2 and 3 are formally accepted and closed.
-- Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights has completed implementation and QA.
-- The milestone is parked for client retesting. It is not formally closed.
-- Client review package: docs/PHASE_4_MILESTONE_1_SUMMARY.md.
-- Do not begin another milestone until client acceptance and a separately approved plan.
+- Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights is implemented, merged, deployed and technically verified.
+- Phase 4 Milestone 1 is not formally accepted or closed. Client retesting is deferred because the client is temporarily away from the Vercel review environment.
+- The client authorised continued Phase 4 development before completing Milestone 1 retesting. Later feedback may require focused Milestone 1 acceptance hardening.
+- Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery is active under Autonomous Phase Delivery Mode.
+- Controlling Milestone 2 contract: docs/PHASE_4_MILESTONE_2_CONTRACT.md.
+- Schema assessment: docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md.
+- Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
 
-## Completed Phase 4 PR chain
+## Phase 4 Milestone 1 evidence
 
-- PR #106 contract merged as c860637d2f150c2345babf5921eb72fdd352601f.
-- PR #107 migration plan document merged as 157c0b81b0653049403e6722cba41eaa2420a602.
-- PR #108 schema foundation merged as f2d5e040294e05dd4c2d7641f171727aaad944cd.
-- PR #109 Phase 4 Preview checker profile merged as 06d88cf147ccce03f261c5a109a768c56d192017.
-- PR #110 order-insensitive verification correction merged as be53523040ba9a13b48d42408968fabf4b91c922.
-- PR #111 recurring suggestions merged as 9a280eae650a884882be312d32974d73a8c1634d.
-- PR #112 category budgets merged as 723ef41228e79f3405c43120853e5a3658637751.
-- PR #113 everyday dashboard insights merged as 67a185839b3c67fd136fb9abbdd528944107aea9.
-- PR 4.5 is documentation-only QA and the client review stop gate.
+Completed PR chain:
 
-## Schema and migration status
+- #106 contract: c860637d2f150c2345babf5921eb72fdd352601f;
+- #107 migration plan: 157c0b81b0653049403e6722cba41eaa2420a602;
+- #108 schema foundation: f2d5e040294e05dd4c2d7641f171727aaad944cd;
+- #109 Preview checker profile: 06d88cf147ccce03f261c5a109a768c56d192017;
+- #110 verification correction: be53523040ba9a13b48d42408968fabf4b91c922;
+- #111 recurring suggestions: 9a280eae650a884882be312d32974d73a8c1634d;
+- #112 category budgets: 723ef41228e79f3405c43120853e5a3658637751;
+- #113 everyday dashboard: 67a185839b3c67fd136fb9abbdd528944107aea9;
+- #114 QA package: 402a30e4ea216acf2419fa8304377c346f8087c3.
 
-- Preview migration: 20260708090000_phase_4_recurring_budgets_foundation.
-- Deploy run [29060523217](https://github.com/LatinMaestro/SpendGrove/actions/runs/29060523217) applied it once.
-- Verify-only run [29072916307](https://github.com/LatinMaestro/SpendGrove/actions/runs/29072916307) confirmed the exact approved schema, empty new tables and unchanged existing aggregate counts.
-- Preview-only secrets were used and masked; no Production secret was mapped.
-- No further Preview migration ran for PRs #111-#113.
-- No Production migration has run.
-- Do not rerun the Phase 4 migration.
+Technical verification:
 
-## Delivered behaviour
+- 84 test files / 511 tests passed;
+- TypeScript/lint validity passed;
+- clean production build passed;
+- final main deployment EQhMvit4s8b4SdhsSdZFyE3bMwtZ is Ready;
+- canonical URL: https://spendgrove.vercel.app;
+- public /, /transactions, /import and /loans returned HTTP 200.
 
-Recurring:
+Migration:
 
-- deterministic suggestions from active owned safe merchant/category, type, exact signed amount and frozen interval windows;
-- two occurrences produce a review suggestion and three or more produce a clear suggestion;
-- user confirmation is required before durable state;
-- safe confirm, dismiss, edit and archive lifecycle;
-- no payment, merchant contact or forecast.
+- Preview migration 20260708090000_phase_4_recurring_budgets_foundation applied once by run 29060523217;
+- verify-only run 29072916307 confirmed exact schema, empty new tables and unchanged existing aggregate counts;
+- no later Preview migration ran;
+- no Production migration has run.
 
-Budgets:
+Keep all Milestone 1 features visible and testable. Do not record client acceptance until explicitly provided.
 
-- user-entered monthly expense-category budgets;
-- positive integer-cent amounts;
-- create, edit and archive;
-- one active monthly budget per user/category;
-- Brisbane calendar-month progress;
-- active owned everyday expenses only;
-- split parents, income, transfers and analytical loan repayment records excluded;
-- no rollover or automatic budget creation.
+## Phase 4 Milestone 2 objective
 
-Everyday Home overview:
+Improve lifecycle recovery without changing financial calculations:
 
-- current-month spending and eligible transaction count;
-- top spending categories;
-- active budget progress;
-- confirmed recurring items;
-- explicit previous-month comparison;
-- no forecast, advice, Property/tax/net-worth/loan-balance statistic.
+- show active and archived recurring items separately;
+- explicitly restore owned archived recurring items;
+- show still-relevant dismissed recurring suggestions separately;
+- explicitly undo an owned dismissal preference;
+- show active and archived monthly budgets separately;
+- explicitly restore owned archived budgets;
+- preserve all Milestone 1 formulas, privacy rules and no-double-count behaviour.
 
-Everyday transactions remain the only cashflow records.
+No reminders, notifications, due-status thresholds, transaction matching, navigation changes or new financial calculations are included.
 
-## Verification evidence
+## Approved Milestone 2 sequence
 
-- Latest functional verification: 84 test files / 511 tests passed.
-- TypeScript/lint validity checks passed.
-- Clean Next.js production build passed.
-- PR #113 Preview deployment 3YnDyJBnaN12KxBQLS2yLq85kSCU: Ready.
-- PR #113 main merge: 67a185839b3c67fd136fb9abbdd528944107aea9.
-- Main deployment Cqz59vm8BQ1TtHjTS94otLGnaFZf: Ready.
-- Canonical URL: [https://spendgrove.vercel.app](https://spendgrove.vercel.app).
-- Public /, /transactions, /import and /loans routes returned HTTP 200.
-- The initial PR #113 Vercel throttle was an account build-rate block before build, not an application failure; the later unchanged-scope build passed.
+1. PR 4.6 - contract, no-schema assessment and deferred testing register.
+2. PR 4.7 - recurring and budget lifecycle recovery in one coherent implementation batch.
+3. PR 4.8 - regression hardening, QA and consolidated deferred client package.
 
-## Privacy and security state
+After PR 4.8, both Phase 4 Milestones 1 and 2 remain open pending deferred client retesting. Do not formally close either milestone.
 
-No recurring, budget or insight flow persists, logs or displays raw CSV files, raw rows, filenames, raw narration, account identifiers, BSBs, card fragments, customer IDs, loan/lender references, masked identifiers, exact addresses, balances, secrets or connection strings.
+## Schema and migration gate
 
-Reads and writes are user-scoped. Stale recurring/budget edits are rejected. Audit metadata contains safe lifecycle, confidence, method, state and changed-field codes only.
+Milestone 2 uses existing fields:
+
+- RecurringItem ACTIVE/ARCHIVED, archivedAt and updatedAt;
+- RecurringSuggestionDismissal owned safe suggestion key;
+- CategoryBudget ACTIVE/ARCHIVED, archivedAt and updatedAt.
+
+No schema change, migration, package, provider, secret or environment change is expected.
+
+Stop immediately if implementation requires any such change. No Preview migration and no Production migration are authorised.
+
+## Preserved rules
+
+- Recurring thresholds remain exact signed amount plus approved safe merchant/category/type and interval windows.
+- Budgets remain monthly with the unchanged active-owned expense formula.
+- No rollover.
+- Split parents remain excluded and eligible split children included.
+- Income, transfers, deleted/inactive/cross-user rows and analytical loan repayment records remain excluded from budget progress.
+- Everyday transactions remain the only cashflow records.
+- Recurring and budget records remain planning records.
+- Restore and dismissal undo create no transaction, payment or merchant contact.
+- No raw CSV, row, filename, narration, account reference, balance, exact address or private identifier may enter UI, logs or audit metadata.
 
 ## Exact next action
 
-Stop for client retesting using docs/PHASE_4_MILESTONE_1_SUMMARY.md.
+Merge documentation-first PR 4.6, then implement PR 4.7 only within docs/PHASE_4_MILESTONE_2_CONTRACT.md and the no-schema assessment. Use one meaningful Vercel review point for the user-facing implementation batch where capacity permits.
 
-Do not formally close Phase 4 Milestone 1 until the client confirms acceptance. Do not start a next milestone.
+## Explicit exclusions and stop conditions
 
-## Explicit exclusions
-
+- No Preview migration.
 - No Production migration.
-- No further Preview migration without separate explicit approval.
-- No tax advice, automatic deductibility, ATO integration or tax reporting.
-- No Property profit, yield, equity, valuation or net-worth feature.
-- No Property/tax/loan Home statistics or loan-balance forecasting.
-- No debt advice, credit advice or automatic financial advice.
-- No Basiq/live bank connection, AI, payments, biller contact, household mode or document storage.
-- No new navigation tab, package, provider, paid service, secret or environment change.
-- No later module.
+- No new navigation tab.
+- No reminder, notification, background scheduling or external provider.
+- No changed recurring thresholds, fuzzy matching, budget formula, rollover or transaction linking.
+- No tax advice, automatic deductibility, Property/net-worth statistics, loan forecasting, debt/credit advice.
+- No Basiq, AI, payments, household mode or document storage.
+- No package, provider, paid service, secret or environment change.
+- Stop if ownership, stale-write, duplicate-active or dismissal-undo safety cannot be enforced using existing fields.
 
 ## Resume instruction
 
-Resume from repository truth. Read AGENTS.md, docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md, this handoff, docs/PHASE_4_MILESTONE_1_CONTRACT.md, docs/PHASE_4_MILESTONE_1_PREVIEW_MIGRATION_PLAN.md, docs/PHASE_4_MILESTONE_1_SUMMARY.md, docs/BUILD_PLAN.md and docs/DECISION_LOG.md. Preserve the client-retesting stop gate.
+Resume from repository truth. Read AGENTS.md, docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md, this handoff, docs/PHASE_4_MILESTONE_1_CONTRACT.md, docs/PHASE_4_MILESTONE_1_SUMMARY.md, docs/PHASE_4_MILESTONE_2_CONTRACT.md, docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md, docs/DEFERRED_CLIENT_RETESTING.md, docs/BUILD_PLAN.md and docs/DECISION_LOG.md.
