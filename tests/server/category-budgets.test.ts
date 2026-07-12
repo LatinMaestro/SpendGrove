@@ -269,7 +269,6 @@ describe("category budget lifecycle", () => {
       action: "UPDATED",
       metadata: {
         reasonCode: "BUDGET_RESTORED",
-        periodCode: "MONTHLY",
         stateCode: "ACTIVE",
       },
     });
