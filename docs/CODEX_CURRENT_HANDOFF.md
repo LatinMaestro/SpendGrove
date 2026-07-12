@@ -10,7 +10,7 @@ Last updated: 12 July 2026
 - Phase 4 Milestone 1 - Recurring, Budgets and Everyday Insights is implemented, merged, deployed and technically verified.
 - Phase 4 Milestone 1 is not formally accepted or closed. Client retesting is deferred because the client is temporarily away from the Vercel review environment.
 - The client authorised continued Phase 4 development before completing Milestone 1 retesting. Later feedback may require focused Milestone 1 acceptance hardening.
-- Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery is active under Autonomous Phase Delivery Mode.
+- Phase 4 Milestone 2 - Recurring and Budget Lifecycle Recovery is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Controlling Milestone 2 contract: docs/PHASE_4_MILESTONE_2_CONTRACT.md.
 - Schema assessment: docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md.
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
@@ -67,7 +67,23 @@ No reminders, notifications, due-status thresholds, transaction matching, naviga
 2. PR 4.7 - recurring and budget lifecycle recovery in one coherent implementation batch.
 3. PR 4.8 - regression hardening, QA and consolidated deferred client package.
 
-After PR 4.8, both Phase 4 Milestones 1 and 2 remain open pending deferred client retesting. Do not formally close either milestone.
+Completed delivery:
+
+- PR #115 / 4.6 contract, no-schema assessment and deferred register: `9dde5423db6934718e369e66cc9b3f1759bf26ce`;
+- PR #116 / 4.7 lifecycle implementation: `71f0b5a50cf6ec65839b83935e779ea5c2ccb59f`;
+- PR 4.8 records QA and the consolidated deferred client package.
+
+Verification after PR #116:
+
+- 84 test files / 513 tests passed;
+- TypeScript and lint validity passed;
+- clean production build passed;
+- Preview deployment `CnC9hWFjjRmwx9p4rKhHdVxxmHrC` is Ready;
+- merged-main deployment `91RcdUep4v6E21iFRvnt5TTHX8Bx` is Ready;
+- canonical URL: https://spendgrove.vercel.app;
+- public `/`, `/transactions`, `/import` and `/loans` returned HTTP 200.
+
+Both Phase 4 Milestones 1 and 2 remain open pending deferred client retesting. Do not formally close either milestone.
 
 ## Schema and migration gate
 
@@ -95,7 +111,7 @@ Stop immediately if implementation requires any such change. No Preview migratio
 
 ## Exact next action
 
-Merge documentation-first PR 4.6, then implement PR 4.7 only within docs/PHASE_4_MILESTONE_2_CONTRACT.md and the no-schema assessment. Use one meaningful Vercel review point for the user-facing implementation batch where capacity permits.
+Wait for the client to return to the Vercel review environment. Present one consolidated, non-technical checklist from docs/DEFERRED_CLIENT_RETESTING.md covering Phase 4 Milestones 1 and 2. Record feedback as focused acceptance hardening only. Do not accept or close either milestone without explicit client confirmation.
 
 ## Explicit exclusions and stop conditions
 
