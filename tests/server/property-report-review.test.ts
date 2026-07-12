@@ -288,8 +288,8 @@ describe("Phase 3C Property record review", () => {
   it("shows record review without tax claims or private source detail", async () => {
     const component = await readFile(componentPath, "utf8");
     expect(component).toContain("Property records");
-    expect(component).toContain("Australian financial year");
-    expect(component).toContain("Linked records are included automatically");
+    expect(component).toContain("Financial year");
+    expect(component).toContain("This view uses current linked transactions");
     expect(component).toContain("Included because this transaction is linked to this Property");
     expect(component).toContain("Included through a linked loan repayment");
     expect(component).toContain("Record keeping only - not tax advice.");
