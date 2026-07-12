@@ -155,6 +155,62 @@ Delivery evidence:
 - [ ] No new navigation tab appears.
 - [ ] No Basiq, AI, payment, tax, Property/net-worth, loan forecast, household or document feature appears.
 
+## Phase 4 Milestone 3 - Beginner-first UI Simplification
+
+Status: implementation authorised; client review deferred
+
+### Cross-app simplicity
+
+- [ ] Each screen has an obvious next useful action and clear primary-action hierarchy.
+- [ ] Uncommon/destructive actions do not compete with the primary action.
+- [ ] Essential correction, unlink, archive and restore actions remain discoverable.
+- [ ] Empty sections do not clutter screens.
+- [ ] Advanced controls appear only when relevant or deliberately opened.
+- [ ] Explanations are concise and technical terms are replaced with plain English.
+- [ ] Loading, success and error states explain the next step.
+- [ ] Simple Mode remains the default.
+
+### Home and navigation
+
+- [ ] Home feels calm, hides empty sections and clearly presents spending, budgets and regular payments.
+- [ ] Month comparison wording is understandable.
+- [ ] Existing navigation remains clear and no new tab appears.
+
+### Import and transactions
+
+- [ ] Import follows Choose file, confirm mapping when needed, review, then import.
+- [ ] Confident mapping does not force unnecessary controls into view.
+- [ ] Import, Skip and Merge remain obvious and unchanged.
+- [ ] Duplicate and Property detail appears only when relevant.
+- [ ] Transaction rows prioritise date, description/category and amount.
+- [ ] Secondary actions remain reachable without crowding.
+- [ ] Review-before-commit, safe retry and duplicate-submit prevention remain intact.
+
+### Regular payments and budgets
+
+- [ ] Suggested, confirmed, dismissed and archived regular payments are easy to distinguish.
+- [ ] Internal cadence/confidence wording is absent.
+- [ ] Actions appear only for relevant lifecycle states.
+- [ ] Archived items do not compete with active items by default.
+- [ ] Monthly budget, spent and remaining values are clear and calm.
+- [ ] No recurring threshold, budget formula or rollover behaviour changed.
+
+### Loans, Property records and Settings
+
+- [ ] Loan Account, everyday transaction and repayment breakdown are clearly distinguished.
+- [ ] Repayment components and matching detail use progressive disclosure.
+- [ ] Property records remain automatic and reporting appears only when a Property exists.
+- [ ] Settings separates everyday preferences from advanced history/testing tools.
+- [ ] No Reports or Properties tab appears.
+
+### Accessibility and mobile
+
+- [ ] Headings, labels, keyboard focus, touch targets and live errors/status are usable.
+- [ ] Important actions are not unexplained icon-only controls.
+- [ ] Long names wrap safely.
+- [ ] Narrow screens have no horizontal scrolling.
+- [ ] Colour is not the only status signal.
+
 ## Future additions
 
 Every later milestone that remains pending client acceptance must add its non-technical tests to this document. Do not remove completed-but-untested checks until the client explicitly records the result.

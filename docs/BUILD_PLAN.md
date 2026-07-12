@@ -472,6 +472,22 @@ Milestones 1 and 2 remain open pending deferred client retesting. Do not formall
 
 Strict exclusions: no Preview or Production migration, changed recurring thresholds, fuzzy matching, changed budget formulas, rollover, automatic transaction linking, reminder infrastructure, new navigation, tax advice, Property/net-worth statistics, loan forecasting, Basiq, AI, payments, household mode, document storage, package/provider/secret/environment change or unrelated later module.
 
+### Milestone 3 - Beginner-first UI Simplification and Product Polish
+
+Status: approved and active under Autonomous Phase Delivery Mode. Client visual review is deferred.
+
+Objective: simplify presentation and wording across Home, Transactions, Import, regular payments, budgets, Loans, Property records and Settings while preserving all functionality, calculations, privacy and no-double-count rules.
+
+Controlling documents: `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md`, `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md` and `docs/DEFERRED_CLIENT_RETESTING.md`.
+
+Unique internal sequence: 4.12 contract/audit; 4.13 Home/navigation; 4.14 Import/Transactions; 4.15 regular payments/budgets; 4.16 Loans/Property/Settings; 4.17 accessibility/mobile QA. These labels avoid collision with Milestone 2 labels 4.6-4.8.
+
+Schema assessment: no Prisma schema change, Preview migration, Production migration, data rewrite or backfill is required or authorised.
+
+Stop for essential-function removal, calculation/rule change, import semantic change, Property/report change, schema/migration, new navigation tab, major navigation restructuring, dependency/provider/secret/environment change or later-module scope.
+
+After 4.17, Phase 4 Milestones 1, 2 and 3 remain open pending explicit client retesting and acceptance.
+
 ## Phase 5 — Production Readiness
 
 Only begin after client approval.

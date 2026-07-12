@@ -147,6 +147,10 @@ PR #115 merged as `9dde5423db6934718e369e66cc9b3f1759bf26ce`. PR #116 merged as 
 
 Both Phase 4 Milestones 1 and 2 must remain open pending explicit client acceptance after deferred retesting.
 
+Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is approved under Autonomous Phase Delivery Mode. Its controlling contract is `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md` and audit is `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md`. Use internal labels 4.12-4.17 to avoid collision with Milestone 2. It is UI-only: preserve essential functionality, calculations, import semantics, recurring thresholds, budget rules, Property/report rules, privacy and no-double-count behaviour. No schema, migration, new tab, package/provider/secret/environment change or later module is authorised.
+
+Phase 4 Milestones 1, 2 and 3 must all remain open pending explicit client acceptance after deferred retesting.
+
 No Production migration, tax advice, automatic deductibility, ATO integration, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, Basiq, AI, payments, household mode or later module is authorised.
 
 No Production migration is authorised.

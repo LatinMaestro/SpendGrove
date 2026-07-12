@@ -14,6 +14,9 @@ Last updated: 12 July 2026
 - Controlling Milestone 2 contract: docs/PHASE_4_MILESTONE_2_CONTRACT.md.
 - Schema assessment: docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md.
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
+- Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is approved and active under Autonomous Phase Delivery Mode.
+- Its scope is UI-only and uses internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
+- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md and docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -111,7 +114,9 @@ Stop immediately if implementation requires any such change. No Preview migratio
 
 ## Exact next action
 
-Wait for the client to return to the Vercel review environment. Present one consolidated, non-technical checklist from docs/DEFERRED_CLIENT_RETESTING.md covering Phase 4 Milestones 1 and 2. Record feedback as focused acceptance hardening only. Do not accept or close either milestone without explicit client confirmation.
+Implement Phase 4 Milestone 3 only through the frozen beginner-first UI contract: 4.13 Home/navigation, 4.14 Import/Transactions, 4.15 regular payments/budgets, 4.16 Loans/Property/Settings, then 4.17 accessibility/mobile QA. Use coherent batches and one meaningful Vercel gate where practical.
+
+After 4.17, stop with Milestones 1, 2 and 3 open pending deferred client retesting.
 
 ## Explicit exclusions and stop conditions
 
@@ -123,6 +128,8 @@ Wait for the client to return to the Vercel review environment. Present one cons
 - No tax advice, automatic deductibility, Property/net-worth statistics, loan forecasting, debt/credit advice.
 - No Basiq, AI, payments, household mode or document storage.
 - No package, provider, paid service, secret or environment change.
+- Milestone 3 must not remove essential correction, review, archive/restore, unlink or privacy-disclosure access.
+- No financial, recurring, budget, import, duplicate, Property-link, report or export rule may change.
 - Stop if ownership, stale-write, duplicate-active or dismissal-undo safety cannot be enforced using existing fields.
 
 ## Resume instruction
