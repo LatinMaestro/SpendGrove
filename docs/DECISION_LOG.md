@@ -67,6 +67,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 | 2026-07-12 | Select Phase 4 Milestone 2 recurring and budget lifecycle recovery with no reminders and no schema change | Archived and dismissed-state recovery adds everyday value using existing models without introducing ambiguous calculations, notification infrastructure or later-module scope | Codex under client autonomous continuation authority and master specification | Implement explicit recurring restore, current dismissed-suggestion undo, budget restore, active/archived UI and QA through PRs 4.6-4.8; preserve all Milestone 1 formulas and stop if schema/migration becomes necessary |
 | 2026-07-12 | Permit hard deletion only for an explicit undo of an owned recurring-suggestion dismissal preference | RecurringSuggestionDismissal has no archive state and is a non-financial preference; undo must not delete financial or planning records | Codex under approved Milestone 2 contract | Delete only the exact user-owned dismissal row in an atomic audited action; recurring items, budgets and transactions remain non-destructively archived/restored |
 
+| 2026-07-12 | Approve Phase 4 Milestone 3 beginner-first UI simplification using progressive disclosure | Make SpendGrove calm and obvious for first-time budgeting users without adding product scope or changing financial behaviour | Client | Audit every current screen; preserve essential actions and all calculations/rules; use unique internal labels 4.12-4.17 because Milestone 2 already used 4.6-4.8; no schema, migration, navigation tab or new feature |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |
