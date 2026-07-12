@@ -287,8 +287,8 @@ export function ManualTransactions() {
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><LockKeyhole aria-hidden="true" className="h-6 w-6" /></div>
             <div>
-              <p className="text-sm font-semibold text-brand-teal">Browser-local prototype</p>
-              <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Manual transactions</h2>
+              <p className="text-sm font-semibold text-brand-teal">This device</p>
+              <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Transactions on this device</h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-brand-deepTeal/70">Transactions stay in this browser only. This is not cloud sync, production account storage or a runtime database connection.</p>
             </div>
           </div>
@@ -322,10 +322,10 @@ export function ManualTransactions() {
         <section aria-labelledby="transaction-list-heading">
           <div className="flex items-end justify-between gap-4 px-1">
             <div>
-              <p className="text-sm font-semibold text-brand-teal">Your entries</p>
+              <p className="text-sm font-semibold text-brand-teal">Transactions</p>
               <h2 id="transaction-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeTransactions.length} active transaction{activeTransactions.length === 1 ? "" : "s"}</h2>
             </div>
-            <span className="rounded-full bg-surface-mint px-3 py-2 text-xs font-bold text-brand-deepTeal">AUD · Local only</span>
+            
           </div>
           <div className="mt-4 space-y-3">
             {activeTransactions.map((transaction) => {
@@ -342,9 +342,9 @@ export function ManualTransactions() {
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-semibold text-brand-deepTeal">{typeLabels[transaction.type]}</span>
-                      {transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> CSV match hint</span>}
+                      {transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}
                     </div>
-                    <button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">View details</button>
+                    <button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Details</button>
                   </div>
                 </article>
               );

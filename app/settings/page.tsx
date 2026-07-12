@@ -15,8 +15,16 @@ export default function SettingsPage() {
     <AppShell>
       <div className="space-y-5">
         <SettingsPanel />
-        {developmentTestingAvailable && <DevelopmentTransactionResetPanel />}
-        {accountHistoryAvailable && <AccountImportHistoryPanel />}
+        {(accountHistoryAvailable || developmentTestingAvailable) && (
+          <details className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
+            <summary className="cursor-pointer text-lg font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Advanced account tools</summary>
+            <p className="mt-2 text-sm leading-6 text-brand-deepTeal/65">Import history and development testing tools are available here when needed.</p>
+            <div className="mt-4 space-y-5">
+              {accountHistoryAvailable && <AccountImportHistoryPanel />}
+              {developmentTestingAvailable && <DevelopmentTransactionResetPanel />}
+            </div>
+          </details>
+        )}
       </div>
     </AppShell>
   );

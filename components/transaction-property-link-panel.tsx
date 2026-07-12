@@ -127,8 +127,8 @@ export function TransactionPropertyLinkPanel({ transactionId }: Readonly<{ trans
       <div className="flex items-start gap-3">
         <Landmark aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" />
         <div>
-          <h3 id="property-record-keeping-heading" className="font-bold text-brand-deepTeal">Property record keeping</h3>
-          <p className="mt-1 text-sm leading-5 text-brand-deepTeal/65">Optional supporting metadata. Linking does not change this transaction or create another payment.</p>
+          <h3 id="property-record-keeping-heading" className="font-bold text-brand-deepTeal">Property records</h3>
+          <p className="mt-1 text-sm leading-5 text-brand-deepTeal/65">Optional. This helps the transaction appear in property records later.</p>
         </div>
       </div>
 
@@ -142,7 +142,7 @@ export function TransactionPropertyLinkPanel({ transactionId }: Readonly<{ trans
               <p className="font-bold text-brand-deepTeal">{snapshot.link.property.nickname}</p>
               <p className="mt-1 text-sm text-brand-deepTeal/65">{usageLabels[snapshot.link.property.usage]}{snapshot.link.property.isArchived ? " · Archived Property" : ""}</p>
             </div>
-            <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-brand-teal">Linked manually</span>
+            <span className="rounded-full bg-white px-3 py-1.5 text-xs font-bold text-brand-teal">Linked to property</span>
           </div>
 
           {!confirmingUnlink ? (
@@ -178,7 +178,7 @@ export function TransactionPropertyLinkPanel({ transactionId }: Readonly<{ trans
       {!isLoading && snapshot && !snapshot.link && snapshot.properties.length === 0 && (
         <div className="mt-4 rounded-2xl bg-surface-mint p-4">
           <p className="text-sm font-semibold text-brand-deepTeal">No active Properties are available.</p>
-          <Link href="/loans" className="mt-3 inline-flex min-h-10 items-center rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal">Manage Properties in Loans</Link>
+          <Link href="/loans" className="mt-3 inline-flex min-h-10 items-center rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal">Manage properties in Loans</Link>
         </div>
       )}
     </section>

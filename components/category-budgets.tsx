@@ -74,7 +74,7 @@ function SignedOutBudgetCard() {
           <PiggyBank aria-hidden="true" className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-brand-teal">Monthly category budgets</p>
+          <p className="text-sm font-semibold text-brand-teal">Budgets</p>
           <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to create budgets</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
             Set your own monthly category amounts and see progress from reviewed everyday transactions.
@@ -222,9 +222,9 @@ function BudgetExperience() {
         </div>
         <div>
           <p className="text-sm font-semibold text-brand-teal">Monthly category budgets</p>
-          <h2 id="budget-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Plan by category</h2>
+          <h2 id="budget-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Monthly budgets</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-            You choose each amount. Progress uses active everyday expense transactions for the current calendar month.
+            Set a monthly amount for the categories you want to watch.
           </p>
         </div>
       </div>
@@ -237,7 +237,7 @@ function BudgetExperience() {
       ) : (
         <>
           <div className="mt-5 rounded-3xl bg-surface-mint/50 p-4">
-            <p className="text-sm font-bold text-brand-deepTeal">Create a budget for {monthLabel}</p>
+            <p className="text-sm font-bold text-brand-deepTeal">Create a budget</p>
             {availableCategories.length === 0 ? (
               <p className="mt-2 text-sm leading-6 text-brand-deepTeal/65">
                 {categories.length === 0
@@ -265,9 +265,9 @@ function BudgetExperience() {
 
           <div className="mt-6">
             <p className="text-sm font-semibold text-brand-teal">Current budgets</p>
-            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{activeBudgets.length} active for {monthLabel}</h3>
+            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{monthLabel}</h3>
             {activeBudgets.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Your user-entered monthly category budgets will appear here.</p>
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Create your first monthly budget above.</p>
             ) : (
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {activeBudgets.map((budget) => {
@@ -282,11 +282,11 @@ function BudgetExperience() {
                           <p className="mt-1 text-sm text-brand-deepTeal/65">{formatAudFromCents(budget.amountCents)} monthly budget</p>
                         </div>
                         <div className="flex gap-2">
-                          <button type="button" disabled={busy} onClick={() => editing ? setEditingId(null) : startEditing(budget)} aria-label={"Edit " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-brand-teal text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                            <Pencil aria-hidden="true" className="h-4 w-4" />
+                          <button type="button" disabled={busy} onClick={() => editing ? setEditingId(null) : startEditing(budget)} aria-label={"Edit " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-3 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                            <Pencil aria-hidden="true" className="h-4 w-4" /> Edit
                           </button>
-                          <button type="button" disabled={busy} onClick={() => archiveBudget(budget)} aria-label={"Archive " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-border text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                            <Archive aria-hidden="true" className="h-4 w-4" />
+                          <button type="button" disabled={busy} onClick={() => archiveBudget(budget)} aria-label={"Archive " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                            <Archive aria-hidden="true" className="h-4 w-4" /> Archive
                           </button>
                         </div>
                       </div>
@@ -295,7 +295,7 @@ function BudgetExperience() {
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                         <div><p className="text-brand-deepTeal/60">Used this month</p><p className="font-bold text-brand-deepTeal">{formatAudFromCents(budget.spentCents)}</p></div>
-                        <div><p className="text-brand-deepTeal/60">{overBudget ? "Over budget" : "Remaining this month"}</p><p className="font-bold text-brand-deepTeal">{overBudget ? formatAudFromCents(budget.spentCents - budget.amountCents) : formatAudFromCents(budget.remainingCents)}</p></div>
+                        <div><p className="text-brand-deepTeal/60">{overBudget ? "Over by" : "Budget left"}</p><p className="font-bold text-brand-deepTeal">{overBudget ? formatAudFromCents(budget.spentCents - budget.amountCents) : formatAudFromCents(budget.remainingCents)}</p></div>
                       </div>
                       {editing && (
                         <div className="mt-4 grid gap-3 rounded-2xl bg-surface-mint/50 p-3 sm:grid-cols-2">
@@ -321,9 +321,9 @@ function BudgetExperience() {
             )}
           </div>
 
-          <div className="mt-6 border-t border-border pt-5">
-            <p className="text-sm font-semibold text-brand-teal">Archived budgets</p>
-            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{archivedBudgets.length} archived</h3>
+          {archivedBudgets.length > 0 && (
+          <details className="mt-6 border-t border-border pt-5">
+            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Archived budgets ({archivedBudgets.length})</summary>
             {archivedBudgets.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived monthly budgets will appear here and can be restored.</p>
             ) : (
@@ -344,13 +344,16 @@ function BudgetExperience() {
                 ))}
               </div>
             )}
-          </div>
+          </details>
+          )}
         </>
       )}
 
-      <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
-        Monthly budgets are planning records only. Transfers, split parents and loan repayment breakdowns do not add to budget progress.
-      </p>
+      <details className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
+        <summary className="cursor-pointer font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">How budget progress works</summary>
+        <p className="mt-2">Everyday spending counts once. Transfers, split containers and loan repayment breakdowns are not added.</p>
+        <p className="mt-1">Budgets reset each month and do not roll over.</p>
+      </details>
     </section>
   );
 }
@@ -359,6 +362,6 @@ export function CategoryBudgets({ accountPersistenceAvailable }: Readonly<{ acco
   const { isLoaded, isSignedIn } = useUser();
   if (!accountPersistenceAvailable) return null;
   if (!isLoaded) return <section className="mt-5 rounded-[2rem] border border-border bg-surface-base p-6 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking your account session…</p></section>;
-  if (!isSignedIn) return <SignedOutBudgetCard />;
+  if (!isSignedIn) return null;
   return <BudgetExperience />;
 }

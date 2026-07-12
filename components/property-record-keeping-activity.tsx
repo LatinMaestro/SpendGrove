@@ -56,12 +56,12 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
       });
       const result = await response.json() as { ok: boolean; activity?: PropertyActivity; error?: string };
       if (!response.ok || !result.ok || !result.activity) {
-        setError(result.error ?? "Property record keeping could not be loaded safely.");
+        setError(result.error ?? "Property records could not be loaded safely.");
       } else {
         setActivity(result.activity);
       }
     } catch {
-      setError("Property record keeping could not be loaded safely.");
+      setError("Property records could not be loaded safely.");
     } finally {
       setIsLoading(false);
     }
@@ -70,20 +70,20 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
   return (
     <div className="rounded-2xl border border-border bg-white p-3">
       <button type="button" onClick={() => void toggle()} aria-expanded={isOpen} className="flex min-h-10 w-full items-center justify-between gap-3 text-left text-sm font-bold text-brand-deepTeal">
-        <span className="flex items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Property record keeping</span>
+        <span className="flex items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Property records</span>
         {isOpen ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}
       </button>
 
       {isOpen && (
         <div className="mt-3 border-t border-border pt-3">
-          <p className="text-xs leading-5 text-brand-deepTeal/65">Linked transactions remain the original everyday cashflow records. This view adds no extra payment or total.</p>
+          <p className="text-xs leading-5 text-brand-deepTeal/65">These are your original everyday transactions. Nothing is counted twice.</p>
           {isLoading && <p className="mt-3 text-sm font-semibold text-brand-deepTeal/65">Loading activity...</p>}
           {error && <p role="alert" className="mt-3 rounded-xl bg-danger-red/10 p-3 text-xs font-semibold text-danger-red">{error}</p>}
           {activity && (
             <div className="mt-3 space-y-4">
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Linked through repayment breakdowns</h4>
-                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Loan repayment transactions are shown here because this loan belongs to this Property.</p>
+                <h4 className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Linked through loan repayments</h4>
+                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Shown here because the loan belongs to this property.</p>
                 {activity.loanTransactions.length === 0 ? (
                   <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No active loan repayment transactions are connected yet.</p>
                 ) : (
@@ -101,8 +101,8 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
               </div>
 
               <div className="border-t border-border pt-3">
-                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal"><Landmark aria-hidden="true" className="h-4 w-4" /> Manually linked property transactions</h4>
-                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Manual Property links are for other property-related transactions you choose to attach yourself.</p>
+                <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal"><Landmark aria-hidden="true" className="h-4 w-4" /> Other linked transactions</h4>
+                <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Transactions you chose to link to this property.</p>
                 {activity.transactions.length === 0 ? (
                   <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No transactions have been manually linked to this Property. Loan repayment connections above are unaffected.</p>
                 ) : (
@@ -118,7 +118,7 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
                   </ul>
                 )}
               </div>
-              <p className="border-t border-border pt-3 text-xs leading-5 text-brand-deepTeal/65">These links do not change your transaction, category, amount or tax treatment.</p>
+              <p className="border-t border-border pt-3 text-xs leading-5 text-brand-deepTeal/65">Linking does not change the transaction, category or amount. Record keeping only - not tax advice.</p>
               <PropertyRecordReview propertyId={propertyId} />
             </div>
           )}

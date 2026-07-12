@@ -14,9 +14,9 @@ describe("everyday dashboard and trend insight UI", () => {
       "Spending this month",
       "Compared with last month",
       "Budget progress",
-      "Confirmed recurring items",
-      "No previous-month comparison yet",
-      "Review the source transactions before relying on insights",
+      "Regular payments",
+      "Add another month of transactions to see a comparison",
+      "Your reviewed everyday transactions, kept simple.",
     ]) {
       expect(component).toContain(copy);
     }
@@ -25,9 +25,9 @@ describe("everyday dashboard and trend insight UI", () => {
   it("uses neutral up, down and unchanged comparison copy", async () => {
     const component = await readFile(componentPath, "utf8");
 
-    expect(component).toContain("Spending is up compared with last month");
-    expect(component).toContain("Spending is down compared with last month");
-    expect(component).toContain("Spending is unchanged from last month");
+    expect(component).toContain("You spent more than last month");
+    expect(component).toContain("You spent less than last month");
+    expect(component).toContain("Spending is about the same as last month");
     expect(component).not.toMatch(/bad spending|overspending problem|you should|you must cut|guaranteed forecast/i);
   });
 
@@ -35,7 +35,7 @@ describe("everyday dashboard and trend insight UI", () => {
     const component = await readFile(componentPath, "utf8");
 
     expect(component).not.toMatch(/net worth|property profit|property yield|equity|valuation|investment performance|deductible|claimable|ATO-ready|tax liability|loan balance|principal total|interest total|debt advice|credit advice|AI advice/i);
-    expect(component).toContain("Split parents and analytical loan repayment breakdowns are excluded");
+    expect(component).toContain("Split containers and loan repayment breakdowns are not added again");
   });
 
   it("places the overview on Home without adding a navigation tab", async () => {

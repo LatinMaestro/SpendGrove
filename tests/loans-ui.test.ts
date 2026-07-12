@@ -25,7 +25,7 @@ describe("Loans-first UI contract", () => {
 
     expect(manager).toContain("Optional property link");
     expect(manager).toContain("No property");
-    expect(manager).toContain("Property details are always optional");
+    expect(manager).toContain("Property details are optional");
     expect(manager).toContain("No exact address is requested");
     expect(manager).not.toContain("Account number");
     expect(manager).not.toContain("Customer ID");
@@ -34,8 +34,8 @@ describe("Loans-first UI contract", () => {
   it("shows repayment breakdown history without presenting extra spending", async () => {
     const manager = await readFile(managerPath, "utf8");
 
-    expect(manager).toContain("Repayment history");
-    expect(manager).toContain("Breakdowns only — these are not extra payments or spending entries.");
+    expect(manager).toContain("Repayment breakdowns ({repayments.length})");
+    expect(manager).toContain("Details only — your everyday transaction is still counted once.");
     expect(manager).toContain("Principal");
     expect(manager).toContain("Interest");
     expect(manager).toContain("Fees");
@@ -50,15 +50,15 @@ describe("Loans-first UI contract", () => {
 
     expect(manager).toContain("Find possible matches");
     expect(manager).toContain("Search wider manually");
-    expect(manager).toContain("Wider manual matches");
-    expect(manager).toContain("within $1 and 7 days");
-    expect(manager).toContain("Exact-date manual override results");
-    expect(manager).toContain("separate exact-date override below");
+    expect(manager).toContain("More possible matches");
+    expect(manager).toContain("nearby everyday transactions");
+    expect(manager).toContain("Transactions on this date");
+    expect(manager).toContain("search one exact date below");
     expect(manager).toContain("One clear high-confidence match may be linked automatically when a repayment is saved.");
     expect(manager).toContain("Ambiguous, medium and manual matches stay here for your review.");
-    expect(manager).toContain("High confidence");
+    expect(manager).toContain("Strong match");
     expect(manager).toContain("Possible match");
-    expect(manager).toContain("Manual review");
+    expect(manager).toContain("Choose manually");
     expect(manager).toContain("Link this breakdown");
     expect(manager).toContain("Unlink breakdown");
     expect(manager).toContain("Search this exact date");
@@ -73,9 +73,9 @@ describe("Loans-first UI contract", () => {
 
     expect(manager).toContain("Edit ${loan.nickname} Loan Account");
     expect(manager).toContain("Edit ${loan.property.nickname} Property");
-    expect(manager).toContain("Property management");
-    expect(manager).toContain("Other Properties");
-    expect(manager).toContain("not linked to an active Loan Account");
+    expect(manager).toContain("Other property records");
+    expect(manager).toContain("Properties without an active loan");
+    expect(manager).toContain("not linked to an active loan");
     expect(manager).not.toContain("Optional supporting records");
     expect(manager).toContain('propertyRelevant: false');
     expect(manager).not.toMatch(/property profit|property yield|dashboard statistics|tax report/i);

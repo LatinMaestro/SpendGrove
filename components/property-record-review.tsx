@@ -79,7 +79,7 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
           <h4 id={`property-records-${propertyId}`} className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal">
             <ClipboardCheck aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Property records
           </h4>
-          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Linked records are included automatically for the selected Australian financial year.</p>
+          <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Transactions already linked to this property appear automatically.</p>
         </div>
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-xs font-bold text-brand-deepTeal">Financial year
@@ -94,16 +94,16 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
       </div>
 
       <div className="mt-3 rounded-xl bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal/70">
-        <p className="font-bold text-brand-deepTeal">Review before export</p>
+        <p className="font-bold text-brand-deepTeal">Property records</p>
         <p>Record keeping only - not tax advice. This view uses current linked transactions and does not change their category, amount or cashflow treatment.</p>
       </div>
       {error && <p role="alert" className="mt-3 rounded-xl bg-danger-red/10 p-3 text-xs font-semibold text-danger-red">{error}</p>}
-      {review && review.property.isArchived && <p className="mt-3 text-xs font-bold text-brand-teal">Archived Property context</p>}
+      {review && review.property.isArchived && <p className="mt-3 text-xs font-bold text-brand-teal">Archived property</p>}
       {review && review.records.length === 0 && <p className="mt-3 text-xs text-brand-deepTeal/65">No eligible linked records were found for {review.financialYear.label}.</p>}
       {review && summary && (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
           <div>
-            <h5 className="text-sm font-bold text-brand-deepTeal">Linked record summary</h5>
+            <h5 className="text-sm font-bold text-brand-deepTeal">Linked records</h5>
             <p className="mt-1 text-xs leading-5 text-brand-deepTeal/65">Simple money-in, money-out and context groups only. Linked loan payments are already part of money out and are not added again.</p>
           </div>
           <dl className="grid gap-2 sm:grid-cols-2">
@@ -124,12 +124,12 @@ export function PropertyRecordReview({ propertyId }: Readonly<{ propertyId: stri
           </dl>
           <p className="text-xs text-brand-deepTeal/65">Transfer context: {summary.transferContextCount}</p>
           {!showExportWarning ? (
-            <button type="button" onClick={() => setShowExportWarning(true)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-teal"><Download aria-hidden="true" className="h-4 w-4" /> Prepare CSV export</button>
+            <button type="button" onClick={() => setShowExportWarning(true)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-teal"><Download aria-hidden="true" className="h-4 w-4" /> Export options</button>
           ) : (
             <div className="rounded-2xl border border-brand-teal/30 bg-white p-3">
               <p className="text-xs leading-5 text-brand-deepTeal">SpendGrove provides record-keeping information only, not tax advice. Review your linked records before downloading.</p>
               <div className="mt-3 flex flex-wrap gap-2">
-                <a href={`/api/account/properties/${encodeURIComponent(propertyId)}/report-export?financialYear=${endingYear}`} download className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-green px-4 text-xs font-bold text-white"><Download aria-hidden="true" className="h-4 w-4" /> Download linked records CSV</a>
+                <a href={`/api/account/properties/${encodeURIComponent(propertyId)}/report-export?financialYear=${endingYear}`} download className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-green px-4 text-xs font-bold text-white"><Download aria-hidden="true" className="h-4 w-4" /> Download CSV</a>
                 <button type="button" onClick={() => setShowExportWarning(false)} className="min-h-11 rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal">Cancel</button>
               </div>
             </div>

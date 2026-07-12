@@ -50,7 +50,7 @@ type InsightResult =
 
 const cadenceLabels: Record<string, string> = {
   WEEKLY: "Weekly",
-  FORTNIGHTLY: "Fortnightly",
+  FORTNIGHTLY: "Every 2 weeks",
   MONTHLY: "Monthly",
   OTHER: "Other",
 };
@@ -70,12 +70,12 @@ function TrendSummary({ snapshot }: Readonly<{ snapshot: InsightSnapshot }>) {
   const direction = snapshot.trend.direction;
   const Icon = direction === "UP" ? ArrowUpRight : direction === "DOWN" ? ArrowDownRight : ArrowRight;
   const copy = direction === "NO_PREVIOUS"
-    ? "No previous-month comparison yet"
+    ? "Add another month of transactions to see a comparison"
     : direction === "UP"
-      ? "Spending is up compared with last month"
+      ? "You spent more than last month"
       : direction === "DOWN"
-        ? "Spending is down compared with last month"
-        : "Spending is unchanged from last month";
+        ? "You spent less than last month"
+        : "Spending is about the same as last month";
   const difference = direction === "NO_PREVIOUS"
     ? null
     : formatAudFromCents(Math.abs(snapshot.trend.differenceCents));
@@ -88,7 +88,7 @@ function TrendSummary({ snapshot }: Readonly<{ snapshot: InsightSnapshot }>) {
       </div>
       <p className="mt-3 text-base font-bold text-brand-deepTeal">{copy}</p>
       {difference && <p className="mt-1 text-sm text-brand-deepTeal/65">Difference: {difference}</p>}
-      <p className="mt-2 text-xs leading-5 text-brand-deepTeal/55">Current calendar-month activity can still change as you add or edit transactions.</p>
+      
     </div>
   );
 }
@@ -121,7 +121,7 @@ function InsightExperience() {
           <p className="text-sm font-semibold text-brand-teal">Everyday overview</p>
           <h2 id="everyday-insights-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">This month at a glance</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-            Transparent totals from active everyday transactions. Review the source transactions before relying on insights.
+            Your reviewed everyday transactions, kept simple.
           </p>
         </div>
       </div>
@@ -133,7 +133,7 @@ function InsightExperience() {
         <>
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="rounded-3xl bg-brand-deepTeal p-5 text-white">
-              <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">{snapshot.currentMonth.label} spending</p>
+              <p className="text-xs font-bold uppercase tracking-[0.12em] text-white/65">Spending this month · {snapshot.currentMonth.label}</p>
               <p className="mt-3 text-3xl font-bold">{formatAudFromCents(snapshot.currentMonth.spendCents)}</p>
               <p className="mt-2 text-sm text-white/70">{snapshot.currentMonth.transactionCount} active expense transaction{snapshot.currentMonth.transactionCount === 1 ? "" : "s"}</p>
             </div>
@@ -158,7 +158,7 @@ function InsightExperience() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-border p-4">
+            <div className={snapshot.budgets.length === 0 ? "hidden" : "rounded-3xl border border-border p-4"}>
               <div className="flex items-center gap-2 text-brand-teal">
                 <Target aria-hidden="true" className="h-5 w-5" />
                 <p className="text-sm font-semibold">Budget progress</p>
@@ -183,10 +183,10 @@ function InsightExperience() {
               )}
             </div>
 
-            <div className="rounded-3xl border border-border p-4">
+            <div className={snapshot.recurring.length === 0 ? "hidden" : "rounded-3xl border border-border p-4"}>
               <div className="flex items-center gap-2 text-brand-teal">
                 <Repeat2 aria-hidden="true" className="h-5 w-5" />
-                <p className="text-sm font-semibold">Confirmed recurring items</p>
+                <p className="text-sm font-semibold">Regular payments</p>
               </div>
               <h3 className="mt-1 text-lg font-bold text-brand-deepTeal">{snapshot.recurring.length} active</h3>
               {snapshot.recurring.length === 0 ? (
@@ -204,9 +204,10 @@ function InsightExperience() {
             </div>
           </div>
 
-          <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
-            Everyday transactions count once. Split parents and analytical loan repayment breakdowns are excluded from these totals.
-          </p>
+          <details className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
+            <summary className="cursor-pointer font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">How these totals work</summary>
+            <p className="mt-2">Everyday transactions count once. Split containers and loan repayment breakdowns are not added again.</p>
+          </details>
         </>
       ) : null}
     </section>
