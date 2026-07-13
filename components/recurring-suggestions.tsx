@@ -4,6 +4,7 @@ import { SignInButton, useUser } from "@clerk/nextjs";
 import { CalendarClock, CheckCircle2, Pencil, Repeat2, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
+import { uniqueSuggestionsByIdentity, visibleRecurringSuggestions } from "@/lib/recurring-suggestion-presentation";
 
 type Cadence = "WEEKLY" | "FORTNIGHTLY" | "MONTHLY" | "OTHER";
 
@@ -136,6 +137,8 @@ function RecurringExperience() {
   const [items, setItems] = useState<RecurringItem[]>([]);
   const [drafts, setDrafts] = useState<Record<string, RecurringDraft>>({});
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingSuggestionKey, setEditingSuggestionKey] = useState<string | null>(null);
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [message, setMessage] = useState("");
@@ -168,6 +171,11 @@ function RecurringExperience() {
     return () => { cancelled = true; };
   }, []);
 
+  const uniqueSuggestions = useMemo(() => uniqueSuggestionsByIdentity(suggestions), [suggestions]);
+  const visibleSuggestions = useMemo(
+    () => visibleRecurringSuggestions(uniqueSuggestions, showAllSuggestions),
+    [showAllSuggestions, uniqueSuggestions],
+  );
   const activeItems = useMemo(() => items.filter((item) => item.status === "ACTIVE"), [items]);
   const archivedItems = useMemo(() => items.filter((item) => item.status === "ARCHIVED"), [items]);
 
@@ -330,44 +338,75 @@ function RecurringExperience() {
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-sm font-semibold text-brand-teal">Suggested regular payments</p>
-                <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{suggestions.length} to review</h3>
+                <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{uniqueSuggestions.length} to review</h3>
               </div>
               
             </div>
-            {suggestions.length === 0 ? (
+            {uniqueSuggestions.length === 0 ? (
               <p className="mt-3 rounded-2xl bg-surface-mint p-4 text-sm leading-6 text-brand-deepTeal/70">
                 No clear recurring patterns need review yet. More reviewed transactions may provide enough evidence later.
               </p>
             ) : (
               <div className="mt-3 space-y-3">
-                {suggestions.map((suggestion) => {
+                {visibleSuggestions.map((suggestion) => {
                   const draft = drafts[suggestion.key] ?? suggestionDraft(suggestion);
                   const busy = busyKey === suggestion.key;
+                  const editing = editingSuggestionKey === suggestion.key;
                   return (
                     <article key={suggestion.key} className="rounded-3xl border border-border bg-surface-mint/50 p-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-lg font-bold text-brand-deepTeal">{suggestion.label}</p>
-                          </div>
-                          <p className="mt-1 text-sm text-brand-deepTeal/65">
-                            {suggestion.categoryLabel} · {formatAudFromCents(suggestion.expectedAmountCents)} · {cadenceLabels[suggestion.cadence]}
-                          </p>
-                          <details className="mt-2 text-xs leading-5 text-brand-deepTeal/65"><summary className="cursor-pointer font-bold focus:outline-none focus:ring-2 focus:ring-brand-green">Why this was suggested</summary><p className="mt-1">{suggestion.why}</p></details>
-                        </div>
+                      <div>
+                        <p className="text-lg font-bold text-brand-deepTeal">{suggestion.label}</p>
+                        <p className="mt-1 text-sm text-brand-deepTeal/65">
+                          {formatAudFromCents(suggestion.expectedAmountCents)} · {cadenceLabels[suggestion.cadence]}
+                          {suggestion.nextExpectedDate ? ` · Next ${suggestion.nextExpectedDate}` : ""}
+                        </p>
+                        <details className="mt-2 text-xs leading-5 text-brand-deepTeal/65">
+                          <summary className="cursor-pointer font-bold focus:outline-none focus:ring-2 focus:ring-brand-green">Why was this suggested?</summary>
+                          <p className="mt-1">{suggestion.why}</p>
+                        </details>
                       </div>
-                      <DraftFields draftKey={suggestion.key} draft={draft} disabled={busy} />
-                      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                        <button disabled={busy} type="button" onClick={() => dismissSuggestion(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+
+                      {editing && (
+                        <div className="mt-4 border-t border-border pt-4">
+                          <DraftFields draftKey={suggestion.key} draft={draft} disabled={busy} />
+                          <div className="mt-3 flex flex-wrap justify-end gap-2">
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => {
+                                setDrafts((current) => ({ ...current, [suggestion.key]: suggestionDraft(suggestion) }));
+                                setEditingSuggestionKey(null);
+                              }}
+                              className="min-h-10 rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal"
+                            >
+                              Cancel
+                            </button>
+                            <button type="button" disabled={busy} onClick={() => setEditingSuggestionKey(null)} className="min-h-10 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal">
+                              Save changes
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex flex-wrap items-center justify-end gap-2">
+                        <button type="button" disabled={busy} onClick={() => dismissSuggestion(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
                           <X aria-hidden="true" className="h-4 w-4" /> Dismiss
                         </button>
+                        <button type="button" disabled={busy} aria-expanded={editing} onClick={() => setEditingSuggestionKey(editing ? null : suggestion.key)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal bg-white px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                          <Pencil aria-hidden="true" className="h-4 w-4" /> Edit details
+                        </button>
                         <button disabled={busy} type="button" onClick={() => confirmSuggestion(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">
-                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {busy ? "Saving…" : "Confirm regular payment"}
+                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {busy ? "Saving…" : "Confirm"}
                         </button>
                       </div>
                     </article>
                   );
                 })}
+                {uniqueSuggestions.length > 3 && (
+                  <button type="button" onClick={() => setShowAllSuggestions((current) => !current)} className="min-h-11 w-full rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                    {showAllSuggestions ? "Show fewer" : `Review all (${uniqueSuggestions.length})`}
+                  </button>
+                )}
               </div>
             )}
           </div>
