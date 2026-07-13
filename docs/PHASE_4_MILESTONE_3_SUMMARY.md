@@ -2,7 +2,7 @@
 
 Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
-Last updated: 13 July 2026
+Last updated: 14 July 2026
 
 ## Objective
 
@@ -223,6 +223,64 @@ Known limitations:
 - Existing dependency audit advisories remain outside this no-package-change pass.
 
 No schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, calculation, threshold, reconciliation, import, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
+
+
+
+## Third client-review Loans hardening
+
+The third client review found that the same underlying repayment still appeared as a repayment breakdown, linked everyday transaction and Property record. The accepted presentation now uses one canonical repayment row while preserving every durable model and no-double-count rule.
+
+Delivery:
+
+- PR #127 / canonical Loan display contract: `04e8099f8f2c6a41cbb3021c3b7efee2afdbff72`;
+- PR #128 / canonical Loans implementation: `87012a22bc029d2094ed19f5a8853ad4009f98f3`;
+- documentation-only QA and consolidated deferred-testing update: this pass.
+
+Sections removed or combined:
+
+- removed routine repayment-breakdown and linked-transaction counts from the overview;
+- replaced the separate beginner-facing `Repayment breakdowns` and `Linked everyday transactions` histories with `Loan repayments`;
+- removed the repeated reconciled repayment cashflow from the main Property transaction list;
+- moved full Property records/report/export behind `View property records`;
+- moved Loan deletion, Property editing, deleted repayment cleanup and privacy detail into secondary disclosures;
+- non-Property loans no longer render empty Property sections.
+
+Exact display/deduplication rules:
+
+- one repayment row is keyed by one LoanRepayment and may combine its optional active LoanReconciliationLink and safe linked Transaction context;
+- no linked everyday transaction row is rendered separately for that same repayment;
+- main Property transactions start from eligible manual Property links and exclude every transaction ID returned through any loan-reconciliation path for the selected Property;
+- non-repayment manually linked income and expense records remain;
+- split-parent/child, ownership and active/deleted eligibility remain server-controlled and unchanged;
+- Property report/export uses its accepted source-of-truth unchanged.
+
+Verification:
+
+- corrected PR #128 head `59292d79ef4c8cdb51dd3fe04e4dea00ccbaf48c`;
+- Preview deployment `dpl_71c3ULsevJBSLE427NjEwxtRRYFb` Ready;
+- 89 test files / 553 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- main deployment `dpl_6U5SJiVuHhZSyZjr5LvLZxx1EPZ4` Ready;
+- canonical `/` and `/loans` returned HTTP 200 without internal errors.
+
+Accessibility/mobile and safety evidence:
+
+- latest-three/View-all controls retain visible text and focus styles;
+- expanded repayment rows retain match, unlink and correction controls;
+- important actions retain practical touch heights;
+- no known horizontal-overflow class was added and the app shell retains `overflow-x-hidden`;
+- deduplication is a pure display filter over existing safe IDs and performs no write;
+- no raw source data or private identifier was added.
+
+Known limitations:
+
+- signed-in client visual, mobile and assistive-technology review remains deferred;
+- opening balance is absent because no approved persisted opening-balance field exists;
+- Property report/export intentionally remains the accepted fuller record-keeping workflow behind a secondary action;
+- separately allocated LoanRepayments remain separate canonical rows in their respective Loan Accounts.
+
+No schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, calculation, reconciliation-threshold, split-allocation, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
 
 ## Deferred client testing
 

@@ -601,3 +601,31 @@ Evidence:
 Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no hard deletion, no data rewrite/backfill, and no package/provider/secret/environment change.
 
 Mandatory next state: stop for client retesting; do not close any Phase 4 milestone or begin another milestone.
+
+## Phase 4 Milestone 3 third client-review Loans hardening (completed 14 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+
+- [x] Freeze canonical repayment, Property-transaction deduplication and report-placement rules in `docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md` (PR #127, merge `04e8099f8f2c6a41cbb3021c3b7efee2afdbff72`).
+- [x] Replace the separate Repayment breakdown and Linked everyday transaction histories with one `Loan repayments` presentation.
+- [x] Keep principal, interest, fees and balance-after details available only when present and requested.
+- [x] Show other eligible Property transactions while excluding repayment cashflows already represented in Loan repayments.
+- [x] Keep the accepted Property report/export behind `View property records` without changing its contents, formulas or columns.
+- [x] Keep match, unlink, correction, recoverable Delete/Restore and Property management actions accessible.
+- [x] Complete full tests, type/lint/build verification, Preview/main deployment and public `/loans` smoke check.
+
+Implementation: PR #128, merge `87012a22bc029d2094ed19f5a8853ad4009f98f3`.
+
+Evidence:
+
+- 89 test files / 553 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- Preview deployment `dpl_71c3ULsevJBSLE427NjEwxtRRYFb` is Ready;
+- main deployment `dpl_6U5SJiVuHhZSyZjr5LvLZxx1EPZ4` is Ready;
+- canonical `/` and `/loans` returned HTTP 200.
+
+Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no hard deletion, no data rewrite/backfill, and no package/provider/secret/environment change.
+
+Mandatory next state: stop for consolidated client retesting; do not close any Phase 4 milestone or begin another milestone.
+

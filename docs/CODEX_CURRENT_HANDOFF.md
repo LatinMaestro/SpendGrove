@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 13 July 2026
+Last updated: 14 July 2026
 
 ## Current phase and status
 
@@ -16,7 +16,7 @@ Last updated: 13 July 2026
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
 - Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
-- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
+- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md, docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -189,6 +189,46 @@ Final verification:
 - canonical `https://spendgrove.vercel.app` routes `/`, `/transactions` and `/loans` returned HTTP 200.
 
 No Prisma schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, recurring-threshold, budget-calculation, reconciliation-rule, import, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
+
+## Phase 4 Milestone 3 third client-review Loans hardening evidence
+
+Status: implemented, merged, deployed and technically verified; consolidated client retesting remains pending.
+
+Completed delivery:
+
+- PR #127 froze the canonical Loan display and deduplication contract, merge `04e8099f8f2c6a41cbb3021c3b7efee2afdbff72`;
+- PR #128 delivered the canonical Loans implementation and focused regressions, merge `87012a22bc029d2094ed19f5a8853ad4009f98f3`;
+- this documentation-only QA pass records the final evidence and replaces the superseded duplicate-history client checks.
+
+Accepted technical display rules:
+
+- one user-facing repayment row is keyed by one LoanRepayment and may combine its optional reconciliation link and safe everyday-transaction context;
+- the linked everyday cashflow is not rendered as a second row on the same Loan detail;
+- the main Property transactions list uses eligible manual Property links and excludes every transaction ID returned through a loan-reconciliation path for that Property;
+- non-repayment manually linked Property income and expense records remain visible;
+- the accepted Property report/export remains unchanged behind `View property records`;
+- active repayments and Property transactions show the latest three before View all;
+- non-Property loans render no Property section;
+- match, unlink, correction, soft delete, restore, Property edit and report/export actions remain reachable.
+
+Verification:
+
+- exact corrected PR #128 head `59292d79ef4c8cdb51dd3fe04e4dea00ccbaf48c`;
+- Preview deployment `dpl_71c3ULsevJBSLE427NjEwxtRRYFb` is Ready;
+- 89 test files / 553 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- merged-main deployment `dpl_6U5SJiVuHhZSyZjr5LvLZxx1EPZ4` is Ready;
+- canonical `https://spendgrove.vercel.app` routes `/` and `/loans` returned HTTP 200 without internal errors.
+
+No Prisma schema or migration file changed. No Preview or Production migration ran. No data rewrite/backfill, hard deletion, calculation, reconciliation-threshold, split-allocation, Property-link, report/export, package, provider, secret, environment or navigation change occurred.
+
+Known limitations:
+
+- signed-in visual, narrow-device and assistive-technology testing remains deferred to the client;
+- opening balance is not displayed because it is not an approved persisted repayment field;
+- one everyday transaction may still support separately allocated LoanRepayments under the existing model; each LoanRepayment remains one canonical row in its own Loan Account;
+- report/export intentionally retains its accepted full record-keeping workflow and is only visually secondary on the Loan detail.
 
 ## Exact next action
 
