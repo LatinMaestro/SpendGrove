@@ -44,13 +44,14 @@ describe("Property record-keeping activity", () => {
   it("keeps linked Loan Account context separate and calculates no statistics", async () => {
     const component = await readFile(componentPath, "utf8");
 
-    expect(component).toContain("Linked through repayment breakdowns");
-    expect(component).toContain("Manually linked property transactions");
-    expect(component).toContain("Loan repayment transactions are shown here because this loan belongs to this Property.");
-    expect(component).toContain("Manual Property links are for other property-related transactions you choose to attach yourself.");
-    expect(component).toContain("These links do not change your transaction, category, amount or tax treatment.");
-    expect(component).toContain("This view adds no extra payment or total.");
-    expect(component).not.toMatch(/deduct|EOFY|tax advice|profit|yield|equity|valuation|net worth/i);
+    expect(component).toContain("Linked through loan repayments");
+    expect(component).toContain("Other linked transactions");
+    expect(component).toContain("Shown here because the loan belongs to this property.");
+    expect(component).toContain("Transactions you chose to link to this property.");
+    expect(component).toContain("Linking does not change the transaction, category or amount.");
+    expect(component).toContain("Nothing is counted twice.");
+    expect(component).toContain("Record keeping only - not tax advice.");
+    expect(component).not.toMatch(/deduct|EOFY|profit|yield|equity|valuation|net worth/i);
     expect(component).not.toMatch(/reduce\(|totalCents|average|percentage/);
   });
 });

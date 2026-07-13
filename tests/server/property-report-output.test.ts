@@ -124,10 +124,10 @@ describe("Phase 3C approved Property summary and export", () => {
     expect(route).toContain('"Content-Disposition"');
     expect(output).not.toMatch(/merchant|description|notes|narration|filename|accountReference|userId|email|address|balance/i);
     expect(output).not.toMatch(/propertyReportReview\.(?:create|update|upsert|delete)/);
-    expect(component).toContain("Prepare CSV export");
-    expect(component).toContain("Download linked records CSV");
+    expect(component).toContain("Export options");
+    expect(component).toContain("Download CSV");
     expect(component).toContain("Record keeping only - not tax advice.");
-    expect(component).toContain("Linked records are included automatically");
+    expect(component).toContain("Transactions already linked to this property appear automatically");
     expect(component).not.toContain("Record classification");
     expect(component).not.toContain("Suggested classification");
     expect(component).not.toContain("Apply suggested classifications");

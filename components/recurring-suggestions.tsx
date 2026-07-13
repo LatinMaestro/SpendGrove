@@ -47,7 +47,7 @@ type RecurringDraft = {
 
 const cadenceLabels: Record<Cadence, string> = {
   WEEKLY: "Weekly",
-  FORTNIGHTLY: "Fortnightly",
+  FORTNIGHTLY: "Every 2 weeks",
   MONTHLY: "Monthly",
   OTHER: "Other",
 };
@@ -311,10 +311,10 @@ function RecurringExperience() {
           <Repeat2 aria-hidden="true" className="h-6 w-6" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-brand-teal">Recurring and subscriptions</p>
-          <h2 id="recurring-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review recurring items</h2>
+          <p className="text-sm font-semibold text-brand-teal">Regular payments</p>
+          <h2 id="recurring-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review regular payments</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-            Suggestions use matching cleaned merchants, categories, amounts and repeat intervals. Nothing becomes recurring until you confirm it.
+            Review patterns found in your transactions. Nothing is confirmed until you choose it.
           </p>
         </div>
       </div>
@@ -323,16 +323,16 @@ function RecurringExperience() {
       {error && <p role="alert" className="mt-4 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
 
       {!isReady ? (
-        <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal/70" aria-busy="true">Checking for recurring patterns…</p>
+        <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal/70" aria-busy="true">Checking for regular payments…</p>
       ) : (
         <>
           <div className="mt-5">
             <div className="flex items-end justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-brand-teal">Suggestions</p>
+                <p className="text-sm font-semibold text-brand-teal">Suggested regular payments</p>
                 <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{suggestions.length} to review</h3>
               </div>
-              <span className="rounded-full bg-surface-mint px-3 py-2 text-xs font-bold text-brand-deepTeal">Suggestions only</span>
+              
             </div>
             {suggestions.length === 0 ? (
               <p className="mt-3 rounded-2xl bg-surface-mint p-4 text-sm leading-6 text-brand-deepTeal/70">
@@ -349,23 +349,20 @@ function RecurringExperience() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <p className="text-lg font-bold text-brand-deepTeal">{suggestion.label}</p>
-                            <span className="rounded-full bg-brand-green/10 px-2.5 py-1 text-xs font-bold text-brand-green">
-                              {suggestion.confidence === "HIGH" ? "Clear pattern" : "Review pattern"}
-                            </span>
                           </div>
                           <p className="mt-1 text-sm text-brand-deepTeal/65">
                             {suggestion.categoryLabel} · {formatAudFromCents(suggestion.expectedAmountCents)} · {cadenceLabels[suggestion.cadence]}
                           </p>
-                          <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65"><strong>Why this was suggested:</strong> {suggestion.why}</p>
+                          <details className="mt-2 text-xs leading-5 text-brand-deepTeal/65"><summary className="cursor-pointer font-bold focus:outline-none focus:ring-2 focus:ring-brand-green">Why this was suggested</summary><p className="mt-1">{suggestion.why}</p></details>
                         </div>
                       </div>
                       <DraftFields draftKey={suggestion.key} draft={draft} disabled={busy} />
                       <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                         <button disabled={busy} type="button" onClick={() => dismissSuggestion(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                          <X aria-hidden="true" className="h-4 w-4" /> Dismiss suggestion
+                          <X aria-hidden="true" className="h-4 w-4" /> Dismiss
                         </button>
                         <button disabled={busy} type="button" onClick={() => confirmSuggestion(suggestion)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">
-                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {busy ? "Saving…" : "Confirm recurring item"}
+                          <CheckCircle2 aria-hidden="true" className="h-4 w-4" /> {busy ? "Saving…" : "Confirm regular payment"}
                         </button>
                       </div>
                     </article>
@@ -375,9 +372,9 @@ function RecurringExperience() {
             )}
           </div>
 
-          <div className="mt-6 border-t border-border pt-5">
-            <p className="text-sm font-semibold text-brand-teal">Dismissed suggestions</p>
-            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{dismissedSuggestions.length} still match current data</h3>
+          {dismissedSuggestions.length > 0 && (
+          <details className="mt-6 border-t border-border pt-5">
+            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Dismissed ({dismissedSuggestions.length})</summary>
             {dismissedSuggestions.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">No dismissed suggestion currently matches an active recurring pattern.</p>
             ) : (
@@ -398,13 +395,14 @@ function RecurringExperience() {
                 ))}
               </div>
             )}
-          </div>
+          </details>
+          )}
 
           <div className="mt-6 border-t border-border pt-5">
-            <p className="text-sm font-semibold text-brand-teal">Active recurring items</p>
+            <p className="text-sm font-semibold text-brand-teal">Confirmed regular payments</p>
             <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{activeItems.length} active</h3>
             {activeItems.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Confirmed recurring items will appear here. They are planning records and do not move money.</p>
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Confirmed regular payments will appear here. They do not move money.</p>
             ) : (
               <div className="mt-3 space-y-3">
                 {activeItems.map((item) => {
@@ -450,9 +448,9 @@ function RecurringExperience() {
             )}
           </div>
 
-          <div className="mt-6 border-t border-border pt-5">
-            <p className="text-sm font-semibold text-brand-teal">Archived recurring items</p>
-            <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{archivedItems.length} archived</h3>
+          {archivedItems.length > 0 && (
+          <details className="mt-6 border-t border-border pt-5">
+            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Archived ({archivedItems.length})</summary>
             {archivedItems.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived recurring items will appear here and can be restored.</p>
             ) : (
@@ -466,19 +464,20 @@ function RecurringExperience() {
                         <p className="mt-2 text-xs leading-5 text-brand-deepTeal/60">Restore first if you want to edit this planning record.</p>
                       </div>
                       <button type="button" disabled={busyKey === item.id} onClick={() => restoreItem(item)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                        <RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore recurring item
+                        <RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore regular payment
                       </button>
                     </div>
                   </article>
                 ))}
               </div>
             )}
-          </div>
+          </details>
+          )}
         </>
       )}
 
       <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
-        Recurring items are review and planning records only. They do not contact a merchant, schedule a payment or guarantee a future charge.
+        Regular payments are for planning only. They do not contact a merchant or schedule a payment.
       </p>
     </section>
   );
@@ -488,6 +487,6 @@ export function RecurringSuggestions({ accountPersistenceAvailable }: Readonly<{
   const { isLoaded, isSignedIn } = useUser();
   if (!accountPersistenceAvailable) return null;
   if (!isLoaded) return <section className="mt-5 rounded-[2rem] border border-border bg-surface-base p-6 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking your account session…</p></section>;
-  if (!isSignedIn) return <SignedOutRecurringCard />;
+  if (!isSignedIn) return null;
   return <RecurringExperience />;
 }

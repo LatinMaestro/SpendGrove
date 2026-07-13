@@ -10,16 +10,16 @@ describe("category budget UI and API boundaries", () => {
     const component = await readFile(componentPath, "utf8");
 
     for (const copy of [
-      "Monthly category budgets",
+      "Monthly budgets",
       "Create budget",
       "Used this month",
-      "Remaining this month",
-      "Over budget",
+      "Budget left",
+      "Over by",
       "Save budget changes",
       "Archive this monthly budget?",
-      "Archived budgets",
+      "Archived budgets ({archivedBudgets.length})",
       "Restore budget",
-      "You choose each amount",
+      "Set a monthly amount for the categories you want to watch",
     ]) {
       expect(component).toContain(copy);
     }
@@ -51,7 +51,8 @@ describe("category budget UI and API boundaries", () => {
   it("states the no-double-count exclusions in beginner-friendly copy", async () => {
     const component = await readFile(componentPath, "utf8");
 
-    expect(component).toContain("Transfers, split parents and loan repayment breakdowns do not add to budget progress.");
+    expect(component).toContain("Transfers, split containers and loan repayment breakdowns are not added.");
+    expect(component).toContain("Budgets reset each month and do not roll over.");
     expect(component).not.toMatch(/principal total|interest total|fee total|loan balance|property statistic|tax statistic/i);
   });
 });
