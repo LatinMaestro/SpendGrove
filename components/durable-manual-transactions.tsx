@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   AlertTriangle,
@@ -133,8 +133,9 @@ async function readAccountTransactionResponse(response: Response): Promise<Accou
   }
 }
 
-async function listAccountTransactions(monthKey: string) {
-  return readAccountTransactionResponse(await fetch(`/api/account/manual-transactions?month=${encodeURIComponent(monthKey)}`, {
+async function listAccountTransactions(monthKey: string, initial = false) {
+  const initialQuery = initial ? "&initial=true" : "";
+  return readAccountTransactionResponse(await fetch(`/api/account/manual-transactions?month=${encodeURIComponent(monthKey)}${initialQuery}`, {
     method: "GET",
     cache: "no-store",
   }));
@@ -257,6 +258,7 @@ function SignedOutFallback() {
 function DurableManualTransactionsExperience() {
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
   const [selectedMonth, setSelectedMonth] = useState(brisbaneMonthKey);
+  const initialMonthRequest = useRef(true);
   const [selectedMonthLabel, setSelectedMonthLabel] = useState(() => monthLabelFromKey(brisbaneMonthKey()));
   const [hasLaterTransactions, setHasLaterTransactions] = useState(false);
   const [isReady, setIsReady] = useState(false);
@@ -274,12 +276,16 @@ function DurableManualTransactionsExperience() {
     async function loadTransactions() {
       setIsReady(false);
       setAccountWarning("");
-      const result = await listAccountTransactions(selectedMonth);
+      const useLatestPopulatedFallback = initialMonthRequest.current;
+      initialMonthRequest.current = false;
+      const result = await listAccountTransactions(selectedMonth, useLatestPopulatedFallback);
       if (cancelled) return;
       if (result.ok) {
         setTransactions(result.transactions);
-        setSelectedMonthLabel(result.month?.label ?? monthLabelFromKey(selectedMonth));
+        const resolvedMonth = result.month?.key ?? selectedMonth;
+        setSelectedMonthLabel(result.month?.label ?? monthLabelFromKey(resolvedMonth));
         setHasLaterTransactions(Boolean(result.hasLaterTransactions));
+        if (resolvedMonth !== selectedMonth) setSelectedMonth(resolvedMonth);
       } else {
         setTransactions([]);
         setSelectedMonthLabel(monthLabelFromKey(selectedMonth));
