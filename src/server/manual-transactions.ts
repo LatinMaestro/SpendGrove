@@ -55,7 +55,8 @@ export type ManualTransactionCreateData = {
 };
 
 export type ManualTransactionPersistenceStore = {
-  listActive(userId: string): Promise<DbManualTransactionRecord[]>;
+  listActive(userId: string, dateFrom?: Date, dateTo?: Date): Promise<DbManualTransactionRecord[]>;
+  hasActiveAfter?(userId: string, date: Date): Promise<boolean>;
   findActiveById(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
   findById?(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
   create(userId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
@@ -167,7 +168,7 @@ function migrationItemToDraft(transaction: ManualTransactionMigrationItem): Manu
 
 export function createPrismaManualTransactionStore(prisma: PrismaClient = getPrismaClient()): ManualTransactionPersistenceStore {
   return {
-    async listActive(userId) {
+    async listActive(userId, dateFrom, dateTo) {
       return prisma.transaction.findMany({
         where: {
           userId,
@@ -176,6 +177,7 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           splitRole: {
             not: "PARENT",
           },
+          ...(dateFrom && dateTo ? { date: { gte: dateFrom, lt: dateTo } } : {}),
         },
         include: transactionInclude,
         orderBy: [
@@ -183,6 +185,19 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
           { updatedAt: "desc" },
         ],
       }) as unknown as Promise<DbManualTransactionRecord[]>;
+    },
+    async hasActiveAfter(userId, date) {
+      const record = await prisma.transaction.findFirst({
+        where: {
+          userId,
+          status: "ACTIVE",
+          deletedAt: null,
+          splitRole: { not: "PARENT" },
+          date: { gte: date },
+        },
+        select: { id: true },
+      });
+      return Boolean(record);
     },
     async findActiveById(userId, transactionId) {
       return prisma.transaction.findFirst({
@@ -314,6 +329,41 @@ export async function listDurableManualTransactions(
   const user = requireAuthenticatedUserContext(context);
   const records = await store.listActive(user.userId);
   return records.map(toAccountTransaction);
+}
+
+export async function listDurableManualTransactionsForMonth(
+  context: AuthenticatedUserContext | null | undefined,
+  monthKey: string,
+  store: ManualTransactionPersistenceStore = createPrismaManualTransactionStore(),
+) {
+  const user = requireAuthenticatedUserContext(context);
+  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
+  if (!match) throw new Error("Choose a valid transaction month.");
+  const year = Number(match[1]);
+  const monthIndex = Number(match[2]) - 1;
+  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) {
+    throw new Error("Choose a valid transaction month.");
+  }
+
+  const dateFrom = new Date(Date.UTC(year, monthIndex, 1));
+  const dateTo = new Date(Date.UTC(year, monthIndex + 1, 1));
+  const records = await store.listActive(user.userId, dateFrom, dateTo);
+  const hasLaterTransactions = store.hasActiveAfter
+    ? await store.hasActiveAfter(user.userId, dateTo)
+    : false;
+
+  return {
+    transactions: records.map(toAccountTransaction),
+    month: {
+      key: monthKey,
+      label: new Intl.DateTimeFormat("en-AU", {
+        month: "long",
+        year: "numeric",
+        timeZone: "Australia/Brisbane",
+      }).format(dateFrom),
+    },
+    hasLaterTransactions,
+  };
 }
 
 export async function createDurableManualTransaction(
