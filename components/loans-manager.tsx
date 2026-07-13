@@ -210,16 +210,17 @@ function RepaymentHistory({
   }
 
   if (repayments.length === 0) {
-    return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
+    return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No repayments imported yet.</p>;
   }
   return (
     <details open className="mt-4 border-t border-border pt-4">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Repayment breakdowns ({repayments.length})</summary>
-      <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Details only — your everyday transaction is still counted once.</p>
+      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Loan repayments ({repayments.filter((repayment) => !repayment.isArchived).length})</summary>
+      <details className="mt-3 rounded-2xl border border-border p-3">
+        <summary className="min-h-10 cursor-pointer text-xs font-bold text-brand-deepTeal">Deleted repayments and cleanup</summary>
       <div className="mt-3 flex flex-wrap gap-2" aria-label="Repayment history filter">
-        <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Active ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
-        <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Archived ({repayments.filter((repayment) => repayment.isArchived).length})</button>
-        <button type="button" onClick={() => { setCleanupMode((current) => { if (!current) setShowAllRepayments(true); return !current; }); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "archive" : "restore"}`}</button>
+        <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Current ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
+        <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Deleted ({repayments.filter((repayment) => repayment.isArchived).length})</button>
+        <button type="button" onClick={() => { setCleanupMode((current) => { if (!current) setShowAllRepayments(true); return !current; }); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "delete" : "restore"}`}</button>
       </div>
       {cleanupMode && (
         <div className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-4 text-xs text-brand-deepTeal">
@@ -227,46 +228,47 @@ function RepaymentHistory({
           <p className="mt-1">Linked or newly changed repayments are skipped safely. Everyday transactions are never changed or deleted.</p>
           <label className="mt-3 flex items-start gap-2 rounded-xl bg-white p-3 font-semibold">
             <input type="checkbox" checked={bulkConfirmed} disabled={selectedRepayments.length === 0 || isSaving} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-0.5 accent-brand-green" />
-            I reviewed this selection and want to {historyFilter === "ACTIVE" ? "archive" : "restore"} these repayment breakdowns.
+            I reviewed this selection and want to {historyFilter === "ACTIVE" ? "delete" : "restore"} these repayments.
           </label>
-          <button type="button" disabled={!bulkConfirmed || selectedRepayments.length === 0 || isSaving} onClick={() => void applyBulkCleanup()} className="mt-3 min-h-10 rounded-full bg-brand-deepTeal px-4 font-bold text-white disabled:opacity-45">{isSaving ? "Saving…" : historyFilter === "ACTIVE" ? "Archive selected" : "Restore selected"}</button>
+          <button type="button" disabled={!bulkConfirmed || selectedRepayments.length === 0 || isSaving} onClick={() => void applyBulkCleanup()} className="mt-3 min-h-10 rounded-full bg-brand-deepTeal px-4 font-bold text-white disabled:opacity-45">{isSaving ? "Saving…" : historyFilter === "ACTIVE" ? "Delete selected" : "Restore selected"}</button>
         </div>
       )}
       {bulkSummary && <p role="status" className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-deepTeal">{bulkSummary.changedCount} changed and {bulkSummary.skippedCount} skipped because they were already updated, linked or already in that state.</p>}
+      </details>
       <div className="mt-3 space-y-2">
-        {visibleRepayments.length === 0 && <p className="rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No {historyFilter === "ACTIVE" ? "active" : "archived"} repayment breakdowns.</p>}
+        {visibleRepayments.length === 0 && <p className="rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No {historyFilter === "ACTIVE" ? "current" : "deleted"} repayments.</p>}
         {displayedRepayments.map((repayment) => (
           <div key={repayment.id}>
             {cleanupMode && (
               <label className="mb-2 flex items-start gap-2 rounded-xl bg-surface-mint p-3 text-xs font-semibold text-brand-deepTeal">
                 <input type="checkbox" checked={selectedRepaymentIds.has(repayment.id)} disabled={isSaving || (historyFilter === "ACTIVE" && Boolean(repayment.linkedTransaction)) || (!selectedRepaymentIds.has(repayment.id) && selectedRepaymentIds.size >= 100)} onChange={(event) => changeBulkSelection(repayment.id, event.target.checked)} className="mt-0.5 accent-brand-green" />
-                {historyFilter === "ACTIVE" && repayment.linkedTransaction ? "Linked — unlink before archiving" : `Select ${dateLabel(repayment.repaymentDate)} repayment`}
+                {historyFilter === "ACTIVE" && repayment.linkedTransaction ? "Matched — unlink before deleting" : `Select ${dateLabel(repayment.repaymentDate)} repayment`}
               </label>
             )}
             <details className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
             <summary className="cursor-pointer list-none">
               <div className="flex items-center justify-between gap-3">
-                <span><strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong><span className="text-xs text-brand-deepTeal/60">{repayment.isArchived ? "Archived" : repayment.reconciliationStatus === "LINKED" ? "Linked" : repayment.reconciliationStatus === "NEEDS_REVIEW" ? "Review match" : "Not linked"}</span></span>
+                <span><strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong><span className="text-xs text-brand-deepTeal/60">{repayment.isArchived ? "Deleted" : repayment.reconciliationStatus === "NEEDS_REVIEW" ? "Needs review" : repayment.reconciliationStatus === "LINKED" ? "Matched" : "Repayment"}</span></span>
                 <strong className="text-sm text-brand-deepTeal">{aud(repayment.totalPaymentCents)}</strong>
               </div>
             </summary>
             <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
               {([[
                 "Principal", repayment.principalCents,
-              ], ["Interest", repayment.interestCents], ["Fees", repayment.feeCents], ["Balance after", repayment.balanceAfterCents]] as const).map(([label, value]) => (
+              ], ["Interest", repayment.interestCents], ["Fees", repayment.feeCents], ["Balance after", repayment.balanceAfterCents]] as const).filter(([, value]) => value !== null).map(([label, value]) => (
                 <div key={label} className="rounded-xl bg-surface-mint p-2"><dt className="text-brand-deepTeal/60">{label}</dt><dd className="mt-1 font-bold text-brand-deepTeal">{aud(value)}</dd></div>
               ))}
             </dl>
             {repayment.linkedTransaction && (
               <div className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
-                <p className="flex items-start gap-2"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> Linked to the everyday transaction dated {dateLabel(repayment.linkedTransaction.date)} for {aud(Math.abs(repayment.linkedTransaction.amountCents))}. The transaction remains the only cashflow and spending record; this card is its loan breakdown.</p>
-                <p className="mt-2 font-semibold">Unlink this breakdown before editing its date or amounts.</p>
-                <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 font-bold text-brand-deepTeal disabled:opacity-50">{reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink breakdown"}</button>
+                <p className="flex items-start gap-2"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> This repayment is matched.</p>
+                <p className="mt-2 font-semibold">Unlink this repayment before editing its date or amounts.</p>
+                <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 font-bold text-brand-deepTeal disabled:opacity-50">{reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink repayment"}</button>
               </div>
             )}
             {!repayment.isArchived && !repayment.linkedTransaction && (
               <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
-                <p className="text-xs font-bold text-brand-deepTeal">Possible everyday transaction match</p>
+                <p className="text-xs font-bold text-brand-deepTeal">Match this repayment</p>
                 <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">One clear high-confidence match may be linked automatically when a repayment is saved. Ambiguous, medium and manual matches stay here for your review.</p>
                 {!candidateReviews[repayment.id] ? (
                   <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "SUGGESTED")} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">{candidateLoadingId === repayment.id ? "Checking…" : "Find possible matches"}</button>
@@ -297,7 +299,7 @@ function RepaymentHistory({
                               disabled={reconciliationSavingId === repayment.id || ((candidate.confidence !== "HIGH" || candidateReviews[repayment.id].mode === "OVERRIDE") && !confirmedLinks[`${repayment.id}:${candidate.transactionId}`])}
                               onClick={() => onLink(repayment, candidate, candidateReviews[repayment.id].mode, Boolean(confirmedLinks[`${repayment.id}:${candidate.transactionId}`]))}
                               className="mt-3 min-h-10 rounded-full bg-brand-green px-3 font-bold text-white disabled:opacity-45"
-                            >{reconciliationSavingId === repayment.id ? "Linking…" : "Link this breakdown"}</button>
+                            >{reconciliationSavingId === repayment.id ? "Linking…" : "Match this repayment"}</button>
                           </li>
                         ))}
                       </ul>
@@ -317,16 +319,16 @@ function RepaymentHistory({
                 )}
               </div>
             )}
-            {repayment.isArchived && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Restore this breakdown before editing it.</p>}
+            {repayment.isArchived && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Restore this repayment before editing it.</p>}
             <div className="mt-3 flex flex-wrap gap-2">
               {!repayment.isArchived && !repayment.linkedTransaction && repayment.reconciliationStatus === "UNMATCHED" && (
                 <button type="button" disabled={isSaving} onClick={() => onEdit(repayment)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
-                  <Pencil aria-hidden="true" className="h-4 w-4" /> Edit breakdown
+                  <Pencil aria-hidden="true" className="h-4 w-4" /> Edit repayment
                 </button>
               )}
               <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
                 {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
-                {repayment.isArchived ? "Restore breakdown" : "Archive breakdown"}
+                {repayment.isArchived ? "Restore repayment" : "Delete repayment"}
               </button>
             </div>
             </details>
@@ -342,34 +344,6 @@ function RepaymentHistory({
   );
 }
 
-
-type LinkedEverydayTransaction = NonNullable<SafeLoanRepayment["linkedTransaction"]>;
-
-function LoanLinkedTransactions({ transactions }: Readonly<{ transactions: LinkedEverydayTransaction[] }>) {
-  const [showAll, setShowAll] = useState(false);
-  if (transactions.length === 0) return null;
-  const visible = showAll ? transactions : transactions.slice(0, 3);
-
-  return (
-    <section className="mt-4 border-t border-border pt-4" aria-labelledby="linked-everyday-transactions-heading">
-      <h4 id="linked-everyday-transactions-heading" className="text-sm font-bold text-brand-deepTeal">Linked everyday transactions ({transactions.length})</h4>
-      <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">These remain the only cashflow records. Repayment breakdowns add detail only.</p>
-      <ul className="mt-3 space-y-2">
-        {visible.map((transaction) => (
-          <li key={transaction.transactionId} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
-            <span><strong className="block">{dateLabel(transaction.date)}</strong><span className="text-brand-deepTeal/60">Everyday transaction</span></span>
-            <strong>{aud(Math.abs(transaction.amountCents))}</strong>
-          </li>
-        ))}
-      </ul>
-      {transactions.length > 3 && (
-        <button type="button" onClick={() => setShowAll((current) => !current)} className="mt-3 min-h-10 w-full rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-          {showAll ? "Show latest three" : `View all linked transactions (${transactions.length})`}
-        </button>
-      )}
-    </section>
-  );
-}
 
 async function readResult(response: Response): Promise<LoanResult> {
   try {
@@ -991,12 +965,7 @@ function AuthenticatedLoansManager({
                 .sort((left, right) => right.repaymentDate.localeCompare(left.repaymentDate));
               const activeLoanRepayments = loanRepayments.filter((repayment) => !repayment.isArchived);
               const latestRepayment = activeLoanRepayments[0] ?? null;
-              const linkedTransactions = Array.from(new Map(
-                activeLoanRepayments
-                  .filter((repayment): repayment is SafeLoanRepayment & { linkedTransaction: LinkedEverydayTransaction } => Boolean(repayment.linkedTransaction))
-                  .map((repayment) => [repayment.linkedTransaction.transactionId, repayment.linkedTransaction]),
-              ).values()).sort((left, right) => right.date.localeCompare(left.date));
-              const needsReview = activeLoanRepayments.some((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW");
+              const needsReviewCount = activeLoanRepayments.filter((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW").length;
               const expanded = expandedLoanId === loan.id;
               const propertyActivityKey = loanRepayments
                 .map((repayment) => `${repayment.id}:${repayment.updatedAt}:${repayment.linkedTransaction?.transactionId ?? "none"}`)
@@ -1012,27 +981,16 @@ function AuthenticatedLoansManager({
                     </div>
                   </div>
 
-                  <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
-                    <div className="rounded-2xl bg-surface-mint p-3">
-                      <dt className="text-brand-deepTeal/60">Repayment breakdowns</dt>
-                      <dd className="mt-1 text-lg font-bold text-brand-deepTeal">{activeLoanRepayments.length}</dd>
-                    </div>
-                    <div className="rounded-2xl bg-surface-mint p-3">
-                      <dt className="text-brand-deepTeal/60">Linked transactions</dt>
-                      <dd className="mt-1 text-lg font-bold text-brand-deepTeal">{linkedTransactions.length}</dd>
-                    </div>
-                  </dl>
-
                   <p className="mt-3 text-sm text-brand-deepTeal/65">
                     {latestRepayment
-                      ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${latestRepayment.reconciliationStatus === "LINKED" ? "Matched" : latestRepayment.reconciliationStatus === "NEEDS_REVIEW" ? "Needs review" : "Not linked"}`
-                      : "No repayment breakdowns saved yet."}
+                      ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${aud(latestRepayment.totalPaymentCents)}`
+                      : "No repayments imported yet"}
                   </p>
-
-                  {needsReview && (
-                    <p className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-amber/10 p-3 text-xs font-semibold text-brand-deepTeal">
-                      <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-warning-amber" />
-                      A repayment match needs your review.
+                  {latestRepayment && (
+                    <p className={`mt-2 text-xs font-bold ${needsReviewCount > 0 ? "text-warning-amber" : "text-brand-teal"}`}>
+                      {needsReviewCount > 0
+                        ? `${needsReviewCount} repayment${needsReviewCount === 1 ? "" : "s"} need matching`
+                        : "Up to date"}
                     </p>
                   )}
 
@@ -1047,20 +1005,23 @@ function AuthenticatedLoansManager({
 
                   {expanded && (
                     <div className="mt-5 border-t border-border pt-5">
-                      <div className="flex flex-wrap justify-end gap-2">
+                      <div className="flex flex-wrap items-center justify-end gap-2">
                         <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
                           <Pencil aria-hidden="true" className="h-4 w-4" /> Edit loan
                         </button>
+                        <details className="relative">
+                          <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">More</summary>
+                          <div className="mt-2 space-y-2 rounded-2xl border border-border bg-white p-3 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:min-w-52">
+                            {loan.property && (
+                              <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="min-h-10 w-full rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">Edit property</button>
+                            )}
+                            <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="min-h-10 w-full rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal">Delete loan</button>
+                          </div>
+                        </details>
                       </div>
 
                       {loan.property && (
-                        <div className="mt-4 space-y-2">
-                          <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal">
-                            <span className="flex min-w-0 items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-teal" /><span className="truncate"><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></span>
-                            <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
-                          </div>
-                          <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} />
-                        </div>
+                        <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} variant="loan-detail" />
                       )}
 
                       <RepaymentHistory
@@ -1081,11 +1042,6 @@ function AuthenticatedLoansManager({
                         onUnlink={(repayment) => void unlinkRepayment(repayment)}
                       />
 
-                      <LoanLinkedTransactions transactions={linkedTransactions} />
-
-                      <div className="mt-4 border-t border-border pt-4">
-                        <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive loan</button>
-                      </div>
                     </div>
                   )}
                 </article>
@@ -1121,11 +1077,11 @@ function AuthenticatedLoansManager({
         </section>
       )}
 
-      <section className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
-        <p className="flex items-center gap-2 font-bold text-brand-deepTeal"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-brand-green" /> Privacy boundary</p>
-        <p className="mt-2">SpendGrove stores safe nicknames and broad metadata only. No address, account number, masked reference, customer ID or source narration is requested.</p>
-        <p className="mt-2 flex items-center gap-2 font-semibold text-brand-teal"><CheckCircle2 aria-hidden="true" className="h-4 w-4" /> No tax conclusion is created.</p>
-      </section>
+      <details className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
+        <summary className="flex min-h-11 cursor-pointer items-center gap-2 font-bold text-brand-deepTeal"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-brand-green" /> How SpendGrove keeps loan information private</summary>
+        <p className="mt-2">SpendGrove stores safe nicknames and broad details only. It does not ask for an address, account number, masked reference, customer ID or source narration.</p>
+        <p className="mt-2 font-semibold text-brand-teal">Record keeping only - not tax advice.</p>
+      </details>
 
       {editor && <LoanEditor draft={editor.draft} properties={properties} isEditing={Boolean(editor.loanId)} error={error} isSaving={isSaving} onChange={(draft) => { setEditor({ ...editor, draft }); setError(""); }} onClose={() => setEditor(null)} onSave={() => void saveLoan()} />}
 

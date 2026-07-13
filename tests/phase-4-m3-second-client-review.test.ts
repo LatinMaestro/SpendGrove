@@ -48,11 +48,11 @@ describe("Phase 4 Milestone 3 second client-review hardening", () => {
     expect(source).toContain("View loan");
     expect(source).toContain("Close details");
     expect(source).toContain("visibleRepayments.slice(0, 3)");
-    expect(source).toContain("transactions.slice(0, 3)");
+    expect(source).toContain("propertyTransactions.slice(0, 3)");
     expect(source).toContain("View all repayments (");
-    expect(source).toContain("View all linked transactions (");
-    expect(source).toContain("A repayment match needs your review.");
-    expect(source).toContain("These remain the only cashflow records.");
+    expect(source).toContain("View all property transactions (");
+    expect(source).toContain("need matching");
+    expect(source).not.toContain("Linked everyday transactions");
   });
 
   it("hides monthly budget creation until requested and supports safe cancellation", async () => {

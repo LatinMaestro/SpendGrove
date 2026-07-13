@@ -1,26 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Building2, ChevronDown, ChevronUp, Landmark } from "lucide-react";
 import { PropertyRecordReview } from "@/components/property-record-review";
+import { propertyTransactionsForLoanView } from "@/lib/loan-display";
+
+type PropertyActivityTransaction = {
+  id: string;
+  date: string;
+  amountCents: number;
+  type: "INCOME" | "EXPENSE";
+  merchantName: string | null;
+  categoryName: string | null;
+};
 
 type PropertyActivity = {
   property: { id: string; nickname: string; usage: string; isArchived: boolean };
-  transactions: Array<{
-    id: string;
-    date: string;
-    amountCents: number;
-    type: "INCOME" | "EXPENSE";
-    merchantName: string | null;
-    categoryName: string | null;
-  }>;
-  loanTransactions: Array<{
-    id: string;
-    date: string;
-    amountCents: number;
-    type: "INCOME" | "EXPENSE";
-    merchantName: string | null;
-    categoryName: string | null;
+  transactions: PropertyActivityTransaction[];
+  loanTransactions: Array<PropertyActivityTransaction & {
     loanAccounts: Array<{ id: string; nickname: string }>;
   }>;
 };
@@ -34,18 +31,34 @@ function dateLabel(date: string) {
     .format(new Date(`${date}T00:00:00Z`));
 }
 
-export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propertyId: string }>) {
+function TransactionRow({ transaction, showMerchant = true }: Readonly<{ transaction: PropertyActivityTransaction; showMerchant?: boolean }>) {
+  return (
+    <li className="rounded-xl border border-border p-3 text-xs text-brand-deepTeal">
+      <div className="flex items-start justify-between gap-3">
+        <span>
+          <strong className="block">{showMerchant ? transaction.merchantName ?? "Everyday transaction" : transaction.type === "INCOME" ? "Money in" : "Money out"}</strong>
+          <span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` · ${transaction.categoryName}` : ""}</span>
+        </span>
+        <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
+      </div>
+    </li>
+  );
+}
+
+export function PropertyRecordKeepingActivity({
+  propertyId,
+  variant = "full",
+}: Readonly<{
+  propertyId: string;
+  variant?: "full" | "loan-detail";
+}>) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [activity, setActivity] = useState<PropertyActivity | null>(null);
   const [error, setError] = useState("");
+  const [showAllPropertyTransactions, setShowAllPropertyTransactions] = useState(false);
 
-  async function toggle() {
-    if (isOpen) {
-      setIsOpen(false);
-      return;
-    }
-    setIsOpen(true);
+  const loadActivity = useCallback(async () => {
     if (activity || isLoading) return;
     setIsLoading(true);
     setError("");
@@ -65,6 +78,57 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
     } finally {
       setIsLoading(false);
     }
+  }, [activity, isLoading, propertyId]);
+
+  useEffect(() => {
+    if (variant === "loan-detail") void loadActivity();
+  }, [loadActivity, variant]);
+
+  async function toggle() {
+    if (isOpen) {
+      setIsOpen(false);
+      return;
+    }
+    setIsOpen(true);
+    await loadActivity();
+  }
+
+  if (variant === "loan-detail") {
+    const propertyTransactions = activity
+      ? propertyTransactionsForLoanView(activity.transactions, activity.loanTransactions)
+      : [];
+    const visibleTransactions = showAllPropertyTransactions ? propertyTransactions : propertyTransactions.slice(0, 3);
+
+    return (
+      <div className="mt-4 space-y-4">
+        <section className="border-t border-border pt-4" aria-labelledby={`property-transactions-${propertyId}`}>
+          <h4 id={`property-transactions-${propertyId}`} className="text-sm font-bold text-brand-deepTeal">Property transactions</h4>
+          {isLoading && <p className="mt-3 text-sm font-semibold text-brand-deepTeal/65">Loading transactions...</p>}
+          {error && <p role="alert" className="mt-3 rounded-xl bg-danger-red/10 p-3 text-xs font-semibold text-danger-red">{error}</p>}
+          {activity && propertyTransactions.length === 0 && (
+            <p className="mt-3 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No other transactions are linked to this Property.</p>
+          )}
+          {visibleTransactions.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {visibleTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} showMerchant={false} />)}
+            </ul>
+          )}
+          {propertyTransactions.length > 3 && (
+            <button type="button" onClick={() => setShowAllPropertyTransactions((current) => !current)} className="mt-3 min-h-10 w-full rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+              {showAllPropertyTransactions ? "Show latest three" : `View all property transactions (${propertyTransactions.length})`}
+            </button>
+          )}
+        </section>
+
+        <details className="border-t border-border pt-4">
+          <summary className="min-h-11 cursor-pointer text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">View property records</summary>
+          <div className="mt-3">
+            <p className="text-xs leading-5 text-brand-deepTeal/65">Record keeping only - not tax advice.</p>
+            <PropertyRecordReview propertyId={propertyId} />
+          </div>
+        </details>
+      </div>
+    );
   }
 
   return (
@@ -88,14 +152,7 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
                   <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No active loan repayment transactions are connected yet.</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
-                    {activity.loanTransactions.map((transaction) => (
-                      <li key={transaction.id} className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
-                        <div className="flex items-start justify-between gap-3">
-                          <span><strong className="block">{transaction.merchantName ?? "Everyday transaction"}</strong><span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` - ${transaction.categoryName}` : ""}</span><span className="mt-1 block text-brand-teal">Connected via {transaction.loanAccounts.map((loan) => loan.nickname).join(", ")}</span></span>
-                          <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
-                        </div>
-                      </li>
-                    ))}
+                    {activity.loanTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)}
                   </ul>
                 )}
               </div>
@@ -107,14 +164,7 @@ export function PropertyRecordKeepingActivity({ propertyId }: Readonly<{ propert
                   <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No transactions have been manually linked to this Property. Loan repayment connections above are unaffected.</p>
                 ) : (
                   <ul className="mt-2 space-y-2">
-                    {activity.transactions.map((transaction) => (
-                      <li key={transaction.id} className="rounded-xl border border-border p-3 text-xs text-brand-deepTeal">
-                        <div className="flex items-start justify-between gap-3">
-                          <span><strong className="block">{transaction.merchantName ?? "Everyday transaction"}</strong><span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` - ${transaction.categoryName}` : ""}</span></span>
-                          <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
-                        </div>
-                      </li>
-                    ))}
+                    {activity.transactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)}
                   </ul>
                 )}
               </div>

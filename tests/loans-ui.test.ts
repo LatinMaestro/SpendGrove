@@ -34,14 +34,14 @@ describe("Loans-first UI contract", () => {
   it("shows repayment breakdown history without presenting extra spending", async () => {
     const manager = await readFile(managerPath, "utf8");
 
-    expect(manager).toContain("Repayment breakdowns ({repayments.length})");
-    expect(manager).toContain("Details only — your everyday transaction is still counted once.");
+    expect(manager).toContain("Loan repayments ({repayments.filter((repayment) => !repayment.isArchived).length})");
+    expect(manager).not.toContain("Linked everyday transactions");
     expect(manager).toContain("Principal");
     expect(manager).toContain("Interest");
     expect(manager).toContain("Fees");
     expect(manager).toContain("Balance after");
-    expect(manager).toContain("Archive breakdown");
-    expect(manager).toContain("Restore breakdown");
+    expect(manager).toContain("Delete repayment");
+    expect(manager).toContain("Restore repayment");
     expect(manager).not.toContain("rawNarration");
   });
 
@@ -59,12 +59,12 @@ describe("Loans-first UI contract", () => {
     expect(manager).toContain("Strong match");
     expect(manager).toContain("Possible match");
     expect(manager).toContain("Choose manually");
-    expect(manager).toContain("Link this breakdown");
-    expect(manager).toContain("Unlink breakdown");
+    expect(manager).toContain("Match this repayment");
+    expect(manager).toContain("Unlink repayment");
     expect(manager).toContain("Search this exact date");
     expect(manager).toContain("explicit manual override search, not a likely-match suggestion");
     expect(manager).toContain("Manual links and automatic high-confidence links are reversible.");
-    expect(manager).toContain("only cashflow and spending record");
+    expect(manager).toContain("This repayment is matched.");
     expect(manager).not.toContain("Nothing is linked automatically");
   });
 
@@ -86,10 +86,10 @@ describe("Loans-first UI contract", () => {
     const manager = await readFile(managerPath, "utf8");
 
     expect(manager).toContain("Edit repayment breakdown");
-    expect(manager).toContain("Edit breakdown");
+    expect(manager).toContain("Edit repayment");
     expect(manager).toContain("Save correction");
-    expect(manager).toContain("Unlink this breakdown before editing its date or amounts.");
-    expect(manager).toContain("Restore this breakdown before editing it.");
+    expect(manager).toContain("Unlink this repayment before editing its date or amounts.");
+    expect(manager).toContain("Restore this repayment before editing it.");
     expect(manager).toContain("expectedUpdatedAt");
     expect(manager).toContain('method: "PUT"');
     expect(manager).not.toContain("oldAmount");
@@ -99,13 +99,13 @@ describe("Loans-first UI contract", () => {
   it("filters active and archived repayments and offers bounded confirmed cleanup", async () => {
     const manager = await readFile(managerPath, "utf8");
 
-    expect(manager).toContain("Repayment history filter");
+    expect(manager).toContain("Deleted repayments and cleanup");
     expect(manager).toContain("Finish selecting");
-    expect(manager).toContain('historyFilter === "ACTIVE" ? "archive" : "restore"');
+    expect(manager).toContain('historyFilter === "ACTIVE" ? "delete" : "restore"');
     expect(manager).toContain("maximum 100");
-    expect(manager).toContain("Archive selected");
+    expect(manager).toContain("Delete selected");
     expect(manager).toContain("Restore selected");
-    expect(manager).toContain("Linked — unlink before archiving");
+    expect(manager).toContain("Matched — unlink before deleting");
     expect(manager).toContain("Everyday transactions are never changed or deleted.");
     expect(manager).toContain("expectedUpdatedAt");
     expect(manager).toContain("/api/account/loan-repayments/archive");
