@@ -5,6 +5,8 @@ import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   AlertTriangle,
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Cloud,
   Copy,
   FileSearch,
@@ -45,7 +47,13 @@ const typeLabels: Record<ManualTransactionType, string> = {
 };
 
 type AccountTransactionResult =
-  | { ok: true; transactions: AccountTransaction[]; savedTransaction?: AccountTransaction }
+  | {
+      ok: true;
+      transactions: AccountTransaction[];
+      savedTransaction?: AccountTransaction;
+      month?: { key: string; label: string };
+      hasLaterTransactions?: boolean;
+    }
   | { ok: false; error: string };
 
 type LoanMetadataResult =
@@ -64,6 +72,32 @@ function localDateInputValue() {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function brisbaneMonthKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    year: "numeric",
+    month: "2-digit",
+    timeZone: "Australia/Brisbane",
+  }).formatToParts(date);
+  const year = parts.find((part) => part.type === "year")?.value ?? String(date.getUTCFullYear());
+  const month = parts.find((part) => part.type === "month")?.value ?? String(date.getUTCMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function monthLabelFromKey(monthKey: string) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-AU", {
+    month: "long",
+    year: "numeric",
+    timeZone: "Australia/Brisbane",
+  }).format(new Date(Date.UTC(year, month - 1, 1)));
+}
+
+function shiftMonthKey(monthKey: string, offset: number) {
+  const [year, month] = monthKey.split("-").map(Number);
+  const shifted = new Date(Date.UTC(year, month - 1 + offset, 1));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
 function createEmptyDraft(): ManualTransactionDraft {
@@ -99,8 +133,8 @@ async function readAccountTransactionResponse(response: Response): Promise<Accou
   }
 }
 
-async function listAccountTransactions() {
-  return readAccountTransactionResponse(await fetch("/api/account/manual-transactions", {
+async function listAccountTransactions(monthKey: string) {
+  return readAccountTransactionResponse(await fetch(`/api/account/manual-transactions?month=${encodeURIComponent(monthKey)}`, {
     method: "GET",
     cache: "no-store",
   }));
@@ -222,6 +256,9 @@ function SignedOutFallback() {
 
 function DurableManualTransactionsExperience() {
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
+  const [selectedMonth, setSelectedMonth] = useState(brisbaneMonthKey);
+  const [selectedMonthLabel, setSelectedMonthLabel] = useState(() => monthLabelFromKey(brisbaneMonthKey()));
+  const [hasLaterTransactions, setHasLaterTransactions] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [accountWarning, setAccountWarning] = useState("");
   const [editor, setEditor] = useState<EditorState | null>(null);
@@ -232,7 +269,28 @@ function DurableManualTransactionsExperience() {
   const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
   const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("LOADING");
 
-  useEffect(() => { let cancelled = false; async function loadTransactions() { setIsReady(false); setAccountWarning(""); const result = await listAccountTransactions(); if (cancelled) return; if (result.ok) setTransactions(result.transactions); else { setTransactions([]); setAccountWarning(result.error); } setIsReady(true); } void loadTransactions(); return () => { cancelled = true; }; }, []);
+  useEffect(() => {
+    let cancelled = false;
+    async function loadTransactions() {
+      setIsReady(false);
+      setAccountWarning("");
+      const result = await listAccountTransactions(selectedMonth);
+      if (cancelled) return;
+      if (result.ok) {
+        setTransactions(result.transactions);
+        setSelectedMonthLabel(result.month?.label ?? monthLabelFromKey(selectedMonth));
+        setHasLaterTransactions(Boolean(result.hasLaterTransactions));
+      } else {
+        setTransactions([]);
+        setSelectedMonthLabel(monthLabelFromKey(selectedMonth));
+        setHasLaterTransactions(false);
+        setAccountWarning(result.error);
+      }
+      setIsReady(true);
+    }
+    void loadTransactions();
+    return () => { cancelled = true; };
+  }, [selectedMonth]);
   useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
@@ -260,7 +318,9 @@ function DurableManualTransactionsExperience() {
     setIsSaving(true); setEditorError("");
     const result = editor.mode === "edit" && editor.transactionId ? await updateAccountTransaction(editor.transactionId, editor.draft) : await createAccountManualTransaction(editor.draft);
     if (!result.ok) { setIsSaving(false); setEditorError(result.error); return; }
-    setTransactions(result.transactions);
+    const savedMonth = result.savedTransaction?.date.slice(0, 7) ?? selectedMonth;
+    setTransactions(result.transactions.filter((transaction) => transaction.date.startsWith(savedMonth)));
+    if (savedMonth !== selectedMonth) setSelectedMonth(savedMonth);
     const savedTransactionId = result.savedTransaction?.id;
     if (savedTransactionId) {
       const linkResult = await setTransactionPropertyLink(savedTransactionId, editor.propertyLinkPropertyId, editor.initialPropertyLinkPropertyId);
@@ -279,13 +339,18 @@ function DurableManualTransactionsExperience() {
   async function confirmDelete() {
     if (!deleteId || isSaving) return;
     setIsSaving(true); const result = await deleteAccountTransaction(deleteId); setIsSaving(false);
-    if (result.ok) { setTransactions(result.transactions); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
+    if (result.ok) { setTransactions(result.transactions.filter((transaction) => transaction.date.startsWith(selectedMonth))); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
   }
 
   return <div className="space-y-5">
     <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6"><div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between"><div className="flex items-start gap-4"><div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><LockKeyhole aria-hidden="true" className="h-6 w-6" /></div><div><p className="text-sm font-semibold text-brand-teal">Your transactions</p><h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Transactions</h2><p className="mt-2 max-w-xl text-sm leading-6 text-brand-deepTeal/70">Manual and imported transactions are shown together and scoped to your authenticated SpendGrove account.</p></div></div><button type="button" onClick={openCreate} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal"><Plus aria-hidden="true" className="h-5 w-5" /> Add transaction</button></div></section>
     {accountWarning && <div role="status" className="flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm leading-6 text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p>{accountWarning}</p></div>}
-    {!isReady ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking your account transactions…</p></section> : activeTransactions.length === 0 ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-mint text-brand-green"><ReceiptText aria-hidden="true" className="h-7 w-7" /></div><h2 className="mt-5 text-2xl font-bold text-brand-deepTeal">No transactions yet.</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-brand-deepTeal/70">Add a manual transaction or commit a reviewed CSV import; both will appear here.</p><button type="button" onClick={openCreate} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Plus aria-hidden="true" className="h-5 w-5" /> Add first transaction</button></section> : <section aria-labelledby="transaction-list-heading"><div className="flex items-end justify-between gap-4 px-1"><div><p className="text-sm font-semibold text-brand-teal">Transactions</p><h2 id="transaction-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeTransactions.length} active transaction{activeTransactions.length === 1 ? "" : "s"}</h2></div></div><div className="mt-4 space-y-3">{activeTransactions.map((transaction) => { const category = getManualCategory(transaction.categoryId); return <article key={transaction.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate text-lg font-bold text-brand-deepTeal">{transaction.description}</p><p className="mt-1 text-sm text-brand-deepTeal/65">{formatAustralianTransactionDate(transaction.date)} · {category?.name ?? "Category unavailable"}</p></div><p className={`shrink-0 text-lg font-bold ${transaction.amountCents < 0 ? "text-brand-deepTeal" : "text-brand-green"}`}>{formatAudFromCents(transaction.amountCents)}</p></div><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-semibold text-brand-deepTeal">{typeLabels[transaction.type]}</span><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${transaction.source === "IMPORTED" ? "bg-brand-green/10 text-brand-green" : "bg-surface-mint text-brand-teal"}`}>{transaction.source === "IMPORTED" ? "Imported" : "Manual"}</span>{transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}</div><button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Details</button></div></article>; })}</div></section>}
+    <nav aria-label="Transaction month" className="flex items-center justify-between rounded-3xl border border-border bg-surface-base p-3 shadow-soft">
+      <button type="button" aria-label="Previous month" onClick={() => setSelectedMonth((month) => shiftMonthKey(month, -1))} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
+      <h2 aria-live="polite" className="text-center text-lg font-bold text-brand-deepTeal">{selectedMonthLabel}</h2>
+      <button type="button" aria-label="Next month" disabled={!hasLaterTransactions} onClick={() => setSelectedMonth((month) => shiftMonthKey(month, 1))} className="flex min-h-11 min-w-11 items-center justify-center rounded-full text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
+    </nav>
+    {!isReady ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking {selectedMonthLabel} transactions…</p></section> : activeTransactions.length === 0 ? <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft"><div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-mint text-brand-green"><ReceiptText aria-hidden="true" className="h-7 w-7" /></div><h2 className="mt-5 text-2xl font-bold text-brand-deepTeal">No transactions in {selectedMonthLabel}.</h2><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-brand-deepTeal/70">Move to another month, add a transaction or import a reviewed CSV.</p><button type="button" onClick={openCreate} className="mt-5 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Plus aria-hidden="true" className="h-5 w-5" /> Add transaction</button></section> : <section aria-labelledby="transaction-list-heading"><div className="flex items-end justify-between gap-4 px-1"><div><p className="text-sm font-semibold text-brand-teal">{selectedMonthLabel}</p><h2 id="transaction-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeTransactions.length} transaction{activeTransactions.length === 1 ? "" : "s"}</h2></div></div><div className="mt-4 space-y-3">{activeTransactions.map((transaction) => { const category = getManualCategory(transaction.categoryId); return <article key={transaction.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft"><div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate text-lg font-bold text-brand-deepTeal">{transaction.description}</p><p className="mt-1 text-sm text-brand-deepTeal/65">{formatAustralianTransactionDate(transaction.date)} · {category?.name ?? "Category unavailable"}</p></div><p className={`shrink-0 text-lg font-bold ${transaction.amountCents < 0 ? "text-brand-deepTeal" : "text-brand-green"}`}>{formatAudFromCents(transaction.amountCents)}</p></div><div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4"><div className="flex flex-wrap gap-2"><span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-semibold text-brand-deepTeal">{typeLabels[transaction.type]}</span><span className={`rounded-full px-3 py-1.5 text-xs font-bold ${transaction.source === "IMPORTED" ? "bg-brand-green/10 text-brand-green" : "bg-surface-mint text-brand-teal"}`}>{transaction.source === "IMPORTED" ? "Imported" : "Manual"}</span>{transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}</div><button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Details</button></div></article>; })}</div></section>}
     <details className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75"><summary className="cursor-pointer font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">How your transaction data is kept safe</summary><p className="mt-2">Only the cleaned details you reviewed are saved to your account. Removed transactions stay out of the active list.</p></details>
     {editor && <TransactionEditor editor={editor} duplicateCount={duplicateCount} error={editorError} isSaving={isSaving} propertyOptions={propertyOptions} onChange={(draft) => { setEditor({ ...editor, draft }); setEditorError(""); }} onPropertyEnabledChange={(enabled) => setEditor({ ...editor, propertyLinkEnabled: enabled, propertyLinkPropertyId: enabled ? editor.propertyLinkPropertyId : null })} onPropertyLinkChange={(propertyId) => setEditor({ ...editor, propertyLinkPropertyId: propertyId })} onCancel={() => setEditor(null)} onSubmit={saveEditor} />}
     {detailTransaction && <ModalFrame title="Transaction details" description={detailTransaction.source === "IMPORTED" ? "A cleaned transaction created from a reviewed import." : "A manual account entry."} onClose={() => setDetailId(null)}><dl className="mt-6 space-y-4 rounded-3xl bg-surface-mint p-5"><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Description</dt><dd className="mt-1 text-lg font-bold text-brand-deepTeal">{detailTransaction.description}</dd></div><div className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Amount</dt><dd className="mt-1 font-bold text-brand-deepTeal">{formatAudFromCents(detailTransaction.amountCents)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Date</dt><dd className="mt-1 font-bold text-brand-deepTeal">{formatAustralianTransactionDate(detailTransaction.date)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Category</dt><dd className="mt-1 font-bold text-brand-deepTeal">{getManualCategory(detailTransaction.categoryId)?.name}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Source</dt><dd className="mt-1 font-bold text-brand-deepTeal">{detailTransaction.source === "IMPORTED" ? "Imported · Account storage" : "Manual · Account storage"}</dd></div></div>{detailTransaction.notes && <div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Notes</dt><dd className="mt-1 text-brand-deepTeal">{detailTransaction.notes}</dd></div>}{detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}</dl><TransactionPropertyLinkPanel transactionId={detailTransaction.id} /><div className="mt-5 grid gap-3 sm:grid-cols-3"><button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button><button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button><button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-danger-red px-4 text-sm font-bold text-danger-red focus:outline-none focus:ring-2 focus:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button></div></ModalFrame>}
