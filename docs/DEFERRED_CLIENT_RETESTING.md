@@ -220,6 +220,110 @@ Delivery evidence:
 - [ ] Narrow screens have no horizontal scrolling.
 - [ ] Colour is not the only status signal.
 
+## Phase 4 Milestone 3 - Client-feedback acceptance hardening
+
+Status: implemented, merged, deployed and technically verified; pending final client retesting
+
+Delivery evidence:
+
+- PR #121 contract merged as `54ae6196ed12ff96495b7aed88beec893ddab1df`;
+- PR #122 implementation merged as `8bc4c6e4701554ec2cca0ce74e5aab2d38dcff15`;
+- 86 test files / 536 tests passed;
+- TypeScript/lint validity and clean production build passed;
+- Preview `dpl_GrPrQu1QWys6JDfLquwbuW2eEeF5` and main `dpl_AVVZqH2afjZNvPZJF5bp5R3No8sW` are Ready;
+- canonical review URL: https://spendgrove.vercel.app.
+
+### Transactions
+
+- [ ] The current Australian calendar month is selected by default.
+- [ ] Previous month and Next month controls move exactly one month and have clear accessible labels.
+- [ ] The next control is disabled when no later month is permitted.
+- [ ] A month with no transactions shows a concise empty state.
+- [ ] Search and existing filters operate within the selected month.
+- [ ] A long history no longer creates one enormous default page.
+- [ ] Dates do not shift across month boundaries.
+
+### Category picker
+
+- [ ] The category chooser opens quickly.
+- [ ] Search finds seeded categories.
+- [ ] Search finds custom categories.
+- [ ] Search matches relevant group labels without case sensitivity.
+- [ ] Keyboard and touch selection work.
+- [ ] The no-results state is clear.
+- [ ] A selection updates the correct review row.
+- [ ] Opening/searching the chooser does not refetch the whole category catalogue for every row.
+
+### Category suggestions
+
+- [ ] Pizza, Sushi and Red Rooster-style descriptions receive a sensible reviewable takeaway suggestion.
+- [ ] Other approved obvious takeaway brands behave consistently.
+- [ ] A user-confirmed merchant/category rule overrides a generic keyword suggestion.
+- [ ] Ambiguous descriptions remain manual.
+- [ ] A clear outgoing-transfer purpose can provide a safe category suggestion.
+- [ ] Suggestions remain editable and nothing is committed until Import is confirmed.
+- [ ] No raw description evidence, filename or account detail appears in saved data or messages.
+
+### Property controls
+
+- [ ] The Property selector is hidden until Include in property records is enabled.
+- [ ] Enabling the control reveals one active owned Property selector using nicknames only.
+- [ ] Unchecking clears the transient Property choice.
+- [ ] Skip creates no Property link.
+- [ ] Merge ignores/clears the transient choice and remains post-merge manual-link only.
+- [ ] Manual transaction create/edit uses the same compact optional pattern.
+
+### Loan reconciliation
+
+- [ ] Everyday-first import order auto-links one unique accepted high-confidence repayment.
+- [ ] Loan-first import order auto-links when the matching everyday transaction is later imported.
+- [ ] Zero or multiple eligible candidates remain manual.
+- [ ] Medium/manual/override candidates remain manual.
+- [ ] Cross-user, inactive, deleted or incompatible split records cannot auto-link.
+- [ ] The link remains reversible through the existing unlink flow.
+- [ ] No duplicate spending or second cashflow transaction appears.
+- [ ] No automatic PropertyTransactionLink is created.
+
+### Regular payments
+
+- [ ] A stable merchant with changing trailing references can still form a suggestion when exact amount and interval rules pass.
+- [ ] Case and punctuation variation can group only when merchant identity remains clear.
+- [ ] Unrelated merchants sharing generic words are not grouped.
+- [ ] Exact signed amount remains required.
+- [ ] Existing weekly, fortnightly and monthly interval windows remain unchanged.
+- [ ] Confirmation is still required before a regular payment becomes durable.
+- [ ] Dismissed/deleted lifecycle behaviour remains correct.
+
+### Delete terminology and recovery
+
+- [ ] Transactions show Delete transaction and disappear from active views after confirmation.
+- [ ] Budgets show Delete budget and disappear from active budgets.
+- [ ] Confirmed regular payments show Delete regular payment and disappear from the active list.
+- [ ] Deleted budgets and regular payments remain available only in secondary recovery sections.
+- [ ] Restore returns the owned record safely.
+- [ ] Suggestions continue to use Dismiss and Show suggestion again.
+- [ ] No financial or planning record is hard-deleted.
+- [ ] Import idempotency, audit history, Property links and repayment matching remain intact.
+
+### Home comparisons
+
+- [ ] The overall previous-month comparison remains correct.
+- [ ] Category comparisons use the same current and previous Brisbane calendar months.
+- [ ] Only useful/top category comparisons are shown.
+- [ ] Wording such as less, more, about the same and new this month is understandable.
+- [ ] Split children are included and split parents excluded.
+- [ ] Income, transfers, deleted records and analytical repayments are excluded.
+- [ ] No Property, tax, loan-balance, equity, valuation or net-worth statistic appears.
+
+### Privacy, accessibility and regression
+
+- [ ] Month controls, category search and changed compact controls have useful screen-reader labels.
+- [ ] Narrow mobile layouts do not scroll horizontally.
+- [ ] Duplicate submission prevention and failed-request recovery still work.
+- [ ] Existing Import/Skip/Merge, duplicate scoring, budgets, reports and Property-link rules are unchanged.
+- [ ] No raw CSV, raw row, narration, filename, account reference, exact address or private identifier is exposed.
+- [ ] Everyday transactions remain the only cashflow records.
+
 ## Future additions
 
 Every later milestone that remains pending client acceptance must add its non-technical tests to this document. Do not remove completed-but-untested checks until the client explicitly records the result.

@@ -69,6 +69,12 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | 2026-07-12 | Approve Phase 4 Milestone 3 beginner-first UI simplification using progressive disclosure | Make SpendGrove calm and obvious for first-time budgeting users without adding product scope or changing financial behaviour | Client | Audit every current screen; preserve essential actions and all calculations/rules; use unique internal labels 4.12-4.17 because Milestone 2 already used 4.6-4.8; no schema, migration, navigation tab or new feature |
 
+| 2026-07-13 | Default Transactions to one Brisbane calendar month with month-scoped search and accessible navigation | The all-history page was too long and obscured the current task | Client | Query and render only the selected month by default; preserve transaction ownership, values, split handling and cashflow rules |
+| 2026-07-13 | Prioritise deterministic local category intelligence and conservative stable merchant grouping | Obvious merchant/purpose terms and changing trailing references can reduce repetitive review without Basiq, AI or private persistence | Client | User-confirmed rules remain first; generic keyword suggestions stay reviewable; exact recurring amount/cadence thresholds remain unchanged; ambiguous cases remain manual |
+| 2026-07-13 | Re-evaluate unique high-confidence loan repayment matches after either import order | Loan-first imports should receive the same safe automation as everyday-first imports | Client | Use only the accepted exact remaining amount, zero-to-one-day, owned active and unique-candidate rules; keep ambiguous/medium/manual cases unlinked; everyday transactions remain the only cashflow records |
+| 2026-07-13 | Use Delete/Deleted/Restore language over the existing recovery-safe internal archive lifecycle | Beginner-facing Archive terminology added unnecessary product complexity | Client | Do not hard-delete financial/planning records; preserve retention, audit, reconciliation and restore behaviour |
+| 2026-07-13 | Add category-level month comparison using the existing overall comparison periods and eligibility formula | Users need understandable category context without a new financial calculation model | Client | Use active owned everyday expenses, include eligible split children, exclude split parents/income/transfers/analytical repayments; no Property, tax, loan or net-worth comparisons |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |

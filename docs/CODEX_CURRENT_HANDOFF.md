@@ -132,24 +132,41 @@ Verification:
 
 No Prisma schema, migration, data rewrite, package, provider, secret, environment, financial-rule, import-rule, Property-rule, report/export-rule or navigation-tab change occurred. No Preview or Production migration ran.
 
-## Phase 4 Milestone 3 client-feedback hardening
+## Phase 4 Milestone 3 client-feedback acceptance hardening
 
-The client approved a focused acceptance-hardening sequence on 13 July 2026. Controlling contract: `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md`.
+Status: implemented, merged, deployed and technically verified; client retesting remains pending. Controlling contract: `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md`.
 
-Approved work:
+Completed delivery:
 
-1. 4.12 contract and no-schema impact assessment;
-2. 4.13 month-focused transactions, searchable category picker and Property disclosure;
-3. 4.14 local category suggestions and recurring merchant normalisation;
-4. 4.15 repayment reconciliation in both import orders;
-5. 4.16 Delete wording and category-level month comparison;
-6. 4.17 QA and consolidated deferred client package.
+- PR #121 / 4.12 contract and no-schema impact assessment: `54ae6196ed12ff96495b7aed88beec893ddab1df`;
+- PR #122 / 4.13-4.16 implementation batch: `8bc4c6e4701554ec2cca0ce74e5aab2d38dcff15`;
+- 4.17 QA and consolidated deferred client package: this documentation pass.
 
-No schema, migration, hard deletion, calculation-threshold, duplicate, Property-link or report/export rule change is authorised.
+Delivered behaviour:
+
+- Transactions default to the current Brisbane calendar month with accessible previous/next month controls and month-scoped search/filtering.
+- CSV review uses a searchable locally filtered category catalogue and compact opt-in Property controls.
+- Conservative deterministic food/takeaway and clear transfer-purpose suggestions remain reviewable; user-confirmed merchant rules take priority.
+- Recurring detection groups only a conservative stable merchant identity while preserving exact signed amount and accepted cadence windows.
+- Unique accepted high-confidence repayment matches can reconcile in either import order; ambiguous cases remain manual and reversible.
+- Beginner-facing Delete/Deleted/Restore wording maps to the existing safe soft lifecycle.
+- Home category comparisons use the same current-versus-previous Brisbane month rules as the existing overall comparison.
+
+Verification:
+
+- exact PR #122 head `6729d9e6f464f6102c8f57610d09611b5a2d9cd0`;
+- Preview deployment `dpl_GrPrQu1QWys6JDfLquwbuW2eEeF5` is Ready;
+- 86 test files / 536 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- merged-main deployment `dpl_AVVZqH2afjZNvPZJF5bp5R3No8sW` is Ready;
+- canonical https://spendgrove.vercel.app routes `/`, `/transactions` and `/loans` returned HTTP 200 and browser checks found no console or internal-page error.
+
+No Prisma schema, migration, hard deletion, data rewrite/backfill, package, provider, secret, environment, recurring-threshold, budget-calculation, duplicate-scoring, Property-link, report/export or navigation-tab change occurred. No Preview or Production migration ran.
 
 ## Exact next action
 
-Complete and merge the documentation-only 4.12 contract, then implement the approved in-scope hardening. Keep Phase 4 Milestones 1, 2 and 3 open pending final client retesting.
+Stop for consolidated client retesting. Keep Phase 4 Milestones 1, 2 and 3 open; do not formally close them and do not begin another milestone.
 
 ## Explicit exclusions and stop conditions
 
