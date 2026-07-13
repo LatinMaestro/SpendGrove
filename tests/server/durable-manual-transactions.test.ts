@@ -5,6 +5,7 @@ import { AuthenticationRequiredError, OwnershipError } from "@/src/server/auth/o
 import {
   createDurableManualTransaction,
   listDurableManualTransactions,
+  listDurableManualTransactionsForMonth,
   softDeleteDurableManualTransaction,
   updateDurableManualTransaction,
   type ManualTransactionPersistenceStore,
@@ -97,10 +98,26 @@ function createMemoryStore() {
       records.push(nextRecord);
       return nextRecord;
     },
-    async listActive(userId) {
+    async listActive(userId, dateFrom, dateTo) {
       return records
-        .filter((record) => record.userId === userId && record.status === "ACTIVE" && record.deletedAt === null && record.splitRole !== "PARENT")
+        .filter((record) => (
+          record.userId === userId
+          && record.status === "ACTIVE"
+          && record.deletedAt === null
+          && record.splitRole !== "PARENT"
+          && (!dateFrom || record.date >= dateFrom)
+          && (!dateTo || record.date < dateTo)
+        ))
         .sort((left, right) => right.date.toISOString().localeCompare(left.date.toISOString()) || right.updatedAt.toISOString().localeCompare(left.updatedAt.toISOString())) as never;
+    },
+    async hasActiveAfter(userId, date) {
+      return records.some((record) => (
+        record.userId === userId
+        && record.status === "ACTIVE"
+        && record.deletedAt === null
+        && record.splitRole !== "PARENT"
+        && record.date >= date
+      ));
     },
     async findActiveById(userId, transactionId) {
       return findRecord(userId, transactionId) as never;
@@ -198,6 +215,21 @@ describe("durable manual transaction persistence", () => {
     await softDeleteDurableManualTransaction(user, updated.id, store, new Date("2026-06-11T00:00:00.000Z"));
     const active = await listDurableManualTransactions(user, store);
     expect(active.map((transaction) => transaction.id)).toEqual([duplicate.id]);
+  });
+
+  it("lists only the selected Australian calendar month and reports later history", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+    const categoryId = await store.resolveSeededCategoryId(user.userId, groceriesCategory);
+    const category = store.categories.get(`${user.userId}:${categoryId}`)!;
+    store.addRecord({ userId: user.userId, amountCents: -1000, date: new Date("2026-06-30T00:00:00.000Z"), description: "June", categoryId, category });
+    store.addRecord({ userId: user.userId, amountCents: -2000, date: new Date("2026-07-01T00:00:00.000Z"), description: "July", categoryId, category });
+    store.addRecord({ userId: user.userId, amountCents: -3000, date: new Date("2026-08-01T00:00:00.000Z"), description: "August", categoryId, category });
+
+    const result = await listDurableManualTransactionsForMonth(user, "2026-07", store);
+    expect(result.month).toEqual({ key: "2026-07", label: "July 2026" });
+    expect(result.transactions.map((transaction) => transaction.description)).toEqual(["July"]);
+    expect(result.hasLaterTransactions).toBe(true);
   });
 
   it("stores income as positive cents and requires a matching category type", async () => {
