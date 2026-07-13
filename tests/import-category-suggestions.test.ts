@@ -15,11 +15,11 @@ function categoryName(categoryId: string) {
 
 describe("import category suggestions", () => {
   it.each([
-    ["Domino's Wynnum", "Domino's", "Dining out"],
+    ["Domino's Wynnum", "Domino's", "Coffee / takeaway"],
     ["Bunnings Warehouse Fictional Suburb", "Bunnings", "Home maintenance"],
     ["Translink go card", "Translink", "Public transport"],
     ["Uber trip", "Uber", "Rideshare / taxi"],
-    ["Uber Eats order", "Uber Eats", "Dining out"],
+    ["Uber Eats order", "Uber Eats", "Coffee / takeaway"],
     ["AGL electricity", "AGL", "Electricity"],
     ["Loan repayment", "Loan repayment", "Loan repayment"],
     ["Credit card payment", "Credit card payment", "Credit card payment"],
@@ -31,6 +31,23 @@ describe("import category suggestions", () => {
     expect(categoryName(suggestion.categoryId)).toBe(expectedCategory);
     expect(suggestion.requiresReview).toBe(true);
     expect(suggestion.source).not.toBe("FALLBACK");
+  });
+
+  it.each([
+    ["Pizza for team", "Coffee / takeaway"],
+    ["Sushi lunch", "Coffee / takeaway"],
+    ["RED ROOSTER 4821", "Coffee / takeaway"],
+    ["KFC order 7788", "Coffee / takeaway"],
+    ["DoorDash 8842", "Coffee / takeaway"],
+  ])("uses conservative word-boundary food rules for %s", (description, expectedCategory) => {
+    const suggestion = suggestImportReviewCategory(description, emptyLocalMerchantData(), description);
+    expect(categoryName(suggestion.categoryId)).toBe(expectedCategory);
+    expect(suggestion).toMatchObject({ source: "KEYWORD", confidence: "HIGH", requiresReview: true });
+  });
+
+  it("does not match food keywords embedded inside unrelated words", () => {
+    const suggestion = suggestImportReviewCategory("Sushiko consulting", emptyLocalMerchantData());
+    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
   });
 
   it("keeps unclear recipient payments in Needs review", () => {
@@ -59,7 +76,7 @@ describe("import category suggestions", () => {
     expect(categoryName(suggestion.categoryId)).toBe("Gifts");
     expect(suggestion).toMatchObject({
       source: "KEYWORD",
-      confidence: "MEDIUM",
+      confidence: "HIGH",
       requiresReview: true,
     });
   });
