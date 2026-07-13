@@ -23,6 +23,7 @@ function evidence(input: {
   splitRole?: string;
   deletedAt?: string | null;
   merchantProfileId?: string | null;
+  merchantName?: string | null;
   categoryId?: string | null;
 }): RecurringEvidenceRecord {
   const merchantProfileId = input.merchantProfileId === undefined ? "merchant_streaming" : input.merchantProfileId;
@@ -37,6 +38,7 @@ function evidence(input: {
     splitRole: input.splitRole ?? "NONE",
     deletedAt: input.deletedAt ?? null,
     merchantProfileId,
+    merchantName: input.merchantName ?? "Stream Service",
     categoryId,
     merchantProfile: merchantProfileId ? {
       id: merchantProfileId,
@@ -218,13 +220,42 @@ describe("deterministic recurring suggestions", () => {
     ])).toEqual([]);
   });
 
+  it("groups safe merchant names with changing trailing references", () => {
+    const suggestions = detectRecurringSuggestions("user_1", [
+      evidence({ id: "reference_1", date: "2026-01-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Stream Service order 1001" }),
+      evidence({ id: "reference_2", date: "2026-02-01T00:00:00.000Z", merchantProfileId: null, merchantName: "stream service ORDER-2002" }),
+      evidence({ id: "reference_3", date: "2026-03-01T00:00:00.000Z", merchantProfileId: null, merchantName: "STREAM SERVICE order 3003" }),
+    ]);
+
+    expect(suggestions).toMatchObject([{
+      label: "Stream Service",
+      cadence: "MONTHLY",
+      expectedAmountCents: -1599,
+      occurrenceCount: 3,
+    }]);
+  });
+
+  it("does not group unrelated or generic merchant identities", () => {
+    expect(detectRecurringSuggestions("user_1", [
+      evidence({ id: "generic_1", date: "2026-01-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Payment 1001" }),
+      evidence({ id: "generic_2", date: "2026-02-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Payment 2002" }),
+      evidence({ id: "generic_3", date: "2026-03-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Payment 3003" }),
+    ])).toEqual([]);
+
+    expect(detectRecurringSuggestions("user_1", [
+      evidence({ id: "different_1", date: "2026-01-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Alpha Fitness ref 1001" }),
+      evidence({ id: "different_2", date: "2026-02-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Beta Fitness ref 2002" }),
+      evidence({ id: "different_3", date: "2026-03-01T00:00:00.000Z", merchantProfileId: null, merchantName: "Gamma Fitness ref 3003" }),
+    ])).toEqual([]);
+  });
+
   it("excludes cross-user, deleted, split-parent, transfer and inactive evidence", () => {
     const excluded = [
       evidence({ id: "other_user", date: "2026-04-01T00:00:00.000Z", userId: "user_2" }),
       evidence({ id: "deleted", date: "2026-04-01T00:00:00.000Z", status: "DELETED", deletedAt: "2026-04-02T00:00:00.000Z" }),
       evidence({ id: "parent", date: "2026-04-01T00:00:00.000Z", splitRole: "PARENT" }),
       evidence({ id: "transfer", date: "2026-04-01T00:00:00.000Z", type: "TRANSFER" }),
-      evidence({ id: "no_merchant", date: "2026-04-01T00:00:00.000Z", merchantProfileId: null }),
+      evidence({ id: "no_merchant", date: "2026-04-01T00:00:00.000Z", merchantProfileId: null, merchantName: "" }),
       {
         ...evidence({ id: "foreign_relation", date: "2026-04-01T00:00:00.000Z" }),
         merchantProfile: {
