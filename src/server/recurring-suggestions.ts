@@ -3,6 +3,11 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { auditEventSchema } from "@/lib/validation/audit";
 import { assertNoPrivateBankIdentifiers } from "@/lib/validation/privacy";
+import {
+  canonicalMerchantDisplayName,
+  canonicalMerchantGroupingKey,
+  isSafeCanonicalMerchantGroupingKey,
+} from "@/lib/import-review-merchant-identity";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
@@ -21,6 +26,7 @@ export type RecurringEvidenceRecord = {
   splitRole: string;
   deletedAt?: Date | string | null;
   merchantProfileId: string | null;
+  merchantName: string | null;
   categoryId: string | null;
   merchantProfile: {
     id: string;
@@ -283,13 +289,39 @@ export function createRecurringSuggestionKey(input: {
     .digest("hex");
 }
 
+type RecurringEvidenceWithMerchant = RecurringEvidenceRecord & {
+  merchantIdentity: string;
+  merchantLabel: string;
+};
+
+function recurringMerchantIdentity(record: RecurringEvidenceRecord, userId: string) {
+  if (record.merchantProfileId) {
+    if (
+      !record.merchantProfile?.isActive
+      || record.merchantProfile.userId !== userId
+      || record.merchantProfile.deletedAt
+    ) return null;
+    return {
+      merchantIdentity: `profile:${record.merchantProfileId}`,
+      merchantLabel: record.merchantProfile.name,
+    };
+  }
+
+  const key = canonicalMerchantGroupingKey(record.merchantName ?? "");
+  if (!key || !isSafeCanonicalMerchantGroupingKey(key)) return null;
+  return {
+    merchantIdentity: `clean:${key}`,
+    merchantLabel: canonicalMerchantDisplayName(record.merchantName ?? ""),
+  };
+}
+
 export function detectRecurringSuggestions(
   userId: string,
   evidence: RecurringEvidenceRecord[],
   dismissedKeys: string[] = [],
 ) {
   const dismissed = new Set(dismissedKeys);
-  const groups = new Map<string, RecurringEvidenceRecord[]>();
+  const groups = new Map<string, RecurringEvidenceWithMerchant[]>();
 
   for (const record of evidence) {
     if (
@@ -297,11 +329,7 @@ export function detectRecurringSuggestions(
       || record.status !== "ACTIVE"
       || record.deletedAt
       || record.splitRole === "PARENT"
-      || !record.merchantProfileId
       || !record.categoryId
-      || !record.merchantProfile?.isActive
-      || record.merchantProfile.userId !== userId
-      || record.merchantProfile.deletedAt
       || !record.category
       || record.category.userId !== userId
       || record.category.isArchived
@@ -313,15 +341,16 @@ export function detectRecurringSuggestions(
     }
 
     const date = asDate(record.date);
-    if (!date) continue;
+    const merchant = recurringMerchantIdentity(record, userId);
+    if (!date || !merchant) continue;
     const groupKey = [
-      record.merchantProfileId,
+      merchant.merchantIdentity,
       record.categoryId,
       record.type,
       String(record.amountCents),
     ].join("|");
     const current = groups.get(groupKey) ?? [];
-    current.push(record);
+    current.push({ ...record, ...merchant });
     groups.set(groupKey, current);
   }
 
@@ -338,9 +367,9 @@ export function detectRecurringSuggestions(
     const cadence = detectCadence(dates);
     if (!cadence) continue;
 
-    const first = sorted[0] as RecurringEvidenceRecord & { type: RecurringTransactionType };
+    const first = sorted[0] as RecurringEvidenceWithMerchant & { type: RecurringTransactionType };
     const key = createRecurringSuggestionKey({
-      merchantProfileId: first.merchantProfileId!,
+      merchantProfileId: first.merchantIdentity,
       categoryId: first.categoryId!,
       transactionType: first.type,
       amountCents: first.amountCents,
@@ -351,7 +380,7 @@ export function detectRecurringSuggestions(
     const confidence: RecurringConfidenceCode = sorted.length >= 3 ? "HIGH" : "REVIEW";
     suggestions.push({
       key,
-      label: first.merchantProfile!.name,
+      label: first.merchantLabel,
       categoryId: first.categoryId!,
       categoryLabel: first.category!.name,
       transactionType: first.type,
@@ -360,7 +389,7 @@ export function detectRecurringSuggestions(
       nextExpectedDate: addCadence(dates[dates.length - 1], cadence),
       confidence,
       occurrenceCount: sorted.length,
-      why: `${sorted.length} active transactions share the same confirmed merchant, category and amount with a ${cadenceLabel(cadence)} interval.`,
+      why: `${sorted.length} active transactions share the same safe merchant identity, category and amount with a ${cadenceLabel(cadence)} interval.`,
     });
   }
 
@@ -465,7 +494,6 @@ export function createPrismaRecurringStore(prisma: PrismaClient = getPrismaClien
           deletedAt: null,
           splitRole: { not: "PARENT" },
           type: { in: ["EXPENSE", "INCOME"] },
-          merchantProfileId: { not: null },
           categoryId: { not: null },
         },
         select: {
@@ -478,6 +506,7 @@ export function createPrismaRecurringStore(prisma: PrismaClient = getPrismaClien
           splitRole: true,
           deletedAt: true,
           merchantProfileId: true,
+          merchantName: true,
           categoryId: true,
           merchantProfile: {
             select: {

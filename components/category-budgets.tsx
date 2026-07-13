@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Archive, Pencil, PiggyBank, Plus, RotateCcw } from "lucide-react";
+import { Pencil, PiggyBank, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
@@ -198,12 +198,12 @@ function BudgetExperience() {
   }
 
   function archiveBudget(budget: CategoryBudget) {
-    if (!window.confirm("Archive this monthly budget? Existing transactions will not be changed.")) return;
+    if (!window.confirm("Delete this monthly budget from the active list? Existing transactions will not be changed.")) return;
     void mutate({
       action: "ARCHIVE",
       budgetId: budget.id,
       updatedAt: budget.updatedAt,
-    }, budget.id, "Monthly category budget archived.");
+    }, budget.id, "Budget removed from the active list.");
   }
 
   function restoreBudget(budget: CategoryBudget) {
@@ -285,8 +285,8 @@ function BudgetExperience() {
                           <button type="button" disabled={busy} onClick={() => editing ? setEditingId(null) : startEditing(budget)} aria-label={"Edit " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-3 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
                             <Pencil aria-hidden="true" className="h-4 w-4" /> Edit
                           </button>
-                          <button type="button" disabled={busy} onClick={() => archiveBudget(budget)} aria-label={"Archive " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                            <Archive aria-hidden="true" className="h-4 w-4" /> Archive
+                          <button type="button" disabled={busy} onClick={() => archiveBudget(budget)} aria-label={"Delete " + budget.categoryLabel + " budget"} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-border px-3 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                            <Trash2 aria-hidden="true" className="h-4 w-4" /> Delete
                           </button>
                         </div>
                       </div>
@@ -323,9 +323,9 @@ function BudgetExperience() {
 
           {archivedBudgets.length > 0 && (
           <details className="mt-6 border-t border-border pt-5">
-            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Archived budgets ({archivedBudgets.length})</summary>
+            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Deleted budgets ({archivedBudgets.length})</summary>
             {archivedBudgets.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived monthly budgets will appear here and can be restored.</p>
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Deleted monthly budgets will appear here and can be restored.</p>
             ) : (
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {archivedBudgets.map((budget) => (

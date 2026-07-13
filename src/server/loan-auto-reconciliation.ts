@@ -125,3 +125,52 @@ export async function autoReconcileHighConfidenceRepayments(
   }
   return linkedCount;
 }
+
+
+export async function autoReconcileHighConfidenceRepaymentsForTransactions(
+  prisma: PrismaClient,
+  userId: string,
+  transactionIds: readonly string[],
+) {
+  const uniqueTransactionIds = [...new Set(transactionIds.filter(Boolean))];
+  if (uniqueTransactionIds.length === 0) return 0;
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      id: { in: uniqueTransactionIds },
+      userId,
+      type: "EXPENSE",
+      status: "ACTIVE",
+      deletedAt: null,
+      splitRole: { not: "PARENT" },
+      amountCents: { not: 0 },
+    },
+    select: { date: true },
+  });
+  if (transactions.length === 0) return 0;
+
+  const timestamps = transactions.map((transaction) => transaction.date.getTime());
+  const dateFrom = new Date(Math.min(...timestamps));
+  dateFrom.setUTCDate(dateFrom.getUTCDate() - 1);
+  const dateTo = new Date(Math.max(...timestamps));
+  dateTo.setUTCDate(dateTo.getUTCDate() + 1);
+
+  const repayments = await prisma.loanRepayment.findMany({
+    where: {
+      userId,
+      isArchived: false,
+      deletedAt: null,
+      repaymentDate: { gte: dateFrom, lte: dateTo },
+    },
+    select: {
+      id: true,
+      reconciliationLink: { select: { unlinkedAt: true } },
+    },
+  });
+
+  const eligibleRepaymentIds = repayments
+    .filter((repayment) => !repayment.reconciliationLink || repayment.reconciliationLink.unlinkedAt !== null)
+    .map((repayment) => repayment.id);
+
+  return autoReconcileHighConfidenceRepayments(prisma, userId, eligibleRepaymentIds);
+}

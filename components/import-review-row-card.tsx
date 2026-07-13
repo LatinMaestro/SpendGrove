@@ -60,10 +60,21 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
 }) {
   const [showMore, setShowMore] = useState(false);
   const [showMerchantEdit, setShowMerchantEdit] = useState(false);
+  const [propertyEnabled, setPropertyEnabled] = useState(Boolean(row.propertyLinkPropertyId));
   const previousMerchantName = useRef(row.merchantName);
   const currentCategory = getReviewCategory(customCategories, row.categoryId);
   const topDuplicateCandidate = duplicateCandidates[0];
   const statusText = reviewStatusText(row);
+
+  function chooseAction(action: ImportReviewAction) {
+    if (action !== "IMPORT") setPropertyEnabled(false);
+    onAction(action);
+  }
+
+  function toggleProperty(enabled: boolean) {
+    setPropertyEnabled(enabled);
+    if (!enabled) onPropertyLinkChange(null);
+  }
 
   function finishMerchantEdit() {
     setShowMerchantEdit(false);
@@ -80,26 +91,36 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
     <ReviewCategoryPicker row={row} customCategories={customCategories} onDetails={onDetails} onCreate={onCreateCategory} />
     {ambiguousTransfer && <p className="mt-3 text-xs font-semibold leading-5 text-brand-teal">This may be a transfer. Check the source details in More options if you are unsure.</p>}
     <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-3"><input type="checkbox" checked={isPotentiallyDeductible} onChange={(event) => onTaxChange(event.target.checked)} className="mt-1 h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green" /><span><span className="block text-sm font-bold text-brand-deepTeal">Needs record-keeping review?</span><span className="mt-0.5 block text-xs leading-5 text-brand-deepTeal/60">Optional note for this browser review only. This choice is not saved as a transaction.</span></span></label>
-    <section className="mt-4 rounded-2xl border border-border bg-white p-3" aria-label="Property record link for this import row">
-      <div className="flex items-start gap-3"><Home aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-teal" /><div className="min-w-0 flex-1"><p className="text-sm font-bold text-brand-deepTeal">Include in property records</p><p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Optional. This will help this transaction appear in property records later. Record keeping only - not tax advice.</p></div></div>
-      {row.action === "IMPORT" ? (
-        propertyOptionsStatus === "READY" && propertyOptions.length > 0 ? (
-          <label className="mt-3 block text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Link to property<select value={row.propertyLinkPropertyId ?? ""} onChange={(event) => onPropertyLinkChange(event.target.value || null)} className="mt-2 min-h-11 w-full rounded-2xl border border-border bg-white px-3 text-sm font-normal normal-case tracking-normal text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><option value="">No Property link</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.nickname} · {propertyUsageLabels[property.usage]}</option>)}</select></label>
-        ) : propertyOptionsStatus === "LOADING" ? (
-          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Loading active Properties…</p>
-        ) : propertyOptionsStatus === "SIGNED_OUT" ? (
-          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Sign in before importing to choose a Property link.</p>
-        ) : propertyOptionsStatus === "UNAVAILABLE" ? (
-          <p className="mt-3 text-xs font-semibold text-warning-amber">Property options could not be loaded. You can still import and link this transaction later.</p>
-        ) : (
-          <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">No active Properties are available. Create one from Loans first, or import without a Property link.</p>
-        )
-      ) : (
-        <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">{row.action === "SKIP" ? "Skipped rows do not create transactions or Property links." : "Merge rows are linked after import by editing the existing transaction."}</p>
-      )}
-    </section>
+    {row.action === "IMPORT" && (
+      <section className="mt-4" aria-label="Property record link for this import row">
+        <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-surface-mint p-3">
+          <input
+            type="checkbox"
+            checked={propertyEnabled}
+            onChange={(event) => toggleProperty(event.target.checked)}
+            className="h-5 w-5 rounded border-border text-brand-green focus:ring-brand-green"
+          />
+          <span className="flex items-center gap-2 text-sm font-bold text-brand-deepTeal"><Home aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Include in property records</span>
+        </label>
+        {propertyEnabled && (
+          <div className="mt-3 rounded-2xl border border-border bg-white p-3">
+            {propertyOptionsStatus === "READY" && propertyOptions.length > 0 ? (
+              <label className="block text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Link to property<select autoFocus value={row.propertyLinkPropertyId ?? ""} onChange={(event) => onPropertyLinkChange(event.target.value || null)} className="mt-2 min-h-11 w-full rounded-2xl border border-border bg-white px-3 text-sm font-normal normal-case tracking-normal text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><option value="">Choose a Property</option>{propertyOptions.map((property) => <option key={property.id} value={property.id}>{property.nickname} · {propertyUsageLabels[property.usage]}</option>)}</select><span className="mt-2 block text-xs font-normal normal-case tracking-normal text-brand-deepTeal/60">Record keeping only - not tax advice.</span></label>
+            ) : propertyOptionsStatus === "LOADING" ? (
+              <p className="text-xs font-semibold text-brand-deepTeal/60">Loading active Properties…</p>
+            ) : propertyOptionsStatus === "SIGNED_OUT" ? (
+              <p className="text-xs font-semibold text-brand-deepTeal/60">Sign in before importing to choose a Property.</p>
+            ) : propertyOptionsStatus === "UNAVAILABLE" ? (
+              <p className="text-xs font-semibold text-warning-amber">Property options could not be loaded. Uncheck this option or link the transaction later.</p>
+            ) : (
+              <p className="text-xs font-semibold text-brand-deepTeal/60">No active Properties are available. Create one from Loans first.</p>
+            )}
+          </div>
+        )}
+      </section>
+    )}
     {row.categoryConfirmed && row.action !== "SKIP" && matchingRowCount > 0 && <button type="button" onClick={onApplySameMerchant} className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal"><Link2 aria-hidden="true" className="h-4 w-4" /> Apply to {matchingRowCount} matching transaction{matchingRowCount === 1 ? "" : "s"}</button>}
-    <fieldset className="mt-4"><legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">What should happen?</legend><div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">{reviewActions.map((action) => <button key={action.value} type="button" onClick={() => onAction(action.value)} aria-pressed={row.action === action.value} className={`min-h-10 rounded-xl border px-3 py-2 text-sm font-bold ${row.action === action.value ? "border-brand-green bg-white text-brand-deepTeal" : "border-transparent text-brand-deepTeal/70"}`}>{action.label}</button>)}</div>{row.action === "MERGE" && <div role="status" className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal"><p className="font-bold">Merge selected</p><p className="mt-1">Choose an eligible existing manual transaction below before final account save. Rows from this CSV cannot be merge targets.</p></div>}</fieldset>
+    <fieldset className="mt-4"><legend className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">What should happen?</legend><div className="mt-2 grid grid-cols-3 gap-1 rounded-2xl bg-surface-mint p-1">{reviewActions.map((action) => <button key={action.value} type="button" onClick={() => chooseAction(action.value)} aria-pressed={row.action === action.value} className={`min-h-10 rounded-xl border px-3 py-2 text-sm font-bold ${row.action === action.value ? "border-brand-green bg-white text-brand-deepTeal" : "border-transparent text-brand-deepTeal/70"}`}>{action.label}</button>)}</div>{row.action === "MERGE" && <div role="status" className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-3 text-xs leading-5 text-brand-deepTeal"><p className="font-bold">Merge selected</p><p className="mt-1">Choose an eligible existing manual transaction below before final account save. Rows from this CSV cannot be merge targets.</p></div>}</fieldset>
     {topDuplicateCandidate?.source === "EXISTING_TRANSACTION" && topDuplicateCandidate.confidence === "LIKELY" && row.action === "SKIP" && <p className="mt-3 rounded-2xl bg-warning-amber/10 p-3 text-xs font-semibold leading-5 text-brand-deepTeal">Skip was selected because this looks already saved. Choose Import only if you deliberately want another copy.</p>}
     {duplicateCandidates.length > 0 && <div className="mt-4 space-y-3"><p className="text-sm font-bold text-brand-deepTeal">Duplicate check</p>{duplicateCandidates.map((candidate) => <DuplicateCandidateDetails key={`${candidate.source}-${candidate.candidateId}`} candidate={candidate} isSelected={selectedMergeTargetId === candidate.candidateId} onChoose={onChooseMergeTarget} />)}</div>}
     <button type="button" onClick={() => setShowMore((current) => !current)} aria-expanded={showMore} className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-bold text-brand-teal">{showMore ? <ChevronUp aria-hidden="true" className="h-4 w-4" /> : <ChevronDown aria-hidden="true" className="h-4 w-4" />}{showMore ? "Hide options" : "More options"}</button>

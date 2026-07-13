@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Plus, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, Plus, Search, X } from "lucide-react";
 import type { CustomCategory, CustomCategoryGroup } from "@/lib/custom-categories";
 import {
   CUSTOM_CATEGORY_GROUPS,
@@ -38,16 +38,39 @@ export function ReviewCategoryPicker({
     currentCategoryType: currentCategory?.type,
   });
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
   const [group, setGroup] = useState<CustomCategoryGroup>(suggestedGroup);
   const [financialType, setFinancialType] = useState<ManualCategoryType>("TRANSFER");
   const [error, setError] = useState("");
-  const groups = getCategoryCatalogueSections(customCategories, row.categoryId);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const groups = useMemo(
+    () => getCategoryCatalogueSections(customCategories, row.categoryId),
+    [customCategories, row.categoryId],
+  );
+  const filteredGroups = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase("en-AU");
+    if (!needle) return groups;
+    return groups.map((section) => ({
+      ...section,
+      categories: section.categories.filter((category) =>
+        category.name.toLocaleLowerCase("en-AU").includes(needle)
+        || section.label.toLocaleLowerCase("en-AU").includes(needle)),
+    })).filter((section) => section.categories.length > 0);
+  }, [groups, query]);
+  const resultCount = filteredGroups.reduce((count, section) => count + section.categories.length, 0);
+
+  useEffect(() => {
+    if (!open || showCreate) return;
+    const frame = window.requestAnimationFrame(() => searchRef.current?.focus());
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, showCreate]);
 
   function chooseCategory(categoryId: string) {
     onDetails({ merchantName: row.merchantName, categoryId, editType: "CATEGORY_EDIT" });
     setOpen(false);
+    setQuery("");
     setShowCreate(false);
   }
 
@@ -78,7 +101,7 @@ export function ReviewCategoryPicker({
       <span className="text-sm font-bold text-brand-deepTeal">Category</span>
       <button
         type="button"
-        onClick={() => { setOpen(true); setShowCreate(false); setError(""); }}
+        onClick={() => { setOpen(true); setQuery(""); setShowCreate(false); setError(""); }}
         aria-haspopup="dialog"
         className="mt-2 flex min-h-12 w-full items-center justify-between rounded-2xl border border-border bg-white px-4 text-left text-sm font-semibold text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
       >
@@ -90,13 +113,30 @@ export function ReviewCategoryPicker({
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-brand-deepTeal/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby={`category-picker-${row.id}`} className="max-h-[82dvh] w-full max-w-xl overflow-hidden rounded-t-[2rem] bg-surface-base shadow-soft sm:rounded-[2rem]">
             <div className="flex items-start justify-between gap-4 border-b border-border p-5">
-              <div><h3 id={`category-picker-${row.id}`} className="text-xl font-bold text-brand-deepTeal">Choose a category</h3><p className="mt-1 text-sm text-brand-deepTeal/65">Your choice is reviewed now and safely remembered for this merchant next time.</p></div>
+              <div><h3 id={`category-picker-${row.id}`} className="text-xl font-bold text-brand-deepTeal">Choose a category</h3><p className="mt-1 text-sm text-brand-deepTeal/65">Search or browse. Your reviewed choice can be remembered for this merchant.</p></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close category picker" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-brand-deepTeal"><X aria-hidden="true" className="h-5 w-5" /></button>
             </div>
             <div className="max-h-[calc(82dvh-7rem)] overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4">
               {!showCreate ? (
                 <div className="space-y-5">
-                  {groups.map((section) => (
+                  <label className="block text-sm font-bold text-brand-deepTeal">
+                    Search categories
+                    <span className="relative mt-2 block">
+                      <Search aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-teal" />
+                      <input
+                        ref={searchRef}
+                        type="search"
+                        value={query}
+                        onChange={(event) => setQuery(event.target.value)}
+                        placeholder="Try food, rent or utilities"
+                        aria-label="Search categories"
+                        className="min-h-12 w-full rounded-2xl border border-border bg-white py-3 pl-11 pr-4 text-sm font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+                      />
+                    </span>
+                  </label>
+                  {resultCount === 0 ? (
+                    <p role="status" className="rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">No categories found.</p>
+                  ) : filteredGroups.map((section) => (
                     <div key={section.value}><p className="mb-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{section.label}</p><div className="grid gap-2 sm:grid-cols-2">{section.categories.map((category) => {
                       const selected = category.id === row.categoryId;
                       return <button key={category.id} type="button" onClick={() => chooseCategory(category.id)} className={`flex min-h-12 items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-semibold ${selected ? "border-brand-green bg-surface-mint text-brand-deepTeal" : "border-border bg-white text-brand-deepTeal"}`}><span>{category.name}{"isArchived" in category && category.isArchived ? " (archived)" : ""}</span>{selected && <Check aria-hidden="true" className="h-4 w-4 text-brand-green" />}</button>;

@@ -92,7 +92,7 @@ describe("everyday insight calculations", () => {
     expect(snapshot.currentMonth).toMatchObject({ spendCents: 12500, transactionCount: 2 });
     expect(snapshot.previousMonth).toMatchObject({ spendCents: 5000, transactionCount: 1 });
     expect(snapshot.trend).toEqual({ direction: "UP", differenceCents: 7500 });
-    expect(snapshot.categories).toEqual([{ id: "category_food", label: "Food", spendCents: 12500 }]);
+    expect(snapshot.categories).toEqual([{ id: "category_food", label: "Food", spendCents: 12500, previousSpendCents: 5000, differenceCents: 7500, direction: "UP" }]);
   });
 
   it("shows no comparison when the previous month has no eligible spending", () => {

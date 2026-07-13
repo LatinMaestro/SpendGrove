@@ -26,6 +26,9 @@ type InsightSnapshot = {
     id: string | null;
     label: string;
     spendCents: number;
+    previousSpendCents: number;
+    differenceCents: number;
+    direction: "UP" | "DOWN" | "SAME" | "NEW";
   }>;
   budgets: Array<{
     id: string;
@@ -64,6 +67,15 @@ async function loadInsights(): Promise<InsightResult> {
   } catch {
     return { ok: false, error: "Everyday insights could not be loaded safely. Check your connection and try again." };
   }
+}
+
+function categoryTrendCopy(category: InsightSnapshot["categories"][number]) {
+  if (category.direction === "NEW") return "New this month";
+  if (category.direction === "SAME") return "About the same";
+  const amount = formatAudFromCents(Math.abs(category.differenceCents));
+  return category.direction === "UP"
+    ? `${amount} more than last month`
+    : `${amount} less than last month`;
 }
 
 function TrendSummary({ snapshot }: Readonly<{ snapshot: InsightSnapshot }>) {
@@ -149,9 +161,12 @@ function InsightExperience() {
               ) : (
                 <ul className="mt-3 space-y-3">
                   {snapshot.categories.slice(0, 5).map((category) => (
-                    <li key={category.id ?? "uncategorised"} className="flex items-center justify-between gap-3 text-sm">
-                      <span className="font-semibold text-brand-deepTeal">{category.label}</span>
-                      <span className="text-brand-deepTeal/65">{formatAudFromCents(category.spendCents)}</span>
+                    <li key={category.id ?? "uncategorised"} className="flex items-start justify-between gap-3 text-sm">
+                      <span>
+                        <span className="block font-semibold text-brand-deepTeal">{category.label}</span>
+                        <span className="mt-1 block text-xs text-brand-deepTeal/60">{categoryTrendCopy(category)}</span>
+                      </span>
+                      <span className="shrink-0 text-brand-deepTeal/65">{formatAudFromCents(category.spendCents)}</span>
                     </li>
                   ))}
                 </ul>

@@ -70,7 +70,7 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
     expect(recurring).not.toContain("High confidence");
     expect(recurring).not.toContain("High confidence");
     expect(recurring).toContain("<details");
-    for (const copy of ["Monthly budgets", "Used this month", "Budget left", "Over by", "Archived budgets"]) expect(budgets).toContain(copy);
+    for (const copy of ["Monthly budgets", "Used this month", "Budget left", "Over by", "Deleted budgets"]) expect(budgets).toContain(copy);
     expect(budgets).toContain("<details");
   });
 
