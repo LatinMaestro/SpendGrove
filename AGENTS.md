@@ -147,7 +147,7 @@ PR #115 merged as `9dde5423db6934718e369e66cc9b3f1759bf26ce`. PR #116 merged as 
 
 Both Phase 4 Milestones 1 and 2 must remain open pending explicit client acceptance after deferred retesting.
 
-Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is approved under Autonomous Phase Delivery Mode. Its controlling contract is `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md` and audit is `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md`. Use internal labels 4.12-4.17 to avoid collision with Milestone 2. It is UI-only: preserve essential functionality, calculations, import semantics, recurring thresholds, budget rules, Property/report rules, privacy and no-double-count behaviour. No schema, migration, new tab, package/provider/secret/environment change or later module is authorised.
+Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified but remains open pending deferred client retesting. PR #118 merged as `344be702dea5cf82ae771d4d688cf2622a4b1e44`; PR #119 merged as `cc4d44d17d34ef9b86a064dfd25c536e5a2e6bd7`; 85 test files / 521 tests, TypeScript/lint validity and the production build passed; main deployment `GsZrG1sSrzrsSe5nn9Gj4U5qpibr` is Ready. Its controlling contract is `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md`, audit is `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md`, and evidence is `docs/PHASE_4_MILESTONE_3_SUMMARY.md`. No schema, migration, new tab, package/provider/secret/environment, financial-rule, import-rule, Property-rule or report/export-rule change occurred.
 
 Phase 4 Milestones 1, 2 and 3 must all remain open pending explicit client acceptance after deferred retesting.
 

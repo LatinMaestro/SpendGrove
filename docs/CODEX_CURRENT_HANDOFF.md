@@ -1,6 +1,6 @@
 # Current Codex Handoff
 
-Last updated: 12 July 2026
+Last updated: 13 July 2026
 
 ## Current phase and status
 
@@ -14,9 +14,9 @@ Last updated: 12 July 2026
 - Controlling Milestone 2 contract: docs/PHASE_4_MILESTONE_2_CONTRACT.md.
 - Schema assessment: docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md.
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
-- Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is approved and active under Autonomous Phase Delivery Mode.
-- Its scope is UI-only and uses internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
-- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md and docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md.
+- Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
+- Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
+- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -112,11 +112,29 @@ Stop immediately if implementation requires any such change. No Preview migratio
 - Restore and dismissal undo create no transaction, payment or merchant contact.
 - No raw CSV, row, filename, narration, account reference, balance, exact address or private identifier may enter UI, logs or audit metadata.
 
+## Phase 4 Milestone 3 evidence
+
+Completed delivery:
+
+- PR #118 / 4.12 contract and interface audit: `344be702dea5cf82ae771d4d688cf2622a4b1e44`;
+- PR #119 / 4.13-4.16 UI simplification batch: `cc4d44d17d34ef9b86a064dfd25c536e5a2e6bd7`;
+- 4.17 QA summary: docs/PHASE_4_MILESTONE_3_SUMMARY.md.
+
+Verification:
+
+- exact PR head `6ab45f6c18e1c0d1c1dcc1ec1bb7d108fa51a4b2`;
+- Preview deployment `ESYj1tFsrxZuoPL9No9ZcEiyphZw` is Ready;
+- 85 test files / 521 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- merged-main deployment `GsZrG1sSrzrsSe5nn9Gj4U5qpibr` is Ready;
+- canonical https://spendgrove.vercel.app `/`, `/transactions`, `/import` and `/loans` returned HTTP 200.
+
+No Prisma schema, migration, data rewrite, package, provider, secret, environment, financial-rule, import-rule, Property-rule, report/export-rule or navigation-tab change occurred. No Preview or Production migration ran.
+
 ## Exact next action
 
-Implement Phase 4 Milestone 3 only through the frozen beginner-first UI contract: 4.13 Home/navigation, 4.14 Import/Transactions, 4.15 regular payments/budgets, 4.16 Loans/Property/Settings, then 4.17 accessibility/mobile QA. Use coherent batches and one meaningful Vercel gate where practical.
-
-After 4.17, stop with Milestones 1, 2 and 3 open pending deferred client retesting.
+Stop. Keep Phase 4 Milestones 1, 2 and 3 open pending the client's consolidated deferred Vercel retesting. Do not begin another milestone or formally close any Phase 4 milestone.
 
 ## Explicit exclusions and stop conditions
 
