@@ -377,6 +377,42 @@ Delivery evidence:
 - [ ] Privacy information is available under How SpendGrove keeps loan information private.
 - [ ] The Loan page fits a narrow phone without horizontal scrolling and important controls are keyboard accessible.
 
+### Final focused Loan detail review
+
+Delivery evidence:
+
+- final contract PR #130 merged as `5f907c52ac586e34cc83ffd869b8985a99fc0862`;
+- implementation PR #131 merged as `18d416e3ef5ea63f8b86081e11332f7a72634ffa`;
+- 90 test files / 558 tests, TypeScript, lint and optimized production build passed;
+- main deployment `dpl_9mAuvoqGkSt9Cw1TqPUAW9zX7DKH` is Ready;
+- canonical review URL: https://spendgrove.vercel.app.
+
+- [ ] The Loans overview contains compact Loan Account cards only.
+- [ ] View loan replaces the overview with one focused Loan; no other Loan cards appear underneath.
+- [ ] Back to loans returns to the overview and there is no large Close details button.
+- [ ] The Loan header shows the Loan and optional Property relationship once.
+- [ ] Loan repayments appear before Property transactions.
+- [ ] Healthy repayments show no repetitive Matched label.
+- [ ] An unresolved repayment shows Needs review and a clear Match transaction action.
+- [ ] Only one repayment detail opens at a time.
+- [ ] Principal, interest, fees and balance after appear only when present and requested.
+- [ ] Latest three, View all repayments and Show latest three work.
+- [ ] Edit repayment, Unlink repayment, Delete repayment and Restore repayment remain reachable under secondary controls.
+- [ ] Deleted repayments is secondary and no cleanup wording appears.
+- [ ] Matching uses plain language; Search for another transaction and Search by date remain reachable.
+- [ ] A deliberately chosen poor match still requires explicit confirmation.
+- [ ] Property transaction rows lead with category or safe merchant identity; Money in/out is secondary.
+- [ ] Reconciled repayment cashflows do not appear again under Property transactions.
+- [ ] Other linked Property income and expenses remain visible.
+- [ ] A non-Property loan shows no Property transaction or report section.
+- [ ] View property report opens a focused report workflow rather than adding another long inline section.
+- [ ] Financial year, Load records and CSV export remain available and unchanged inside the report.
+- [ ] The report closes back to the same Loan.
+- [ ] The focused Loan view fits a narrow phone without horizontal scrolling.
+- [ ] Back, repayment disclosure, More, matching and report controls work by keyboard and have clear screen-reader labels.
+- [ ] No duplicate cashflow, repayment or Property record is created.
+
+
 ### Budgets
 
 - [ ] The blank budget creation form is hidden initially.

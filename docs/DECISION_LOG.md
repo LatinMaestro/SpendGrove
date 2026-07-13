@@ -79,6 +79,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | 2026-07-14 | Present one canonical Loan repayment row and exclude repayment cashflows from the main Property transactions list | Repeating the same underlying repayment as a breakdown, linked cashflow and Property record confused beginner users | Client | Combine one LoanRepayment with optional safe reconciliation/transaction context for display only; keep the everyday transaction as the sole cashflow record; preserve report/export and all durable relationships |
 
+| 2026-07-14 | Use a focused selected-loan subview, quiet healthy repayment rows and a separate Property report dialog | The inline Loan expansion still made the overview long and gave technical/secondary tools equal visual weight | Client | Keep the existing /loans navigation; show repayments first and Property transactions second; allow one repayment detail at a time; preserve all matching, cashflow, Property-link and report/export rules |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |

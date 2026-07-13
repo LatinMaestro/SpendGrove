@@ -52,10 +52,10 @@ Internal work labels are 4.12-4.17 because Phase 4 Milestone 2 already used 4.6-
 ### Loans and Property records
 
 - Loan Accounts remain primary;
-- repayment history uses `Repayment breakdowns`;
+- focused Loan detail uses one `Loan repayments` section and hides repayment components until requested;
 - reconciliation is described as a repayment match in beginner-facing copy;
 - detailed repayment components and matching information use disclosure;
-- Property records remain an automatic linked-record view inside Loans;
+- Property transactions remain an automatic linked-record view, while the full Property report/export opens as a secondary focused workflow;
 - report/export wording remains neutral and retains `Record keeping only - not tax advice.`;
 - no Reports or Properties navigation tab was added.
 
@@ -281,6 +281,52 @@ Known limitations:
 - separately allocated LoanRepayments remain separate canonical rows in their respective Loan Accounts.
 
 No schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, calculation, reconciliation-threshold, split-allocation, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
+
+## Final Loans simplicity hardening
+
+Delivery:
+
+- PR #130 / final Loans simplicity contract: `5f907c52ac586e34cc83ffd869b8985a99fc0862`;
+- PR #131 / focused Loan implementation: `18d416e3ef5ea63f8b86081e11332f7a72634ffa`;
+- final QA and deferred-testing documentation: this PR.
+
+Final Loans overview:
+
+- compact Loan Account cards show nickname, type, optional Property, latest repayment and Needs review only when action is required;
+- View loan replaces the overview with one focused Loan on the existing `/loans` route;
+- Back to loans restores the cards;
+- no full-width Close details action, routine Up to date status, or other Loan cards appear beneath the focused Loan.
+
+Final Loan detail:
+
+1. Loan repayments.
+2. Property transactions, only for a linked Property.
+
+Healthy repayment rows show date and total only. Needs review appears only when unresolved. One repayment detail opens at a time; available principal, interest, fees and balance-after values remain accessible. Edit, match, unlink, recoverable Delete/Restore and deleted-item management remain secondary.
+
+Matching presentation now uses Match transaction, Search for another transaction and Search by date. Accepted candidate modes, confidence thresholds, amount/date validation, ambiguity rules and mismatch confirmation are unchanged.
+
+Property transaction rows lead with safe category or cleaned merchant identity and use Money in/out as secondary context. The existing repayment-cashflow exclusion remains unchanged.
+
+View property report opens the accepted Financial Year/report/export workflow in an accessible dialog. Report sources, values, formulas, export columns and disclaimer are unchanged.
+
+Verification:
+
+- green PR #131 head `26f12e68a095f07b7e2d2a7b50e31175859dfc72`;
+- 90 test files / 558 tests passed;
+- TypeScript and Next.js lint validity passed;
+- optimized production build passed;
+- Preview `dpl_C6onQZPd4U56sJNtgA2j5SGWsAaC` Ready;
+- main `dpl_9mAuvoqGkSt9Cw1TqPUAW9zX7DKH` Ready;
+- canonical `/` and `/loans` returned HTTP 200.
+
+Known limitations:
+
+- the selected-loan state is not a bookmarkable deep link;
+- signed-in client narrow-width, keyboard, screen-reader and touch review remains deferred;
+- opening balance is not displayed because no approved persisted opening-balance field exists.
+
+No schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, financial calculation, matching-threshold, cashflow, split-allocation, Property-link, report/export or navigation rule changed. No Preview or Production migration ran.
 
 ## Deferred client testing
 
