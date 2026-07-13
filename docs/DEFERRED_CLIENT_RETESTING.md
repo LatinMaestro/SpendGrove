@@ -324,6 +324,61 @@ Delivery evidence:
 - [ ] No raw CSV, raw row, narration, filename, account reference, exact address or private identifier is exposed.
 - [ ] Everyday transactions remain the only cashflow records.
 
+## Phase 4 Milestone 3 - Second client-review compact views
+
+Status: pending deferred client retesting
+
+### Transactions initial month
+
+- [ ] When the current Brisbane month has active transactions, Transactions opens on that month.
+- [ ] When the current month is empty, Transactions initially opens the latest month containing active transactions.
+- [ ] When no transactions exist, the current month and existing empty state remain.
+- [ ] Previous and Next month controls continue to work.
+- [ ] Search and filters remain scoped to the selected month.
+- [ ] A long transaction history is not loaded or displayed as one default page.
+
+### Regular-payment review
+
+- [ ] Home shows the number awaiting review, no more than three suggestions and a clear Review all action.
+- [ ] Each suggestion initially shows only its name, signed amount, repeat interval, optional next date, Confirm, Dismiss and Edit details.
+- [ ] Editing one suggestion reveals only that suggestion's fields.
+- [ ] Cancel closes the editor without saving draft changes.
+- [ ] Why was this suggested remains available without repeating its explanation by default.
+- [ ] An exact duplicate suggestion identity is shown once.
+- [ ] Distinct payments sharing a merchant remain separate when amount, cadence or deterministic identity differs.
+- [ ] Confirm and Dismiss still require the existing safe user action.
+- [ ] Weekly, fortnightly, monthly, exact-amount and interval thresholds are unchanged.
+
+### Loan Accounts
+
+- [ ] Each Loan Account begins as a compact summary with nickname, purpose, optional Property, recent status and counts.
+- [ ] Only one Loan Account detail is open at a time.
+- [ ] Repayment breakdowns initially show the latest three and View all repayments reveals the full eligible list.
+- [ ] Linked everyday transactions initially show the latest three and View all linked transactions reveals the full eligible list.
+- [ ] Property records remain behind their existing disclosure.
+- [ ] A repayment match needing review remains visible on the compact card.
+- [ ] Correction, unlink, archive/restore and no-double-count behaviour still work.
+- [ ] Everyday transactions remain the only cashflow records.
+
+### Budgets
+
+- [ ] The blank budget creation form is hidden initially.
+- [ ] Add budget reveals category and monthly amount fields.
+- [ ] Cancel closes the form without creating a budget.
+- [ ] A successful create closes the form and shows the new active budget.
+- [ ] Used, remaining, monthly-only, no-rollover, Delete and Restore behaviour remains unchanged.
+- [ ] Deleted budgets remain in the secondary recovery section.
+
+### Action hierarchy, accessibility and mobile
+
+- [ ] Each changed card or section has one obvious next action.
+- [ ] Edit, Delete, Restore, Details and View all remain quieter but discoverable.
+- [ ] Complete histories and edit fields remain hidden until deliberately opened.
+- [ ] Previous/Next month, expansion and changed controls have usable keyboard focus and accessible labels.
+- [ ] Compact cards wrap on narrow mobile screens without horizontal scrolling.
+- [ ] No repeated technical explanation, internal confidence term or private source data is shown.
+- [ ] No financial calculation, recurring threshold, budget formula, reconciliation rule, report/export rule or navigation changed.
+
 ## Future additions
 
 Every later milestone that remains pending client acceptance must add its non-technical tests to this document. Do not remove completed-but-untested checks until the client explicitly records the result.

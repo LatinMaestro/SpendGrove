@@ -16,7 +16,7 @@ Last updated: 13 July 2026
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
 - Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
-- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
+- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -163,6 +163,32 @@ Verification:
 - canonical https://spendgrove.vercel.app routes `/`, `/transactions` and `/loans` returned HTTP 200 and browser checks found no console or internal-page error.
 
 No Prisma schema, migration, hard deletion, data rewrite/backfill, package, provider, secret, environment, recurring-threshold, budget-calculation, duplicate-scoring, Property-link, report/export or navigation-tab change occurred. No Preview or Production migration ran.
+
+## Phase 4 Milestone 3 second client-review hardening evidence
+
+The client's second recording confirmed the earlier month navigation, category search, compact Property opt-in, conservative category suggestions, Delete/Restore language, category comparisons and loan reconciliation were working. The approved follow-up changed presentation only:
+
+- PR #124 froze the compact-view contract, merge `2e5e6f340bf00d41db04d27c9de55fe01021ea9b`;
+- PR #125 delivered the compact UI batch, merge `b6d20c32ac682e36ff5f5f229b8db0846a84bb97`;
+- PR #126 is the documentation-only QA and consolidated retesting package.
+- Transactions initially use the current Brisbane month when populated, otherwise one efficient owned active-record query resolves the latest populated month; no full-history load is used.
+- Home shows at most three recurring suggestions; suggestion edit fields and reasons remain closed until requested.
+- Exact duplicate suggestion identities are displayed once, while distinct amounts/cadences/identities remain separate.
+- Loan Account overviews are compact; one account opens at a time, and repayment and linked-transaction previews are capped at three before a user chooses View all.
+- Budget creation is hidden until Add budget and can be cancelled without saving.
+- Reconciliation warnings, correction/unlink actions, budget calculations, recurring thresholds and all financial rules remain unchanged.
+
+Final verification:
+
+- exact PR #125 head `3b07c1a3181317354909aa1a66d576fdcce2885f`;
+- Preview deployment `dpl_gHKePj4zDjjWEC8HFZYueNtXhWWC` is Ready;
+- 88 test files / 547 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- merged-main deployment `dpl_8vvdNFvXP2TqHbF5jZCTH2AAMMbu` is Ready;
+- canonical `https://spendgrove.vercel.app` routes `/`, `/transactions` and `/loans` returned HTTP 200.
+
+No Prisma schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, recurring-threshold, budget-calculation, reconciliation-rule, import, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
 
 ## Exact next action
 

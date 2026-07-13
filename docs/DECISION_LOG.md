@@ -75,6 +75,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 | 2026-07-13 | Use Delete/Deleted/Restore language over the existing recovery-safe internal archive lifecycle | Beginner-facing Archive terminology added unnecessary product complexity | Client | Do not hard-delete financial/planning records; preserve retention, audit, reconciliation and restore behaviour |
 | 2026-07-13 | Add category-level month comparison using the existing overall comparison periods and eligibility formula | Users need understandable category context without a new financial calculation model | Client | Use active owned everyday expenses, include eligible split children, exclude split parents/income/transfers/analytical repayments; no Property, tax, loan or net-worth comparisons |
 
+| 2026-07-13 | Use compact task-first presentation for recurring suggestions, Loan Accounts and budget creation, and fall back to the latest populated transaction month only on initial entry | The client recording showed correct features were still producing long pages and exposing forms/history before they were needed | Client | Show at most three recurring suggestions on Home, one suggestion editor and one Loan Account detail at a time, three recent loan records before View all, and budget fields only after Add budget; preserve all existing financial, reconciliation and lifecycle rules |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |
