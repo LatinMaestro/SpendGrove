@@ -573,3 +573,31 @@ Schema and migration status: no Prisma schema or migration change, no Preview mi
 
 Mandatory next state: stop for client retesting; do not close any Phase 4 milestone or begin another milestone.
 
+
+
+## Phase 4 Milestone 3 second client-review hardening (completed 13 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+
+- [x] Freeze presentation-only rules in `docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md` (PR #124, merge `2e5e6f340bf00d41db04d27c9de55fe01021ea9b`).
+- [x] Make the initial Transactions month prefer current when populated and otherwise the latest populated owned active month.
+- [x] Limit Home to three regular-payment suggestions and reveal one editor/reason at a time.
+- [x] Suppress only exact duplicate suggestion identities.
+- [x] Replace inline Loan Account histories with compact cards, one selected account and three-item previews.
+- [x] Hide budget creation until Add budget.
+- [x] Complete focused regression coverage, full build verification, main deployment and consolidated deferred testing updates.
+
+Implementation: PR #125, merge `b6d20c32ac682e36ff5f5f229b8db0846a84bb97`.
+
+Evidence:
+
+- 88 test files / 547 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- Preview deployment `dpl_gHKePj4zDjjWEC8HFZYueNtXhWWC` is Ready;
+- main deployment `dpl_8vvdNFvXP2TqHbF5jZCTH2AAMMbu` is Ready;
+- canonical `/`, `/transactions` and `/loans` returned HTTP 200.
+
+Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no hard deletion, no data rewrite/backfill, and no package/provider/secret/environment change.
+
+Mandatory next state: stop for client retesting; do not close any Phase 4 milestone or begin another milestone.

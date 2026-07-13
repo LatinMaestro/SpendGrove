@@ -14,7 +14,10 @@ Internal work labels are 4.12-4.17 because Phase 4 Milestone 2 already used 4.6-
 
 - PR #118 / 4.12 - beginner-first UI contract and repository-truth interface audit. Merge: `344be702dea5cf82ae771d4d688cf2622a4b1e44`.
 - PR #119 / 4.13-4.16 - coherent UI simplification batch covering Home, navigation presentation, Import, Transactions, regular payments, budgets, Loans, Property records and Settings. Merge: `cc4d44d17d34ef9b86a064dfd25c536e5a2e6bd7`.
-- 4.17 - this accessibility/mobile QA and consolidated deferred client review package.
+- 4.17 - accessibility/mobile QA and consolidated deferred client review package.
+- PR #124 - second client-review compact-view contract. Merge: `2e5e6f340bf00d41db04d27c9de55fe01021ea9b`.
+- PR #125 - second client-review implementation covering initial month fallback, compact recurring review, compact Loan Accounts and on-demand budget creation. Merge: `b6d20c32ac682e36ff5f5f229b8db0846a84bb97`.
+- PR #126 - documentation-only QA and expanded consolidated client checklist.
 
 ## Screens simplified
 
@@ -186,6 +189,40 @@ Known limitations:
 - the existing dependency audit advisories remain outside this no-package-change batch.
 
 No schema, migration, data rewrite, hard deletion, package, provider, secret, environment, navigation-tab, Basiq, AI, payment, tax, Property/net-worth or later-module change occurred. No Preview or Production migration ran.
+
+## Second client-review hardening
+
+The second client recording confirmed the prior month navigation, searchable category selection, compact Property opt-in, conservative category suggestions, Delete/Restore wording, category comparisons and loan reconciliation behaviour. Those accepted working behaviours were preserved.
+
+Additional presentation changes:
+
+- Transactions keeps the current Brisbane month when populated; only the initial empty-month request falls back to the latest populated owned active month through an efficient server query.
+- Home displays no more than three recurring suggestions before Review all.
+- Recurring suggestion forms and reasons are collapsed by default, and only one suggestion editor opens at a time.
+- Exact duplicate deterministic suggestion identities are shown once; distinct payments remain separate.
+- Loan Account cards show summary counts and action-needed warnings without inline full histories.
+- Only one Loan Account detail opens at a time; repayment and linked-transaction previews each show three records before View all.
+- Budget creation fields remain hidden until Add budget and Cancel discards the transient form state.
+
+Final evidence:
+
+- PR #125 head `3b07c1a3181317354909aa1a66d576fdcce2885f`;
+- Preview `dpl_gHKePj4zDjjWEC8HFZYueNtXhWWC` Ready;
+- merge `b6d20c32ac682e36ff5f5f229b8db0846a84bb97`;
+- main deployment `dpl_8vvdNFvXP2TqHbF5jZCTH2AAMMbu` Ready;
+- 88 test files / 547 tests passed;
+- TypeScript, Next.js lint validity and clean optimized production build passed;
+- live `/`, `/transactions` and `/loans` returned HTTP 200.
+
+Known limitations:
+
+- Review all and View all expand the eligible list in the current workflow rather than introducing a new route or navigation tab.
+- Recurring suggestions remain conservative and still require the approved exact signed amount and interval evidence.
+- The latest-month fallback applies only to initial entry; deliberate month navigation is never overridden.
+- Loan warnings stay visible, but detailed correction and unlink actions require opening the selected Loan Account.
+- Existing dependency audit advisories remain outside this no-package-change pass.
+
+No schema, migration, data rewrite/backfill, hard deletion, package, provider, secret, environment, calculation, threshold, reconciliation, import, Property-link, report/export or navigation change occurred. No Preview or Production migration ran.
 
 ## Deferred client testing
 
