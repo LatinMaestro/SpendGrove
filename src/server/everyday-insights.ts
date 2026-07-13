@@ -137,6 +137,7 @@ export function summarizeEverydayInsights(
   const differenceCents = currentSpendCents - previousSpendCents;
 
   const categoryTotals = new Map<string, { id: string | null; label: string; spendCents: number }>();
+  const previousCategoryTotals = new Map<string, number>();
   for (const record of currentRows) {
     const key = record.categoryId ?? "uncategorised";
     const current = categoryTotals.get(key) ?? {
@@ -147,8 +148,27 @@ export function summarizeEverydayInsights(
     current.spendCents += Math.abs(record.amountCents);
     categoryTotals.set(key, current);
   }
+  for (const record of previousRows) {
+    const key = record.categoryId ?? "uncategorised";
+    previousCategoryTotals.set(key, (previousCategoryTotals.get(key) ?? 0) + Math.abs(record.amountCents));
+  }
 
-  const categories = [...categoryTotals.values()].sort((left, right) => (
+  const categories = [...categoryTotals.entries()].map(([key, category]) => {
+    const previousSpendCents = previousCategoryTotals.get(key) ?? 0;
+    const categoryDifferenceCents = category.spendCents - previousSpendCents;
+    return {
+      ...category,
+      previousSpendCents,
+      differenceCents: categoryDifferenceCents,
+      direction: previousSpendCents === 0
+        ? "NEW" as const
+        : categoryDifferenceCents > 0
+          ? "UP" as const
+          : categoryDifferenceCents < 0
+            ? "DOWN" as const
+            : "SAME" as const,
+    };
+  }).sort((left, right) => (
     right.spendCents - left.spendCents || left.label.localeCompare(right.label)
   ));
 
