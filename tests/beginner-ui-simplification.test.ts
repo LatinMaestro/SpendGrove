@@ -77,11 +77,11 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
   it("uses plain loan and Property wording while preserving essential advanced actions", async () => {
     const [loans, property] = await Promise.all([readFile(paths.loans, "utf8"), readFile(paths.property, "utf8")]);
     expect(loans).toContain("Your loans");
-    expect(loans).toContain("Repayment breakdowns");
+    expect(loans).toContain("Loan repayments");
     expect(loans).toContain("Suggested repayment matches");
     expect(loans).toContain("Edit repayment breakdown");
-    expect(loans).toContain("Unlink breakdown");
-    expect(loans).toContain("Archive breakdown");
+    expect(loans).toContain("Unlink repayment");
+    expect(loans).toContain("Delete repayment");
     expect(loans).toContain("<details");
     expect(property).toContain("Property records");
     expect(property).toContain("Record keeping only - not tax advice.");
