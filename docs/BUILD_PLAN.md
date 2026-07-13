@@ -474,19 +474,31 @@ Strict exclusions: no Preview or Production migration, changed recurring thresho
 
 ### Milestone 3 - Beginner-first UI Simplification and Product Polish
 
-Status: approved and active under Autonomous Phase Delivery Mode. Client visual review is deferred.
+Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Objective: simplify presentation and wording across Home, Transactions, Import, regular payments, budgets, Loans, Property records and Settings while preserving all functionality, calculations, privacy and no-double-count rules.
 
-Controlling documents: `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md`, `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md` and `docs/DEFERRED_CLIENT_RETESTING.md`.
+Controlling documents: `docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md`, `docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md`, `docs/PHASE_4_MILESTONE_3_SUMMARY.md` and `docs/DEFERRED_CLIENT_RETESTING.md`.
 
-Unique internal sequence: 4.12 contract/audit; 4.13 Home/navigation; 4.14 Import/Transactions; 4.15 regular payments/budgets; 4.16 Loans/Property/Settings; 4.17 accessibility/mobile QA. These labels avoid collision with Milestone 2 labels 4.6-4.8.
+Completed sequence:
 
-Schema assessment: no Prisma schema change, Preview migration, Production migration, data rewrite or backfill is required or authorised.
+1. 4.12 contract/audit: PR #118, merge `344be702dea5cf82ae771d4d688cf2622a4b1e44`.
+2. 4.13-4.16 coherent UI simplification batch: PR #119, merge `cc4d44d17d34ef9b86a064dfd25c536e5a2e6bd7`.
+3. 4.17 accessibility/mobile QA and consolidated deferred client package.
 
-Stop for essential-function removal, calculation/rule change, import semantic change, Property/report change, schema/migration, new navigation tab, major navigation restructuring, dependency/provider/secret/environment change or later-module scope.
+Evidence:
 
-After 4.17, Phase 4 Milestones 1, 2 and 3 remain open pending explicit client retesting and acceptance.
+- exact PR head `6ab45f6c18e1c0d1c1dcc1ec1bb7d108fa51a4b2`;
+- 85 test files / 521 tests passed;
+- TypeScript/lint validity and clean production build passed;
+- Preview deployment `ESYj1tFsrxZuoPL9No9ZcEiyphZw` is Ready;
+- main deployment `GsZrG1sSrzrsSe5nn9Gj4U5qpibr` is Ready;
+- public Home, Transactions, Import and Loans routes returned HTTP 200.
+
+Schema assessment: no Prisma schema change, Preview migration, Production migration, data rewrite or backfill occurred. No package, provider, secret, environment, navigation-tab, financial-rule, import-rule, Property-rule or report/export-rule change occurred.
+
+Phase 4 Milestones 1, 2 and 3 remain open pending explicit client retesting and acceptance. Stop before another milestone.
+
 
 ## Phase 5 — Production Readiness
 
