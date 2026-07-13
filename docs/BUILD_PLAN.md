@@ -546,3 +546,17 @@ Scope:
 ## Visual preview setup task
 
 Vercel preview deployments are configured. User-facing PRs must include preview links and follow `docs/VERCEL_VISUAL_REVIEW.md`.
+
+## Phase 4 Milestone 3 acceptance hardening (approved 13 July 2026)
+
+Status: contract gate in progress; Milestones 1-3 remain open pending client retesting.
+
+- [x] Confirm no schema/migration, financial-rule, duplicate, Property-link or report/export change is required.
+- [x] Freeze rules in `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md`.
+- [ ] Deliver month-focused transactions, searchable category choice and Property progressive disclosure.
+- [ ] Deliver conservative local category intelligence and stable recurring merchant grouping.
+- [ ] Deliver reverse-order high-confidence repayment reconciliation using existing rules.
+- [ ] Deliver Delete wording over existing recovery-safe lifecycle and category month comparisons.
+- [ ] Complete full QA, one meaningful Vercel gate and consolidated deferred client package.
+
+Mandatory stop: any schema/migration, hard deletion, altered calculation/threshold/import/duplicate/Property/report rule, private persistence, package/provider/secret/environment or later-module requirement.
