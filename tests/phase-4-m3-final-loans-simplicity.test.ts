@@ -48,7 +48,7 @@ describe("Phase 4 Milestone 3 final Loans simplicity", () => {
     expect(activity).toContain("setIsReportOpen(true)");
     expect(activity).toContain("setIsReportOpen(false)");
     expect(activity).toContain('aria-modal="true"');
-    expect(report).toContain("Financial Year");
+    expect(report).toContain("Financial year");
     expect(activity).not.toContain("<details className=\"border-t border-border pt-4\">");
   });
 });

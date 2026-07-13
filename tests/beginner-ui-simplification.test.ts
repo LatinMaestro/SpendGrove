@@ -78,8 +78,8 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
     const [loans, property] = await Promise.all([readFile(paths.loans, "utf8"), readFile(paths.property, "utf8")]);
     expect(loans).toContain("Your loans");
     expect(loans).toContain("Loan repayments");
-    expect(loans).toContain("Suggested repayment matches");
-    expect(loans).toContain("Edit repayment breakdown");
+    expect(loans).toContain("Suggested transactions");
+    expect(loans).toContain("Edit repayment");
     expect(loans).toContain("Unlink repayment");
     expect(loans).toContain("Delete repayment");
     expect(loans).toContain("<details");
