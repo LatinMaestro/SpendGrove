@@ -77,6 +77,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | 2026-07-13 | Use compact task-first presentation for recurring suggestions, Loan Accounts and budget creation, and fall back to the latest populated transaction month only on initial entry | The client recording showed correct features were still producing long pages and exposing forms/history before they were needed | Client | Show at most three recurring suggestions on Home, one suggestion editor and one Loan Account detail at a time, three recent loan records before View all, and budget fields only after Add budget; preserve all existing financial, reconciliation and lifecycle rules |
 
+| 2026-07-14 | Present one canonical Loan repayment row and exclude repayment cashflows from the main Property transactions list | Repeating the same underlying repayment as a breakdown, linked cashflow and Property record confused beginner users | Client | Combine one LoanRepayment with optional safe reconciliation/transaction context for display only; keep the everyday transaction as the sole cashflow record; preserve report/export and all durable relationships |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |

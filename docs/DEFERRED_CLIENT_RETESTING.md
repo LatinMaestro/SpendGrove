@@ -2,7 +2,7 @@
 
 Status: active consolidated backlog
 
-Last updated: 13 July 2026
+Last updated: 14 July 2026
 
 ## Purpose
 
@@ -349,16 +349,33 @@ Status: pending deferred client retesting
 - [ ] Confirm and Dismiss still require the existing safe user action.
 - [ ] Weekly, fortnightly, monthly, exact-amount and interval thresholds are unchanged.
 
-### Loan Accounts
+### Loans - canonical repayment and Property views
 
-- [ ] Each Loan Account begins as a compact summary with nickname, purpose, optional Property, recent status and counts.
+Delivery evidence:
+
+- contract PR #127 merged as `04e8099f8f2c6a41cbb3021c3b7efee2afdbff72`;
+- implementation PR #128 merged as `87012a22bc029d2094ed19f5a8853ad4009f98f3`;
+- 89 test files / 553 tests, TypeScript, lint and optimized production build passed;
+- main deployment `dpl_6U5SJiVuHhZSyZjr5LvLZxx1EPZ4` is Ready;
+- canonical review URL: https://spendgrove.vercel.app.
+
+- [ ] Loan overview is concise and shows nickname, type, optional Property, latest repayment and only useful action status.
+- [ ] Loan and Property names are not repeated in several cards.
 - [ ] Only one Loan Account detail is open at a time.
-- [ ] Repayment breakdowns initially show the latest three and View all repayments reveals the full eligible list.
-- [ ] Linked everyday transactions initially show the latest three and View all linked transactions reveals the full eligible list.
-- [ ] Property records remain behind their existing disclosure.
-- [ ] A repayment match needing review remains visible on the compact card.
-- [ ] Correction, unlink, archive/restore and no-double-count behaviour still work.
-- [ ] Everyday transactions remain the only cashflow records.
+- [ ] Each repayment appears once under Loan repayments.
+- [ ] Repayment principal, interest, fees and balance-after details expand only when requested and empty details are hidden.
+- [ ] A matched everyday cashflow does not appear again as a separate repayment or linked-transaction history.
+- [ ] Other Property expenses and income remain visible under Property transactions.
+- [ ] A car, personal or other non-Property loan shows no Property transactions or Property records control.
+- [ ] Loan repayments and Property transactions show the latest three initially; View all and Show latest three work.
+- [ ] An unmatched repayment has one useful warning and its review/matching action remains available.
+- [ ] Property records/export remains accessible through View property records but is not repeated inline.
+- [ ] Delete, Deleted repayments and Restore wording is simple while safe recovery remains available.
+- [ ] Correction, manual match, unlink, delete and restore actions remain reachable.
+- [ ] No duplicate spending, cashflow or durable Property link is created by the combined display.
+- [ ] Everyday transactions remain the only cashflow records and LoanRepayment remains analytical detail.
+- [ ] Privacy information is available under How SpendGrove keeps loan information private.
+- [ ] The Loan page fits a narrow phone without horizontal scrolling and important controls are keyboard accessible.
 
 ### Budgets
 
