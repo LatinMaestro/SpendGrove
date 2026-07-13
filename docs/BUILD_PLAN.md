@@ -547,16 +547,29 @@ Scope:
 
 Vercel preview deployments are configured. User-facing PRs must include preview links and follow `docs/VERCEL_VISUAL_REVIEW.md`.
 
-## Phase 4 Milestone 3 acceptance hardening (approved 13 July 2026)
+## Phase 4 Milestone 3 acceptance hardening (completed 13 July 2026)
 
-Status: contract gate in progress; Milestones 1-3 remain open pending client retesting.
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
 
-- [x] Confirm no schema/migration, financial-rule, duplicate, Property-link or report/export change is required.
-- [x] Freeze rules in `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md`.
-- [ ] Deliver month-focused transactions, searchable category choice and Property progressive disclosure.
-- [ ] Deliver conservative local category intelligence and stable recurring merchant grouping.
-- [ ] Deliver reverse-order high-confidence repayment reconciliation using existing rules.
-- [ ] Deliver Delete wording over existing recovery-safe lifecycle and category month comparisons.
-- [ ] Complete full QA, one meaningful Vercel gate and consolidated deferred client package.
+- [x] Freeze rules in `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md` (PR #121, merge `54ae6196ed12ff96495b7aed88beec893ddab1df`).
+- [x] Deliver month-focused Transactions, searchable category choice and Property progressive disclosure.
+- [x] Deliver conservative local category intelligence and stable recurring merchant grouping without changing thresholds.
+- [x] Deliver reverse-order high-confidence repayment reconciliation using existing validation and no-double-count rules.
+- [x] Deliver Delete wording over the existing recovery-safe lifecycle and category month comparisons.
+- [x] Complete full QA, Preview/main Vercel verification, public route smoke checks and consolidated deferred client package.
 
-Mandatory stop: any schema/migration, hard deletion, altered calculation/threshold/import/duplicate/Property/report rule, private persistence, package/provider/secret/environment or later-module requirement.
+Implementation: PR #122, merge `8bc4c6e4701554ec2cca0ce74e5aab2d38dcff15`.
+
+Evidence:
+
+- 86 test files / 536 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- Preview deployment `dpl_GrPrQu1QWys6JDfLquwbuW2eEeF5` is Ready;
+- main deployment `dpl_AVVZqH2afjZNvPZJF5bp5R3No8sW` is Ready;
+- canonical `/`, `/transactions` and `/loans` returned HTTP 200 without console or internal-page errors.
+
+Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no hard deletion, no data rewrite/backfill, and no package/provider/secret/environment change.
+
+Mandatory next state: stop for client retesting; do not close any Phase 4 milestone or begin another milestone.
+
