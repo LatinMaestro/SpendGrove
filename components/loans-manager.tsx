@@ -172,7 +172,9 @@ function RepaymentHistory({
   const [selectedRepaymentIds, setSelectedRepaymentIds] = useState<Set<string>>(new Set());
   const [bulkConfirmed, setBulkConfirmed] = useState(false);
   const [bulkSummary, setBulkSummary] = useState<LoanRepaymentBulkArchiveSummary | null>(null);
+  const [showAllRepayments, setShowAllRepayments] = useState(false);
   const visibleRepayments = repayments.filter((repayment) => repayment.isArchived === (historyFilter === "ARCHIVED"));
+  const displayedRepayments = showAllRepayments ? visibleRepayments : visibleRepayments.slice(0, 3);
   const selectedRepayments = visibleRepayments.filter((repayment) => selectedRepaymentIds.has(repayment.id));
 
   function changeHistoryFilter(filter: "ACTIVE" | "ARCHIVED") {
@@ -181,6 +183,7 @@ function RepaymentHistory({
     setSelectedRepaymentIds(new Set());
     setBulkConfirmed(false);
     setBulkSummary(null);
+    setShowAllRepayments(false);
   }
 
   function changeBulkSelection(repaymentId: string, selected: boolean) {
@@ -210,13 +213,13 @@ function RepaymentHistory({
     return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No saved repayment breakdowns yet.</p>;
   }
   return (
-    <details className="mt-4 border-t border-border pt-4">
+    <details open className="mt-4 border-t border-border pt-4">
       <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Repayment breakdowns ({repayments.length})</summary>
       <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">Details only — your everyday transaction is still counted once.</p>
       <div className="mt-3 flex flex-wrap gap-2" aria-label="Repayment history filter">
         <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Active ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
         <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Archived ({repayments.filter((repayment) => repayment.isArchived).length})</button>
-        <button type="button" onClick={() => { setCleanupMode((current) => !current); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "archive" : "restore"}`}</button>
+        <button type="button" onClick={() => { setCleanupMode((current) => { if (!current) setShowAllRepayments(true); return !current; }); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "archive" : "restore"}`}</button>
       </div>
       {cleanupMode && (
         <div className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-4 text-xs text-brand-deepTeal">
@@ -232,7 +235,7 @@ function RepaymentHistory({
       {bulkSummary && <p role="status" className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-deepTeal">{bulkSummary.changedCount} changed and {bulkSummary.skippedCount} skipped because they were already updated, linked or already in that state.</p>}
       <div className="mt-3 space-y-2">
         {visibleRepayments.length === 0 && <p className="rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No {historyFilter === "ACTIVE" ? "active" : "archived"} repayment breakdowns.</p>}
-        {visibleRepayments.map((repayment) => (
+        {displayedRepayments.map((repayment) => (
           <div key={repayment.id}>
             {cleanupMode && (
               <label className="mb-2 flex items-start gap-2 rounded-xl bg-surface-mint p-3 text-xs font-semibold text-brand-deepTeal">
@@ -330,7 +333,41 @@ function RepaymentHistory({
           </div>
         ))}
       </div>
+      {visibleRepayments.length > 3 && !cleanupMode && (
+        <button type="button" onClick={() => setShowAllRepayments((current) => !current)} className="mt-3 min-h-10 w-full rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+          {showAllRepayments ? "Show latest three" : `View all repayments (${visibleRepayments.length})`}
+        </button>
+      )}
     </details>
+  );
+}
+
+
+type LinkedEverydayTransaction = NonNullable<SafeLoanRepayment["linkedTransaction"]>;
+
+function LoanLinkedTransactions({ transactions }: Readonly<{ transactions: LinkedEverydayTransaction[] }>) {
+  const [showAll, setShowAll] = useState(false);
+  if (transactions.length === 0) return null;
+  const visible = showAll ? transactions : transactions.slice(0, 3);
+
+  return (
+    <section className="mt-4 border-t border-border pt-4" aria-labelledby="linked-everyday-transactions-heading">
+      <h4 id="linked-everyday-transactions-heading" className="text-sm font-bold text-brand-deepTeal">Linked everyday transactions ({transactions.length})</h4>
+      <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">These remain the only cashflow records. Repayment breakdowns add detail only.</p>
+      <ul className="mt-3 space-y-2">
+        {visible.map((transaction) => (
+          <li key={transaction.transactionId} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
+            <span><strong className="block">{dateLabel(transaction.date)}</strong><span className="text-brand-deepTeal/60">Everyday transaction</span></span>
+            <strong>{aud(Math.abs(transaction.amountCents))}</strong>
+          </li>
+        ))}
+      </ul>
+      {transactions.length > 3 && (
+        <button type="button" onClick={() => setShowAll((current) => !current)} className="mt-3 min-h-10 w-full rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+          {showAll ? "Show latest three" : `View all linked transactions (${transactions.length})`}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -607,6 +644,7 @@ function AuthenticatedLoansManager({
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [repayments, setRepayments] = useState<SafeLoanRepayment[]>([]);
+  const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
   const [candidateReviews, setCandidateReviews] = useState<Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>>({});
   const [candidateLoadingId, setCandidateLoadingId] = useState("");
   const [reconciliationSavingId, setReconciliationSavingId] = useState("");
