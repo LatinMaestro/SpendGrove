@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Building2, ChevronDown, ChevronUp, Landmark } from "lucide-react";
+import { Building2, ChevronDown, ChevronUp, Landmark, X } from "lucide-react";
 import { PropertyRecordReview } from "@/components/property-record-review";
 import { propertyTransactionsForLoanView } from "@/lib/loan-display";
 
@@ -31,15 +31,16 @@ function dateLabel(date: string) {
     .format(new Date(`${date}T00:00:00Z`));
 }
 
-function TransactionRow({ transaction, showMerchant = true }: Readonly<{ transaction: PropertyActivityTransaction; showMerchant?: boolean }>) {
+function TransactionRow({ transaction }: Readonly<{ transaction: PropertyActivityTransaction }>) {
+  const title = transaction.categoryName ?? transaction.merchantName ?? "Everyday transaction";
   return (
     <li className="rounded-xl border border-border p-3 text-xs text-brand-deepTeal">
       <div className="flex items-start justify-between gap-3">
-        <span>
-          <strong className="block">{showMerchant ? transaction.merchantName ?? "Everyday transaction" : transaction.type === "INCOME" ? "Money in" : "Money out"}</strong>
-          <span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)}{transaction.categoryName ? ` · ${transaction.categoryName}` : ""}</span>
+        <span className="min-w-0">
+          <strong className="block truncate">{title}</strong>
+          <span className="mt-1 block text-brand-deepTeal/60">{dateLabel(transaction.date)} · {transaction.type === "INCOME" ? "Money in" : "Money out"}</span>
         </span>
-        <strong>{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
+        <strong className="shrink-0">{transaction.type === "INCOME" ? "+" : "-"}{money(transaction.amountCents)}</strong>
       </div>
     </li>
   );
@@ -57,6 +58,7 @@ export function PropertyRecordKeepingActivity({
   const [activity, setActivity] = useState<PropertyActivity | null>(null);
   const [error, setError] = useState("");
   const [showAllPropertyTransactions, setShowAllPropertyTransactions] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
 
   const loadActivity = useCallback(async () => {
     if (activity || isLoading) return;
@@ -110,7 +112,7 @@ export function PropertyRecordKeepingActivity({
           )}
           {visibleTransactions.length > 0 && (
             <ul className="mt-3 space-y-2">
-              {visibleTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} showMerchant={false} />)}
+              {visibleTransactions.map((transaction) => <TransactionRow key={transaction.id} transaction={transaction} />)}
             </ul>
           )}
           {propertyTransactions.length > 3 && (
@@ -120,13 +122,29 @@ export function PropertyRecordKeepingActivity({
           )}
         </section>
 
-        <details className="border-t border-border pt-4">
-          <summary className="min-h-11 cursor-pointer text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">View property records</summary>
-          <div className="mt-3">
-            <p className="text-xs leading-5 text-brand-deepTeal/65">Record keeping only - not tax advice.</p>
-            <PropertyRecordReview propertyId={propertyId} />
+        <div className="border-t border-border pt-4">
+          <button type="button" onClick={() => setIsReportOpen(true)} className="min-h-11 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">View property report</button>
+        </div>
+
+        {isReportOpen && (
+          <div className="fixed inset-0 z-50 flex items-end justify-center bg-brand-deepTeal/55 backdrop-blur-sm sm:items-center sm:p-6">
+            <section role="dialog" aria-modal="true" aria-labelledby={`property-report-title-${propertyId}`} onKeyDown={(event) => { if (event.key === "Escape") setIsReportOpen(false); }} className="max-h-[94vh] w-full max-w-3xl overflow-y-auto rounded-t-[2rem] bg-surface-base p-5 shadow-2xl sm:rounded-[2rem] sm:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-brand-teal">Property records</p>
+                  <h3 id={`property-report-title-${propertyId}`} className="mt-1 text-2xl font-bold text-brand-deepTeal">Property report</h3>
+                  <p className="mt-2 text-xs leading-5 text-brand-deepTeal/65">Record keeping only - not tax advice.</p>
+                </div>
+                <button type="button" autoFocus onClick={() => setIsReportOpen(false)} aria-label="Close property report" className="min-h-11 min-w-11 rounded-full border border-border p-3 text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                  <X aria-hidden="true" className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-4">
+                <PropertyRecordReview propertyId={propertyId} />
+              </div>
+            </section>
           </div>
-        </details>
+        )}
       </div>
     );
   }

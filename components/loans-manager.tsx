@@ -12,7 +12,6 @@ import {
   Home,
   History,
   Landmark,
-  Link2,
   Pencil,
   Plus,
   RotateCcw,
@@ -103,37 +102,6 @@ function dateLabel(date: string) {
   return new Intl.DateTimeFormat("en-AU", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${date}T00:00:00Z`));
 }
 
-function confidenceLabel(confidence: LoanReconciliationCandidate["confidence"]) {
-  return confidence === "HIGH" ? "Strong match" : confidence === "MEDIUM" ? "Possible match" : "Choose manually";
-}
-
-function varianceLabel(candidate: LoanReconciliationCandidate) {
-  if (candidate.amountVarianceCents === 0) return "Exact amount";
-  return `Amount differs by ${aud(Math.abs(candidate.amountVarianceCents))}`;
-}
-
-function candidateReviewCopy(mode: ReconciliationCandidateMode) {
-  if (mode === "MANUAL") {
-    return {
-      heading: "More possible matches",
-      description: "Choose from nearby everyday transactions when the suggested match is not right.",
-      empty: "No nearby everyday transactions were found. You can search one exact date below.",
-    };
-  }
-  if (mode === "OVERRIDE") {
-    return {
-      heading: "Transactions on this date",
-      description: "Choose an everyday transaction from the exact date you entered.",
-      empty: "No eligible everyday transactions were found on that exact date.",
-    };
-  }
-  return {
-    heading: "Suggested repayment matches",
-    description: "Review the closest eligible everyday transactions.",
-    empty: "No clear everyday transaction match was found.",
-  };
-}
-
 function RepaymentHistory({
   repayments,
   isSaving,
@@ -173,6 +141,9 @@ function RepaymentHistory({
   const [bulkConfirmed, setBulkConfirmed] = useState(false);
   const [bulkSummary, setBulkSummary] = useState<LoanRepaymentBulkArchiveSummary | null>(null);
   const [showAllRepayments, setShowAllRepayments] = useState(false);
+  const [openRepaymentId, setOpenRepaymentId] = useState<string | null>(null);
+  const [matchingRepaymentId, setMatchingRepaymentId] = useState<string | null>(null);
+  const [searchByDateRepaymentId, setSearchByDateRepaymentId] = useState<string | null>(null);
   const visibleRepayments = repayments.filter((repayment) => repayment.isArchived === (historyFilter === "ARCHIVED"));
   const displayedRepayments = showAllRepayments ? visibleRepayments : visibleRepayments.slice(0, 3);
   const selectedRepayments = visibleRepayments.filter((repayment) => selectedRepaymentIds.has(repayment.id));
@@ -184,6 +155,7 @@ function RepaymentHistory({
     setBulkConfirmed(false);
     setBulkSummary(null);
     setShowAllRepayments(false);
+    setOpenRepaymentId(null);
   }
 
   function changeBulkSelection(repaymentId: string, selected: boolean) {
@@ -209,141 +181,209 @@ function RepaymentHistory({
     }
   }
 
-  if (repayments.length === 0) {
-    return <p className="mt-4 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No repayments imported yet.</p>;
+  function beginMatching(repayment: SafeLoanRepayment) {
+    setMatchingRepaymentId(repayment.id);
+    setSearchByDateRepaymentId(null);
+    if (!candidateReviews[repayment.id]) onLoadCandidates(repayment, "SUGGESTED");
   }
+
+  if (repayments.length === 0) {
+    return (
+      <section className="mt-5 border-t border-border pt-5" aria-labelledby="loan-repayments-heading">
+        <h3 id="loan-repayments-heading" className="text-xl font-bold text-brand-deepTeal">Loan repayments</h3>
+        <p className="mt-3 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal/65">No repayments imported yet.</p>
+      </section>
+    );
+  }
+
   return (
-    <details open className="mt-4 border-t border-border pt-4">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><History aria-hidden="true" className="h-4 w-4 text-brand-teal" /> Loan repayments ({repayments.filter((repayment) => !repayment.isArchived).length})</summary>
-      <details className="mt-3 rounded-2xl border border-border p-3">
-        <summary className="min-h-10 cursor-pointer text-xs font-bold text-brand-deepTeal">Deleted repayments and cleanup</summary>
-      <div className="mt-3 flex flex-wrap gap-2" aria-label="Repayment history filter">
-        <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Current ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
-        <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Deleted ({repayments.filter((repayment) => repayment.isArchived).length})</button>
-        <button type="button" onClick={() => { setCleanupMode((current) => { if (!current) setShowAllRepayments(true); return !current; }); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "delete" : "restore"}`}</button>
+    <section className="mt-5 border-t border-border pt-5" aria-labelledby="loan-repayments-heading">
+      <div className="flex items-center gap-2">
+        <History aria-hidden="true" className="h-4 w-4 text-brand-teal" />
+        <h3 id="loan-repayments-heading" className="text-xl font-bold text-brand-deepTeal">Loan repayments</h3>
       </div>
-      {cleanupMode && (
-        <div className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-4 text-xs text-brand-deepTeal">
-          <p className="font-bold">{selectedRepayments.length} selected · maximum 100</p>
-          <p className="mt-1">Linked or newly changed repayments are skipped safely. Everyday transactions are never changed or deleted.</p>
-          <label className="mt-3 flex items-start gap-2 rounded-xl bg-white p-3 font-semibold">
-            <input type="checkbox" checked={bulkConfirmed} disabled={selectedRepayments.length === 0 || isSaving} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-0.5 accent-brand-green" />
-            I reviewed this selection and want to {historyFilter === "ACTIVE" ? "delete" : "restore"} these repayments.
-          </label>
-          <button type="button" disabled={!bulkConfirmed || selectedRepayments.length === 0 || isSaving} onClick={() => void applyBulkCleanup()} className="mt-3 min-h-10 rounded-full bg-brand-deepTeal px-4 font-bold text-white disabled:opacity-45">{isSaving ? "Saving…" : historyFilter === "ACTIVE" ? "Delete selected" : "Restore selected"}</button>
-        </div>
-      )}
-      {bulkSummary && <p role="status" className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-deepTeal">{bulkSummary.changedCount} changed and {bulkSummary.skippedCount} skipped because they were already updated, linked or already in that state.</p>}
-      </details>
+
       <div className="mt-3 space-y-2">
         {visibleRepayments.length === 0 && <p className="rounded-2xl bg-surface-mint p-3 text-xs text-brand-deepTeal/65">No {historyFilter === "ACTIVE" ? "current" : "deleted"} repayments.</p>}
-        {displayedRepayments.map((repayment) => (
-          <div key={repayment.id}>
-            {cleanupMode && (
-              <label className="mb-2 flex items-start gap-2 rounded-xl bg-surface-mint p-3 text-xs font-semibold text-brand-deepTeal">
-                <input type="checkbox" checked={selectedRepaymentIds.has(repayment.id)} disabled={isSaving || (historyFilter === "ACTIVE" && Boolean(repayment.linkedTransaction)) || (!selectedRepaymentIds.has(repayment.id) && selectedRepaymentIds.size >= 100)} onChange={(event) => changeBulkSelection(repayment.id, event.target.checked)} className="mt-0.5 accent-brand-green" />
-                {historyFilter === "ACTIVE" && repayment.linkedTransaction ? "Matched — unlink before deleting" : `Select ${dateLabel(repayment.repaymentDate)} repayment`}
-              </label>
-            )}
-            <details className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
-            <summary className="cursor-pointer list-none">
-              <div className="flex items-center justify-between gap-3">
-                <span><strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong><span className="text-xs text-brand-deepTeal/60">{repayment.isArchived ? "Deleted" : repayment.reconciliationStatus === "NEEDS_REVIEW" ? "Needs review" : repayment.reconciliationStatus === "LINKED" ? "Matched" : "Repayment"}</span></span>
-                <strong className="text-sm text-brand-deepTeal">{aud(repayment.totalPaymentCents)}</strong>
-              </div>
-            </summary>
-            <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              {([[
-                "Principal", repayment.principalCents,
-              ], ["Interest", repayment.interestCents], ["Fees", repayment.feeCents], ["Balance after", repayment.balanceAfterCents]] as const).filter(([, value]) => value !== null).map(([label, value]) => (
-                <div key={label} className="rounded-xl bg-surface-mint p-2"><dt className="text-brand-deepTeal/60">{label}</dt><dd className="mt-1 font-bold text-brand-deepTeal">{aud(value)}</dd></div>
-              ))}
-            </dl>
-            {repayment.linkedTransaction && (
-              <div className="mt-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
-                <p className="flex items-start gap-2"><Link2 aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-brand-green" /> This repayment is matched.</p>
-                <p className="mt-2 font-semibold">Unlink this repayment before editing its date or amounts.</p>
-                <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 font-bold text-brand-deepTeal disabled:opacity-50">{reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink repayment"}</button>
-              </div>
-            )}
-            {!repayment.isArchived && !repayment.linkedTransaction && (
-              <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
-                <p className="text-xs font-bold text-brand-deepTeal">Match this repayment</p>
-                <p className="mt-1 text-xs leading-5 text-brand-deepTeal/60">One clear high-confidence match may be linked automatically when a repayment is saved. Ambiguous, medium and manual matches stay here for your review.</p>
-                {!candidateReviews[repayment.id] ? (
-                  <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "SUGGESTED")} className="mt-3 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">{candidateLoadingId === repayment.id ? "Checking…" : "Find possible matches"}</button>
-                ) : (
-                  <div className="mt-3">
-                    <div className="mb-3 rounded-xl bg-brand-green/10 p-3 text-xs text-brand-deepTeal">
-                      <p className="font-bold">{candidateReviewCopy(candidateReviews[repayment.id].mode).heading}</p>
-                      <p className="mt-1 leading-5 text-brand-deepTeal/65">{candidateReviewCopy(candidateReviews[repayment.id].mode).description}</p>
-                    </div>
-                    {candidateReviews[repayment.id].candidates.length === 0 ? (
-                      <p className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">{candidateReviewCopy(candidateReviews[repayment.id].mode).empty}</p>
-                    ) : (
-                      <ul className="space-y-2">
-                        {candidateReviews[repayment.id].candidates.map((candidate) => (
-                          <li key={candidate.transactionId} className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
-                            <div className="flex items-center justify-between gap-2"><strong>{dateLabel(candidate.transactionDate)}</strong><span className="rounded-full bg-white px-2 py-1 font-bold text-brand-teal">{confidenceLabel(candidate.confidence)}</span></div>
-                            <p className="mt-2">Everyday transaction: <strong>{aud(Math.abs(candidate.transactionAmountCents))}</strong></p>
-                            <p>{varianceLabel(candidate)} · {candidate.dateDifferenceDays} day{candidate.dateDifferenceDays === 1 ? "" : "s"} apart</p>
-                            {candidate.existingAllocationCents > 0 && <p className="mt-1">Includes {aud(candidate.existingAllocationCents)} already linked as another loan breakdown.</p>}
-                            {(candidate.confidence !== "HIGH" || candidateReviews[repayment.id].mode === "OVERRIDE") && (
-                              <label className="mt-3 flex items-start gap-2 rounded-lg bg-white p-2 font-semibold">
-                                <input type="checkbox" checked={Boolean(confirmedLinks[`${repayment.id}:${candidate.transactionId}`])} onChange={(event) => onConfirmationChange(`${repayment.id}:${candidate.transactionId}`, event.target.checked)} className="mt-0.5 accent-brand-green" />
-                                I checked the amount variance and date difference.
-                              </label>
-                            )}
-                            <button
-                              type="button"
-                              disabled={reconciliationSavingId === repayment.id || ((candidate.confidence !== "HIGH" || candidateReviews[repayment.id].mode === "OVERRIDE") && !confirmedLinks[`${repayment.id}:${candidate.transactionId}`])}
-                              onClick={() => onLink(repayment, candidate, candidateReviews[repayment.id].mode, Boolean(confirmedLinks[`${repayment.id}:${candidate.transactionId}`]))}
-                              className="mt-3 min-h-10 rounded-full bg-brand-green px-3 font-bold text-white disabled:opacity-45"
-                            >{reconciliationSavingId === repayment.id ? "Linking…" : "Match this repayment"}</button>
-                          </li>
+        {displayedRepayments.map((repayment) => {
+          const isOpen = openRepaymentId === repayment.id;
+          const review = candidateReviews[repayment.id];
+          return (
+            <div key={repayment.id}>
+              {cleanupMode && (
+                <label className="mb-2 flex items-start gap-2 rounded-xl bg-surface-mint p-3 text-xs font-semibold text-brand-deepTeal">
+                  <input type="checkbox" checked={selectedRepaymentIds.has(repayment.id)} disabled={isSaving || (historyFilter === "ACTIVE" && Boolean(repayment.linkedTransaction)) || (!selectedRepaymentIds.has(repayment.id) && selectedRepaymentIds.size >= 100)} onChange={(event) => changeBulkSelection(repayment.id, event.target.checked)} className="mt-0.5 accent-brand-green" />
+                  {historyFilter === "ACTIVE" && repayment.linkedTransaction ? "Unlink before deleting" : `Select ${dateLabel(repayment.repaymentDate)} repayment`}
+                </label>
+              )}
+              <article className={`rounded-2xl border border-border p-3 ${repayment.isArchived ? "bg-surface-mint opacity-70" : "bg-white"}`}>
+                <button
+                  type="button"
+                  aria-expanded={isOpen}
+                  aria-controls={`repayment-details-${repayment.id}`}
+                  onClick={() => setOpenRepaymentId(isOpen ? null : repayment.id)}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 text-left focus:outline-none focus:ring-2 focus:ring-brand-green"
+                >
+                  <span>
+                    <strong className="block text-sm text-brand-deepTeal">{dateLabel(repayment.repaymentDate)}</strong>
+                    {repayment.isArchived && <span className="text-xs text-brand-deepTeal/60">Deleted</span>}
+                    {!repayment.isArchived && repayment.reconciliationStatus === "NEEDS_REVIEW" && <span className="text-xs font-bold text-warning-amber">Needs review</span>}
+                  </span>
+                  <span className="flex items-center gap-3">
+                    <strong className="text-sm text-brand-deepTeal">{aud(repayment.totalPaymentCents)}</strong>
+                    <span className="text-xs font-bold text-brand-teal">{isOpen ? "Hide details" : "Details"}</span>
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div id={`repayment-details-${repayment.id}`} className="mt-3 border-t border-border pt-3">
+                    <dl className="grid grid-cols-2 gap-2 text-xs">
+                      {([["Principal", repayment.principalCents], ["Interest", repayment.interestCents], ["Fees", repayment.feeCents], ["Balance after", repayment.balanceAfterCents]] as const)
+                        .filter(([, value]) => value !== null)
+                        .map(([label, value]) => (
+                          <div key={label} className="rounded-xl bg-surface-mint p-2">
+                            <dt className="text-brand-deepTeal/60">{label}</dt>
+                            <dd className="mt-1 font-bold text-brand-deepTeal">{aud(value)}</dd>
+                          </div>
                         ))}
-                      </ul>
+                    </dl>
+
+                    {!repayment.isArchived && !repayment.linkedTransaction && matchingRepaymentId !== repayment.id && (
+                      <div className="mt-3 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
+                        <p className="font-bold">Needs review</p>
+                        <p className="mt-1 leading-5 text-brand-deepTeal/65">SpendGrove could not find a clear matching transaction.</p>
+                        <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => beginMatching(repayment)} className="mt-3 min-h-10 rounded-full bg-brand-green px-3 font-bold text-white disabled:opacity-50">
+                          {candidateLoadingId === repayment.id ? "Checking…" : "Match transaction"}
+                        </button>
+                      </div>
                     )}
-                    {candidateReviews[repayment.id].mode === "SUGGESTED" && (
-                      <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "MANUAL")} className="mt-3 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">Search wider manually</button>
+
+                    {!repayment.isArchived && !repayment.linkedTransaction && matchingRepaymentId === repayment.id && (
+                      <div className="mt-3 rounded-xl border border-brand-teal/20 p-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-xs font-bold text-brand-deepTeal">Match transaction</p>
+                          <button type="button" onClick={() => { setMatchingRepaymentId(null); setSearchByDateRepaymentId(null); }} className="min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal">Cancel</button>
+                        </div>
+
+                        {candidateLoadingId === repayment.id && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/65">Checking transactions…</p>}
+                        {review && candidateLoadingId !== repayment.id && (
+                          <div className="mt-3">
+                            <p className="text-xs font-bold text-brand-deepTeal">{review.mode === "OVERRIDE" ? "Transactions on this date" : review.mode === "MANUAL" ? "Other transactions" : "Suggested transactions"}</p>
+                            {review.candidates.length === 0 ? (
+                              <p className="mt-2 rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">No matching transaction was found.</p>
+                            ) : (
+                              <ul className="mt-2 space-y-2">
+                                {review.candidates.map((candidate) => {
+                                  const requiresConfirmation = candidate.confidence !== "HIGH" || review.mode === "OVERRIDE";
+                                  const confirmationKey = `${repayment.id}:${candidate.transactionId}`;
+                                  return (
+                                    <li key={candidate.transactionId} className="rounded-xl bg-surface-mint p-3 text-xs text-brand-deepTeal">
+                                      <div className="flex items-center justify-between gap-3">
+                                        <strong>{dateLabel(candidate.transactionDate)}</strong>
+                                        <strong>{aud(Math.abs(candidate.transactionAmountCents))}</strong>
+                                      </div>
+                                      {requiresConfirmation && (
+                                        <label className="mt-3 flex items-start gap-2 rounded-lg bg-white p-2 font-semibold">
+                                          <input type="checkbox" checked={Boolean(confirmedLinks[confirmationKey])} onChange={(event) => onConfirmationChange(confirmationKey, event.target.checked)} className="mt-0.5 accent-brand-green" />
+                                          This transaction does not closely match the repayment. Are you sure you want to link it?
+                                        </label>
+                                      )}
+                                      <button
+                                        type="button"
+                                        disabled={reconciliationSavingId === repayment.id || (requiresConfirmation && !confirmedLinks[confirmationKey])}
+                                        onClick={() => onLink(repayment, candidate, review.mode, Boolean(confirmedLinks[confirmationKey]))}
+                                        className="mt-3 min-h-10 rounded-full bg-brand-green px-3 font-bold text-white disabled:opacity-45"
+                                      >
+                                        {reconciliationSavingId === repayment.id ? "Linking…" : "Link transaction"}
+                                      </button>
+                                    </li>
+                                  );
+                                })}
+                              </ul>
+                            )}
+
+                            {review.mode === "SUGGESTED" && (
+                              <button type="button" disabled={candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "MANUAL")} className="mt-3 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">Search for another transaction</button>
+                            )}
+
+                            {review.mode !== "OVERRIDE" && searchByDateRepaymentId !== repayment.id && (
+                              <button type="button" onClick={() => setSearchByDateRepaymentId(repayment.id)} className="mt-3 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal">Search by date</button>
+                            )}
+
+                            {searchByDateRepaymentId === repayment.id && (
+                              <div className="mt-3 rounded-xl bg-white p-3">
+                                <label className="block text-xs font-bold text-brand-deepTeal">Search by date
+                                  <input type="date" value={overrideDates[repayment.id] ?? ""} onChange={(event) => onOverrideDateChange(repayment.id, event.target.value)} className="mt-2 min-h-10 w-full rounded-lg border border-border px-2 font-normal" />
+                                </label>
+                                <button type="button" disabled={!overrideDates[repayment.id] || candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "OVERRIDE", overrideDates[repayment.id])} className="mt-2 min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-45">Find transactions</button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     )}
-                    <div className="mt-3 rounded-xl bg-white p-3">
-                      <label className="block text-xs font-bold text-brand-deepTeal">Find another eligible transaction by exact date
-                        <input type="date" value={overrideDates[repayment.id] ?? ""} onChange={(event) => onOverrideDateChange(repayment.id, event.target.value)} className="mt-2 min-h-10 w-full rounded-lg border border-border px-2 font-normal" />
-                      </label>
-                      <button type="button" disabled={!overrideDates[repayment.id] || candidateLoadingId === repayment.id} onClick={() => onLoadCandidates(repayment, "OVERRIDE", overrideDates[repayment.id])} className="mt-2 min-h-10 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-45">Search this exact date</button>
-                      <p className="mt-2 text-xs text-brand-deepTeal/60">This is an explicit manual override search, not a likely-match suggestion. Any result requires mismatch confirmation.</p>
-                    </div>
-                    <p className="mt-2 text-xs font-semibold text-brand-deepTeal/60">Manual links and automatic high-confidence links are reversible. Linking never creates or changes an everyday transaction.</p>
+
+                    {repayment.isArchived && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Restore this repayment before editing it.</p>}
+
+                    <details className="mt-3">
+                      <summary className="inline-flex min-h-10 cursor-pointer list-none items-center rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">More</summary>
+                      <div className="mt-2 flex flex-wrap gap-2 rounded-xl bg-surface-mint p-3">
+                        {!repayment.isArchived && !repayment.linkedTransaction && repayment.reconciliationStatus === "UNMATCHED" && (
+                          <button type="button" disabled={isSaving} onClick={() => onEdit(repayment)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+                            <Pencil aria-hidden="true" className="h-4 w-4" /> Edit repayment
+                          </button>
+                        )}
+                        {!repayment.isArchived && repayment.linkedTransaction && (
+                          <button type="button" disabled={reconciliationSavingId === repayment.id} onClick={() => onUnlink(repayment)} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+                            {reconciliationSavingId === repayment.id ? "Unlinking…" : "Unlink repayment"}
+                          </button>
+                        )}
+                        <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
+                          {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
+                          {repayment.isArchived ? "Restore repayment" : "Delete repayment"}
+                        </button>
+                      </div>
+                    </details>
                   </div>
                 )}
-              </div>
-            )}
-            {repayment.isArchived && <p className="mt-3 text-xs font-semibold text-brand-deepTeal/60">Restore this repayment before editing it.</p>}
-            <div className="mt-3 flex flex-wrap gap-2">
-              {!repayment.isArchived && !repayment.linkedTransaction && repayment.reconciliationStatus === "UNMATCHED" && (
-                <button type="button" disabled={isSaving} onClick={() => onEdit(repayment)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
-                  <Pencil aria-hidden="true" className="h-4 w-4" /> Edit repayment
-                </button>
-              )}
-              <button type="button" disabled={isSaving} onClick={() => onArchiveChange(repayment, !repayment.isArchived)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal disabled:opacity-50">
-                {repayment.isArchived ? <RotateCcw aria-hidden="true" className="h-4 w-4" /> : <Archive aria-hidden="true" className="h-4 w-4" />}
-                {repayment.isArchived ? "Restore repayment" : "Delete repayment"}
-              </button>
+              </article>
             </div>
-            </details>
-          </div>
-        ))}
+          );
+        })}
       </div>
+
       {visibleRepayments.length > 3 && !cleanupMode && (
         <button type="button" onClick={() => setShowAllRepayments((current) => !current)} className="mt-3 min-h-10 w-full rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
           {showAllRepayments ? "Show latest three" : `View all repayments (${visibleRepayments.length})`}
         </button>
       )}
-    </details>
+
+      <details
+        className="mt-4 border-t border-border pt-3"
+        onToggle={(event) => changeHistoryFilter(event.currentTarget.open ? "ARCHIVED" : "ACTIVE")}
+      >
+        <summary className="min-h-10 cursor-pointer text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Deleted repayments</summary>
+        <div className="mt-3 flex flex-wrap gap-2" aria-label="Repayment management filter">
+          <button type="button" onClick={() => changeHistoryFilter("ACTIVE")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ACTIVE" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Current ({repayments.filter((repayment) => !repayment.isArchived).length})</button>
+          <button type="button" onClick={() => changeHistoryFilter("ARCHIVED")} className={`min-h-10 rounded-full px-3 text-xs font-bold ${historyFilter === "ARCHIVED" ? "bg-brand-deepTeal text-white" : "border border-border text-brand-deepTeal"}`}>Deleted ({repayments.filter((repayment) => repayment.isArchived).length})</button>
+          <button type="button" onClick={() => { setCleanupMode((current) => { if (!current) setShowAllRepayments(true); return !current; }); setSelectedRepaymentIds(new Set()); setBulkConfirmed(false); setBulkSummary(null); }} className="min-h-10 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">{cleanupMode ? "Finish selecting" : `Select to ${historyFilter === "ACTIVE" ? "delete" : "restore"}`}</button>
+        </div>
+        {cleanupMode && (
+          <div className="mt-3 rounded-2xl border border-brand-teal/30 bg-surface-mint p-4 text-xs text-brand-deepTeal">
+            <p className="font-bold">{selectedRepayments.length} selected · maximum 100</p>
+            <p className="mt-1">Linked or newly changed repayments are skipped safely. Everyday transactions are never changed or deleted.</p>
+            <label className="mt-3 flex items-start gap-2 rounded-xl bg-white p-3 font-semibold">
+              <input type="checkbox" checked={bulkConfirmed} disabled={selectedRepayments.length === 0 || isSaving} onChange={(event) => setBulkConfirmed(event.target.checked)} className="mt-0.5 accent-brand-green" />
+              I reviewed this selection and want to {historyFilter === "ACTIVE" ? "delete" : "restore"} these repayments.
+            </label>
+            <button type="button" disabled={!bulkConfirmed || selectedRepayments.length === 0 || isSaving} onClick={() => void applyBulkCleanup()} className="mt-3 min-h-10 rounded-full bg-brand-deepTeal px-4 font-bold text-white disabled:opacity-45">{isSaving ? "Saving…" : historyFilter === "ACTIVE" ? "Delete selected" : "Restore selected"}</button>
+          </div>
+        )}
+        {bulkSummary && <p role="status" className="mt-3 rounded-2xl bg-brand-green/10 p-3 text-xs font-semibold text-brand-deepTeal">{bulkSummary.changedCount} changed and {bulkSummary.skippedCount} skipped because they were already updated, linked or already in that state.</p>}
+      </details>
+    </section>
   );
 }
-
 
 async function readResult(response: Response): Promise<LoanResult> {
   try {
@@ -406,7 +446,7 @@ function RepaymentCorrectionEditor({ draft, error, isSaving, onChange, onClose, 
   onSave: () => void;
 }>) {
   return (
-    <Modal title="Edit repayment breakdown" description="Correct structured values only. Source and import lineage stay unchanged." onClose={onClose}>
+    <Modal title="Edit repayment" description="Correct the repayment details below. The original import record stays unchanged." onClose={onClose}>
       <form className="mt-6 space-y-5" onSubmit={(event) => { event.preventDefault(); onSave(); }}>
         <label className="block text-sm font-bold text-brand-deepTeal">Repayment date
           <input type="date" value={draft.repaymentDate} onChange={(event) => onChange({ ...draft, repaymentDate: event.target.value })} required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal" />
@@ -618,7 +658,7 @@ function AuthenticatedLoansManager({
   const [loans, setLoans] = useState<LoanRecord[]>([]);
   const [properties, setProperties] = useState<PropertyRecord[]>([]);
   const [repayments, setRepayments] = useState<SafeLoanRepayment[]>([]);
-  const [expandedLoanId, setExpandedLoanId] = useState<string | null>(null);
+  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [candidateReviews, setCandidateReviews] = useState<Record<string, { mode: ReconciliationCandidateMode; candidates: LoanReconciliationCandidate[] }>>({});
   const [candidateLoadingId, setCandidateLoadingId] = useState("");
   const [reconciliationSavingId, setReconciliationSavingId] = useState("");
@@ -662,6 +702,21 @@ function AuthenticatedLoansManager({
   }, [isLoaded, isSignedIn]);
 
   const activeLoans = useMemo(() => loans.filter((loan) => !loan.isArchived), [loans]);
+  const selectedLoan = useMemo(
+    () => activeLoans.find((loan) => loan.id === selectedLoanId) ?? null,
+    [activeLoans, selectedLoanId],
+  );
+  const selectedLoanRepayments = useMemo(
+    () => selectedLoan
+      ? repayments
+          .filter((repayment) => repayment.loanAccountId === selectedLoan.id)
+          .sort((left, right) => right.repaymentDate.localeCompare(left.repaymentDate))
+      : [],
+    [repayments, selectedLoan],
+  );
+  const selectedPropertyActivityKey = selectedLoanRepayments
+    .map((repayment) => `${repayment.id}:${repayment.updatedAt}:${repayment.linkedTransaction?.transactionId ?? "none"}`)
+    .join("|");
   const archivedLoans = useMemo(() => loans.filter((loan) => loan.isArchived), [loans]);
   const activeLoanPropertyIds = useMemo(
     () => new Set(activeLoans.flatMap((loan) => loan.propertyId ? [loan.propertyId] : [])),
@@ -915,7 +970,7 @@ function AuthenticatedLoansManager({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
+      {!selectedLoan && <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-white/70">Loans</p>
@@ -929,16 +984,16 @@ function AuthenticatedLoansManager({
             <Link href="/loans/import" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/35 px-5 text-sm font-bold text-white">Import repayments</Link>
           </div>
         </div>
-      </section>
+      </section>}
 
-      {loanImportCompleted && (
+      {!selectedLoan && loanImportCompleted && (
         <div role="status" className="flex items-start gap-3 rounded-2xl border border-brand-green bg-brand-green/10 p-4 text-sm text-brand-deepTeal">
           <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
           <p>
             <strong className="block">Loan CSV imported.</strong>
             {loanImportSavedCount === null
-              ? "Repayment breakdowns were saved."
-              : `${loanImportSavedCount} repayment breakdown${loanImportSavedCount === 1 ? "" : "s"} saved.`}
+              ? "Repayments were saved."
+              : `${loanImportSavedCount} repayment${loanImportSavedCount === 1 ? "" : "s"} saved.`}
           </p>
         </div>
       )}
@@ -953,6 +1008,55 @@ function AuthenticatedLoansManager({
           <h2 className="mt-5 text-2xl font-bold text-brand-deepTeal">No loans yet.</h2>
           <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-brand-deepTeal/70">Add your first loan using a safe nickname. Property details are optional.</p>
         </section>
+      ) : selectedLoan ? (
+        <section aria-labelledby="selected-loan-heading">
+          <button type="button" onClick={() => setSelectedLoanId(null)} className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Back to loans</button>
+          <article className="mt-4 rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
+            <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-brand-teal">Loan</p>
+                <h2 id="selected-loan-heading" className="mt-1 truncate text-2xl font-bold text-brand-deepTeal">{selectedLoan.nickname}</h2>
+                <p className="mt-1 text-sm text-brand-deepTeal/65">{choiceForLoan(selectedLoan).tag}{selectedLoan.property ? ` · ${selectedLoan.property.nickname}` : ""}</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={() => { setError(""); setEditor({ loanId: selectedLoan.id, draft: loanDraft(selectedLoan) }); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                  <Pencil aria-hidden="true" className="h-4 w-4" /> Edit loan
+                </button>
+                <details className="relative">
+                  <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">More</summary>
+                  <div className="mt-2 space-y-2 rounded-2xl border border-border bg-white p-3 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:min-w-52">
+                    {selectedLoan.property && (
+                      <button type="button" aria-label={`Edit ${selectedLoan.property.nickname} Property`} onClick={() => openProperty(selectedLoan.property!)} className="min-h-10 w-full rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">Edit property</button>
+                    )}
+                    <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(selectedLoan, true)} className="min-h-10 w-full rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal">Delete loan</button>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <RepaymentHistory
+              repayments={selectedLoanRepayments}
+              isSaving={isSaving}
+              candidateReviews={candidateReviews}
+              candidateLoadingId={candidateLoadingId}
+              reconciliationSavingId={reconciliationSavingId}
+              confirmedLinks={confirmedLinks}
+              overrideDates={overrideDates}
+              onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
+              onBulkArchiveChange={bulkSetRepaymentArchived}
+              onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
+              onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
+              onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
+              onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
+              onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
+              onUnlink={(repayment) => void unlinkRepayment(repayment)}
+            />
+
+            {selectedLoan.property && (
+              <PropertyRecordKeepingActivity key={`${selectedLoan.property.id}:${selectedPropertyActivityKey}`} propertyId={selectedLoan.property.id} variant="loan-detail" />
+            )}
+          </article>
+        </section>
       ) : (
         <section aria-labelledby="loan-list-heading">
           <div className="px-1"><p className="text-sm font-semibold text-brand-teal">Your active loans</p><h2 id="loan-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeLoans.length} Loan Account{activeLoans.length === 1 ? "" : "s"}</h2></div>
@@ -961,18 +1065,13 @@ function AuthenticatedLoansManager({
               const choice = choiceForLoan(loan);
               const Icon = choice.kind === "CAR" ? Car : choice.propertyRelevant ? Home : Landmark;
               const loanRepayments = repayments
-                .filter((repayment) => repayment.loanAccountId === loan.id)
+                .filter((repayment) => repayment.loanAccountId === loan.id && !repayment.isArchived)
                 .sort((left, right) => right.repaymentDate.localeCompare(left.repaymentDate));
-              const activeLoanRepayments = loanRepayments.filter((repayment) => !repayment.isArchived);
-              const latestRepayment = activeLoanRepayments[0] ?? null;
-              const needsReviewCount = activeLoanRepayments.filter((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW").length;
-              const expanded = expandedLoanId === loan.id;
-              const propertyActivityKey = loanRepayments
-                .map((repayment) => `${repayment.id}:${repayment.updatedAt}:${repayment.linkedTransaction?.transactionId ?? "none"}`)
-                .join("|");
+              const latestRepayment = loanRepayments[0] ?? null;
+              const needsReview = loanRepayments.some((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW");
 
               return (
-                <article key={loan.id} className={`rounded-3xl border border-border bg-surface-base p-5 shadow-soft ${expanded ? "lg:col-span-2" : ""}`}>
+                <article key={loan.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Icon aria-hidden="true" className="h-5 w-5" /></div>
                     <div className="min-w-0">
@@ -980,70 +1079,11 @@ function AuthenticatedLoansManager({
                       <p className="mt-1 text-sm text-brand-deepTeal/65">{choice.tag}{loan.property ? ` · ${loan.property.nickname}` : ""}</p>
                     </div>
                   </div>
-
                   <p className="mt-3 text-sm text-brand-deepTeal/65">
-                    {latestRepayment
-                      ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${aud(latestRepayment.totalPaymentCents)}`
-                      : "No repayments imported yet"}
+                    {latestRepayment ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${aud(latestRepayment.totalPaymentCents)}` : "No repayments imported yet"}
                   </p>
-                  {latestRepayment && (
-                    <p className={`mt-2 text-xs font-bold ${needsReviewCount > 0 ? "text-warning-amber" : "text-brand-teal"}`}>
-                      {needsReviewCount > 0
-                        ? `${needsReviewCount} repayment${needsReviewCount === 1 ? "" : "s"} need matching`
-                        : "Up to date"}
-                    </p>
-                  )}
-
-                  <button
-                    type="button"
-                    aria-expanded={expanded}
-                    onClick={() => setExpandedLoanId(expanded ? null : loan.id)}
-                    className="mt-4 min-h-11 w-full rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal"
-                  >
-                    {expanded ? "Close details" : "View loan"}
-                  </button>
-
-                  {expanded && (
-                    <div className="mt-5 border-t border-border pt-5">
-                      <div className="flex flex-wrap items-center justify-end gap-2">
-                        <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                          <Pencil aria-hidden="true" className="h-4 w-4" /> Edit loan
-                        </button>
-                        <details className="relative">
-                          <summary className="flex min-h-10 cursor-pointer list-none items-center rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">More</summary>
-                          <div className="mt-2 space-y-2 rounded-2xl border border-border bg-white p-3 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:min-w-52">
-                            {loan.property && (
-                              <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="min-h-10 w-full rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">Edit property</button>
-                            )}
-                            <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="min-h-10 w-full rounded-full border border-border px-3 text-xs font-bold text-brand-deepTeal">Delete loan</button>
-                          </div>
-                        </details>
-                      </div>
-
-                      {loan.property && (
-                        <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} variant="loan-detail" />
-                      )}
-
-                      <RepaymentHistory
-                        repayments={loanRepayments}
-                        isSaving={isSaving}
-                        candidateReviews={candidateReviews}
-                        candidateLoadingId={candidateLoadingId}
-                        reconciliationSavingId={reconciliationSavingId}
-                        confirmedLinks={confirmedLinks}
-                        overrideDates={overrideDates}
-                        onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
-                        onBulkArchiveChange={bulkSetRepaymentArchived}
-                        onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
-                        onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
-                        onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
-                        onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
-                        onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
-                        onUnlink={(repayment) => void unlinkRepayment(repayment)}
-                      />
-
-                    </div>
-                  )}
+                  {needsReview && <p className="mt-2 text-xs font-bold text-warning-amber">Needs review</p>}
+                  <button type="button" onClick={() => setSelectedLoanId(loan.id)} className="mt-4 min-h-11 w-full rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">View loan</button>
                 </article>
               );
             })}
@@ -1051,7 +1091,7 @@ function AuthenticatedLoansManager({
         </section>
       )}
 
-      {otherProperties.length > 0 && (
+      {!selectedLoan && otherProperties.length > 0 && (
         <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft">
           <p className="text-sm font-semibold text-brand-teal">Other property records</p>
           <h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Properties without an active loan</h2>
@@ -1070,18 +1110,18 @@ function AuthenticatedLoansManager({
         </section>
       )}
 
-      {archivedLoans.length > 0 && (
+      {!selectedLoan && archivedLoans.length > 0 && (
         <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
           <h2 className="font-bold text-brand-deepTeal">Archived Loan Accounts</h2>
           <div className="mt-3 space-y-2">{archivedLoans.map((loan) => <div key={loan.id} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3"><span className="text-sm font-semibold text-brand-deepTeal">{loan.nickname}</span><button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, false)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore</button></div>)}</div>
         </section>
       )}
 
-      <details className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
+      {!selectedLoan && <details className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
         <summary className="flex min-h-11 cursor-pointer items-center gap-2 font-bold text-brand-deepTeal"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-brand-green" /> How SpendGrove keeps loan information private</summary>
         <p className="mt-2">SpendGrove stores safe nicknames and broad details only. It does not ask for an address, account number, masked reference, customer ID or source narration.</p>
         <p className="mt-2 font-semibold text-brand-teal">Record keeping only - not tax advice.</p>
-      </details>
+      </details>}
 
       {editor && <LoanEditor draft={editor.draft} properties={properties} isEditing={Boolean(editor.loanId)} error={error} isSaving={isSaving} onChange={(draft) => { setEditor({ ...editor, draft }); setError(""); }} onClose={() => setEditor(null)} onSave={() => void saveLoan()} />}
 
