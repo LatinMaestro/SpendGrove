@@ -9,14 +9,15 @@ describe("Phase 3C Milestone 3 import-review Property link UI", () => {
   it("shows an optional neutral Property record control during import review", () => {
     expect(rowCard).toContain("Include in property records");
     expect(rowCard).toContain("Link to property");
-    expect(rowCard).toContain("No Property link");
+    expect(rowCard).toContain("propertyEnabled &&");
+    expect(rowCard).toContain("Choose a Property");
     expect(rowCard).toContain("Record keeping only - not tax advice");
     expect(rowCard).toContain("onPropertyLinkChange(event.target.value || null)");
   });
 
   it("keeps Skip and Merge rows out of pre-commit Property linking", () => {
-    expect(rowCard).toContain("Skipped rows do not create transactions or Property links.");
-    expect(rowCard).toContain("Merge rows are linked after import by editing the existing transaction.");
+    expect(rowCard).toContain('if (action !== "IMPORT") setPropertyEnabled(false)');
+    expect(rowCard).toContain('row.action === "IMPORT"');
     expect(importReview).toContain('propertyLinkPropertyId: validatedAction === "IMPORT" ? row.propertyLinkPropertyId ?? null : null');
   });
 
