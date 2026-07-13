@@ -11,7 +11,9 @@ describe("recurring suggestions UI and API boundaries", () => {
     const component = await readFile(componentPath, "utf8");
 
     for (const copy of [
-      "Why this was suggested",
+      "Why was this suggested?",
+      "Edit details",
+      "Review all",
       "Suggested regular payments",
       "Confirm regular payment",
       "Dismiss",
