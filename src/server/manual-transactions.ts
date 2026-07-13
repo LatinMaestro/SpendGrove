@@ -57,6 +57,7 @@ export type ManualTransactionCreateData = {
 export type ManualTransactionPersistenceStore = {
   listActive(userId: string, dateFrom?: Date, dateTo?: Date): Promise<DbManualTransactionRecord[]>;
   hasActiveAfter?(userId: string, date: Date): Promise<boolean>;
+  latestActiveDate?(userId: string): Promise<Date | null>;
   findActiveById(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
   findById?(userId: string, transactionId: string): Promise<DbManualTransactionRecord | null>;
   create(userId: string, data: ManualTransactionCreateData): Promise<DbManualTransactionRecord>;
@@ -199,6 +200,19 @@ export function createPrismaManualTransactionStore(prisma: PrismaClient = getPri
       });
       return Boolean(record);
     },
+    async latestActiveDate(userId) {
+      const record = await prisma.transaction.findFirst({
+        where: {
+          userId,
+          status: "ACTIVE",
+          deletedAt: null,
+          splitRole: { not: "PARENT" },
+        },
+        orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+        select: { date: true },
+      });
+      return record?.date ?? null;
+    },
     async findActiveById(userId, transactionId) {
       return prisma.transaction.findFirst({
         where: {
@@ -335,32 +349,52 @@ export async function listDurableManualTransactionsForMonth(
   context: AuthenticatedUserContext | null | undefined,
   monthKey: string,
   store: ManualTransactionPersistenceStore = createPrismaManualTransactionStore(),
+  options: { fallbackToLatest?: boolean } = {},
 ) {
   const user = requireAuthenticatedUserContext(context);
-  const match = /^(\d{4})-(\d{2})$/.exec(monthKey);
-  if (!match) throw new Error("Choose a valid transaction month.");
-  const year = Number(match[1]);
-  const monthIndex = Number(match[2]) - 1;
-  if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) {
-    throw new Error("Choose a valid transaction month.");
+
+  function monthWindow(key: string) {
+    const match = /^(\d{4})-(\d{2})$/.exec(key);
+    if (!match) throw new Error("Choose a valid transaction month.");
+    const year = Number(match[1]);
+    const monthIndex = Number(match[2]) - 1;
+    if (!Number.isInteger(year) || monthIndex < 0 || monthIndex > 11) {
+      throw new Error("Choose a valid transaction month.");
+    }
+    return {
+      key,
+      dateFrom: new Date(Date.UTC(year, monthIndex, 1)),
+      dateTo: new Date(Date.UTC(year, monthIndex + 1, 1)),
+    };
   }
 
-  const dateFrom = new Date(Date.UTC(year, monthIndex, 1));
-  const dateTo = new Date(Date.UTC(year, monthIndex + 1, 1));
-  const records = await store.listActive(user.userId, dateFrom, dateTo);
+  let window = monthWindow(monthKey);
+  let records = await store.listActive(user.userId, window.dateFrom, window.dateTo);
+
+  if (options.fallbackToLatest && records.length === 0 && store.latestActiveDate) {
+    const latestDate = await store.latestActiveDate(user.userId);
+    if (latestDate) {
+      const latestMonthKey = `${latestDate.getUTCFullYear()}-${String(latestDate.getUTCMonth() + 1).padStart(2, "0")}`;
+      if (latestMonthKey !== monthKey) {
+        window = monthWindow(latestMonthKey);
+        records = await store.listActive(user.userId, window.dateFrom, window.dateTo);
+      }
+    }
+  }
+
   const hasLaterTransactions = store.hasActiveAfter
-    ? await store.hasActiveAfter(user.userId, dateTo)
+    ? await store.hasActiveAfter(user.userId, window.dateTo)
     : false;
 
   return {
     transactions: records.map(toAccountTransaction),
     month: {
-      key: monthKey,
+      key: window.key,
       label: new Intl.DateTimeFormat("en-AU", {
         month: "long",
         year: "numeric",
         timeZone: "Australia/Brisbane",
-      }).format(dateFrom),
+      }).format(window.dateFrom),
     },
     hasLaterTransactions,
   };
