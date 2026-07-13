@@ -8,7 +8,7 @@ describe("imported account transactions UI", () => {
     const component = await source("components/durable-manual-transactions.tsx");
     expect(component).toContain("Manual and imported transactions are shown together");
     expect(component).toContain('transaction.source === "IMPORTED" ? "Imported" : "Manual"');
-    expect(component).toContain("Add a manual transaction or commit a reviewed CSV import");
+    expect(component).toContain("Move to another month, add a transaction or import a reviewed CSV.");
   });
 
   it("uses the existing account editor and soft-delete confirmation for imported records", async () => {
@@ -25,7 +25,8 @@ describe("imported account transactions UI", () => {
 
     expect(component).toContain("Include in property records");
     expect(component).toContain("Link to property");
-    expect(component).toContain("No Property link");
+    expect(component).toContain("propertyLinkEnabled &&");
+    expect(component).toContain("Choose a Property");
     expect(component).toContain("Record keeping only - not tax advice");
     expect(component).toContain("setTransactionPropertyLink");
     expect(component).toContain('method: "POST"');
