@@ -7,6 +7,7 @@ const transactionServicePath = new URL("../src/server/manual-transactions.ts", i
 const recurringUiPath = new URL("../components/recurring-suggestions.tsx", import.meta.url);
 const budgetUiPath = new URL("../components/category-budgets.tsx", import.meta.url);
 const loansUiPath = new URL("../components/loans-manager.tsx", import.meta.url);
+const propertyActivityPath = new URL("../components/property-record-keeping-activity.tsx", import.meta.url);
 
 describe("Phase 4 Milestone 3 second client-review hardening", () => {
   it("uses the latest eligible populated month only for the initial empty-month request", async () => {
@@ -42,15 +43,18 @@ describe("Phase 4 Milestone 3 second client-review hardening", () => {
   });
 
   it("keeps Loan Accounts compact and caps both recent history lists at three", async () => {
-    const source = await readFile(loansUiPath, "utf8");
+    const [source, propertyActivity] = await Promise.all([
+      readFile(loansUiPath, "utf8"),
+      readFile(propertyActivityPath, "utf8"),
+    ]);
 
     expect(source).toContain("expandedLoanId === loan.id");
     expect(source).toContain("View loan");
     expect(source).toContain("Close details");
     expect(source).toContain("visibleRepayments.slice(0, 3)");
-    expect(source).toContain("propertyTransactions.slice(0, 3)");
+    expect(propertyActivity).toContain("propertyTransactions.slice(0, 3)");
     expect(source).toContain("View all repayments (");
-    expect(source).toContain("View all property transactions (");
+    expect(propertyActivity).toContain("View all property transactions (");
     expect(source).toContain("need matching");
     expect(source).not.toContain("Linked everyday transactions");
   });
