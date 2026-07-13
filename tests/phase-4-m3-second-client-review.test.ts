@@ -60,7 +60,7 @@ describe("Phase 4 Milestone 3 second client-review hardening", () => {
 
     expect(source).toContain("useState(false)");
     expect(source).toContain("Add budget");
-    expect(source).toContain("showCreateForm &&");
+    expect(source).toContain("!showCreateForm ? (");
     expect(source).toContain("setShowCreateForm(false)");
     expect(source).toContain("Cancel");
     expect(source).toContain("Used this month");

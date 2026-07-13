@@ -15,7 +15,7 @@ describe("recurring suggestions UI and API boundaries", () => {
       "Edit details",
       "Review all",
       "Suggested regular payments",
-      "Confirm regular payment",
+      "Confirm",
       "Dismiss",
       "Save changes",
       "Delete",
