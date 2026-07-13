@@ -9,6 +9,7 @@ import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
 import { createPropertyLinkAuditEvent } from "@/src/server/property-transaction-links";
+import { autoReconcileHighConfidenceRepaymentsForTransactions } from "@/src/server/loan-auto-reconciliation";
 
 export class ImportCommitConflictError extends Error {
   constructor(message = "This reviewed import is already being committed. Please refresh before trying again.") {
@@ -104,7 +105,7 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
       }
 
       try {
-        return await prisma.$transaction(async (tx) => {
+        const committed = await prisma.$transaction(async (tx) => {
           const importedCount = request.rows.filter((row) => row.action === "IMPORT").length;
           const skippedCount = request.rows.filter((row) => row.action === "SKIP").length;
           const mergedCount = request.rows.filter((row) => row.action === "MERGE").length;
@@ -307,8 +308,22 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               metadata: auditMetadata,
             },
           });
-          return summaryFromBatch({ ...batch, warningCodes }, false);
+          return {
+            summary: summaryFromBatch({ ...batch, warningCodes }, false),
+            transactionIds: transactionCreates.map((transaction) => String(transaction.id)),
+          };
         }, { maxWait: 10_000, timeout: 30_000 });
+
+        try {
+          await autoReconcileHighConfidenceRepaymentsForTransactions(
+            prisma,
+            userId,
+            committed.transactionIds,
+          );
+        } catch {
+          // The import remains successful; changed or ambiguous candidates stay available for manual review.
+        }
+        return committed.summary;
       } catch (error) {
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
           const committed = await prisma.importBatch.findFirst({
