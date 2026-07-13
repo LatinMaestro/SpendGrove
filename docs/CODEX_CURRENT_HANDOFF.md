@@ -132,9 +132,24 @@ Verification:
 
 No Prisma schema, migration, data rewrite, package, provider, secret, environment, financial-rule, import-rule, Property-rule, report/export-rule or navigation-tab change occurred. No Preview or Production migration ran.
 
+## Phase 4 Milestone 3 client-feedback hardening
+
+The client approved a focused acceptance-hardening sequence on 13 July 2026. Controlling contract: `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md`.
+
+Approved work:
+
+1. 4.12 contract and no-schema impact assessment;
+2. 4.13 month-focused transactions, searchable category picker and Property disclosure;
+3. 4.14 local category suggestions and recurring merchant normalisation;
+4. 4.15 repayment reconciliation in both import orders;
+5. 4.16 Delete wording and category-level month comparison;
+6. 4.17 QA and consolidated deferred client package.
+
+No schema, migration, hard deletion, calculation-threshold, duplicate, Property-link or report/export rule change is authorised.
+
 ## Exact next action
 
-Stop. Keep Phase 4 Milestones 1, 2 and 3 open pending the client's consolidated deferred Vercel retesting. Do not begin another milestone or formally close any Phase 4 milestone.
+Complete and merge the documentation-only 4.12 contract, then implement the approved in-scope hardening. Keep Phase 4 Milestones 1, 2 and 3 open pending final client retesting.
 
 ## Explicit exclusions and stop conditions
 
