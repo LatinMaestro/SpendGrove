@@ -629,3 +629,27 @@ Schema and migration status: no Prisma schema or migration change, no Preview mi
 
 Mandatory next state: stop for consolidated client retesting; do not close any Phase 4 milestone or begin another milestone.
 
+## Phase 4 Milestone 3 final Loans simplicity hardening (completed 14 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+
+- [x] Freeze the selected-loan subview, repayment-first hierarchy, plain matching copy and separate report dialog in `docs/PHASE_4_MILESTONE_3_FINAL_LOANS_SIMPLICITY_CONTRACT.md` (PR #130, merge `5f907c52ac586e34cc83ffd869b8985a99fc0862`).
+- [x] Replace inline Loan expansion with one focused selected-loan view and `Back to loans`.
+- [x] Put Loan repayments before Property transactions and remove routine healthy status labels.
+- [x] Allow only one repayment detail to be open while keeping edit, match, unlink, Delete and Restore available secondarily.
+- [x] Replace technical matching explanations with plain review language without changing any matching rule.
+- [x] Lead Property transaction rows with safe category/merchant identity.
+- [x] Move the unchanged Property report/export into a focused accessible dialog.
+- [x] Complete 90 test files / 558 tests, lint/type validation, optimized build, Preview, merged-main and public `/loans` verification.
+
+Implementation: PR #131, merge `18d416e3ef5ea63f8b86081e11332f7a72634ffa`.
+
+Evidence:
+
+- Preview `dpl_C6onQZPd4U56sJNtgA2j5SGWsAaC` Ready;
+- main `dpl_9mAuvoqGkSt9Cw1TqPUAW9zX7DKH` Ready;
+- canonical `/` and `/loans` returned HTTP 200.
+
+Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no data rewrite/backfill, no hard deletion, and no package/provider/secret/environment change.
+
+Mandatory next state: stop for consolidated client retesting; do not close any Phase 4 milestone or begin another milestone.

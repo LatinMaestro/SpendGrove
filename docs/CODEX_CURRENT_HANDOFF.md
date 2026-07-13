@@ -16,7 +16,7 @@ Last updated: 14 July 2026
 - Consolidated testing backlog: docs/DEFERRED_CLIENT_RETESTING.md.
 - Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
-- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md, docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
+- Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md, docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md, docs/PHASE_4_MILESTONE_3_FINAL_LOANS_SIMPLICITY_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -229,6 +229,53 @@ Known limitations:
 - opening balance is not displayed because it is not an approved persisted repayment field;
 - one everyday transaction may still support separately allocated LoanRepayments under the existing model; each LoanRepayment remains one canonical row in its own Loan Account;
 - report/export intentionally retains its accepted full record-keeping workflow and is only visually secondary on the Loan detail.
+
+## Phase 4 Milestone 3 final Loans simplicity hardening
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+
+Completed delivery:
+
+- PR #130 froze the final focused-Loan navigation, plain-language matching and separate report workflow, merge `5f907c52ac586e34cc83ffd869b8985a99fc0862`;
+- PR #131 delivered the focused Loan view and regressions, merge `18d416e3ef5ea63f8b86081e11332f7a72634ffa`;
+- the final documentation/QA PR records the evidence and consolidated client checks.
+
+Final display rules:
+
+- `View loan` replaces the multi-loan overview with one focused selected-loan subview on the existing `/loans` route;
+- `Back to loans` restores the compact cards; other Loan Account cards do not render beneath the focused Loan;
+- Loan repayments appear first, Property transactions second, and non-Property loans have no Property section;
+- healthy repayment rows show only date and amount; `Needs review` appears only for unresolved records;
+- only one repayment detail is open at a time; details retain non-empty principal, interest, fees and balance-after values;
+- Edit, match, unlink, recoverable Delete/Restore and bounded deleted-item management remain secondary but reachable;
+- matching uses plain language while all existing automatic/manual thresholds, confirmation and validation paths remain unchanged;
+- Property transaction rows lead with safe category or cleaned merchant identity, with date and Money in/out secondary;
+- `View property report` opens the unchanged report/export workflow in an accessible focused dialog rather than inline.
+
+Verification:
+
+- exact green PR #131 head `26f12e68a095f07b7e2d2a7b50e31175859dfc72`;
+- Preview deployment `dpl_C6onQZPd4U56sJNtgA2j5SGWsAaC` is Ready;
+- 90 test files / 558 tests passed;
+- Next.js lint and TypeScript validity passed;
+- optimized production build passed;
+- merged-main deployment `dpl_9mAuvoqGkSt9Cw1TqPUAW9zX7DKH` is Ready for merge `18d416e3ef5ea63f8b86081e11332f7a72634ffa`;
+- canonical `https://spendgrove.vercel.app/` and `/loans` returned HTTP 200 without internal errors.
+
+Safety:
+
+- no Prisma schema or migration file changed;
+- no Preview or Production migration ran;
+- no data rewrite/backfill or hard deletion occurred;
+- no calculation, matching-threshold, split-allocation, cashflow, Property-link, report/export or navigation rule changed;
+- no package, provider, secret or environment change occurred;
+- no raw CSV/source narration, bank reference, exact address or private identifier was added.
+
+Known limitations:
+
+- the selected Loan is UI state on the existing `/loans` route and is not a bookmarkable deep link;
+- signed-in narrow-width, keyboard, screen-reader and touch review remains in the consolidated client checklist;
+- opening balance remains absent because it is not an approved persisted repayment field.
 
 ## Exact next action
 
