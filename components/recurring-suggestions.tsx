@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Archive, CalendarClock, CheckCircle2, Pencil, Repeat2, RotateCcw, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Pencil, Repeat2, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
@@ -205,7 +205,7 @@ function RecurringExperience() {
       expectedAmountCents,
       cadence: draft.cadence,
       nextExpectedDate: draft.nextExpectedDate || null,
-    }, suggestion.key, "Recurring item confirmed. You can edit or archive it at any time.");
+    }, suggestion.key, "Regular payment confirmed. You can edit or delete it from the active list at any time.");
   }
 
   function dismissSuggestion(suggestion: Suggestion) {
@@ -238,7 +238,7 @@ function RecurringExperience() {
       action: "ARCHIVE",
       itemId: item.id,
       updatedAt: item.updatedAt,
-    }, item.id, "Recurring item archived.");
+    }, item.id, "Regular payment removed from the active list.");
   }
 
   function restoreItem(item: RecurringItem) {
@@ -427,7 +427,7 @@ function RecurringExperience() {
                             <Pencil aria-hidden="true" className="h-4 w-4" /> Edit
                           </button>
                           <button type="button" disabled={busy} onClick={() => archiveItem(item)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
-                            <Archive aria-hidden="true" className="h-4 w-4" /> Archive
+                            <Trash2 aria-hidden="true" className="h-4 w-4" /> Delete
                           </button>
                         </div>
                       </div>
@@ -450,9 +450,9 @@ function RecurringExperience() {
 
           {archivedItems.length > 0 && (
           <details className="mt-6 border-t border-border pt-5">
-            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Archived ({archivedItems.length})</summary>
+            <summary className="cursor-pointer text-base font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Deleted regular payments ({archivedItems.length})</summary>
             {archivedItems.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Archived recurring items will appear here and can be restored.</p>
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Deleted regular payments will appear here and can be restored.</p>
             ) : (
               <div className="mt-3 space-y-3">
                 {archivedItems.map((item) => (
