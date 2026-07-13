@@ -136,6 +136,57 @@ The UI continues to use only approved safe structured data. It does not add pers
 - no reminder, notification or scheduling behaviour was added;
 - existing recurring, budget refund and reporting limitations remain unchanged.
 
+## Client-feedback acceptance hardening
+
+A focused post-delivery hardening batch was completed without changing the milestone's financial, privacy or persistence contracts.
+
+Delivery:
+
+- PR #121 / rules and impact contract: `54ae6196ed12ff96495b7aed88beec893ddab1df`;
+- PR #122 / implementation: `8bc4c6e4701554ec2cca0ce74e5aab2d38dcff15`;
+- 4.17 / this QA and consolidated deferred-testing documentation pass.
+
+Changes:
+
+- Transactions now open on the current Brisbane calendar month with month navigation and month-scoped search/filtering.
+- CSV review has a searchable local category picker and compact opt-in Property controls.
+- Conservative food/takeaway and clear transfer-purpose category suggestions are reviewable; user merchant learning remains higher priority.
+- Recurring merchant grouping tolerates only conservative trailing reference variation while exact amount, interval and confirmation rules remain unchanged.
+- Accepted high-confidence loan repayment matching now runs safely in either import order.
+- Beginner-facing Delete/Deleted/Restore wording uses the existing soft archive/restore lifecycle; no hard deletion was introduced.
+- Home shows useful category month comparisons using the existing overall period and eligibility formula.
+
+Verification:
+
+- exact PR #122 head: `6729d9e6f464f6102c8f57610d09611b5a2d9cd0`;
+- Preview deployment: `dpl_GrPrQu1QWys6JDfLquwbuW2eEeF5` (Ready);
+- merged-main commit: `8bc4c6e4701554ec2cca0ce74e5aab2d38dcff15`;
+- main deployment: `dpl_AVVZqH2afjZNvPZJF5bp5R3No8sW` (Ready);
+- canonical URL: https://spendgrove.vercel.app;
+- 86 test files / 536 tests passed;
+- TypeScript and Next.js lint validity passed;
+- clean optimized production build passed;
+- live `/`, `/transactions` and `/loans` returned HTTP 200 and browser checks found no console or internal-page errors.
+
+Privacy and no-double-count evidence:
+
+- current descriptions are inspected transiently for deterministic suggestions and are not added to logs, rules or audit metadata;
+- raw CSV files/rows, filenames, narration, bank identifiers, exact addresses and private references remain excluded;
+- user ownership and active-state checks remain server enforced;
+- bidirectional automatic repayment linking uses safe reason codes and creates no transaction or automatic Property link;
+- everyday transactions remain the sole cashflow records.
+
+Known limitations:
+
+- keyword and transfer-purpose rules are deliberately small and conservative; ambiguous or unsupported descriptions remain manual;
+- recurring grouping still requires exact signed amount and accepted interval windows;
+- reverse-order repayment automation requires exactly one accepted high-confidence candidate;
+- Property selection remains user opt-in and is never auto-matched;
+- Delete is presentation wording over recoverable internal archive state;
+- the existing dependency audit advisories remain outside this no-package-change batch.
+
+No schema, migration, data rewrite, hard deletion, package, provider, secret, environment, navigation-tab, Basiq, AI, payment, tax, Property/net-worth or later-module change occurred. No Preview or Production migration ran.
+
 ## Deferred client testing
 
 The consolidated non-technical checklist for Phase 4 Milestones 1, 2 and 3 is maintained in `docs/DEFERRED_CLIENT_RETESTING.md`. All three milestones remain open until the client explicitly completes testing and records acceptance.
