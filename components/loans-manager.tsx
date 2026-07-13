@@ -986,48 +986,108 @@ function AuthenticatedLoansManager({
             {activeLoans.map((loan) => {
               const choice = choiceForLoan(loan);
               const Icon = choice.kind === "CAR" ? Car : choice.propertyRelevant ? Home : Landmark;
-              const loanRepayments = repayments.filter((repayment) => repayment.loanAccountId === loan.id);
+              const loanRepayments = repayments
+                .filter((repayment) => repayment.loanAccountId === loan.id)
+                .sort((left, right) => right.repaymentDate.localeCompare(left.repaymentDate));
+              const activeLoanRepayments = loanRepayments.filter((repayment) => !repayment.isArchived);
+              const latestRepayment = activeLoanRepayments[0] ?? null;
+              const linkedTransactions = Array.from(new Map(
+                activeLoanRepayments
+                  .filter((repayment): repayment is SafeLoanRepayment & { linkedTransaction: LinkedEverydayTransaction } => Boolean(repayment.linkedTransaction))
+                  .map((repayment) => [repayment.linkedTransaction.transactionId, repayment.linkedTransaction]),
+              ).values()).sort((left, right) => right.date.localeCompare(left.date));
+              const needsReview = activeLoanRepayments.some((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW");
+              const expanded = expandedLoanId === loan.id;
               const propertyActivityKey = loanRepayments
                 .map((repayment) => `${repayment.id}:${repayment.updatedAt}:${repayment.linkedTransaction?.transactionId ?? "none"}`)
                 .join("|");
+
               return (
-                <article key={loan.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Icon aria-hidden="true" className="h-5 w-5" /></div>
-                      <div className="min-w-0"><h3 className="truncate text-lg font-bold text-brand-deepTeal">{loan.nickname}</h3><span className="mt-2 inline-flex rounded-full bg-brand-green/10 px-3 py-1 text-xs font-bold text-brand-green">{choice.tag}</span></div>
+                <article key={loan.id} className={`rounded-3xl border border-border bg-surface-base p-5 shadow-soft ${expanded ? "lg:col-span-2" : ""}`}>
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Icon aria-hidden="true" className="h-5 w-5" /></div>
+                    <div className="min-w-0">
+                      <h3 className="truncate text-lg font-bold text-brand-deepTeal">{loan.nickname}</h3>
+                      <p className="mt-1 text-sm text-brand-deepTeal/65">{choice.tag}{loan.property ? ` · ${loan.property.nickname}` : ""}</p>
                     </div>
-                    <button type="button" aria-label={`Edit ${loan.nickname} Loan Account`} onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-brand-teal text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /></button>
                   </div>
-                  {loan.property && (
-                    <div className="mt-4 space-y-2">
-                      <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal">
-                        <span className="flex min-w-0 items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-teal" /><span className="truncate"><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></span>
-                        <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-full border border-brand-teal text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /></button>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-2xl bg-surface-mint p-3">
+                      <dt className="text-brand-deepTeal/60">Repayment breakdowns</dt>
+                      <dd className="mt-1 text-lg font-bold text-brand-deepTeal">{activeLoanRepayments.length}</dd>
+                    </div>
+                    <div className="rounded-2xl bg-surface-mint p-3">
+                      <dt className="text-brand-deepTeal/60">Linked transactions</dt>
+                      <dd className="mt-1 text-lg font-bold text-brand-deepTeal">{linkedTransactions.length}</dd>
+                    </div>
+                  </dl>
+
+                  <p className="mt-3 text-sm text-brand-deepTeal/65">
+                    {latestRepayment
+                      ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${latestRepayment.reconciliationStatus === "LINKED" ? "Matched" : latestRepayment.reconciliationStatus === "NEEDS_REVIEW" ? "Needs review" : "Not linked"}`
+                      : "No repayment breakdowns saved yet."}
+                  </p>
+
+                  {needsReview && (
+                    <p className="mt-3 flex items-start gap-2 rounded-2xl bg-warning-amber/10 p-3 text-xs font-semibold text-brand-deepTeal">
+                      <AlertTriangle aria-hidden="true" className="mt-0.5 h-4 w-4 shrink-0 text-warning-amber" />
+                      A repayment match needs your review.
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    aria-expanded={expanded}
+                    onClick={() => setExpandedLoanId(expanded ? null : loan.id)}
+                    className="mt-4 min-h-11 w-full rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal"
+                  >
+                    {expanded ? "Close details" : "View loan"}
+                  </button>
+
+                  {expanded && (
+                    <div className="mt-5 border-t border-border pt-5">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <button type="button" onClick={() => { setError(""); setEditor({ loanId: loan.id, draft: loanDraft(loan) }); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                          <Pencil aria-hidden="true" className="h-4 w-4" /> Edit loan
+                        </button>
                       </div>
-                      <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} />
+
+                      {loan.property && (
+                        <div className="mt-4 space-y-2">
+                          <div className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3 text-sm text-brand-deepTeal">
+                            <span className="flex min-w-0 items-center gap-2"><Building2 aria-hidden="true" className="h-4 w-4 shrink-0 text-brand-teal" /><span className="truncate"><strong>{loan.property.nickname}</strong> · {propertyUsageLabels[loan.property.usage]}</span></span>
+                            <button type="button" aria-label={`Edit ${loan.property.nickname} Property`} onClick={() => openProperty(loan.property!)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
+                          </div>
+                          <PropertyRecordKeepingActivity key={`${loan.property.id}:${propertyActivityKey}`} propertyId={loan.property.id} />
+                        </div>
+                      )}
+
+                      <RepaymentHistory
+                        repayments={loanRepayments}
+                        isSaving={isSaving}
+                        candidateReviews={candidateReviews}
+                        candidateLoadingId={candidateLoadingId}
+                        reconciliationSavingId={reconciliationSavingId}
+                        confirmedLinks={confirmedLinks}
+                        overrideDates={overrideDates}
+                        onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
+                        onBulkArchiveChange={bulkSetRepaymentArchived}
+                        onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
+                        onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
+                        onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
+                        onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
+                        onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
+                        onUnlink={(repayment) => void unlinkRepayment(repayment)}
+                      />
+
+                      <LoanLinkedTransactions transactions={linkedTransactions} />
+
+                      <div className="mt-4 border-t border-border pt-4">
+                        <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive loan</button>
+                      </div>
                     </div>
                   )}
-                  <RepaymentHistory
-                    repayments={loanRepayments}
-                    isSaving={isSaving}
-                    candidateReviews={candidateReviews}
-                    candidateLoadingId={candidateLoadingId}
-                    reconciliationSavingId={reconciliationSavingId}
-                    confirmedLinks={confirmedLinks}
-                    overrideDates={overrideDates}
-                    onArchiveChange={(repayment, archived) => void setRepaymentArchived(repayment, archived)}
-                    onBulkArchiveChange={bulkSetRepaymentArchived}
-                    onEdit={(repayment) => { setError(""); setRepaymentEditor({ repayment, draft: repaymentCorrectionDraft(repayment) }); }}
-                    onLoadCandidates={(repayment, mode, overrideDate) => void loadReconciliationCandidates(repayment, mode, overrideDate)}
-                    onConfirmationChange={(key, confirmed) => setConfirmedLinks((current) => ({ ...current, [key]: confirmed }))}
-                    onOverrideDateChange={(repaymentId, date) => setOverrideDates((current) => ({ ...current, [repaymentId]: date }))}
-                    onLink={(repayment, candidate, mode, confirmed) => void linkRepayment(repayment, candidate, mode, confirmed)}
-                    onUnlink={(repayment) => void unlinkRepayment(repayment)}
-                  />
-                  <div className="mt-4 border-t border-border pt-4">
-                    <button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, true)} className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal"><Archive aria-hidden="true" className="h-4 w-4" /> Archive loan</button>
-                  </div>
                 </article>
               );
             })}
