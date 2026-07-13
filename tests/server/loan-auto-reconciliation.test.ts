@@ -6,6 +6,7 @@ import { createLoanReconciliationLinkAuditEvent } from "@/src/server/loan-reconc
 
 const autoSourcePath = new URL("../../src/server/loan-auto-reconciliation.ts", import.meta.url);
 const commitSourcePath = new URL("../../src/server/loan-repayments.ts", import.meta.url);
+const everydayImportCommitSourcePath = new URL("../../src/server/import-commit.ts", import.meta.url);
 const linksSourcePath = new URL("../../src/server/loan-reconciliation-links.ts", import.meta.url);
 
 function candidate(overrides: Partial<LoanReconciliationCandidate> = {}): LoanReconciliationCandidate {
@@ -70,6 +71,24 @@ describe("automatic high-confidence loan reconciliation", () => {
     expect(autoSource).not.toMatch(/transaction\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/);
     expect(commitSource.indexOf("loanRepayment.createMany")).toBeLessThan(commitSource.lastIndexOf("autoReconcileHighConfidenceRepayments"));
     expect(commitSource).toContain("autoReconcileHighConfidenceRepayments(prisma, userId, committed.repaymentIds)");
+  });
+
+  it("rechecks existing unlinked repayments after a later everyday import without failing the import", async () => {
+    const [autoSource, importSource] = await Promise.all([
+      readFile(autoSourcePath, "utf8"),
+      readFile(everydayImportCommitSourcePath, "utf8"),
+    ]);
+
+    expect(autoSource).toContain("autoReconcileHighConfidenceRepaymentsForTransactions");
+    expect(autoSource).toContain('type: "EXPENSE"');
+    expect(autoSource).toContain('status: "ACTIVE"');
+    expect(autoSource).toContain('splitRole: { not: "PARENT" }');
+    expect(autoSource).toContain("repayment.reconciliationLink.unlinkedAt !== null");
+    expect(importSource.indexOf("tx.transaction.createMany")).toBeLessThan(
+      importSource.lastIndexOf("autoReconcileHighConfidenceRepaymentsForTransactions"),
+    );
+    expect(importSource).toContain("The import remains successful; changed or ambiguous candidates stay available for manual review.");
+    expect(importSource).not.toMatch(/AUTO_HIGH_CONFIDENCE[\s\S]{0,300}(?:amountCents|description|merchantName|filename|accountNumber)/);
   });
 
   it("audits only safe automatic state, method, confidence and reason codes", () => {
