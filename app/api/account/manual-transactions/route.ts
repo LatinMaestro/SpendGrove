@@ -39,9 +39,12 @@ function errorResponse(error: unknown, status = 400) {
 export async function GET(request: Request) {
   try {
     const context = await getCurrentUserContext();
-    const month = new URL(request.url).searchParams.get("month");
+    const searchParams = new URL(request.url).searchParams;
+    const month = searchParams.get("month");
     if (month) {
-      const result = await listDurableManualTransactionsForMonth(context, month);
+      const result = await listDurableManualTransactionsForMonth(context, month, undefined, {
+        fallbackToLatest: searchParams.get("initial") === "true",
+      });
       return NextResponse.json({ ok: true, ...result });
     }
     const transactions = await listDurableManualTransactions(context);
