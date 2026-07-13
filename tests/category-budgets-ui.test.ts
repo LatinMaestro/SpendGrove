@@ -16,8 +16,8 @@ describe("category budget UI and API boundaries", () => {
       "Budget left",
       "Over by",
       "Save budget changes",
-      "Archive this monthly budget?",
-      "Archived budgets ({archivedBudgets.length})",
+      "Delete this monthly budget from the active list?",
+      "Deleted budgets ({archivedBudgets.length})",
       "Restore budget",
       "Set a monthly amount for the categories you want to watch",
     ]) {
