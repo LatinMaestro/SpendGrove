@@ -5,6 +5,7 @@ import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import {
   createDurableManualTransaction,
   listDurableManualTransactions,
+  listDurableManualTransactionsForMonth,
 } from "@/src/server/manual-transactions";
 
 export const dynamic = "force-dynamic";
@@ -35,9 +36,14 @@ function errorResponse(error: unknown, status = 400) {
   return NextResponse.json({ ok: false, error: safeApiError(error) }, { status });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const context = await getCurrentUserContext();
+    const month = new URL(request.url).searchParams.get("month");
+    if (month) {
+      const result = await listDurableManualTransactionsForMonth(context, month);
+      return NextResponse.json({ ok: true, ...result });
+    }
     const transactions = await listDurableManualTransactions(context);
     return NextResponse.json({ ok: true, transactions });
   } catch (error) {
