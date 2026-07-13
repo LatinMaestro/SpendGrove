@@ -96,6 +96,7 @@ function BudgetExperience() {
   const [budgets, setBudgets] = useState<CategoryBudget[]>([]);
   const [categoryId, setCategoryId] = useState("");
   const [amountInput, setAmountInput] = useState("");
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editCategoryId, setEditCategoryId] = useState("");
   const [editAmountInput, setEditAmountInput] = useState("");
@@ -141,7 +142,7 @@ function BudgetExperience() {
   const availableCategories = categories.filter((category) => !budgetedCategoryIds.has(category.id));
 
   async function mutate(payload: Record<string, unknown>, busy: string, successMessage: string) {
-    if (busyKey) return;
+    if (busyKey) return false;
     setBusyKey(busy);
     setMessage("");
     setError("");
@@ -153,15 +154,16 @@ function BudgetExperience() {
     setBusyKey(null);
     if (!result.ok) {
       setError(result.error);
-      return;
+      return false;
     }
     applySnapshot(result);
     setEditingId(null);
     setAmountInput("");
     setMessage(successMessage);
+    return true;
   }
 
-  function createBudget() {
+  async function createBudget() {
     const amountCents = inputToPositiveCents(amountInput);
     if (!categoryId) {
       setError("Choose an expense category.");
@@ -171,7 +173,8 @@ function BudgetExperience() {
       setError("Enter a monthly budget greater than zero using dollars and cents.");
       return;
     }
-    void mutate({ action: "CREATE", categoryId, amountCents }, "create", "Monthly category budget created.");
+    const saved = await mutate({ action: "CREATE", categoryId, amountCents }, "create", "Monthly category budget created.");
+    if (saved) setShowCreateForm(false);
   }
 
   function startEditing(budget: CategoryBudget) {
@@ -236,30 +239,60 @@ function BudgetExperience() {
         <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal/70" aria-busy="true">Loading monthly budgets…</p>
       ) : (
         <>
-          <div className="mt-5 rounded-3xl bg-surface-mint/50 p-4">
-            <p className="text-sm font-bold text-brand-deepTeal">Create a budget</p>
-            {availableCategories.length === 0 ? (
-              <p className="mt-2 text-sm leading-6 text-brand-deepTeal/65">
+          <div className="mt-5">
+            {!showCreateForm ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateForm(true);
+                  setMessage("");
+                  setError("");
+                }}
+                disabled={availableCategories.length === 0}
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Plus aria-hidden="true" className="h-4 w-4" /> Add budget
+              </button>
+            ) : (
+              <div className="rounded-3xl bg-surface-mint/50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-sm font-bold text-brand-deepTeal">Add monthly budget</p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      setAmountInput("");
+                      setMessage("");
+                      setError("");
+                    }}
+                    className="min-h-10 rounded-full border border-border px-4 text-xs font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
+                  <label className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
+                    Expense category
+                    <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-normal normal-case tracking-normal text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">
+                      {availableCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
+                    Monthly amount (AUD)
+                    <input value={amountInput} inputMode="decimal" placeholder="500.00" onChange={(event) => setAmountInput(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-normal normal-case tracking-normal text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" />
+                  </label>
+                  <button type="button" disabled={busyKey === "create"} onClick={() => void createBudget()} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">
+                    <Plus aria-hidden="true" className="h-4 w-4" /> {busyKey === "create" ? "Saving…" : "Create budget"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {availableCategories.length === 0 && (
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">
                 {categories.length === 0
                   ? "Add or use an expense category before creating a budget."
                   : "Every active expense category already has a monthly budget."}
               </p>
-            ) : (
-              <div className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                <label className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
-                  Expense category
-                  <select value={categoryId} onChange={(event) => setCategoryId(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-normal normal-case tracking-normal text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">
-                    {availableCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-                  </select>
-                </label>
-                <label className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
-                  Monthly amount (AUD)
-                  <input value={amountInput} inputMode="decimal" placeholder="500.00" onChange={(event) => setAmountInput(event.target.value)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-normal normal-case tracking-normal text-brand-deepTeal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" />
-                </label>
-                <button type="button" disabled={busyKey === "create"} onClick={createBudget} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">
-                  <Plus aria-hidden="true" className="h-4 w-4" /> {busyKey === "create" ? "Saving…" : "Create budget"}
-                </button>
-              </div>
             )}
           </div>
 
@@ -267,7 +300,7 @@ function BudgetExperience() {
             <p className="text-sm font-semibold text-brand-teal">Current budgets</p>
             <h3 className="mt-1 text-xl font-bold text-brand-deepTeal">{monthLabel}</h3>
             {activeBudgets.length === 0 ? (
-              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Create your first monthly budget above.</p>
+              <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Choose Add budget to create your first monthly budget.</p>
             ) : (
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {activeBudgets.map((budget) => {
