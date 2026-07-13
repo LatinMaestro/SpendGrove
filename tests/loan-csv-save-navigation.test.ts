@@ -53,7 +53,7 @@ describe("loan CSV post-save navigation", () => {
 
     expect(page).toContain("count > 0 && count <= 5000");
     expect(manager).toContain("Loan CSV imported.");
-    expect(manager).toContain("Repayment breakdowns were saved.");
+    expect(manager).toContain("Repayments were saved.");
     expect(manager).toContain("loanImportSavedCount");
     expect(navigationLine).not.toMatch(/loanAccount|nickname|filename|narration|reference|balance/i);
     expect(review).toContain("duplicateOverrideRowNumbers");

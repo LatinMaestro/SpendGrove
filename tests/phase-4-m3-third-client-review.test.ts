@@ -8,36 +8,39 @@ const schemaPath = new URL("../prisma/schema.prisma", import.meta.url);
 const migrationLockPath = new URL("../prisma/migrations/migration_lock.toml", import.meta.url);
 
 describe("Phase 4 Milestone 3 canonical Loans presentation", () => {
-  it("shows one concise overview and one expanded Loan at a time", async () => {
+  it("shows compact overview cards and replaces them with one focused Loan", async () => {
     const source = await readFile(loansPath, "utf8");
 
-    expect(source).toContain("expandedLoanId === loan.id");
-    expect(source).toContain("setExpandedLoanId(expanded ? null : loan.id)");
+    expect(source).toContain("selectedLoanId");
+    expect(source).toContain("selectedLoan ? (");
+    expect(source).toContain("Back to loans");
     expect(source).toContain("Latest repayment");
-    expect(source).toContain("Up to date");
-    expect(source).toContain("need matching");
+    expect(source).toContain("Needs review");
     expect(source).toContain("No repayments imported yet");
-    expect(source).not.toContain("<dt className=\"text-brand-deepTeal/60\">Repayment breakdowns</dt>");
-    expect(source).not.toContain("<dt className=\"text-brand-deepTeal/60\">Linked transactions</dt>");
+    expect(source).not.toContain("Close details");
+    expect(source).not.toContain("Up to date");
+    expect(source).not.toContain("expandedLoanId");
   });
 
-  it("renders one canonical repayment row and keeps essential actions in details", async () => {
+  it("renders repayments first, once, with controlled details and secondary actions", async () => {
     const source = await readFile(loansPath, "utf8");
+    const repaymentPosition = source.indexOf("<RepaymentHistory");
+    const propertyPosition = source.indexOf("<PropertyRecordKeepingActivity key");
 
-    expect(source).toContain("Loan repayments (");
+    expect(repaymentPosition).toBeGreaterThan(-1);
+    expect(propertyPosition).toBeGreaterThan(repaymentPosition);
+    expect(source).toContain("openRepaymentId === repayment.id");
     expect(source).toContain("visibleRepayments.slice(0, 3)");
     expect(source).toContain("View all repayments (");
-    expect(source).toContain("This repayment is matched.");
     expect(source).toContain("Unlink repayment");
     expect(source).toContain("Edit repayment");
     expect(source).toContain("Delete repayment");
     expect(source).toContain("Restore repayment");
-    expect(source).toContain("Match this repayment");
+    expect(source).not.toContain("This repayment is matched.");
     expect(source).not.toContain("Linked everyday transactions");
-    expect(source).not.toContain("View all linked transactions");
   });
 
-  it("shows only other Property transactions and keeps the report secondary", async () => {
+  it("shows only other Property transactions and opens the report in a dialog", async () => {
     const source = await readFile(propertyActivityPath, "utf8");
 
     expect(source).toContain('variant?: "full" | "loan-detail"');
@@ -45,8 +48,11 @@ describe("Phase 4 Milestone 3 canonical Loans presentation", () => {
     expect(source).toContain("Property transactions");
     expect(source).toContain("propertyTransactions.slice(0, 3)");
     expect(source).toContain("View all property transactions (");
-    expect(source).toContain("View property records");
+    expect(source).toContain("View property report");
+    expect(source).toContain('role="dialog"');
+    expect(source).toContain('aria-label="Close property report"');
     expect(source).toContain("<PropertyRecordReview propertyId={propertyId} />");
+    expect(source).not.toContain("View property records");
   });
 
   it("excludes every repayment-derived cashflow while retaining other linked income and expenses", () => {
@@ -61,10 +67,18 @@ describe("Phase 4 Milestone 3 canonical Loans presentation", () => {
     expect(manual).toHaveLength(3);
   });
 
+  it("leads Property rows with safe identity and keeps money direction secondary", async () => {
+    const source = await readFile(propertyActivityPath, "utf8");
+
+    expect(source).toContain('const title = transaction.categoryName ?? transaction.merchantName ?? "Everyday transaction"');
+    expect(source).toContain('{dateLabel(transaction.date)} · {transaction.type === "INCOME" ? "Money in" : "Money out"}');
+    expect(source).toContain('className="shrink-0"');
+  });
+
   it("keeps non-Property loans free of Property sections and privacy details secondary", async () => {
     const source = await readFile(loansPath, "utf8");
 
-    expect(source).toContain("{loan.property && (");
+    expect(source).toContain("{selectedLoan.property && (");
     expect(source).toContain('variant="loan-detail"');
     expect(source).toContain("How SpendGrove keeps loan information private");
     expect(source).toContain("More");

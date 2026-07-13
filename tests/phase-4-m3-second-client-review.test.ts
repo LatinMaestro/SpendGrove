@@ -48,14 +48,15 @@ describe("Phase 4 Milestone 3 second client-review hardening", () => {
       readFile(propertyActivityPath, "utf8"),
     ]);
 
-    expect(source).toContain("expandedLoanId === loan.id");
+    expect(source).toContain("selectedLoanId");
     expect(source).toContain("View loan");
-    expect(source).toContain("Close details");
+    expect(source).toContain("Back to loans");
+    expect(source).not.toContain("Close details");
     expect(source).toContain("visibleRepayments.slice(0, 3)");
     expect(propertyActivity).toContain("propertyTransactions.slice(0, 3)");
     expect(source).toContain("View all repayments (");
     expect(propertyActivity).toContain("View all property transactions (");
-    expect(source).toContain("need matching");
+    expect(source).toContain("Needs review");
     expect(source).not.toContain("Linked everyday transactions");
   });
 
