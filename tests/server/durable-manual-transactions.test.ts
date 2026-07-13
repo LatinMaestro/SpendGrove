@@ -119,6 +119,16 @@ function createMemoryStore() {
         && record.date >= date
       ));
     },
+    async latestActiveDate(userId) {
+      return records
+        .filter((record) => (
+          record.userId === userId
+          && record.status === "ACTIVE"
+          && record.deletedAt === null
+          && record.splitRole !== "PARENT"
+        ))
+        .sort((left, right) => right.date.getTime() - left.date.getTime())[0]?.date ?? null;
+    },
     async findActiveById(userId, transactionId) {
       return findRecord(userId, transactionId) as never;
     },
@@ -230,6 +240,45 @@ describe("durable manual transaction persistence", () => {
     expect(result.month).toEqual({ key: "2026-07", label: "July 2026" });
     expect(result.transactions.map((transaction) => transaction.description)).toEqual(["July"]);
     expect(result.hasLaterTransactions).toBe(true);
+  });
+
+  it("keeps the requested current month when it contains active transactions", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+    const categoryId = await store.resolveSeededCategoryId(user.userId, groceriesCategory);
+    const category = store.categories.get(`${user.userId}:${categoryId}`)!;
+    store.addRecord({ userId: user.userId, amountCents: -1000, date: new Date("2026-07-05T00:00:00.000Z"), description: "Current month", categoryId, category });
+    store.addRecord({ userId: user.userId, amountCents: -2000, date: new Date("2026-06-05T00:00:00.000Z"), description: "Earlier month", categoryId, category });
+
+    const result = await listDurableManualTransactionsForMonth(user, "2026-07", store, { fallbackToLatest: true });
+
+    expect(result.month.key).toBe("2026-07");
+    expect(result.transactions.map((transaction) => transaction.description)).toEqual(["Current month"]);
+  });
+
+  it("opens the latest populated month when the requested initial month is empty", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+    const categoryId = await store.resolveSeededCategoryId(user.userId, groceriesCategory);
+    const category = store.categories.get(`${user.userId}:${categoryId}`)!;
+    store.addRecord({ userId: user.userId, amountCents: -1000, date: new Date("2026-05-20T00:00:00.000Z"), description: "May", categoryId, category });
+    store.addRecord({ userId: user.userId, amountCents: -2000, date: new Date("2026-06-15T00:00:00.000Z"), description: "June", categoryId, category });
+
+    const result = await listDurableManualTransactionsForMonth(user, "2026-07", store, { fallbackToLatest: true });
+
+    expect(result.month).toEqual({ key: "2026-06", label: "June 2026" });
+    expect(result.transactions.map((transaction) => transaction.description)).toEqual(["June"]);
+  });
+
+  it("keeps the requested month and empty state when no active transactions exist", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+
+    const result = await listDurableManualTransactionsForMonth(user, "2026-07", store, { fallbackToLatest: true });
+
+    expect(result.month).toEqual({ key: "2026-07", label: "July 2026" });
+    expect(result.transactions).toEqual([]);
+    expect(result.hasLaterTransactions).toBe(false);
   });
 
   it("stores income as positive cents and requires a matching category type", async () => {

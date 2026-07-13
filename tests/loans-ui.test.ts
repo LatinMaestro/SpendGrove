@@ -71,7 +71,8 @@ describe("Loans-first UI contract", () => {
   it("keeps editing on active Loan Account cards and uses a compact area only for other Properties", async () => {
     const manager = await readFile(managerPath, "utf8");
 
-    expect(manager).toContain("Edit ${loan.nickname} Loan Account");
+    expect(manager).toContain("View loan");
+    expect(manager).toContain("Edit loan");
     expect(manager).toContain("Edit ${loan.property.nickname} Property");
     expect(manager).toContain("Other property records");
     expect(manager).toContain("Properties without an active loan");
