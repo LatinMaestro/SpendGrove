@@ -2,7 +2,7 @@
 
 Status: active consolidated backlog
 
-Last updated: 12 July 2026
+Last updated: 13 July 2026
 
 ## Purpose
 
@@ -54,7 +54,7 @@ Status: pending deferred client retesting
 - [ ] No budget rollover occurs.
 - [ ] No budget is created automatically.
 - [ ] Refund limitation is understood: refunds represented as income do not reduce expense progress in this milestone.
-- [ ] Used this month, Remaining this month and Over budget copy is clear and non-judgmental.
+- [ ] Used this month, Budget left and Over by copy is clear and non-judgmental.
 
 ### Home insights
 
@@ -157,7 +157,16 @@ Delivery evidence:
 
 ## Phase 4 Milestone 3 - Beginner-first UI Simplification
 
-Status: implementation authorised; client review deferred
+Status: implemented, merged, deployed and technically verified; client review deferred
+
+Delivery evidence:
+
+- PR #118 merged as `344be702dea5cf82ae771d4d688cf2622a4b1e44`;
+- PR #119 merged as `cc4d44d17d34ef9b86a064dfd25c536e5a2e6bd7`;
+- exact PR verification used `6ab45f6c18e1c0d1c1dcc1ec1bb7d108fa51a4b2`;
+- 85 test files / 521 tests, TypeScript/lint validity and the production build passed;
+- Preview deployment `ESYj1tFsrxZuoPL9No9ZcEiyphZw` and merged-main deployment `GsZrG1sSrzrsSe5nn9Gj4U5qpibr` are Ready;
+- no schema change or Preview/Production migration occurred.
 
 ### Cross-app simplicity
 
