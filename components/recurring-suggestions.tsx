@@ -313,19 +313,9 @@ function RecurringExperience() {
   }
 
   return (
-    <section className="mt-5 rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="recurring-heading">
-      <div className="flex items-start gap-4">
-        <div className="rounded-2xl bg-surface-mint p-3 text-brand-green">
-          <Repeat2 aria-hidden="true" className="h-6 w-6" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-brand-teal">Regular payments</p>
-          <h2 id="recurring-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Review regular payments</h2>
-          <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-            Review patterns found in your transactions. Nothing is confirmed until you choose it.
-          </p>
-        </div>
-      </div>
+    <section className="mt-6 space-y-6" aria-labelledby="recurring-heading">
+      <h2 id="recurring-heading" className="sr-only">Review regular payments</h2>
+      <p className="text-sm leading-6 text-muted">Nothing is confirmed until you choose it.</p>
 
       {message && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{message}</p>}
       {error && <p role="alert" className="mt-4 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
@@ -353,7 +343,7 @@ function RecurringExperience() {
                   const busy = busyKey === suggestion.key;
                   const editing = editingSuggestionKey === suggestion.key;
                   return (
-                    <article key={suggestion.key} className="rounded-3xl border border-border bg-surface-mint/50 p-4">
+                    <article key={suggestion.key} className="rounded-2xl border border-border bg-surface-base p-4">
                       <div>
                         <p className="text-lg font-bold text-brand-deepTeal">{suggestion.label}</p>
                         <p className="mt-1 text-sm text-brand-deepTeal/65">
@@ -403,7 +393,7 @@ function RecurringExperience() {
                   );
                 })}
                 {uniqueSuggestions.length > 3 && (
-                  <button type="button" onClick={() => setShowAllSuggestions((current) => !current)} className="min-h-11 w-full rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
+                  <button type="button" onClick={() => setShowAllSuggestions((current) => !current)} className="min-h-11 w-full rounded-xl border border-border px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">
                     {showAllSuggestions ? "Show fewer" : `Review all (${uniqueSuggestions.length})`}
                   </button>
                 )}
@@ -449,7 +439,7 @@ function RecurringExperience() {
                   const draft = drafts[item.id] ?? itemDraft(item);
                   const busy = busyKey === item.id;
                   return (
-                    <article key={item.id} className="rounded-3xl border border-border p-4">
+                    <article key={item.id} className="rounded-2xl border border-border bg-surface-base p-4">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <p className="text-lg font-bold text-brand-deepTeal">{item.label}</p>
@@ -495,7 +485,7 @@ function RecurringExperience() {
             ) : (
               <div className="mt-3 space-y-3">
                 {archivedItems.map((item) => (
-                  <article key={item.id} className="rounded-3xl border border-border p-4">
+                  <article key={item.id} className="rounded-2xl border border-border bg-surface-base p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-lg font-bold text-brand-deepTeal">{item.label}</p>
@@ -515,7 +505,7 @@ function RecurringExperience() {
         </>
       )}
 
-      <p className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
+      <p className="mt-5 border-t border-border pt-4 text-xs leading-5 text-muted">
         Regular payments are for planning only. They do not contact a merchant or schedule a payment.
       </p>
     </section>

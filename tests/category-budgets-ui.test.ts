@@ -22,7 +22,7 @@ describe("category budget UI and API boundaries", () => {
       "Delete this monthly budget from the active list?",
       "Deleted budgets ({archivedBudgets.length})",
       "Restore budget",
-      "Set a monthly amount for the categories you want to watch",
+      "Choose Add budget to create your first monthly budget.",
     ]) {
       expect(component).toContain(copy);
     }
