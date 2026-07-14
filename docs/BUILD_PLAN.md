@@ -752,3 +752,19 @@ Canonical spending eligibility now requires a strictly negative signed `EXPENSE`
 No schema, migration, data rewrite/backfill, historical reclassification, package/provider/secret/environment, Property, Loan, report/export or navigation change occurred. The inconsistent existing positive `EXPENSE` record is not rewritten and remains user-correctable; it is excluded from spending.
 
 Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+
+## Phase 4 Milestone 4 transaction sign/type integrity hardening (gated 14 July 2026)
+
+Status: audit complete; implementation blocked pending client approval. Phase 4 Milestones 1-4 remain open.
+
+- [x] Audit CSV Import/Skip/Merge, category review, merchant learning, manual create/edit, generic transaction validation, splits, Property links, reconciliation and production-like fixtures.
+- [x] Confirm the CSV Import defect: durable type follows category while signed cents remain unchanged.
+- [x] Confirm zero-value transactions are rejected and downstream calculations already exclude sign/type anomalies.
+- [x] Confirm no schema, migration, backfill, manual SQL or Production access is required for the proposed implementation.
+- [ ] Obtain explicit rules for positive refunds, negative income adjustments, signed internal transfers and mixed-direction split children.
+- [ ] Only after approval, implement the shared invariant and focused regressions.
+- [ ] Only after a green implementation, complete QA, Vercel verification and deferred-testing documentation.
+
+Controlling audit: `docs/PHASE_4_MILESTONE_4_TRANSACTION_SIGN_TYPE_AUDIT.md`.
+
+Mandatory gate: do not begin implementation while any listed edge rule is ambiguous. Do not rewrite existing records automatically, run a migration, access Production or close any Phase 4 milestone.
