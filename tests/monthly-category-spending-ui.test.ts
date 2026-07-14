@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 
 const transactions = readFileSync("components/durable-manual-transactions.tsx", "utf8");
 const chart = readFileSync("components/monthly-category-spending.tsx", "utf8");
-const shell = readFileSync("components/app-shell.tsx", "utf8");
+const navigation = readFileSync("components/bottom-nav.tsx", "utf8");
 
 describe("monthly category spending presentation", () => {
   it("places the whole-month chart between the month toolbar and transaction list", () => {
@@ -43,7 +43,7 @@ describe("monthly category spending presentation", () => {
 
   it("does not add a primary destination or expose private source fields", () => {
     for (const destination of ["Home", "Transactions", "Loans", "Import", "Settings"]) {
-      expect(shell).toContain(destination);
+      expect(navigation).toContain(destination);
     }
     const surfaces = transactions + chart;
     expect(surfaces).not.toMatch(/raw csv|bank account|bsb|card reference|customer identifier|exact property address/i);
