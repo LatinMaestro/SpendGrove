@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { ChevronDown, ChevronRight, LockKeyhole, SlidersHorizontal } from "lucide-react";
 import { useUserSettings } from "@/components/settings-provider";
 
@@ -42,7 +43,7 @@ function SettingsGroup({
 }: Readonly<{
   title: string;
   description?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }>) {
   return (
     <section aria-labelledby={`${title.toLowerCase().replaceAll(" ", "-")}-heading`}>
