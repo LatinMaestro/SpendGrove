@@ -33,12 +33,12 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
     expect(settingsPage).toContain("<details");
   });
 
-  it("gives Home one dominant entry action and removes repeated feature cards", async () => {
+  it("gives Home one dominant entry action and concise supporting tasks", async () => {
     const [home, navigation] = await Promise.all([readFile(paths.home, "utf8"), readFile(paths.navigation, "utf8")]);
-    expect(home).toContain("Import transactions");
-    expect(home).toContain("Review transactions");
-    expect(home).toContain("See what matters this month.");
-    expect(home).toContain('aria-labelledby="home-overview-heading"');
+    expect(home.match(/Import transactions/g)).toHaveLength(1);
+    expect(home.match(/Add transaction/g)).toHaveLength(1);
+    expect(home).toContain("<EverydayInsights");
+    expect(home).toContain('title="Home"');
     expect(home).not.toContain("<FeatureCard");
     expect(home).not.toContain("Privacy stays visible");
     expect(navigation).not.toContain('label: "Reports"');
@@ -67,7 +67,6 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
   it("uses beginner regular-payment and budget wording with contextual history", async () => {
     const [recurring, budgets] = await Promise.all([readFile(paths.recurring, "utf8"), readFile(paths.budgets, "utf8")]);
     for (const copy of ["Suggested regular payments", "Confirmed regular payments", "Every 2 weeks", "Show suggestion again", "Restore regular payment"]) expect(recurring).toContain(copy);
-    expect(recurring).not.toContain("High confidence");
     expect(recurring).not.toContain("High confidence");
     expect(recurring).toContain("<details");
     for (const copy of ["Monthly budgets", "Used this month", "Budget left", "Over by", "Deleted budgets"]) expect(budgets).toContain(copy);
