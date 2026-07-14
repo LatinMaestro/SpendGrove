@@ -45,7 +45,10 @@ export function importReviewRowHasHardBlocker(
 }
 
 export function importReviewRowIsInNeedsReviewCategory(row: ImportReviewRow) {
-  return row.action !== "SKIP" && getManualCategory(row.categoryId)?.name === "Needs review";
+  return row.action !== "SKIP" && (
+    getManualCategory(row.categoryId)?.name === "Needs review"
+    || (row.suggestionSource === "FALLBACK" && !row.categoryConfirmed)
+  );
 }
 
 /**
