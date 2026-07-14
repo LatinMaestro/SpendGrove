@@ -22,6 +22,7 @@ import type { LoanRepaymentBulkArchiveSummary, SafeLoanRepayment } from "@/lib/l
 import type { LoanReconciliationCandidate, ReconciliationCandidateMode } from "@/lib/loan-reconciliation";
 import { parseMoneyToCents } from "@/lib/validation/money";
 import { PropertyRecordKeepingActivity } from "@/components/property-record-keeping-activity";
+import { PageHeader } from "@/components/ui/app-primitives";
 
 type LoanKind = "OWNER_OCCUPIER_HOME" | "INVESTMENT_PROPERTY" | "CAR" | "PERSONAL" | "OTHER";
 type PropertyUsage = "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
@@ -970,21 +971,22 @@ function AuthenticatedLoansManager({
 
   return (
     <div className="space-y-5">
-      {!selectedLoan && <section className="rounded-[2rem] bg-brand-deepTeal p-6 text-white shadow-soft">
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold text-white/70">Loans</p>
-            <h2 className="mt-2 text-3xl font-bold">Your loans</h2>
-            <p className="mt-3 max-w-xl text-sm leading-6 text-white/75">Add a loan with a safe nickname. Property details are optional.</p>
-          </div>
-          <div className="flex flex-col gap-2">
-            <button type="button" onClick={() => { setError(""); setEditor({ draft: emptyLoanDraft() }); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-white">
-              <Plus aria-hidden="true" className="h-5 w-5" /> Add Loan Account
-            </button>
-            <Link href="/loans/import" className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/35 px-5 text-sm font-bold text-white">Import repayments</Link>
-          </div>
-        </div>
-      </section>}
+      {!selectedLoan && (
+        <PageHeader
+          title="Loans"
+          description="Keep repayments together and review Property transactions only when they are relevant."
+          action={(
+            <div className="flex flex-wrap gap-2">
+              <Link href="/loans/import" className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border bg-surface-base px-4 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-brand-green">
+                Import repayments
+              </Link>
+              <button type="button" onClick={() => { setError(""); setEditor({ draft: emptyLoanDraft() }); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">
+                <Plus aria-hidden="true" className="h-4 w-4" /> Add loan
+              </button>
+            </div>
+          )}
+        />
+      )}
 
       {!selectedLoan && loanImportCompleted && (
         <div role="status" className="flex items-start gap-3 rounded-2xl border border-brand-green bg-brand-green/10 p-4 text-sm text-brand-deepTeal">
@@ -1011,7 +1013,7 @@ function AuthenticatedLoansManager({
       ) : selectedLoan ? (
         <section aria-labelledby="selected-loan-heading">
           <button type="button" onClick={() => setSelectedLoanId(null)} className="inline-flex min-h-11 items-center rounded-full border border-border px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Back to loans</button>
-          <article className="mt-4 rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
+          <article className="mt-3 rounded-2xl border border-border bg-surface-base p-4 sm:p-5">
             <div className="flex flex-col gap-4 border-b border-border pb-5 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-brand-teal">Loan</p>
@@ -1059,7 +1061,7 @@ function AuthenticatedLoansManager({
         </section>
       ) : (
         <section aria-labelledby="loan-list-heading">
-          <div className="px-1"><p className="text-sm font-semibold text-brand-teal">Your active loans</p><h2 id="loan-list-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">{activeLoans.length} Loan Account{activeLoans.length === 1 ? "" : "s"}</h2></div>
+          <div className="px-1"><h2 id="loan-list-heading" className="text-lg font-semibold text-foreground">Your loans</h2><p className="mt-0.5 text-sm text-muted">{activeLoans.length} active</p></div>
           <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {activeLoans.map((loan) => {
               const choice = choiceForLoan(loan);
@@ -1071,7 +1073,7 @@ function AuthenticatedLoansManager({
               const needsReview = loanRepayments.some((repayment) => repayment.reconciliationStatus === "NEEDS_REVIEW");
 
               return (
-                <article key={loan.id} className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
+                <article key={loan.id} className="rounded-2xl border border-border bg-surface-base p-4">
                   <div className="flex min-w-0 items-start gap-3">
                     <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Icon aria-hidden="true" className="h-5 w-5" /></div>
                     <div className="min-w-0">
@@ -1083,7 +1085,7 @@ function AuthenticatedLoansManager({
                     {latestRepayment ? `Latest repayment ${dateLabel(latestRepayment.repaymentDate)} · ${aud(latestRepayment.totalPaymentCents)}` : "No repayments imported yet"}
                   </p>
                   {needsReview && <p className="mt-2 text-xs font-bold text-warning-amber">Needs review</p>}
-                  <button type="button" onClick={() => setSelectedLoanId(loan.id)} className="mt-4 min-h-11 w-full rounded-full bg-brand-green px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">View loan</button>
+                  <button type="button" onClick={() => setSelectedLoanId(loan.id)} className="mt-4 inline-flex min-h-11 items-center justify-center rounded-xl bg-brand-evergreen px-4 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-brand-green">View loan</button>
                 </article>
               );
             })}
@@ -1092,7 +1094,7 @@ function AuthenticatedLoansManager({
       )}
 
       {!selectedLoan && otherProperties.length > 0 && (
-        <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft">
+        <section className="rounded-2xl border border-border bg-surface-base p-4">
           <p className="text-sm font-semibold text-brand-teal">Other property records</p>
           <h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Properties without an active loan</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">These properties are not linked to an active loan.</p>
@@ -1100,7 +1102,7 @@ function AuthenticatedLoansManager({
             {otherProperties.map((property) => (
               <div key={property.id} className="space-y-2 rounded-2xl bg-surface-mint p-2">
                 <button type="button" onClick={() => openProperty(property)} className="flex min-h-14 w-full items-center justify-between gap-3 rounded-xl px-2 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
-                  <span><strong className="block text-brand-deepTeal">{property.nickname}</strong><span className="text-xs text-brand-deepTeal/65">{propertyUsageLabels[property.usage]}{property.isArchived ? " · Archived" : ""}</span></span>
+                  <span><strong className="block text-brand-deepTeal">{property.nickname}</strong><span className="text-xs text-brand-deepTeal/65">{propertyUsageLabels[property.usage]}{property.isArchived ? " · Deleted" : ""}</span></span>
                   <span className="inline-flex items-center gap-2 text-xs font-bold text-brand-teal"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</span>
                 </button>
                 <PropertyRecordKeepingActivity propertyId={property.id} />
@@ -1111,13 +1113,16 @@ function AuthenticatedLoansManager({
       )}
 
       {!selectedLoan && archivedLoans.length > 0 && (
-        <section className="rounded-3xl border border-border bg-surface-base p-5 shadow-soft">
-          <h2 className="font-bold text-brand-deepTeal">Archived Loan Accounts</h2>
-          <div className="mt-3 space-y-2">{archivedLoans.map((loan) => <div key={loan.id} className="flex items-center justify-between gap-3 rounded-2xl bg-surface-mint p-3"><span className="text-sm font-semibold text-brand-deepTeal">{loan.nickname}</span><button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, false)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore</button></div>)}</div>
-        </section>
+        <details className="rounded-2xl border border-border bg-surface-base">
+          <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green">
+            Deleted loans ({archivedLoans.length})
+            <span aria-hidden="true" className="text-muted">›</span>
+          </summary>
+          <div className="space-y-2 border-t border-border p-4">{archivedLoans.map((loan) => <div key={loan.id} className="flex items-center justify-between gap-3 rounded-xl bg-surface-subtle p-3"><span className="text-sm font-semibold text-foreground">{loan.nickname}</span><button type="button" disabled={isSaving} onClick={() => void setLoanArchived(loan, false)} className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-border px-3 text-xs font-semibold text-foreground"><RotateCcw aria-hidden="true" className="h-4 w-4" /> Restore</button></div>)}</div>
+        </details>
       )}
 
-      {!selectedLoan && <details className="rounded-3xl bg-surface-mint p-5 text-sm leading-6 text-brand-deepTeal/75">
+      {!selectedLoan && <details className="border-t border-border px-1 py-3 text-sm leading-6 text-muted">
         <summary className="flex min-h-11 cursor-pointer items-center gap-2 font-bold text-brand-deepTeal"><ShieldCheck aria-hidden="true" className="h-5 w-5 text-brand-green" /> How SpendGrove keeps loan information private</summary>
         <p className="mt-2">SpendGrove stores safe nicknames and broad details only. It does not ask for an address, account number, masked reference, customer ID or source narration.</p>
         <p className="mt-2 font-semibold text-brand-teal">Record keeping only - not tax advice.</p>
@@ -1128,13 +1133,13 @@ function AuthenticatedLoansManager({
       {repaymentEditor && <RepaymentCorrectionEditor draft={repaymentEditor.draft} error={error} isSaving={isSaving} onChange={(draft) => { setRepaymentEditor({ ...repaymentEditor, draft }); setError(""); }} onClose={() => { setRepaymentEditor(null); setError(""); }} onSave={() => void saveRepaymentCorrection()} />}
 
       {propertyEditor && (
-        <Modal title="Edit supporting property" description="Use a nickname and broad usage only. Do not enter an exact address." onClose={() => setPropertyEditor(null)}>
+        <Modal title="Edit property" description="Use a nickname and broad usage only. Do not enter an exact address." onClose={() => setPropertyEditor(null)}>
           <form className="mt-6 space-y-5" onSubmit={(event) => { event.preventDefault(); void saveProperty(); }}>
             <label className="block text-sm font-bold text-brand-deepTeal">Property nickname<input value={propertyNickname} onChange={(event) => setPropertyNickname(event.target.value)} maxLength={80} required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal" /></label>
             <label className="block text-sm font-bold text-brand-deepTeal">Property usage<select value={propertyUsage} onChange={(event) => setPropertyUsage(event.target.value as PropertyUsage)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal">{Object.entries(propertyUsageLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
             {error && <p role="alert" className="rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
             <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-              <button type="button" disabled={isSaving} onClick={() => void saveProperty(!propertyEditor.isArchived)} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal">{propertyEditor.isArchived ? "Restore property" : "Archive property"}</button>
+              <button type="button" disabled={isSaving} onClick={() => void saveProperty(!propertyEditor.isArchived)} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal">{propertyEditor.isArchived ? "Restore property" : "Delete property"}</button>
               <button type="submit" disabled={isSaving} className="min-h-12 rounded-full bg-brand-green px-6 text-sm font-bold text-white">{isSaving ? "Saving…" : "Save property"}</button>
             </div>
           </form>
