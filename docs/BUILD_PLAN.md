@@ -719,3 +719,18 @@ Status: in progress; Phase 4 Milestones 1-4 remain open pending consolidated cli
 - [ ] Complete full QA, meaningful Preview/main verification, documentation and consolidated deferred testing (PR 4.29).
 
 Gate: no schema, migration, data rewrite/backfill, package/lockfile, provider, secret, environment, financial-formula, month-boundary, split, transfer, category, budget, import, Property, loan or primary-navigation change is authorised. Stop if existing monthly totals disagree.
+
+## Phase 4 Milestone 4 monthly category-spending enhancement (completed 14 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- [x] PR #139 / 4.27 contract and aggregation assessment: `f858566fa38fb4755ae11985b09785d216cd72e5`.
+- [x] PR #140 / 4.28 accessible selected-month SVG donut, exact top-five-plus-Other grouping, full real-category breakdown, removable same-month filter and focused regressions: `1e347102f9583b33c1b873a340c64c38c151e382`.
+- [x] PR 4.29 QA, handoff, design guidance and consolidated deferred testing.
+- [x] 97 test files / 597 tests, TypeScript, lint and optimized build passed.
+- [x] Preview `dpl_FEx2aJUeSRNp7nZAPsgCNXMrSffH` and main `dpl_BV7bZ6LX8tth2iMs96q7QgGmKe3W` are Ready.
+- [x] Public `/transactions` returned HTTP 200; responsive deployed-shell checks found no horizontal overflow at the required widths.
+
+No schema, migration, package, provider, secret, environment, data rewrite, financial formula, import, budget, recurring, loan, Property, report/export or navigation change occurred. No Preview or Production migration ran.
+
+Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
