@@ -15,6 +15,9 @@ describe("monthly category spending presentation", () => {
 
   it("keeps search list-only and adds a removable same-month category filter", () => {
     expect(transactions).toContain("categoryFilteredTransactions");
+    expect(transactions).toContain("categoryFilter.transactionIds");
+    expect(transactions).toContain("eligibleTransactionIds.has(transaction.id)");
+    expect(transactions).not.toContain("!validSpendingCategoryIds.has(transaction.categoryId)");
     expect(transactions).toContain("category filter");
     expect(transactions).toContain("Clear filter");
     expect(transactions).toContain("Search is limited to {selectedMonthLabel}");
