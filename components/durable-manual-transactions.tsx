@@ -34,6 +34,11 @@ import { ManualTransactions } from "@/components/manual-transactions";
 import { TransactionPropertyLinkPanel } from "@/components/transaction-property-link-panel";
 import { CategoryBreakdownView, MonthlyCategoryChart } from "@/components/monthly-category-spending";
 import type { MonthlyCategorySpending, MonthlyCategorySpendingCategory } from "@/lib/monthly-category-spending";
+import {
+  deriveTransactionType,
+  directionCompatibleFallbackCategoryName,
+  transactionNeedsDirectionCorrection,
+} from "@/lib/transaction-direction";
 
 type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
 type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
@@ -43,8 +48,8 @@ type PropertyLinkSnapshotResult =
   | { ok: false; error: string };
 
 const typeLabels: Record<ManualTransactionType, string> = {
-  EXPENSE: "Expense",
-  INCOME: "Income",
+  EXPENSE: "Money out",
+  INCOME: "Money in",
   TRANSFER: "Transfer",
 };
 
@@ -113,6 +118,21 @@ function createEmptyDraft(): ManualTransactionDraft {
     categoryId: category.id,
     notes: "",
     csvMatchHint: false,
+  };
+}
+
+function draftForDirectionCorrection(transaction: AccountTransaction) {
+  const draft = duplicateManualTransactionToDraft(transaction as ManualTransaction);
+  if (!transactionNeedsDirectionCorrection(transaction)) return draft;
+  const type = deriveTransactionType(transaction.amountCents);
+  const fallbackName = directionCompatibleFallbackCategoryName(transaction.amountCents);
+  const categories = getManualCategoryGroups(type).flatMap((group) => group.categories);
+  const category = categories.find((candidate) => candidate.name === fallbackName) ?? categories[0];
+  return {
+    ...draft,
+    type,
+    categoryId: category.id,
+    amountInput: (Math.abs(transaction.amountCents) / 100).toFixed(2),
   };
 }
 
@@ -326,6 +346,7 @@ function DurableManualTransactionsExperience() {
     });
   }, [categoryFilteredTransactions, categorySpending, searchQuery]);
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
+  const detailNeedsCorrection = detailTransaction ? transactionNeedsDirectionCorrection(detailTransaction) : false;
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
   const duplicateCount = useMemo(() => { if (!editor) return 0; try { const candidate = validateManualTransactionDraft(editor.draft); return findManualTransactionDuplicates(transactions as ManualTransaction[], candidate, editor.transactionId).length; } catch { return 0; } }, [editor, transactions]);
 
@@ -333,7 +354,7 @@ function DurableManualTransactionsExperience() {
   function openEdit(transaction: AccountTransaction) {
     setDetailId(null);
     setEditorError("");
-    setEditor({ mode: "edit", transactionId: transaction.id, draft: duplicateManualTransactionToDraft(transaction as ManualTransaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: "LOADING" });
+    setEditor({ mode: "edit", transactionId: transaction.id, draft: draftForDirectionCorrection(transaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: "LOADING" });
     void getTransactionPropertySnapshot(transaction.id).then((result) => {
       setEditor((current) => {
         if (!current || current.transactionId !== transaction.id) return current;
@@ -450,7 +471,7 @@ function DurableManualTransactionsExperience() {
                     <p className="order-3 min-w-0 truncate text-xs text-muted sm:order-none sm:text-sm">{category?.name ?? "Category unavailable"}</p>
                     <p className={transaction.amountCents < 0 ? "money-value shrink-0 text-right text-sm font-bold text-foreground" : "money-value shrink-0 text-right text-sm font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</p>
                     <ChevronRight aria-hidden="true" className="hidden h-4 w-4 text-muted sm:block" />
-                    {transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}
+                    {transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}
                   </button>
                 </article>
               );
@@ -468,7 +489,7 @@ function DurableManualTransactionsExperience() {
     </details>
 
     {editor && <TransactionEditor editor={editor} duplicateCount={duplicateCount} error={editorError} isSaving={isSaving} propertyOptions={propertyOptions} onChange={(draft) => { setEditor({ ...editor, draft }); setEditorError(""); }} onPropertyEnabledChange={(enabled) => setEditor({ ...editor, propertyLinkEnabled: enabled, propertyLinkPropertyId: enabled ? editor.propertyLinkPropertyId : null })} onPropertyLinkChange={(propertyId) => setEditor({ ...editor, propertyLinkPropertyId: propertyId })} onCancel={() => setEditor(null)} onSubmit={saveEditor} />}
-    {detailTransaction && <ModalFrame title="Transaction details" description={detailTransaction.source === "IMPORTED" ? "A cleaned transaction created from a reviewed import." : "A manual account entry."} onClose={() => setDetailId(null)}><dl className="mt-6 space-y-4 rounded-2xl bg-surface-subtle p-4"><div><dt className="text-xs font-bold text-muted">Description</dt><dd className="mt-1 text-lg font-bold text-foreground">{detailTransaction.description}</dd></div><div className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-bold text-muted">Amount</dt><dd className="mt-1 font-bold text-foreground">{formatAudFromCents(detailTransaction.amountCents)}</dd></div><div><dt className="text-xs font-bold text-muted">Date</dt><dd className="mt-1 font-bold text-foreground">{formatAustralianTransactionDate(detailTransaction.date)}</dd></div><div><dt className="text-xs font-bold text-muted">Category</dt><dd className="mt-1 font-bold text-foreground">{getManualCategory(detailTransaction.categoryId)?.name}</dd></div><div><dt className="text-xs font-bold text-muted">Source</dt><dd className="mt-1 font-bold text-foreground">{detailTransaction.source === "IMPORTED" ? "Imported" : "Manual"}</dd></div></div>{detailTransaction.notes && <div><dt className="text-xs font-bold text-muted">Notes</dt><dd className="mt-1 text-foreground">{detailTransaction.notes}</dd></div>}{detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-foreground"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}</dl><TransactionPropertyLinkPanel transactionId={detailTransaction.id} /><div className="mt-5 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button><button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-danger-red/40 px-4 text-sm font-bold text-danger-red focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button><button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button></div></ModalFrame>}
+    {detailTransaction && <ModalFrame title="Transaction details" description={detailTransaction.source === "IMPORTED" ? "A cleaned transaction created from a reviewed import." : "A manual account entry."} onClose={() => setDetailId(null)}>{detailNeedsCorrection && <div role="status" className="mt-6 rounded-2xl border border-warning-amber/30 bg-warning-amber/10 p-4"><p className="font-bold text-foreground">This transaction needs correction</p><p className="mt-1 text-sm text-muted">The amount and transaction direction do not agree.</p></div>}<dl className="mt-6 space-y-4 rounded-2xl bg-surface-subtle p-4"><div><dt className="text-xs font-bold text-muted">Description</dt><dd className="mt-1 text-lg font-bold text-foreground">{detailTransaction.description}</dd></div><div className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-bold text-muted">Amount</dt><dd className="mt-1 font-bold text-foreground">{formatAudFromCents(detailTransaction.amountCents)}</dd></div><div><dt className="text-xs font-bold text-muted">Date</dt><dd className="mt-1 font-bold text-foreground">{formatAustralianTransactionDate(detailTransaction.date)}</dd></div><div><dt className="text-xs font-bold text-muted">Category</dt><dd className="mt-1 font-bold text-foreground">{getManualCategory(detailTransaction.categoryId)?.name}</dd></div><div><dt className="text-xs font-bold text-muted">Source</dt><dd className="mt-1 font-bold text-foreground">{detailTransaction.source === "IMPORTED" ? "Imported" : "Manual"}</dd></div></div>{detailTransaction.notes && <div><dt className="text-xs font-bold text-muted">Notes</dt><dd className="mt-1 text-foreground">{detailTransaction.notes}</dd></div>}{detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-foreground"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}</dl><TransactionPropertyLinkPanel transactionId={detailTransaction.id} /><div className="mt-5 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button><button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-danger-red/40 px-4 text-sm font-bold text-danger-red focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button><button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Pencil aria-hidden="true" className="h-4 w-4" /> {detailNeedsCorrection ? "Review transaction" : "Edit"}</button></div></ModalFrame>}
     {deleteTransaction && <ModalFrame title="Delete transaction?" description="This entry will be removed from your active transaction list and kept recoverable." onClose={() => setDeleteId(null)}><div className="mt-6 rounded-2xl bg-danger-red/5 p-4"><p className="font-bold text-foreground">{deleteTransaction.description}</p><p className="mt-1 text-sm text-muted">{formatAustralianTransactionDate(deleteTransaction.date)} · {formatAudFromCents(deleteTransaction.amountCents)}</p></div>{accountWarning && <p role="alert" className="mt-4 rounded-xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{accountWarning}</p>}<div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button disabled={isSaving} type="button" onClick={() => setDeleteId(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Keep transaction</button><button disabled={isSaving} type="button" onClick={confirmDelete} className="min-h-11 rounded-xl bg-danger-red px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-red">{isSaving ? "Deleting…" : "Delete transaction"}</button></div></ModalFrame>}
   </div>;
 
