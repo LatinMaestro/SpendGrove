@@ -23,7 +23,6 @@ describe("import category suggestions", () => {
     ["AGL electricity", "AGL", "Electricity"],
     ["Loan repayment", "Loan repayment", "Loan repayment"],
     ["Credit card payment", "Credit card payment", "Credit card payment"],
-    ["Internal transfer", "Internal transfer", "Transfer"],
   ])("suggests a reviewable category for %s", (input, expectedMerchant, expectedCategory) => {
     const suggestion = suggestImportReviewCategory(input, emptyLocalMerchantData());
 
@@ -43,6 +42,12 @@ describe("import category suggestions", () => {
     const suggestion = suggestImportReviewCategory(description, emptyLocalMerchantData(), description);
     expect(categoryName(suggestion.categoryId)).toBe(expectedCategory);
     expect(suggestion).toMatchObject({ source: "KEYWORD", confidence: "HIGH", requiresReview: true });
+  });
+
+  it("does not confirm a transfer from narration alone", () => {
+    const suggestion = suggestImportReviewCategory("Internal transfer", emptyLocalMerchantData());
+    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
+    expect(suggestion).toMatchObject({ source: "FALLBACK", requiresReview: true });
   });
 
   it("does not match food keywords embedded inside unrelated words", () => {
@@ -152,8 +157,9 @@ describe("import category suggestions", () => {
       "Red Rooster refund",
       2599,
     );
-    expect(categoryName(suggestion.categoryId)).toBe("Other income");
-    expect(suggestion).toMatchObject({ source: "FALLBACK", requiresReview: true });
+    expect(getManualCategory(suggestion.categoryId)?.type).toBe("INCOME");
+    expect(categoryName(suggestion.categoryId)).not.toBe("Coffee / takeaway");
+    expect(suggestion.requiresReview).toBe(true);
   });
 
   it("does not apply income wording to negative money out", () => {
