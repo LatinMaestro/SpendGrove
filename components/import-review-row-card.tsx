@@ -10,6 +10,7 @@ import type { ImportReviewSourceDetails } from "@/lib/import-review-source-detai
 import type { ImportReviewAction, ImportReviewEditType, ImportReviewRow } from "@/lib/import-review";
 import type { ManualCategoryType } from "@/lib/manual-categories";
 import { formatAudFromCents } from "@/lib/money";
+import { deriveTransactionType, transactionDirectionLabel } from "@/lib/transaction-direction";
 
 const reviewActions: Array<{ value: ImportReviewAction; label: string }> = [{ value: "IMPORT", label: "Import" }, { value: "SKIP", label: "Skip" }, { value: "MERGE", label: "Merge" }];
 const propertyUsageLabels = {
@@ -63,6 +64,12 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
   const [propertyEnabled, setPropertyEnabled] = useState(Boolean(row.propertyLinkPropertyId));
   const previousMerchantName = useRef(row.merchantName);
   const currentCategory = getReviewCategory(customCategories, row.categoryId);
+  const displayedDirection = row.amountCents
+    ? transactionDirectionLabel(
+        currentCategory?.type === "TRANSFER" ? "TRANSFER" : deriveTransactionType(row.amountCents),
+        row.amountCents,
+      )
+    : "Direction needs review";
   const topDuplicateCandidate = duplicateCandidates[0];
   const statusText = reviewStatusText(row);
 
@@ -83,7 +90,7 @@ export function ImportReviewRowCard({ row, customCategories, matchingRowCount, d
   }
 
   return <article className="rounded-2xl border border-border bg-surface-base p-4">
-    <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate font-bold text-brand-deepTeal">{row.merchantName || "Payment"}</p><p className="mt-1 text-sm text-brand-deepTeal/60">{formatReviewDate(row.date)}</p></div><p className="shrink-0 font-bold text-brand-deepTeal">{row.amountCents === null ? "Review amount" : formatAudFromCents(row.amountCents)}</p></div>
+    <div className="flex items-start justify-between gap-4"><div className="min-w-0"><p className="truncate font-bold text-brand-deepTeal">{row.merchantName || "Payment"}</p><p className="mt-1 text-sm text-brand-deepTeal/60">{formatReviewDate(row.date)} · {displayedDirection}</p></div><p className="shrink-0 font-bold text-brand-deepTeal">{row.amountCents === null ? "Review amount" : formatAudFromCents(row.amountCents)}</p></div>
     <button type="button" onClick={() => setShowMerchantEdit((current) => !current)} aria-expanded={showMerchantEdit} className="mt-2 inline-flex min-h-9 items-center gap-2 text-xs font-bold text-brand-teal"><Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Edit merchant name</button>
     {showMerchantEdit && <label className="mt-2 block text-sm font-semibold text-brand-deepTeal">Clean merchant name<input value={row.merchantName} maxLength={80} autoFocus onChange={(event) => onDetails({ merchantName: event.target.value, categoryId: row.categoryId, editType: "MERCHANT_EDIT" })} onBlur={finishMerchantEdit} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); }} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm" /><span className="mt-1 block text-xs font-normal leading-5 text-brand-deepTeal/60">Saved automatically when you finish editing. Private bank narration remains excluded.</span></label>}
     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">{needsAttention && <span className="rounded-full bg-warning-amber/10 px-3 py-1.5 font-bold text-foreground">Needs review</span>}{topDuplicateCandidate && <span className="rounded-full bg-warning-amber/10 px-3 py-1.5 font-bold text-foreground">{duplicateChipText(topDuplicateCandidate)}</span>}{statusText && <span className="font-semibold text-brand-evergreen">{statusText}</span>}{!needsAttention && !topDuplicateCandidate && !statusText && <span className="text-muted">{currentCategory?.name ?? "Category checked"}</span>}</div>
