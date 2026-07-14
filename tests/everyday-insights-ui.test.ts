@@ -44,6 +44,7 @@ describe("everyday dashboard and trend insight UI", () => {
     expect(eligibility).toContain('record.splitRole === "PARENT"');
     expect(eligibility).toContain('record.type !== "EXPENSE"');
     expect(eligibility).toContain("record.amountCents >= 0");
+    expect(eligibility).not.toMatch(/description|merchant|narration|fileName|account|balance|address/i);
     expect(server).not.toMatch(/prisma\.loanRepayment\.(?:find|count|aggregate)/);
   });
 
