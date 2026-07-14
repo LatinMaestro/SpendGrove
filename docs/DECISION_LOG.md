@@ -149,3 +149,31 @@ Client-approved Phase 4 Milestone 4 correctness hardening; implemented by Codex 
 Implementation impact:
 
 One shared pure eligibility helper is authoritative for everyday spending; chart, breakdown and drilldown reconcile to one record set. Percentage copy uses `<0.1%` for positive sub-0.1% values, and category colours are deterministic without persistence. No schema, migration, rewrite/backfill, package/provider/secret/environment, signed-money, refund, transfer, split, category, import, Property, Loan, report/export or navigation change.
+
+## 2026-07-14 - Transaction direction precedes categorisation
+
+Decision:
+
+- Confirmed transfer treatment is authoritative first.
+- Otherwise, strictly positive integer cents are Money in / `INCOME`, and strictly negative integer cents are Money out / `EXPENSE`.
+- Category compatibility and categorisation occur only after direction is established and cannot reverse it.
+- Zero-value ordinary transactions are rejected.
+- Positive and negative confirmed transfers remain `TRANSFER`.
+- Needs review is a category-review state, not a financial direction.
+- Split children must be non-zero, share the parent's sign and compatible type, and sum exactly to the parent.
+- Existing inconsistent records are not rewritten; they remain visible, excluded from incompatible calculations and correctable through normal Edit.
+
+Edge decisions:
+
+- positive non-transfer refunds remain Money in and do not reduce expense spending or budget progress;
+- negative income adjustments are Money out under the current model and may affect spending until appropriately categorised;
+- no mixed-direction split support is introduced;
+- description and merchant text may inform reviewable categorisation but never determine final direction.
+
+Reason:
+
+CSV Import could preserve a positive signed amount while an expense-typed reviewed category supplied durable type. Enforcing one shared server-side invariant prevents future sign/type mismatches without inventing a new accounting treatment or rewriting historical data.
+
+Implementation impact:
+
+CSV Import, manual create/edit, generic transaction validation, category suggestions, Merge validation and split validation share the same direction rules. Transfer thresholds, duplicate scoring, refund calculations, budgets, Property/Loan/reporting, schema and persisted historical data remain unchanged.

@@ -282,3 +282,70 @@ No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, 
 - search intentionally remains list-only;
 - deterministic palette hashing can assign the same colour to different categories when many categories exist;
 - signed-in populated-data and assistive-technology review remain pending client acceptance.
+
+## Transaction sign/type integrity delivery (14 July 2026)
+
+Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+### Delivery
+
+- PR #145 / 4.33 audit contract: `53fadcbab4a009bbaec85e46f06f3a56602fc8f5`.
+- PR #146 / 4.34 implementation: `78574362f07781a1181766a5ae68f663ee02d03f`.
+- PR 4.35: QA, handoff and consolidated client-testing record.
+
+### Shared invariant
+
+Transaction direction is determined by:
+
+1. confirmed transfer treatment;
+2. otherwise signed integer cents;
+3. compatible category selection.
+
+Zero values are invalid. Positive non-transfer amounts are Money in / `INCOME`; negative non-transfer amounts are Money out / `EXPENSE`; signed confirmed transfers remain `TRANSFER`. Categories, merchant learning, keyword suggestions and Needs review cannot reverse direction.
+
+### Hardened paths
+
+- CSV review and server commit;
+- Import and Merge validation, with Skip remaining non-writing;
+- local merchant/category suggestions;
+- manual transaction create/edit;
+- generic transaction request validation;
+- split sign, type, zero and exact-total validation;
+- contextual anomaly presentation.
+
+Property links and loan reconciliation do not alter direction. Duplicate scoring and Import/Skip/Merge semantics are unchanged.
+
+### Edge-case outcome
+
+- Positive non-transfer refunds remain Money in and stay excluded from expense spending and budget progress; they do not net the original expense.
+- Negative income adjustments are Money out under the current model and may affect spending until the user selects an appropriate compatible category.
+- Incoming and outgoing confirmed transfers remain excluded from spending and existing transfer-excluded income totals.
+- Split children must be same-direction and type-compatible with the parent; mixed-direction children are rejected.
+
+### Existing records
+
+No historical transaction was rewritten or reclassified. The known positive `EXPENSE` remains visible, excluded from incompatible calculations by the canonical spending guard and correctable through Edit transaction. Only affected rows/details show Needs correction.
+
+### Verification
+
+- 101 test files / 633 tests passed;
+- TypeScript validity and Next.js lint passed;
+- optimized production build passed;
+- final Preview `dpl_NgKKnxdaY1zKgwUaNyDSD66ALfBY` Ready at `ec7f5fd88b8af4ff1e4b6a18a1cbab35a8940d04`;
+- public Preview Transactions loaded with no browser console errors;
+- 390 px browser check found no horizontal overflow.
+
+The first real builds identified a missing helper import and then two stale expectations. Only those focused defects were corrected; the exact final head passed. The connected browser had no authenticated data session, so durable anomaly correction remains deferred client testing.
+
+### Safety and unchanged boundaries
+
+No Prisma schema, migration, backfill, data rewrite, manual SQL, Production database access, package/lockfile, provider, secret or environment change. No transfer threshold, signed-money convention, refund formula, split counting, duplicate scoring, budget formula, Property/Loan/reporting or navigation change. No private source content is added to logs or audit metadata.
+
+### Known limitations
+
+- Existing anomalies require user confirmation through Edit; there is no automatic remediation.
+- Positive refunds do not reduce the original expense category or budget.
+- Negative income adjustments use the current Money out model; no contra-income model exists.
+- Mixed-direction splits are unsupported.
+- Narration-only transfer hints remain reviewable and are not authoritative.
+- Populated signed-in and assistive-technology checks remain pending consolidated client acceptance.

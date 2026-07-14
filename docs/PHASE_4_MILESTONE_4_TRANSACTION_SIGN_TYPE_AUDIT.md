@@ -113,3 +113,39 @@ Later validation/audit events must use safe reason codes only and must not log d
 PR 4.34 implementation is blocked pending explicit client approval of the proposed rules for positive refunds, negative income adjustments, signed internal transfers and mixed-direction split children.
 
 No implementation, schema, migration, data or deployment work may proceed before that decision.
+
+## Approved edge-case rules and implementation outcome (14 July 2026)
+
+The client approved this audit as the PR 4.34 implementation contract in PR #145, merge `53fadcbab4a009bbaec85e46f06f3a56602fc8f5`. The earlier gate is resolved.
+
+### Canonical precedence
+
+1. confirmed transfer treatment;
+2. otherwise signed integer cents;
+3. category compatibility and categorisation.
+
+Category, merchant learning, keyword suggestions and Needs review cannot reverse direction. Narration and merchant text are never final direction authority.
+
+### Approved rules
+
+- Zero values remain invalid.
+- Positive non-transfer amounts, including refunds, are Money in / `INCOME`.
+- Positive refunds remain excluded from expense spending and budgets and do not net the original expense.
+- Negative non-transfer amounts, including negative income adjustments, are Money out / `EXPENSE`; no contra-income model is introduced.
+- Positive and negative confirmed transfers remain `TRANSFER` and retain existing exclusions.
+- Needs review is direction-aware and does not supply financial direction.
+- Income categories cannot be assigned to negative ordinary records; expense categories cannot be assigned to positive ordinary records.
+- Every split child must be non-zero, share the parent's sign and compatible type, and reconcile exactly to the parent. Mixed-direction children remain unsupported.
+- Existing anomalies are not rewritten, backfilled or silently reclassified.
+
+### Implemented write paths
+
+PR #146, merge `78574362f07781a1181766a5ae68f663ee02d03f`, applied the shared invariant to CSV review/commit, Import/Merge validation, merchant/category suggestions, manual create/edit, generic transaction validation and splits. Skip remains non-writing. Property links and loan reconciliation remain direction-neutral.
+
+The implementation uses safe internal reason codes only. It does not put descriptions, signed amounts, filenames, bank details or account references into audit metadata or logs.
+
+### Verification and boundaries
+
+101 test files / 633 tests, TypeScript, lint and optimized production build passed. Preview `dpl_NgKKnxdaY1zKgwUaNyDSD66ALfBY` is Ready. No schema, migration, historical rewrite/backfill, manual SQL, package/provider/secret/environment or Production access occurred.
+
+Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.

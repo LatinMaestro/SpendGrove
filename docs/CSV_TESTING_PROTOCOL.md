@@ -123,3 +123,20 @@ When asking the client to test real CSVs, provide:
 - what screenshots are safe or unsafe;
 - reminder not to send screenshots showing real private transactions unless explicitly redacted;
 - reminder not to commit, upload or paste private CSV content.
+
+## Transaction sign/type integrity checks
+
+Every supported CSV regression must now confirm:
+
+- a strictly positive ordinary imported amount commits as Money in / `INCOME`;
+- a strictly negative ordinary imported amount commits as Money out / `EXPENSE`;
+- confirmed incoming and outgoing transfers remain `TRANSFER`;
+- zero-value rows cannot create ordinary transactions;
+- selected, learned and keyword-suggested categories cannot reverse signed direction;
+- an incompatible suggestion is ignored and the row remains direction-aware Needs review;
+- positive refund descriptions do not turn positive money into expense;
+- Import, Skip and Merge outcomes retain their established meanings;
+- Merge does not overwrite the existing transaction's direction from a new category;
+- no raw narration, filename, account reference or bank identifier enters logs or audit metadata.
+
+Private-bank validation remains structural and local. Record only safe format labels, counts and pass/fail outcomes; do not record transaction values or source text.
