@@ -32,6 +32,8 @@ import {
 } from "@/lib/manual-transactions";
 import { ManualTransactions } from "@/components/manual-transactions";
 import { TransactionPropertyLinkPanel } from "@/components/transaction-property-link-panel";
+import { CategoryBreakdownView, MonthlyCategoryChart } from "@/components/monthly-category-spending";
+import type { MonthlyCategorySpending, MonthlyCategorySpendingCategory } from "@/lib/monthly-category-spending";
 
 type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
 type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
@@ -53,6 +55,7 @@ type AccountTransactionResult =
       savedTransaction?: AccountTransaction;
       month?: { key: string; label: string };
       hasLaterTransactions?: boolean;
+      categorySpending?: MonthlyCategorySpending;
     }
   | { ok: false; error: string };
 
@@ -257,6 +260,10 @@ function SignedOutFallback() {
 
 function DurableManualTransactionsExperience() {
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
+  const [categorySpending, setCategorySpending] = useState<MonthlyCategorySpending | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<MonthlyCategorySpendingCategory | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
   const [selectedMonth, setSelectedMonth] = useState(brisbaneMonthKey);
   const initialMonthRequest = useRef(true);
   const [selectedMonthLabel, setSelectedMonthLabel] = useState(() => monthLabelFromKey(brisbaneMonthKey()));
@@ -283,12 +290,14 @@ function DurableManualTransactionsExperience() {
       if (cancelled) return;
       if (result.ok) {
         setTransactions(result.transactions);
+        setCategorySpending(result.categorySpending ?? null);
         const resolvedMonth = result.month?.key ?? selectedMonth;
         setSelectedMonthLabel(result.month?.label ?? monthLabelFromKey(resolvedMonth));
         setHasLaterTransactions(Boolean(result.hasLaterTransactions));
         if (resolvedMonth !== selectedMonth) setSelectedMonth(resolvedMonth);
       } else {
         setTransactions([]);
+        setCategorySpending(null);
         setSelectedMonthLabel(monthLabelFromKey(selectedMonth));
         setHasLaterTransactions(false);
         setAccountWarning(result.error);
@@ -297,19 +306,32 @@ function DurableManualTransactionsExperience() {
     }
     void loadTransactions();
     return () => { cancelled = true; };
-  }, [selectedMonth]);
+  }, [selectedMonth, refreshKey]);
   useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
+  const validSpendingCategoryIds = useMemo(
+    () => new Set(categorySpending?.categories.flatMap((category) => category.categoryId ? [category.categoryId] : []) ?? []),
+    [categorySpending],
+  );
+  const categoryFilteredTransactions = useMemo(() => {
+    if (!categoryFilter) return activeTransactions;
+    return activeTransactions.filter((transaction) => {
+      if (transaction.type !== "EXPENSE") return false;
+      if (categoryFilter.categoryId) return transaction.categoryId === categoryFilter.categoryId;
+      return !validSpendingCategoryIds.has(transaction.categoryId);
+    });
+  }, [activeTransactions, categoryFilter, validSpendingCategoryIds]);
   const filteredTransactions = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("en-AU");
-    if (!query) return activeTransactions;
-    return activeTransactions.filter((transaction) => {
-      const category = getManualCategory(transaction.categoryId)?.name ?? "";
+    if (!query) return categoryFilteredTransactions;
+    return categoryFilteredTransactions.filter((transaction) => {
+      const aggregateCategory = categorySpending?.categories.find((category) => category.categoryId === transaction.categoryId)?.name;
+      const category = aggregateCategory ?? getManualCategory(transaction.categoryId)?.name ?? "";
       return transaction.description.toLocaleLowerCase("en-AU").includes(query)
         || category.toLocaleLowerCase("en-AU").includes(query);
     });
-  }, [activeTransactions, searchQuery]);
+  }, [categoryFilteredTransactions, categorySpending, searchQuery]);
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
   const duplicateCount = useMemo(() => { if (!editor) return 0; try { const candidate = validateManualTransactionDraft(editor.draft); return findManualTransactionDuplicates(transactions as ManualTransaction[], candidate, editor.transactionId).length; } catch { return 0; } }, [editor, transactions]);
@@ -335,8 +357,8 @@ function DurableManualTransactionsExperience() {
     const result = editor.mode === "edit" && editor.transactionId ? await updateAccountTransaction(editor.transactionId, editor.draft) : await createAccountManualTransaction(editor.draft);
     if (!result.ok) { setIsSaving(false); setEditorError(result.error); return; }
     const savedMonth = result.savedTransaction?.date.slice(0, 7) ?? selectedMonth;
-    setTransactions(result.transactions.filter((transaction) => transaction.date.startsWith(savedMonth)));
     if (savedMonth !== selectedMonth) setSelectedMonth(savedMonth);
+    else setRefreshKey((current) => current + 1);
     const savedTransactionId = result.savedTransaction?.id;
     if (savedTransactionId) {
       const linkResult = await setTransactionPropertyLink(savedTransactionId, editor.propertyLinkPropertyId, editor.initialPropertyLinkPropertyId);
@@ -355,7 +377,7 @@ function DurableManualTransactionsExperience() {
   async function confirmDelete() {
     if (!deleteId || isSaving) return;
     setIsSaving(true); const result = await deleteAccountTransaction(deleteId); setIsSaving(false);
-    if (result.ok) { setTransactions(result.transactions.filter((transaction) => transaction.date.startsWith(selectedMonth))); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
+    if (result.ok) { setRefreshKey((current) => current + 1); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
   }
 
   return <div className="space-y-6">
@@ -369,9 +391,9 @@ function DurableManualTransactionsExperience() {
 
     <section className="rounded-2xl border border-border bg-surface-base p-3 sm:p-4" aria-label="Transaction month and search">
       <nav aria-label="Transaction month" className="flex items-center justify-between">
-        <button type="button" aria-label="Previous month" onClick={() => setSelectedMonth((month) => shiftMonthKey(month, -1))} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
+        <button type="button" aria-label="Previous month" onClick={() => { setShowBreakdown(false); setCategoryFilter(null); setSelectedMonth((month) => shiftMonthKey(month, -1)); }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
         <h2 aria-live="polite" className="text-center text-base font-bold text-foreground sm:text-lg">{selectedMonthLabel}</h2>
-        <button type="button" aria-label="Next month" disabled={!hasLaterTransactions} onClick={() => setSelectedMonth((month) => shiftMonthKey(month, 1))} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
+        <button type="button" aria-label="Next month" disabled={!hasLaterTransactions} onClick={() => { setShowBreakdown(false); setCategoryFilter(null); setSelectedMonth((month) => shiftMonthKey(month, 1)); }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
       </nav>
       <label className="mt-3 block">
         <span className="sr-only">Search this month</span>
@@ -383,6 +405,23 @@ function DurableManualTransactionsExperience() {
       </label>
     </section>
 
+    {isReady && showBreakdown && categorySpending ? (
+      <CategoryBreakdownView
+        monthLabel={selectedMonthLabel}
+        spending={categorySpending}
+        onBack={() => setShowBreakdown(false)}
+        onSelectCategory={(category) => { setCategoryFilter(category); setShowBreakdown(false); }}
+      />
+    ) : (
+      <>
+        {isReady && categorySpending ? (
+          <MonthlyCategoryChart monthLabel={selectedMonthLabel} spending={categorySpending} onViewBreakdown={() => setShowBreakdown(true)} />
+        ) : isReady ? (
+          <section className="rounded-2xl border border-border bg-surface-base p-4" role="status">
+            <p className="text-sm font-semibold text-foreground">Spending summary unavailable</p>
+            <button type="button" onClick={() => setRefreshKey((current) => current + 1)} className="mt-2 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Try again</button>
+          </section>
+        ) : null}
     {!isReady ? (
       <section className="rounded-2xl border border-border bg-surface-base p-5" aria-busy="true"><p className="text-sm font-semibold text-muted">Checking {selectedMonthLabel} transactions…</p></section>
     ) : activeTransactions.length === 0 ? (
@@ -394,6 +433,12 @@ function DurableManualTransactionsExperience() {
       </section>
     ) : (
       <section aria-labelledby="transaction-list-heading">
+        {categoryFilter && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-evergreen/20 bg-surface-mint px-3 py-2 text-sm">
+            <span className="font-semibold text-foreground">{categoryFilter.name}</span>
+            <button type="button" onClick={() => setCategoryFilter(null)} aria-label={`Remove ${categoryFilter.name} category filter`} className="min-h-9 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filter</button>
+          </div>
+        )}
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <h2 id="transaction-list-heading" className="text-sm font-semibold text-muted">{filteredTransactions.length} transaction{filteredTransactions.length === 1 ? "" : "s"}</h2>
           {searchQuery && <p className="text-xs text-muted">Search is limited to {selectedMonthLabel}</p>}
@@ -420,6 +465,8 @@ function DurableManualTransactionsExperience() {
           </div>
         )}
       </section>
+    )}
+      </>
     )}
 
     <details className="border-t border-border pt-3 text-sm leading-6 text-muted">
