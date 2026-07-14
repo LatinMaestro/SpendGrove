@@ -84,6 +84,8 @@ describe("everyday insight calculations", () => {
       expense({ amountCents: -9000, splitRole: "PARENT" }),
       expense({ amountCents: -5000, date: "2026-06-10T00:00:00.000Z" }),
       expense({ amountCents: 3000, type: "INCOME" }),
+      expense({ amountCents: 250000 }),
+      expense({ amountCents: 250000, type: "TRANSFER" }),
       expense({ amountCents: -4000, type: "TRANSFER" }),
       expense({ amountCents: -7000, status: "DELETED", deletedAt: "2026-07-11T00:00:00.000Z" }),
       expense({ amountCents: -8000, userId: "user_2" }),
@@ -106,6 +108,7 @@ describe("everyday insight calculations", () => {
     const snapshot = summarizeEverydayInsights("user_1", [
       expense(),
       expense({ amountCents: -2500, splitRole: "CHILD" }),
+      expense({ amountCents: 250000 }),
     ], [budget()], [
       recurring(),
       recurring({ id: "archived", status: "ARCHIVED" }),
@@ -159,6 +162,7 @@ describe("everyday insight calculations", () => {
 
     expect(expenseSelect).toContain("amountCents: true");
     expect(expenseSelect).toContain("categoryId: true");
+    expect(service).toContain("amountCents: { lt: 0 }");
     expect(expenseSelect).not.toMatch(/description|merchant|narration|fileName|account|balance|address/i);
     expect(service).not.toMatch(/loanRepayment\.(?:find|count|aggregate)/);
     expect(service).not.toMatch(/propertyReport|propertyTransaction|loanAccount\.(?:find|count|aggregate)/);
