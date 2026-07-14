@@ -8,7 +8,7 @@ describe("imported account transactions UI", () => {
     const component = await source("components/durable-manual-transactions.tsx");
     expect(component).toContain("filteredTransactions.map");
     expect(component).toContain('title="Transaction details"');
-    expect(component).toContain('transaction.source === "IMPORTED" ? "Imported" : "Manual"');
+    expect(component).toContain('detailTransaction.source === "IMPORTED" ? "Imported" : "Manual"');
     expect(component).toContain("Move to another month, add a transaction or import a reviewed CSV.");
   });
 
