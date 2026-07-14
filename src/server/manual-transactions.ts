@@ -397,6 +397,7 @@ export async function listDurableManualTransactionsForMonth(
     window.dateFrom,
     window.dateTo,
     records.map((record) => ({
+      id: record.id,
       userId: record.userId,
       type: record.type,
       status: record.status,
