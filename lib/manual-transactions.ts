@@ -5,6 +5,7 @@ import {
 } from "@/lib/manual-categories";
 import { parseMoneyToCents } from "@/lib/validation/money";
 import { normalizeSafeText } from "@/lib/validation/privacy";
+import { normaliseAmountForTransactionType } from "@/lib/transaction-direction";
 
 export const MANUAL_TRANSACTION_STORAGE_KEY = "spendgrove.phase1.transactions.v1";
 export const MANUAL_TRANSACTION_STORAGE_VERSION = 1 as const;
