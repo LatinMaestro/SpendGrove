@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { createImportCommitRequest, importCommitRequestSchema, type ImportCommitRequest } from "@/lib/import-commit";
 import type { ImportReviewRow } from "@/lib/import-review";
+import { manualCategories } from "@/lib/manual-categories";
 import { AuthenticationRequiredError, OwnershipError } from "@/src/server/auth/ownership";
 import { commitReviewedImport, type ImportCommitStore } from "@/src/server/import-commit";
 import { createTestUserContext } from "@/tests/server/auth-test-helpers";
@@ -213,4 +214,59 @@ describe("durable import commit", () => {
     expect(serialized).toContain("importedCount");
     expect(serialized).not.toMatch(/description|merchant|raw|filename|account|bsb|balance/i);
   });
+  it("builds import commits from signed direction rather than category direction", () => {
+    const categoryId = (name: string) => manualCategories.find((category) => category.name === name)!.id;
+    const row = (amountCents: number, categoryName: string): ImportReviewRow => ({
+      id: "csv-row-1",
+      rowNumber: 1,
+      date: "2026-07-14",
+      amountCents,
+      description: "Synthetic payment",
+      merchantName: "Synthetic payment",
+      categoryId: categoryId(categoryName),
+      action: "IMPORT",
+      warningCodes: [],
+      suggestionSource: "FALLBACK",
+      suggestionConfidence: "LOW",
+      suggestionReason: "Review",
+      categoryConfirmed: false,
+      merchantEdited: false,
+      reviewState: "UNREVIEWED",
+      propertyLinkPropertyId: null,
+    });
+    const build = (reviewRow: ImportReviewRow) => createImportCommitRequest({
+      requestId: "55555555-5555-4555-8555-555555555555",
+      rows: [reviewRow],
+      mergeSelections: {},
+      metadata: {
+        parsedRowCount: 1,
+        privateFieldCount: 0,
+        hasHeader: true,
+        amountMode: "SIGNED_AMOUNT",
+        detectedDateFormats: ["DD/MM/YYYY"],
+        warningCodes: [],
+      },
+    });
+
+    expect(build(row(2500, "Other income")).rows[0]).toMatchObject({
+      amountCents: 2500,
+      categoryId: categoryId("Other income"),
+      warningCodes: ["NEEDS_REVIEW_CATEGORY"],
+    });
+    expect(build(row(-2500, "Needs review")).rows[0]).toMatchObject({ amountCents: -2500 });
+    expect(() => build(row(2500, "Coffee / takeaway"))).toThrow("money in");
+    expect(() => build(row(-2500, "Other income"))).toThrow("money out");
+    expect(build(row(2500, "Transfer")).rows[0]).toMatchObject({ amountCents: 2500 });
+    expect(build(row(-2500, "Transfer")).rows[0]).toMatchObject({ amountCents: -2500 });
+  });
+
+  it("revalidates import and merge direction on the server without rewriting targets", () => {
+    const service = readFileSync(new URL("../../src/server/import-commit.ts", import.meta.url), "utf8");
+    expect(service).toContain("deriveTransactionType(row.amountCents, category.type === \"TRANSFER\")");
+    expect(service).toContain("assertCategoryTypeCompatible(category.type, resolvedType)");
+    expect(service).toContain("assertTransactionTypeCompatible(mergeTarget.type, mergeTarget.amountCents)");
+    expect(service).toContain("different money directions");
+    expect(service).not.toContain("type: transactionType(category.type)");
+  });
+
 });
