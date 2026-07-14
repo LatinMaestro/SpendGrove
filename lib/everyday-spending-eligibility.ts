@@ -30,6 +30,7 @@ export function isEligibleEverydayExpense(
     || Boolean(record.deletedAt)
     || record.splitRole === "PARENT"
     || !Number.isInteger(record.amountCents)
+    // Category-derived type alone is insufficient: everyday money-out spending must retain a negative sign.
     || record.amountCents >= 0
     || time == null) {
     return false;
