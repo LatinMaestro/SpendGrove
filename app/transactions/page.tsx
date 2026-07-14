@@ -1,4 +1,5 @@
 import { AppShell } from "@/components/app-shell";
+import { PageHeader } from "@/components/ui/app-primitives";
 import { DurableManualTransactions } from "@/components/durable-manual-transactions";
 import { ManualTransactionMigrationPanel } from "@/components/manual-transaction-migration-panel";
 import { ManualTransactions } from "@/components/manual-transactions";
@@ -20,9 +21,10 @@ export default function TransactionsPage({ searchParams }: { searchParams?: { im
 
   return (
     <AppShell>
+      <PageHeader title="Transactions" description="See what happened, one month at a time." />
       {importComplete && (
-        <section role="status" className="mb-5 flex items-start gap-3 rounded-3xl border border-brand-green bg-surface-mint p-5 text-brand-deepTeal shadow-soft">
-          <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />
+        <section role="status" className="mb-5 mt-5 flex items-start gap-3 rounded-xl border border-brand-leaf/30 bg-brand-leaf/5 p-4 text-foreground">
+          <CheckCircle2 aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-leaf" />
           <div>
             <p className="font-bold">{importedCount === 0 ? "Import complete. No new transactions were added." : "Import complete. Your transactions have been added."}</p>
             {importedCount !== null && <p className="mt-1 text-sm text-brand-deepTeal/70">Imported {importedCount} transaction{importedCount === 1 ? "" : "s"}.</p>}

@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Pencil, PiggyBank, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
@@ -218,19 +218,8 @@ function BudgetExperience() {
   }
 
   return (
-    <section className="mt-5 rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="budget-heading">
-      <div className="flex items-start gap-4">
-        <div className="rounded-2xl bg-surface-mint p-3 text-brand-green">
-          <PiggyBank aria-hidden="true" className="h-6 w-6" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-brand-teal">Monthly category budgets</p>
-          <h2 id="budget-heading" className="mt-1 text-2xl font-bold text-brand-deepTeal">Monthly budgets</h2>
-          <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
-            Set a monthly amount for the categories you want to watch.
-          </p>
-        </div>
-      </div>
+    <section className="mt-6 space-y-6" aria-labelledby="budget-heading">
+      <h2 id="budget-heading" className="sr-only">Monthly budgets</h2>
 
       {message && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{message}</p>}
       {error && <p role="alert" className="mt-4 rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
@@ -249,12 +238,12 @@ function BudgetExperience() {
                   setError("");
                 }}
                 disabled={availableCategories.length === 0}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Plus aria-hidden="true" className="h-4 w-4" /> Add budget
               </button>
             ) : (
-              <div className="rounded-3xl bg-surface-mint/50 p-4">
+              <div className="rounded-2xl border border-border bg-surface-base p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-bold text-brand-deepTeal">Add monthly budget</p>
                   <button
@@ -302,13 +291,13 @@ function BudgetExperience() {
             {activeBudgets.length === 0 ? (
               <p className="mt-3 text-sm leading-6 text-brand-deepTeal/65">Choose Add budget to create your first monthly budget.</p>
             ) : (
-              <div className="mt-3 grid gap-3 lg:grid-cols-2">
+              <div className="mt-3 divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base">
                 {activeBudgets.map((budget) => {
                   const editing = editingId === budget.id;
                   const busy = busyKey === budget.id;
                   const overBudget = budget.spentCents > budget.amountCents;
                   return (
-                    <article key={budget.id} className="rounded-3xl border border-border p-4">
+                    <article key={budget.id} className="p-4">
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="text-lg font-bold text-brand-deepTeal">{budget.categoryLabel}</p>
@@ -323,7 +312,7 @@ function BudgetExperience() {
                           </button>
                         </div>
                       </div>
-                      <div className="mt-4 h-3 overflow-hidden rounded-full bg-surface-mint" aria-label={String(budget.progressPercent) + "% used"}>
+                      <div className="mt-4 h-2 overflow-hidden rounded-full bg-surface-mint" aria-label={String(budget.progressPercent) + "% used"}>
                         <div className={overBudget ? "h-full rounded-full bg-danger-red" : "h-full rounded-full bg-brand-green"} style={{ width: String(Math.min(budget.progressPercent, 100)) + "%" }} />
                       </div>
                       <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
@@ -362,7 +351,7 @@ function BudgetExperience() {
             ) : (
               <div className="mt-3 grid gap-3 lg:grid-cols-2">
                 {archivedBudgets.map((budget) => (
-                  <article key={budget.id} className="rounded-3xl border border-border p-4">
+                  <article key={budget.id} className="p-4">
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="text-lg font-bold text-brand-deepTeal">{budget.categoryLabel}</p>
@@ -382,7 +371,7 @@ function BudgetExperience() {
         </>
       )}
 
-      <details className="mt-5 rounded-2xl bg-surface-mint p-4 text-xs leading-5 text-brand-deepTeal/65">
+      <details className="mt-5 border-t border-border pt-3 text-xs leading-5 text-muted">
         <summary className="cursor-pointer font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">How budget progress works</summary>
         <p className="mt-2">Everyday spending counts once. Transfers, split containers and loan repayment breakdowns are not added.</p>
         <p className="mt-1">Budgets reset each month and do not roll over.</p>
