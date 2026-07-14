@@ -112,9 +112,7 @@ function createLocalId() {
 }
 
 function applyTypeSign(type: ManualTransactionType, parsedCents: number) {
-  if (type === "EXPENSE") return -Math.abs(parsedCents);
-  if (type === "INCOME") return Math.abs(parsedCents);
-  return parsedCents;
+  return normaliseAmountForTransactionType(type, parsedCents);
 }
 
 export function validateManualTransactionDraft(draft: ManualTransactionDraft) {
