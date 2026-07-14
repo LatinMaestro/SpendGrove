@@ -83,6 +83,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | 2026-07-14 | Approve Phase 4 Milestone 4 as a substantial logo-led, beginner-first UI overhaul | Repeated client recordings showed that isolated simplification patches left the global visual system too large, green-card-heavy, mobile-shaped on desktop and administratively dense | Client | Rebuild presentation and responsive navigation through PRs 4.18-4.26 using the approved repository logo, neutral surfaces, compact rows, one primary action and progressive disclosure; preserve exactly five destinations and every financial/import/matching/report/privacy rule; no schema, migration, package/provider/secret/environment change |
 
+| 2026-07-14 | Adopt the Milestone 4 responsive visual system as the technically verified presentation baseline | The completed overhaul gives beginners a compact month-first experience while retaining all accepted product rules | Client-approved milestone direction; technically verified by Codex | Use the repository logo, desktop sidebar, mobile five-item bottom navigation, neutral surfaces, compact rows, one primary action and progressive disclosure; keep exactly Home, Transactions, Loans, Import and Settings; all Phase 4 milestones remain open pending client acceptance |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |
