@@ -17,8 +17,9 @@ Last updated: 14 July 2026
 - Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
 - Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md, docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md, docs/PHASE_4_MILESTONE_3_FINAL_LOANS_SIMPLICITY_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
-- Phase 4 Milestone 4 - Beginner-First Full UI Overhaul is approved and in progress.
+- Phase 4 Milestone 4 - Beginner-First Full UI Overhaul is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Controlling Milestone 4 contract: docs/PHASE_4_MILESTONE_4_UI_OVERHAUL_CONTRACT.md.
+- Delivery summary: docs/PHASE_4_MILESTONE_4_SUMMARY.md.
 - Milestone 4 is presentation-only: no schema, migration, data, financial, import, matching, report/export, ownership or privacy-rule change is authorised.
 - Approved primary destinations remain exactly Home, Transactions, Loans, Import and Settings.
 
@@ -310,9 +311,41 @@ Meaningful Vercel gates are shell plus Home, core everyday workflows and the com
 
 Permanent status rule: Phase 4 Milestones 1-4 remain open pending consolidated client testing. Do not accept or close any milestone on the client's behalf.
 
+## Phase 4 Milestone 4 completed evidence
+
+Completed PR chain:
+
+- #133 / 4.18 contract and interface inventory: `2e6b194da5a20a1c7c66056f91801d4bbb905e03`;
+- #134 / 4.19-4.20 shell, visual system, Home and onboarding: `7896f28e6a7b954d5108b00127888ced4c58cdc0`;
+- #135 / 4.21-4.22 Transactions, Import, Budgets and Regular payments: `6c8822f7cfbdc1ed222d12ab7b96ba7022a94771`;
+- #136 / 4.23-4.24 Loans, Property and Settings: `41523ac25089e74778cf25eb17e195a0dc6caffa`;
+- #137 / 4.25 responsive and accessibility QA: `df6e6ef20046fe8dccb409178a3076cf28b87eea`;
+- #138 / 4.26 evidence and consolidated client package.
+
+Final technical verification:
+
+- 95 test files / 587 tests passed;
+- TypeScript and Next.js lint validity passed;
+- optimized production build passed;
+- final Preview `dpl_54EaJW6HPZDW5MbjBTACTUekJDxb` Ready;
+- final application main deployment `dpl_2QKHYxtx8dNBW7VacD4eTGbirpTn` Ready;
+- canonical https://spendgrove.vercel.app;
+- public Home, Transactions, Loans, Import and Settings routes loaded without internal errors;
+- desktop 1440 and mobile 390 route sweeps found no horizontal overflow.
+
+Safety:
+
+- no Prisma schema or migration change;
+- no Preview or Production migration;
+- no data rewrite/backfill or hard deletion;
+- no package/provider/secret/environment change;
+- no financial, recurring-threshold, budget, import, duplicate, matching, Property-link, report/export, privacy or no-double-count rule changed.
+
+All Phase 4 Milestones 1-4 remain open pending consolidated client testing. Do not accept or close them on the client's behalf.
+
 ## Exact next action
 
-Complete and merge PR 4.18 as documentation-only, then proceed through the approved Milestone 4 implementation sequence unless a mandatory stop condition is reached.
+Stop after PR 4.26 and wait for consolidated client testing of Phase 4 Milestones 1-4. Do not begin another milestone or formally close any Phase 4 milestone.
 
 ## Explicit exclusions and stop conditions
 
