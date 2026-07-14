@@ -5,6 +5,7 @@ import {
 } from "@/lib/manual-categories";
 import { parseMoneyToCents } from "@/lib/validation/money";
 import { normalizeSafeText } from "@/lib/validation/privacy";
+import { normaliseAmountForTransactionType } from "@/lib/transaction-direction";
 
 export const MANUAL_TRANSACTION_STORAGE_KEY = "spendgrove.phase1.transactions.v1";
 export const MANUAL_TRANSACTION_STORAGE_VERSION = 1 as const;
@@ -112,9 +113,7 @@ function createLocalId() {
 }
 
 function applyTypeSign(type: ManualTransactionType, parsedCents: number) {
-  if (type === "EXPENSE") return -Math.abs(parsedCents);
-  if (type === "INCOME") return Math.abs(parsedCents);
-  return parsedCents;
+  return normaliseAmountForTransactionType(type, parsedCents);
 }
 
 export function validateManualTransactionDraft(draft: ManualTransactionDraft) {

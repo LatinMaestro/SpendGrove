@@ -7,7 +7,7 @@ import {
   updateImportReviewDetails,
 } from "@/lib/import-review";
 import { getManualCategory, manualCategories } from "@/lib/manual-categories";
-import { emptyLocalMerchantData } from "@/lib/merchant-rules";
+import { emptyLocalMerchantData, saveConfirmedMerchantRule } from "@/lib/merchant-rules";
 
 function categoryName(categoryId: string) {
   return getManualCategory(categoryId)?.name;
@@ -23,7 +23,6 @@ describe("import category suggestions", () => {
     ["AGL electricity", "AGL", "Electricity"],
     ["Loan repayment", "Loan repayment", "Loan repayment"],
     ["Credit card payment", "Credit card payment", "Credit card payment"],
-    ["Internal transfer", "Internal transfer", "Transfer"],
   ])("suggests a reviewable category for %s", (input, expectedMerchant, expectedCategory) => {
     const suggestion = suggestImportReviewCategory(input, emptyLocalMerchantData());
 
@@ -43,6 +42,12 @@ describe("import category suggestions", () => {
     const suggestion = suggestImportReviewCategory(description, emptyLocalMerchantData(), description);
     expect(categoryName(suggestion.categoryId)).toBe(expectedCategory);
     expect(suggestion).toMatchObject({ source: "KEYWORD", confidence: "HIGH", requiresReview: true });
+  });
+
+  it("does not confirm a transfer from narration alone", () => {
+    const suggestion = suggestImportReviewCategory("Internal transfer", emptyLocalMerchantData());
+    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
+    expect(suggestion).toMatchObject({ source: "FALLBACK", requiresReview: true });
   });
 
   it("does not match food keywords embedded inside unrelated words", () => {
@@ -144,5 +149,49 @@ describe("import category suggestions", () => {
     expect(serialized).not.toContain("Alex Recipient");
     expect(serialized).not.toContain("12345678");
     expect(serialized).not.toContain("987654321");
+  });
+  it("keeps positive takeaway refunds as money in", () => {
+    const suggestion = suggestImportReviewCategory(
+      "Red Rooster refund",
+      emptyLocalMerchantData(),
+      "Red Rooster refund",
+      2599,
+    );
+    expect(getManualCategory(suggestion.categoryId)?.type).toBe("INCOME");
+    expect(categoryName(suggestion.categoryId)).not.toBe("Coffee / takeaway");
+    expect(suggestion.requiresReview).toBe(true);
+  });
+
+  it("does not apply income wording to negative money out", () => {
+    const suggestion = suggestImportReviewCategory(
+      "ATO refund adjustment",
+      emptyLocalMerchantData(),
+      "ATO refund adjustment",
+      -2599,
+    );
+    expect(categoryName(suggestion.categoryId)).toBe("Needs review");
+    expect(suggestion).toMatchObject({ source: "FALLBACK", requiresReview: true });
+  });
+
+  it("ignores an incompatible user-confirmed merchant rule", () => {
+    const expenseCategory = manualCategories.find((category) => category.name === "Coffee / takeaway")!;
+    const learned = saveConfirmedMerchantRule(emptyLocalMerchantData(), {
+      merchantName: "Red Rooster",
+      categoryId: expenseCategory.id,
+      now: new Date("2026-07-14T00:00:00.000Z"),
+    });
+    const suggestion = suggestImportReviewCategory(
+      "Red Rooster",
+      learned,
+      "Red Rooster refund",
+      2599,
+    );
+    expect(categoryName(suggestion.categoryId)).toBe("Other income");
+    expect(suggestion.source).toBe("FALLBACK");
+  });
+
+  it("uses direction-compatible fallbacks for uncategorised rows", () => {
+    expect(categoryName(suggestImportReviewCategory("Unknown credit", emptyLocalMerchantData(), undefined, 1000).categoryId)).toBe("Other income");
+    expect(categoryName(suggestImportReviewCategory("Unknown debit", emptyLocalMerchantData(), undefined, -1000).categoryId)).toBe("Needs review");
   });
 });

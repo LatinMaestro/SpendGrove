@@ -1,4 +1,5 @@
-import { manualCategories } from "@/lib/manual-categories";
+import { getManualCategory, manualCategories, type ManualCategoryType } from "@/lib/manual-categories";
+import { deriveTransactionType, directionCompatibleFallbackCategoryName } from "@/lib/transaction-direction";
 import { suggestGroupedMerchantCategory } from "@/lib/import-review-merchant-identity";
 import { suggestMerchantCategory, type LocalMerchantData, type MerchantCategorySuggestion, type MerchantSuggestionConfidence } from "@/lib/merchant-rules";
 import { sanitizeBankDescription, sanitizeTransactionNarration } from "@/lib/validation/privacy";
@@ -44,14 +45,44 @@ const transferContextSuggestions: DeterministicSuggestion[] = [
 const transferStylePattern = /\b(?:osko|bank[\s-]*transfer|transfer|xfer|pay[\s-]*anyone|account[\s-]*movement|between[\s-]*accounts)\b/i;
 const internalTransferPattern = /\b(?:internal[\s-]*transfer|account[\s-]*movement|between[\s-]*accounts|own[\s-]*account|to[\s-]*savings|from[\s-]*savings|savings[\s-]*transfer)\b/i;
 
-function categoryIdByName(name: string) {
-  const category = manualCategories.find((candidate) => candidate.name === name);
+function categoryIdByName(name: string, type?: ManualCategoryType) {
+  const category = manualCategories.find((candidate) =>
+    candidate.name === name && (!type || candidate.type === type));
   if (!category) throw new Error(`Missing seeded category: ${name}`);
   return category.id;
 }
 
-function needsReviewSuggestion(merchantName: string, reason: string): MerchantCategorySuggestion {
-  return { merchantName, categoryId: categoryIdByName("Needs review"), source: "FALLBACK", confidence: "LOW", reason, requiresReview: true };
+function needsReviewSuggestion(
+  merchantName: string,
+  reason: string,
+  amountCents?: number | null,
+): MerchantCategorySuggestion {
+  const fallbackName = amountCents && amountCents !== 0
+    ? directionCompatibleFallbackCategoryName(amountCents)
+    : "Needs review";
+  const fallbackType = amountCents && amountCents !== 0
+    ? deriveTransactionType(amountCents)
+    : "EXPENSE";
+  return {
+    merchantName,
+    categoryId: categoryIdByName(fallbackName, fallbackType),
+    source: "FALLBACK",
+    confidence: "LOW",
+    reason,
+    requiresReview: true,
+  };
+}
+
+function directionSafeSuggestion(
+  suggestion: MerchantCategorySuggestion,
+  amountCents?: number | null,
+  reason = "The suggested category does not match the money direction. Choose a category before importing.",
+): MerchantCategorySuggestion {
+  if (amountCents === null || amountCents === undefined || amountCents === 0) return suggestion;
+  const category = getManualCategory(suggestion.categoryId);
+  const expectedType = deriveTransactionType(amountCents);
+  if (category?.type === expectedType) return suggestion;
+  return needsReviewSuggestion(suggestion.merchantName, reason, amountCents);
 }
 
 function suggestionFromRule(merchantName: string, rule: DeterministicSuggestion): MerchantCategorySuggestion {
@@ -65,32 +96,62 @@ function suggestionFromRule(merchantName: string, rule: DeterministicSuggestion)
   };
 }
 
-function suggestTransferCategory(merchantValue: string, bankDescription?: string): MerchantCategorySuggestion | null {
+function suggestTransferCategory(
+  merchantValue: string,
+  bankDescription?: string,
+  amountCents?: number | null,
+): MerchantCategorySuggestion | null {
   const safeMerchant = sanitizeTransactionNarration(merchantValue) || "Payment";
   const safeDescription = sanitizeBankDescription(bankDescription || merchantValue);
   const context = `${safeMerchant} ${safeDescription}`.trim();
   if (!transferStylePattern.test(context)) return null;
   const contextual = transferContextSuggestions.find((candidate) => candidate.pattern.test(context));
-  if (contextual) return suggestionFromRule(safeMerchant, contextual);
-  if (internalTransferPattern.test(context)) return { merchantName: safeMerchant, categoryId: categoryIdByName("Transfer"), source: "KEYWORD", confidence: "MEDIUM", reason: "Suggested from a clear movement between accounts. Please review before using it.", requiresReview: true };
-  return needsReviewSuggestion(safeMerchant, "This may be an account transfer or a payment to someone else. Confirm what happened before saving.");
+  if (contextual) {
+    return directionSafeSuggestion(suggestionFromRule(safeMerchant, contextual), amountCents);
+  }
+  if (internalTransferPattern.test(context)) {
+    return needsReviewSuggestion(
+      safeMerchant,
+      "This may be a transfer. Confirm the transfer treatment before importing.",
+      amountCents,
+    );
+  }
+  return needsReviewSuggestion(
+    safeMerchant,
+    "This may be a transfer or a payment to someone else. Confirm what happened before importing.",
+    amountCents,
+  );
 }
 
-export function suggestImportReviewCategory(merchantValue: string, data: LocalMerchantData, bankDescription?: string): MerchantCategorySuggestion {
+export function suggestImportReviewCategory(
+  merchantValue: string,
+  data: LocalMerchantData,
+  bankDescription?: string,
+  amountCents?: number | null,
+): MerchantCategorySuggestion {
   const localSuggestion = suggestMerchantCategory(merchantValue, data);
-  if (localSuggestion.source === "USER_RULE" || localSuggestion.source === "USER_ALIAS") return localSuggestion;
+  if (localSuggestion.source === "USER_RULE" || localSuggestion.source === "USER_ALIAS") {
+    return directionSafeSuggestion(localSuggestion, amountCents);
+  }
 
   const grouped = suggestGroupedMerchantCategory(merchantValue, data);
-  if (grouped) return grouped;
+  if (grouped) return directionSafeSuggestion(grouped, amountCents);
 
-  const transferSuggestion = suggestTransferCategory(merchantValue, bankDescription);
+  const transferSuggestion = suggestTransferCategory(merchantValue, bankDescription, amountCents);
   if (transferSuggestion) return transferSuggestion;
 
-  if (localSuggestion.source !== "FALLBACK") return localSuggestion;
+  if (localSuggestion.source !== "FALLBACK") {
+    return directionSafeSuggestion(localSuggestion, amountCents);
+  }
 
   const safeDescription = sanitizeBankDescription(bankDescription || merchantValue);
   const context = `${localSuggestion.merchantName} ${safeDescription}`.trim();
   const deterministic = deterministicSuggestions.find((candidate) => candidate.pattern.test(context));
-  if (!deterministic) return localSuggestion;
-  return suggestionFromRule(localSuggestion.merchantName, deterministic);
+  if (!deterministic) {
+    return needsReviewSuggestion(localSuggestion.merchantName, localSuggestion.reason, amountCents);
+  }
+  return directionSafeSuggestion(
+    suggestionFromRule(localSuggestion.merchantName, deterministic),
+    amountCents,
+  );
 }

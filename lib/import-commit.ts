@@ -4,6 +4,7 @@ import type { ImportReviewRow } from "@/lib/import-review";
 import { getManualCategory } from "@/lib/manual-categories";
 import { nonZeroCentsSchema } from "@/lib/validation/money";
 import { containsPrivateBankIdentifier } from "@/lib/validation/privacy";
+import { assertCategoryTypeCompatible, deriveTransactionType } from "@/lib/transaction-direction";
 
 const warningCodeSchema = z.string().trim().min(1).max(80).regex(/^[A-Z0-9_-]+$/);
 const safeTextSchema = z.string().trim().min(1).max(120).refine(
@@ -87,7 +88,9 @@ function reviewedWarningCodes(row: ImportReviewRow) {
   const category = getManualCategory(row.categoryId);
   return Array.from(new Set([
     ...row.warningCodes,
-    ...(category?.name === "Needs review" ? ["NEEDS_REVIEW_CATEGORY"] : []),
+    ...(category?.name === "Needs review" || (row.suggestionSource === "FALLBACK" && !row.categoryConfirmed)
+      ? ["NEEDS_REVIEW_CATEGORY"]
+      : []),
   ]));
 }
 
@@ -105,7 +108,10 @@ export function createImportCommitRequest(input: {
       }
       if (!row.date) throw new Error(`Row ${row.rowNumber}: invalid date.`);
       if (row.amountCents === null || row.amountCents === 0) throw new Error(`Row ${row.rowNumber}: invalid amount.`);
-      if (!getManualCategory(row.categoryId)) throw new Error(`Row ${row.rowNumber}: category not recognised.`);
+      const category = getManualCategory(row.categoryId);
+      if (!category) throw new Error(`Row ${row.rowNumber}: category not recognised.`);
+      const transactionType = deriveTransactionType(row.amountCents, category.type === "TRANSFER");
+      assertCategoryTypeCompatible(category.type, transactionType);
       const reviewed = {
         rowNumber: row.rowNumber,
         action: row.action,

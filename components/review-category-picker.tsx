@@ -12,6 +12,7 @@ import {
 } from "@/lib/custom-categories";
 import type { ImportReviewEditType, ImportReviewRow } from "@/lib/import-review";
 import type { ManualCategoryType } from "@/lib/manual-categories";
+import { deriveTransactionType } from "@/lib/transaction-direction";
 
 const financialTypeOptions: Array<{ value: ManualCategoryType; label: string }> = [
   { value: "TRANSFER", label: "Transfer / account movement" },
@@ -31,6 +32,13 @@ export function ReviewCategoryPicker({
   onCreate(input: { name: string; type: ManualCategoryType; group?: CustomCategoryGroup }): CustomCategory;
 }) {
   const currentCategory = getReviewCategory(customCategories, row.categoryId);
+  const directionType = row.amountCents
+    ? (currentCategory?.type === "TRANSFER" ? "TRANSFER" : deriveTransactionType(row.amountCents))
+    : null;
+  const directionLabel = directionType === "INCOME" ? "money in" : directionType === "EXPENSE" ? "money out" : "a transfer";
+  const categoryTypeIsAllowed = (type: ManualCategoryType) => directionType === null
+    || type === directionType
+    || (directionType !== "TRANSFER" && type === "TRANSFER");
   const suggestedGroup = inferCustomCategoryGroup({
     amountCents: row.amountCents,
     merchantName: row.merchantName,
@@ -46,8 +54,15 @@ export function ReviewCategoryPicker({
   const [error, setError] = useState("");
   const searchRef = useRef<HTMLInputElement>(null);
   const groups = useMemo(
-    () => getCategoryCatalogueSections(customCategories, row.categoryId),
-    [customCategories, row.categoryId],
+    () => getCategoryCatalogueSections(customCategories, row.categoryId)
+      .map((section) => ({
+        ...section,
+        categories: section.categories.filter((category) => directionType === null
+          || category.type === directionType
+          || (directionType !== "TRANSFER" && category.type === "TRANSFER")),
+      }))
+      .filter((section) => section.categories.length > 0),
+    [customCategories, row.categoryId, directionType],
   );
   const filteredGroups = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase("en-AU");
@@ -75,18 +90,27 @@ export function ReviewCategoryPicker({
   }
 
   function beginCreate() {
-    setGroup(suggestedGroup);
-    setFinancialType(defaultTypeForCategoryGroup(suggestedGroup));
+    const compatibleGroup = categoryTypeIsAllowed(defaultTypeForCategoryGroup(suggestedGroup))
+      ? suggestedGroup
+      : directionType === "INCOME"
+        ? "Income"
+        : directionType === "TRANSFER"
+          ? "Financial"
+          : "Everyday spending";
+    setGroup(compatibleGroup);
+    setFinancialType(directionType ?? defaultTypeForCategoryGroup(compatibleGroup));
     setShowCreate(true);
     setError("");
   }
 
   function saveCategory() {
     try {
+      const categoryType = defaultTypeForCategoryGroup(group, financialType);
+      if (!categoryTypeIsAllowed(categoryType)) throw new Error(`Choose a category for ${directionLabel}.`);
       const category = onCreate({
         name,
         group,
-        type: defaultTypeForCategoryGroup(group, financialType),
+        type: categoryType,
       });
       setName("");
       setError("");
@@ -113,7 +137,7 @@ export function ReviewCategoryPicker({
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-brand-deepTeal/35 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
           <section role="dialog" aria-modal="true" aria-labelledby={`category-picker-${row.id}`} className="max-h-[82dvh] w-full max-w-xl overflow-hidden rounded-t-[2rem] bg-surface-base shadow-soft sm:rounded-[2rem]">
             <div className="flex items-start justify-between gap-4 border-b border-border p-5">
-              <div><h3 id={`category-picker-${row.id}`} className="text-xl font-bold text-brand-deepTeal">Choose a category</h3><p className="mt-1 text-sm text-brand-deepTeal/65">Search or browse. Your reviewed choice can be remembered for this merchant.</p></div>
+              <div><h3 id={`category-picker-${row.id}`} className="text-xl font-bold text-brand-deepTeal">Choose a category for {directionLabel}</h3><p className="mt-1 text-sm text-brand-deepTeal/65">Search or browse compatible categories. Your reviewed choice can be remembered for this merchant.</p></div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close category picker" className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-border bg-white text-brand-deepTeal"><X aria-hidden="true" className="h-5 w-5" /></button>
             </div>
             <div className="max-h-[calc(82dvh-7rem)] overflow-y-auto overscroll-contain px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-4">
@@ -148,8 +172,8 @@ export function ReviewCategoryPicker({
                 <div className="rounded-2xl bg-surface-mint p-4">
                   <p className="font-bold text-brand-deepTeal">Create new category</p>
                   <label className="mt-3 block text-sm font-bold text-brand-deepTeal">Category name<input value={name} onChange={(event) => setName(event.target.value)} maxLength={60} autoFocus className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm" /></label>
-                  <label className="mt-3 block text-sm font-bold text-brand-deepTeal">Group<select value={group} onChange={(event) => { const next = event.target.value as CustomCategoryGroup; setGroup(next); setFinancialType(defaultTypeForCategoryGroup(next)); }} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm">{CUSTOM_CATEGORY_GROUPS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
-                  {group === "Financial" && <label className="mt-3 block text-sm font-bold text-brand-deepTeal">What kind?<select value={financialType} onChange={(event) => setFinancialType(event.target.value as ManualCategoryType)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm">{financialTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
+                  <label className="mt-3 block text-sm font-bold text-brand-deepTeal">Group<select value={group} onChange={(event) => { const next = event.target.value as CustomCategoryGroup; setGroup(next); setFinancialType(defaultTypeForCategoryGroup(next)); }} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm">{CUSTOM_CATEGORY_GROUPS.filter((option) => categoryTypeIsAllowed(option.defaultType) || option.value === "Financial").map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
+                  {group === "Financial" && <label className="mt-3 block text-sm font-bold text-brand-deepTeal">What kind?<select value={financialType} onChange={(event) => setFinancialType(event.target.value as ManualCategoryType)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm">{financialTypeOptions.filter((option) => categoryTypeIsAllowed(option.value)).map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>}
                   {error && <p role="alert" className="mt-3 text-sm font-semibold text-danger-red">{error}</p>}
                   <div className="mt-4 flex gap-2"><button type="button" onClick={saveCategory} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white">Create category</button><button type="button" onClick={() => setShowCreate(false)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal">Back</button></div>
                 </div>

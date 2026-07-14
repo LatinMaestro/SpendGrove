@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Prisma, type PrismaClient, type TransactionType } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 import { getManualCategory, manualCategories, type ManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
 import { normalizeMerchantName } from "@/lib/merchant-rules";
 import { importCommitRequestSchema, type ImportCommitRequest, type ImportCommitSummary } from "@/lib/import-commit";
@@ -10,6 +10,11 @@ import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/au
 import { getPrismaClient } from "@/src/server/db";
 import { createPropertyLinkAuditEvent } from "@/src/server/property-transaction-links";
 import { autoReconcileHighConfidenceRepaymentsForTransactions } from "@/src/server/loan-auto-reconciliation";
+import {
+  assertCategoryTypeCompatible,
+  assertTransactionTypeCompatible,
+  deriveTransactionType,
+} from "@/lib/transaction-direction";
 
 export class ImportCommitConflictError extends Error {
   constructor(message = "This reviewed import is already being committed. Please refresh before trying again.") {
@@ -40,11 +45,6 @@ function dateOnlyToUtcDate(value: string) {
   return date;
 }
 
-function transactionType(categoryType: ManualCategoryType | string): TransactionType {
-  if (categoryType === "INCOME") return "INCOME";
-  if (categoryType === "TRANSFER") return "TRANSFER";
-  return "EXPENSE";
-}
 
 function categoryChildSortOrder(category: ManualCategory) {
   const index = manualCategories.filter((candidate) => candidate.group === category.group).findIndex((candidate) => candidate.id === category.id);
@@ -152,9 +152,9 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               deletedAt: null,
               splitRole: { not: "PARENT" },
             },
-            select: { id: true },
+            select: { id: true, type: true, amountCents: true },
           });
-          const availableMergeTargets = new Set(mergeTargets.map((target) => target.id));
+          const availableMergeTargets = new Map(mergeTargets.map((target) => [target.id, target]));
           if (mergeTargetIds.some((targetId) => !availableMergeTargets.has(targetId))) {
             throw new OwnershipError("manual merge target");
           }
@@ -207,6 +207,8 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
 
             const category = categoryByRequestedId.get(row.categoryId);
             if (!category) throw new OwnershipError("approved category");
+            const resolvedType = deriveTransactionType(row.amountCents, category.type === "TRANSFER");
+            assertCategoryTypeCompatible(category.type, resolvedType);
             const description = sanitizeBankDescription(row.description || row.merchantName) || "Payment";
             const merchantName = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
             assertNoPrivateBankIdentifiers(description, "Reviewed description");
@@ -214,6 +216,14 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
             const mappedDate = dateOnlyToUtcDate(row.date);
 
             if (row.action === "MERGE") {
+              const mergeTarget = availableMergeTargets.get(row.targetTransactionId);
+              if (!mergeTarget) throw new OwnershipError("manual merge target");
+              assertTransactionTypeCompatible(mergeTarget.type, mergeTarget.amountCents);
+              if (mergeTarget.type !== resolvedType) {
+                throw new ImportCommitConflictError(
+                  "The imported row and merge target use different money directions. Review the merge before trying again.",
+                );
+              }
               importRowCreates.push({
                 userId,
                 importBatchId: batch.id,
@@ -239,7 +249,7 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               categoryId: category.id,
               importBatchId: batch.id,
               merchantProfileId: normalizedMerchantName ? merchantProfileByNormalizedName.get(normalizedMerchantName) ?? null : null,
-              type: transactionType(category.type),
+              type: resolvedType,
               source: "IMPORTED",
               status: "ACTIVE",
               splitRole: "NONE",

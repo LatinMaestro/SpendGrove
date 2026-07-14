@@ -32,13 +32,18 @@ import {
   type ManualTransactionType,
 } from "@/lib/manual-transactions";
 import {
+  deriveTransactionType,
+  directionCompatibleFallbackCategoryName,
+  transactionNeedsDirectionCorrection,
+} from "@/lib/transaction-direction";
+import {
   loadManualTransactionsFromStorage,
   saveManualTransactionsToStorage,
 } from "@/lib/manual-transaction-storage";
 
 const typeLabels: Record<ManualTransactionType, string> = {
-  EXPENSE: "Expense",
-  INCOME: "Income",
+  EXPENSE: "Money out",
+  INCOME: "Money in",
   TRANSFER: "Transfer",
 };
 
@@ -61,6 +66,16 @@ function createEmptyDraft(): ManualTransactionDraft {
     notes: "",
     csvMatchHint: false,
   };
+}
+
+function draftForDirectionCorrection(transaction: ManualTransaction) {
+  const draft = duplicateManualTransactionToDraft(transaction);
+  if (!transactionNeedsDirectionCorrection(transaction)) return draft;
+  const type = deriveTransactionType(transaction.amountCents);
+  const fallbackName = directionCompatibleFallbackCategoryName(transaction.amountCents);
+  const categories = getManualCategoryGroups(type).flatMap((group) => group.categories);
+  const category = categories.find((candidate) => candidate.name === fallbackName) ?? categories[0];
+  return { ...draft, type, categoryId: category.id, amountInput: (Math.abs(transaction.amountCents) / 100).toFixed(2) };
 }
 
 type EditorState = {
@@ -245,13 +260,13 @@ export function ManualTransactions() {
   function openEdit(transaction: ManualTransaction) {
     setDetailId(null);
     setEditorError("");
-    setEditor({ mode: "edit", transactionId: transaction.id, draft: duplicateManualTransactionToDraft(transaction) });
+    setEditor({ mode: "edit", transactionId: transaction.id, draft: draftForDirectionCorrection(transaction) });
   }
 
   function openDuplicate(transaction: ManualTransaction) {
     setDetailId(null);
     setEditorError("");
-    setEditor({ mode: "duplicate", draft: duplicateManualTransactionToDraft(transaction) });
+    setEditor({ mode: "duplicate", draft: draftForDirectionCorrection(transaction) });
   }
 
   function saveEditor() {
@@ -342,7 +357,7 @@ export function ManualTransactions() {
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
                     <div className="flex flex-wrap gap-2">
                       <span className="rounded-full bg-surface-mint px-3 py-1.5 text-xs font-semibold text-brand-deepTeal">{typeLabels[transaction.type]}</span>
-                      {transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}
+                      {transaction.csvMatchHint && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="inline-flex items-center gap-1 rounded-full bg-warning-amber/15 px-3 py-1.5 text-xs font-semibold text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}
                     </div>
                     <button type="button" onClick={() => setDetailId(transaction.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Details</button>
                   </div>
@@ -364,6 +379,7 @@ export function ManualTransactions() {
 
       {detailTransaction && (
         <ModalFrame title="Transaction details" description="A browser-local manual entry." onClose={() => setDetailId(null)}>
+          {transactionNeedsDirectionCorrection(detailTransaction) && <div role="status" className="mt-6 rounded-2xl border border-warning-amber/30 bg-warning-amber/10 p-4"><p className="font-bold text-brand-deepTeal">This transaction needs correction</p><p className="mt-1 text-sm text-brand-deepTeal/70">The amount and transaction direction do not agree.</p></div>}
           <dl className="mt-6 space-y-4 rounded-3xl bg-surface-mint p-5">
             <div><dt className="text-xs font-bold uppercase tracking-[0.14em] text-brand-teal">Description</dt><dd className="mt-1 text-lg font-bold text-brand-deepTeal">{detailTransaction.description}</dd></div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -376,7 +392,7 @@ export function ManualTransactions() {
             {detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-brand-deepTeal"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}
           </dl>
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
-            <button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> Edit</button>
+            <button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green"><Pencil aria-hidden="true" className="h-4 w-4" /> {transactionNeedsDirectionCorrection(detailTransaction) ? "Review transaction" : "Edit"}</button>
             <button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button>
             <button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full border border-danger-red px-4 text-sm font-bold text-danger-red focus:outline-none focus:ring-2 focus:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button>
           </div>
