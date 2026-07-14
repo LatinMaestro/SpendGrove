@@ -105,3 +105,23 @@ Material decisions should be recorded here. This prevents future agents from re-
 - Major navigation changes.
 - Privacy/security changes.
 - Delivery workflow changes.
+
+## 2026-07-14 - Transactions uses a compact whole-month category chart
+
+Decision:
+
+- Transactions shows one compact accessible donut for the currently selected Australian month.
+- The chart reuses the approved everyday monthly-spending eligibility and integer-cent amount rule; it is not a second financial formula.
+- Search and list-only filters do not change the whole-month chart.
+- Up to five categories appear directly; additional categories are represented by exact presentation-only `Other`.
+- The full breakdown always exposes the real categories, and selecting one applies a removable same-month transaction filter.
+- Unusable categories remain visible as `Needs review`.
+- The implementation uses repository-native SVG and adds no chart dependency.
+
+Reason:
+
+The client requested an immediate, beginner-friendly explanation of what makes up monthly spending without turning Transactions into a large dashboard. A compact summary plus deliberate full breakdown preserves the redesigned page hierarchy and keeps every value traceable.
+
+Boundaries:
+
+No new refund, split, transfer, category, budget, import, Property, loan or tax calculation; no schema/migration/package/provider/secret/environment change; no new primary navigation destination; no raw source data in chart presentation.
