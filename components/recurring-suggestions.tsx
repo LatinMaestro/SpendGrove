@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { CalendarClock, CheckCircle2, Pencil, RotateCcw, Trash2, X } from "lucide-react";
+import { CalendarClock, CheckCircle2, Pencil, Repeat2, RotateCcw, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 import { uniqueSuggestionsByIdentity, visibleRecurringSuggestions } from "@/lib/recurring-suggestion-presentation";
