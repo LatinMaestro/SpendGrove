@@ -9,6 +9,7 @@ import {
   transactionNeedsDirectionCorrection,
 } from "@/lib/transaction-direction";
 import { validateSplitTransactionDirection } from "@/lib/validation/splits";
+import { transactionCreateSchema, transactionUpdateSchema } from "@/lib/validation/transactions";
 
 describe("transaction direction integrity", () => {
   it("derives ordinary direction from signed integer cents", () => {
@@ -91,4 +92,21 @@ describe("transaction direction integrity", () => {
       children: [{ amountCents: -9000, type: "EXPENSE" }],
     })).toThrow("must equal");
   });
+  it("enforces the invariant at generic transaction create and material update boundaries", () => {
+    const base = {
+      userId: "user_1",
+      type: "EXPENSE" as const,
+      source: "MANUAL" as const,
+      amountCents: -2500,
+      date: new Date("2026-07-14T00:00:00.000Z"),
+      description: "Synthetic payment",
+    };
+    expect(transactionCreateSchema.safeParse(base).success).toBe(true);
+    expect(transactionCreateSchema.safeParse({ ...base, amountCents: 2500 }).success).toBe(false);
+    expect(transactionCreateSchema.safeParse({ ...base, type: "INCOME", amountCents: -2500 }).success).toBe(false);
+    expect(transactionCreateSchema.safeParse({ ...base, type: "TRANSFER", amountCents: 2500 }).success).toBe(true);
+    expect(transactionUpdateSchema.safeParse({ type: "EXPENSE", amountCents: 2500 }).success).toBe(false);
+    expect(transactionUpdateSchema.safeParse({ type: "INCOME", amountCents: 2500 }).success).toBe(true);
+  });
+
 });
