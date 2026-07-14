@@ -167,7 +167,7 @@ export function CategoryBreakdownView({ monthLabel, spending, onBack, onSelectCa
               aria-label={`View ${monthLabel} ${category.name} transactions`}
               className="grid min-h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-3 text-left hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
             >
-              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ backgroundColor: monthlyCategoryColour(segment.key) }} />
+              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ backgroundColor: monthlyCategoryColour(category.key) }} />
               <span className="min-w-0">
                 <span title={category.name} className="block truncate text-sm font-bold text-foreground">{category.name}</span>
                 <span className="mt-0.5 block text-xs text-muted">{category.transactionCount} transaction{category.transactionCount === 1 ? "" : "s"} · {formatSpendingPercentage(category.amountCents, spending.totalCents)}</span>
