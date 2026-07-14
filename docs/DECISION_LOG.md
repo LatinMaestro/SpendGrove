@@ -81,6 +81,8 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | 2026-07-14 | Use a focused selected-loan subview, quiet healthy repayment rows and a separate Property report dialog | The inline Loan expansion still made the overview long and gave technical/secondary tools equal visual weight | Client | Keep the existing /loans navigation; show repayments first and Property transactions second; allow one repayment detail at a time; preserve all matching, cashflow, Property-link and report/export rules |
 
+| 2026-07-14 | Approve Phase 4 Milestone 4 as a substantial logo-led, beginner-first UI overhaul | Repeated client recordings showed that isolated simplification patches left the global visual system too large, green-card-heavy, mobile-shaped on desktop and administratively dense | Client | Rebuild presentation and responsive navigation through PRs 4.18-4.26 using the approved repository logo, neutral surfaces, compact rows, one primary action and progressive disclosure; preserve exactly five destinations and every financial/import/matching/report/privacy rule; no schema, migration, package/provider/secret/environment change |
+
 ## Template
 
 | Date | Decision | Reason | Approved by | Implementation impact |
