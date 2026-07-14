@@ -627,7 +627,7 @@ function LoansUnavailable() {
         <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Landmark aria-hidden="true" className="h-6 w-6" /></div>
         <div>
           <p className="text-sm font-semibold text-brand-teal">Loans</p>
-          <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Account storage is not configured here</h2>
+          <h1 className="mt-1 text-2xl font-bold text-brand-deepTeal">Account storage is not configured here</h1>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Loan and optional property metadata is account-only. SpendGrove does not keep a browser-local copy of private loan details.</p>
         </div>
       </div>
@@ -960,7 +960,7 @@ function AuthenticatedLoansManager({
           <div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Landmark aria-hidden="true" className="h-6 w-6" /></div>
           <div>
             <p className="text-sm font-semibold text-brand-teal">Loans</p>
-            <h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to manage Loan Accounts</h2>
+            <h1 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to manage Loan Accounts</h1>
             <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Loan and optional property metadata is account-only. No browser-local fallback stores private loan details.</p>
             {!isSignedIn && <SignInButton mode="modal"><button type="button" className="mt-4 min-h-12 rounded-full bg-brand-green px-5 text-sm font-bold text-white">Sign in</button></SignInButton>}
           </div>
