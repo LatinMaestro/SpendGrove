@@ -7,7 +7,8 @@ import {
   type TransientCsvDocument,
 } from "@/lib/csv-import";
 import { suggestImportReviewCategory } from "@/lib/import-category-suggestions";
-import { getManualCategory } from "@/lib/manual-categories";
+import { getManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
+import { deriveTransactionType } from "@/lib/transaction-direction";
 import {
   emptyLocalMerchantData,
   normalizeMerchantName,
@@ -78,6 +79,15 @@ const suggestionConfidenceSchema = z.enum(["HIGH", "MEDIUM", "LOW"]);
 const reviewStateSchema = z.enum(["UNREVIEWED", "CONFIRMED_SUGGESTION", "MANUALLY_REVIEWED", "APPLIED_TO_MATCH"]);
 const reviewEditTypeSchema = z.enum(["CONFIRM_SUGGESTION", "MERCHANT_EDIT", "CATEGORY_EDIT"]);
 
+function isReviewCategoryCompatible(
+  amountCents: number | null,
+  categoryType: ManualCategoryType,
+) {
+  if (amountCents === null || amountCents === 0) return true;
+  if (categoryType === "TRANSFER") return true;
+  return categoryType === deriveTransactionType(amountCents);
+}
+
 const safeNarrationSchema = z.string().max(120).refine(
   (value) => !containsPrivateBankIdentifier(value),
   "Private banking identifiers are not permitted in review text.",
@@ -101,11 +111,22 @@ const importReviewRowSchema = z.object({
   reviewState: reviewStateSchema,
   propertyLinkPropertyId: z.string().trim().min(1).nullable().default(null),
 }).strict().superRefine((row, context) => {
-  if (!getManualCategory(row.categoryId)) {
+  const category = getManualCategory(row.categoryId);
+  if (!category) {
     context.addIssue({
       code: "custom",
       path: ["categoryId"],
       message: "Choose an approved category.",
+    });
+    return;
+  }
+  if (!isReviewCategoryCompatible(row.amountCents, category.type)) {
+    context.addIssue({
+      code: "custom",
+      path: ["categoryId"],
+      message: row.amountCents && row.amountCents > 0
+        ? "Choose a category for money in."
+        : "Choose a category for money out.",
     });
   }
 });
@@ -163,7 +184,7 @@ export function createTransientImportReviewRows(
       const adjustedRowNumber = row.rowNumber + offset;
       const description = sanitizeBankDescription(row.description);
       const initialMerchant = sanitizeTransactionNarration(row.merchantName || row.description) || "Payment";
-      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData, description);
+      const suggestion = suggestImportReviewCategory(initialMerchant, merchantData, description, row.amountCents);
       rows.push(importReviewRowSchema.parse({
         id: `csv-row-${adjustedRowNumber}`,
         rowNumber: adjustedRowNumber,
@@ -248,15 +269,18 @@ export function applyCategoryToSameMerchant(rows: ImportReviewRow[], rowId: stri
   if (!source || !source.categoryConfirmed) return rows;
   const sourceKey = normalizeMerchantName(source.merchantName);
 
-  return rows.map((row) => normalizeMerchantName(row.merchantName) === sourceKey
-    ? importReviewRowSchema.parse({
-        ...row,
-        categoryId: source.categoryId,
-        categoryConfirmed: true,
-        reviewState: "APPLIED_TO_MATCH",
-        suggestionReason: "Applied to the same cleaned merchant in this review.",
-      })
-    : row);
+  const sourceCategory = getManualCategory(source.categoryId);
+  return rows.map((row) => {
+    if (normalizeMerchantName(row.merchantName) !== sourceKey || !sourceCategory
+      || !isReviewCategoryCompatible(row.amountCents, sourceCategory.type)) return row;
+    return importReviewRowSchema.parse({
+      ...row,
+      categoryId: source.categoryId,
+      categoryConfirmed: true,
+      reviewState: "APPLIED_TO_MATCH",
+      suggestionReason: "Applied to the same cleaned merchant in this review.",
+    });
+  });
 }
 
 export function applyMerchantSuggestionsToRows(
@@ -265,7 +289,7 @@ export function applyMerchantSuggestionsToRows(
 ) {
   return rows.map((row) => {
     if (row.reviewState !== "UNREVIEWED") return row;
-    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData, row.description);
+    const suggestion = suggestImportReviewCategory(row.merchantName, merchantData, row.description, row.amountCents);
     return importReviewRowSchema.parse({
       ...row,
       merchantName: suggestion.merchantName,
