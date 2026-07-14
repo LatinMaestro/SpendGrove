@@ -7,6 +7,7 @@ import {
   transactionTypeSchema,
 } from "@/lib/validation/enums";
 import { normalizeSafeText } from "@/lib/validation/privacy";
+import { isTransactionTypeCompatible } from "@/lib/transaction-direction";
 
 const optionalIdSchema = z.string().min(1).optional();
 const transactionDescriptionSchema = z.string().trim().min(1).max(300).transform(normalizeSafeText);
@@ -49,6 +50,14 @@ function validateSplitRelationship(
 export const transactionCreateSchema = transactionCreateFields.superRefine((value, context) => {
   validateSplitRelationship(value, context);
 
+  if (!isTransactionTypeCompatible(value.type, value.amountCents)) {
+    context.addIssue({
+      code: "custom",
+      path: ["type"],
+      message: "The amount and transaction direction do not agree.",
+    });
+  }
+
   if (value.source === "IMPORTED" && !value.importBatchId) {
     context.addIssue({ code: "custom", path: ["importBatchId"], message: "Imported transactions require an import batch." });
   }
@@ -76,7 +85,17 @@ export const transactionUpdateSchema = z.object({
   duplicateKey: z.string().trim().max(160).nullable().optional(),
   reviewedAt: z.coerce.date().nullable().optional(),
   deletedAt: z.coerce.date().nullable().optional(),
-}).strict().superRefine(validateSplitRelationship);
+}).strict().superRefine((value, context) => {
+  validateSplitRelationship(value, context);
+  if (value.type !== undefined && value.amountCents !== undefined
+    && !isTransactionTypeCompatible(value.type, value.amountCents)) {
+    context.addIssue({
+      code: "custom",
+      path: ["type"],
+      message: "The amount and transaction direction do not agree.",
+    });
+  }
+});
 
 export const transactionTotalsFilter = {
   deletedAt: null,
