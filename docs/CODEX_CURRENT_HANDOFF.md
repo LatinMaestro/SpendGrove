@@ -418,3 +418,61 @@ Known limitations:
 - the whole-month chart intentionally ignores list search text;
 - colours are assigned by monthly rank and may differ between months;
 - signed-in populated-data visual and assistive-technology review remains in the consolidated client checklist.
+
+
+## Phase 4 Milestone 4 chart correctness hardening (14 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+Delivery:
+
+- PR #142 / 4.30 documented the eligibility/source-of-truth audit, merge `6c2f9019d1476fe86a127d1ffd698e5bd3a68d7f`;
+- PR #143 / 4.31 implemented the focused correction and regressions, merge `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`;
+- PR 4.32 records final QA, handoff and deferred testing.
+
+Confirmed root cause:
+
+- the recorded `+$2,500.00` row could appear in the deployed Needs review drilldown only because its API type was `EXPENSE`;
+- import review can pair a positive signed amount with the expense-typed Needs review category because commit derives type from the reviewed category while preserving the source sign;
+- chart and everyday-insight eligibility checked `EXPENSE` but did not also require a negative money-out sign, then used the absolute amount.
+
+Correction:
+
+- one canonical helper now requires an owned, active, non-parent `EXPENSE` with a strictly negative integer-cent amount and valid date;
+- monthly chart aggregation and Home/category/budget insights reuse the helper;
+- each chart category carries only its owned eligible transaction IDs, and category drilldown uses that exact set;
+- Needs review now means only an otherwise eligible expense without a usable active category;
+- income, incoming/outgoing transfers, analytical loan records, positive/zero expense anomalies, split parents, inactive/deleted and cross-user rows are excluded;
+- percentages show `0%` for exact zero and `<0.1%` for positive values below 0.1%;
+- real category colours are deterministic from safe category keys; Needs review and Other have stable fixed colours.
+
+Affected existing views:
+
+- the defect could inflate Home monthly spending, category comparisons and category-budget progress as well as the chart;
+- those views now share the sign-safe guard;
+- recurring thresholds, import semantics, transaction storage, Property/Loan/reporting rules and cashflow ownership did not change.
+
+Durable-data limitation:
+
+- no record was rewritten or backfilled;
+- the existing positive `EXPENSE` remains durably misclassified until corrected through the existing transaction edit flow, but it is no longer eligible for spending totals;
+- broad import type/category redesign remains outside this hardening.
+
+Evidence:
+
+- 99 test files / 612 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- implementation Preview `dpl_AgLcw4d35Z2WNU9yiGGLmZ7UEpCP` is Ready at commit `eb1aca3dc3f4b23e11e2a9e6618c6a94fb0c759b`;
+- merged-main deployment `dpl_Asvt3s72xB9grd9VSuyPWAk5fmst` is Ready at `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`;
+- public `https://spendgrove.vercel.app/transactions` returned HTTP 200;
+- Preview browser check found no console errors and no horizontal overflow at 390 px.
+
+The connected browser had no signed-in data session. The populated July visual check, including confirmation of the corrected total in the client's dataset, remains in deferred client testing. Code-path and regression evidence confirms that a `+250000` positive expense anomaly cannot enter the aggregate or Needs review drilldown.
+
+Safety:
+
+- no Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, secret or environment change;
+- no Preview or Production migration ran;
+- no Production database or secret was accessed;
+- no signed-money, refund, split, transfer, budget-formula, import, Property, Loan, report/export or navigation rule changed;
+- no raw narration, filename, merchant/source text, account reference, banking identifier, exact address or private import metadata is exposed.
