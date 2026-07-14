@@ -256,3 +256,24 @@ Stop and request approval if delivery requires:
 ## Completion gate
 
 After PR 4.29, Phase 4 Milestones 1-4 remain open pending consolidated client acceptance. No milestone is accepted or closed, and no later milestone begins.
+
+
+## Client-review correctness hardening addendum (14 July 2026)
+
+The focused audit is recorded in `docs/PHASE_4_MILESTONE_4_CHART_CORRECTNESS_AUDIT.md`.
+
+The client recording proved that an inconsistent positive `EXPENSE` record could enter the chart because the original implementation checked transaction type but did not enforce the signed money-out boundary. The approved correction is to share one canonical eligibility predicate across monthly category spending and everyday insights:
+
+- owned, active and not deleted;
+- type `EXPENSE`;
+- strictly negative integer-cent amount;
+- not a counted split parent;
+- valid date and selected month where applicable.
+
+`Needs review` is restricted to otherwise eligible everyday expenses without a usable active category. Positive incoming records, transfers and other ineligible records cannot enter that fallback.
+
+Donut, legend, full breakdown and category drilldown must use the same eligible record set. Search remains list-only.
+
+This addendum does not change signed-money conventions, transfer/refund treatment, transaction storage, import behaviour, categories, split rules, budget formulas, schema, migrations or dependencies. Existing inconsistent durable records are not rewritten or backfilled and remain user-correctable through the existing transaction flow.
+
+Presentation may format positive values below 0.1% as `<0.1%` and assign deterministic non-persisted colours from safe category keys, with fixed colours for `Needs review` and `Other`.
