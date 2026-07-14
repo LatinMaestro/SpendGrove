@@ -768,3 +768,22 @@ Status: audit complete; implementation blocked pending client approval. Phase 4 
 Controlling audit: `docs/PHASE_4_MILESTONE_4_TRANSACTION_SIGN_TYPE_AUDIT.md`.
 
 Mandatory gate: do not begin implementation while any listed edge rule is ambiguous. Do not rewrite existing records automatically, run a migration, access Production or close any Phase 4 milestone.
+
+## Phase 4 Milestone 4 transaction sign/type integrity hardening (completed 14 July 2026)
+
+Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- [x] PR #145 / 4.33 audited every approved transaction write path and froze the edge-case contract; merge `53fadcbab4a009bbaec85e46f06f3a56602fc8f5`.
+- [x] Client approved zero-value rejection, positive-refund Money in treatment, negative-adjustment Money out treatment, signed transfers and same-direction splits.
+- [x] PR #146 / 4.34 added shared transfer/sign/category precedence, direction-compatible category and suggestion handling, Import/Merge validation, manual create/edit validation, split validation and contextual anomaly guidance; merge `78574362f07781a1181766a5ae68f663ee02d03f`.
+- [x] PR 4.35 records QA and consolidated deferred client testing.
+- [x] 101 test files / 633 tests, TypeScript validity, Next.js lint and optimized production build passed.
+- [x] Final Preview `dpl_NgKKnxdaY1zKgwUaNyDSD66ALfBY` is Ready and its public Transactions route passed desktop and 390 px smoke checks.
+
+Canonical direction order: confirmed transfer treatment, then signed integer cents, then compatible categorisation. Zero amounts and mixed-direction split children are rejected. Categories, learned merchant rules, keyword suggestions and Needs review cannot reverse direction.
+
+No historical record was rewritten. Existing anomalies stay visible and user-correctable while remaining excluded from calculations.
+
+No schema, migration, data rewrite/backfill, manual SQL, package/lockfile, provider, secret, environment, duplicate-scoring, financial-formula, Property, Loan, report/export or navigation change occurred. No Preview or Production migration ran and Production data was not accessed.
+
+Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.

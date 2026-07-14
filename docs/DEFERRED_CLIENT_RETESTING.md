@@ -605,3 +605,26 @@ Use the client's existing July review dataset or equivalent owned synthetic reco
 12. Edit the existing inconsistent transaction through the normal transaction correction flow and confirm no automatic data rewrite or duplicate transaction occurs.
 
 Technical verification already proves a `+250000` positive `EXPENSE` anomaly is excluded from aggregate and drilldown. The connected verification browser was signed out, so populated July visual confirmation remains a client test rather than a claimed technical observation.
+
+## Phase 4 Milestone 4 - Transaction sign/type integrity
+
+Use owned synthetic data and the existing known anomaly only through the normal UI.
+
+1. Confirm a positive imported ordinary transaction cannot become an expense through category selection.
+2. Confirm a negative imported ordinary transaction cannot become income through category selection.
+3. Confirm a positive Needs review transaction displays as Money in.
+4. Confirm a negative Needs review transaction displays as Money out.
+5. Confirm incoming and outgoing transfer direction remains correct and transfers remain excluded from spending.
+6. Confirm learned merchant and keyword suggestions apply only when compatible with direction.
+7. Confirm manual Money in, Money out and Transfer create/edit flows enforce compatible direction and category.
+8. Open an existing inconsistent transaction and confirm contextual Needs correction guidance appears without a global warning.
+9. Correct that transaction through Edit and confirm the appropriate chart, comparison or budget eligibility updates.
+10. Confirm no historical transaction was automatically changed or duplicated.
+11. Recheck the monthly chart, Home comparison and budget progress for sign-safe totals.
+12. Confirm the minimalist Transactions and CSV review layout remains intact on desktop and mobile.
+13. Confirm zero-value transactions and zero-value split children are rejected with plain wording.
+14. Confirm mixed-direction split children are rejected and valid same-direction children still reconcile exactly.
+15. Confirm positive refunds remain Money in and do not reduce expense-budget progress.
+16. Confirm negative income adjustments are presented as Money out under the current model and require a compatible money-out category.
+
+Technical evidence: 101 test files / 633 tests, TypeScript, lint and optimized build passed. Preview `dpl_NgKKnxdaY1zKgwUaNyDSD66ALfBY` is Ready. The connected browser verification was signed out, so populated durable-record correction and post-correction calculation checks remain deferred client tests.

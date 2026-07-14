@@ -491,3 +491,64 @@ Status: documentation-only audit complete; implementation stopped at a mandatory
 - No implementation, schema, migration, data rewrite/backfill, manual SQL, package/provider/secret/environment, deployment or Production database work occurred.
 
 Exact next action: obtain the client's financial-rule decision. Do not implement, deploy, close a Phase 4 milestone or begin another milestone before approval.
+
+## Phase 4 Milestone 4 transaction sign/type integrity implementation (14 July 2026)
+
+Status: implemented, merged, deployed to a green Preview and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+Delivery:
+
+- PR #145 / 4.33 audit contract: `53fadcbab4a009bbaec85e46f06f3a56602fc8f5`.
+- PR #146 / 4.34 implementation: merge `78574362f07781a1181766a5ae68f663ee02d03f`.
+- PR 4.35 records this QA and deferred-client package.
+
+Canonical invariant:
+
+1. confirmed transfer treatment takes precedence;
+2. otherwise signed integer cents determine Money in or Money out;
+3. category compatibility and categorisation follow direction and cannot reverse it.
+
+Zero values are rejected. Positive non-transfer records are `INCOME`; negative non-transfer records are `EXPENSE`; confirmed positive and negative transfers remain `TRANSFER`. Needs review is a review state, not a financial direction. Category choices, learned merchant rules and keyword suggestions are applied only when direction-compatible.
+
+Write paths hardened:
+
+- CSV review and commit re-derive direction server-side from transfer treatment and signed cents;
+- Import preserves the source sign and stores a compatible type;
+- Skip remains non-writing;
+- Merge revalidates the existing target without rewriting its direction;
+- manual create/edit use the shared invariant;
+- transaction request validation rejects incompatible payloads;
+- split children must be non-zero, same-sign, type-compatible and sum exactly to the parent;
+- Property linking and loan reconciliation remain direction-neutral.
+
+Edge rules:
+
+- positive refunds remain Money in and do not reduce expense totals or budget progress;
+- negative income adjustments are Money out under the current model and may affect spending until the user chooses an appropriate money-out category;
+- incoming and outgoing transfers remain excluded from spending and existing transfer-excluded income totals;
+- mixed-direction splits are unsupported.
+
+Existing anomalies:
+
+- no historical record was changed;
+- the known positive `EXPENSE` remains visible, excluded from calculations by the existing sign-safe guard and correctable through Edit transaction;
+- only an affected row/detail shows `Needs correction`; healthy rows have no warning.
+
+Evidence:
+
+- 101 test files / 633 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- final Preview `dpl_NgKKnxdaY1zKgwUaNyDSD66ALfBY` is Ready at `ec7f5fd88b8af4ff1e4b6a18a1cbab35a8940d04`;
+- public Preview `/transactions` loaded with no console errors and no horizontal overflow at 390 px;
+- the connected verification session was signed out, so populated-data correction remains in deferred client testing.
+
+Safety:
+
+- no Prisma schema or migration file changed;
+- no Preview or Production migration ran;
+- no backfill, data rewrite, manual SQL or Production database access occurred;
+- no package, lockfile, provider, secret or environment change occurred;
+- no duplicate scoring, Import/Skip/Merge semantics, transfer thresholds, refund formula, budget formula, spending formula, Property/Loan/reporting or navigation rules changed;
+- no raw CSV row, narration, filename, amount, account reference or banking identifier is added to audit metadata or logs.
+
+Next action: stop for consolidated client acceptance. Do not formally close Phase 4 Milestones 1-4 or begin another milestone.
