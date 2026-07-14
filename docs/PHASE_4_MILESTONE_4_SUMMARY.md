@@ -192,5 +192,93 @@ No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, 
 - search intentionally does not change the whole-month chart;
 - existing refund treatment is unchanged;
 - percentage display rounding may not total exactly 100%, while currency remains authoritative;
-- rank-based colours may change between months;
+- category colours are deterministic but palette collisions remain possible when many categories are present;
 - populated signed-in visual and assistive-technology review remains pending client acceptance.
+
+
+## Chart correctness client-review hardening
+
+Status: implemented, merged, deployed and technically verified on 14 July 2026; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+### Delivery
+
+- PR #142 / 4.30 eligibility and source-of-truth audit: `6c2f9019d1476fe86a127d1ffd698e5bd3a68d7f`.
+- PR #143 / 4.31 focused implementation and regression tests: `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`.
+- PR 4.32 QA, handoff and deferred-testing package.
+
+### Root cause and record state
+
+The deployed Needs review drilldown accepted only `EXPENSE` records. Because the client's positive `+$2,500.00` row appeared there, the API record was an `EXPENSE` with a positive signed amount rather than a correctly typed income or transfer.
+
+Import review can produce that inconsistent pairing when no safe category suggestion exists: the seeded Needs review category supplies type `EXPENSE`, while commit preserves the positive source amount. Existing chart and everyday-insight helpers checked type and then summed absolute values without also requiring the negative money-out sign.
+
+No Production database was queried. The connected database project exposed only a branch named production, so the audit used repository and deployed predicate evidence without accessing Production data or private source text.
+
+### Exact correction
+
+One canonical pure eligibility helper now requires:
+
+- authenticated owner;
+- active and not deleted;
+- type `EXPENSE`;
+- strictly negative integer-cent amount;
+- not a counted split parent;
+- valid date and selected month where applicable.
+
+The Transactions chart and everyday insights reuse this helper. Each category aggregate also contains its owned eligible transaction IDs, and the category drilldown filters by that exact set. Donut, legend, breakdown and drilldown therefore share one record set.
+
+Needs review means only an otherwise eligible expense without a usable active category. Income, incoming/outgoing transfers, positive/zero expense anomalies, analytical LoanRepayment records, split parents, inactive/deleted and cross-user records are excluded.
+
+### Other affected totals
+
+The same type-only defect existed in the everyday-insight helper. It could inflate:
+
+- Home current/previous monthly spending;
+- Home category comparisons;
+- category-budget progress when an affected category had an active budget.
+
+Those views now use the same sign-safe guard. The approved budget formula, refund treatment and comparison periods did not change.
+
+### Durable-data outcome
+
+No record was rewritten, backfilled or automatically reclassified. The existing positive `EXPENSE` remains incorrectly classified until the user edits it through the normal transaction correction flow, but it is excluded from spending totals and chart drilldowns.
+
+The import category/type model was not redesigned. Broad bank-format import classification remains outside this hardening and requires a separate approved contract if pursued.
+
+### Presentation
+
+- exact zero percentage: `0%`;
+- positive percentage below 0.1%: `<0.1%`;
+- other percentages: restrained one-decimal rounding with trailing `.0` removed;
+- real category colours: deterministic safe-key palette selection;
+- Needs review: fixed amber;
+- Other: fixed neutral slate.
+
+Colours are not persisted, category records are unchanged and no dependency was added.
+
+### Verification
+
+- 99 test files / 612 tests passed;
+- TypeScript validity and Next.js lint passed;
+- optimized production build passed;
+- implementation Preview `dpl_AgLcw4d35Z2WNU9yiGGLmZ7UEpCP` Ready at `eb1aca3dc3f4b23e11e2a9e6618c6a94fb0c759b`;
+- merged-main `dpl_Asvt3s72xB9grd9VSuyPWAk5fmst` Ready at `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`;
+- public `https://spendgrove.vercel.app/transactions` HTTP 200;
+- Preview had no browser console errors and no horizontal overflow at a verified 390 px viewport.
+
+The first real build found one stale source assertion after the eligibility logic moved into the shared helper. Only that assertion was corrected; the exact follow-up head then passed all checks.
+
+The connected browser had no authenticated data session. Populated July confirmation is therefore deferred. Tests prove that a `+250000` positive expense anomaly cannot enter spending or Needs review, but this summary does not claim an observed corrected client total.
+
+### Safety and unchanged boundaries
+
+No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, secret or environment change. No Preview or Production migration. No Production data access. No signed-money convention, refund, transfer, split, category, budget formula, import semantics, recurring, Property, Loan, report/export or navigation rule changed. No raw CSV/source narration, filename, merchant/source text, account reference, banking identifier, exact address or private import metadata is exposed.
+
+### Remaining limitations
+
+- the durable inconsistent record still needs ordinary user correction;
+- broad import type/category modeling is unchanged;
+- income-style refund treatment is unchanged;
+- search intentionally remains list-only;
+- deterministic palette hashing can assign the same colour to different categories when many categories exist;
+- signed-in populated-data and assistive-technology review remain pending client acceptance.
