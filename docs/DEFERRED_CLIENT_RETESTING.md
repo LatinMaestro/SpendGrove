@@ -8,7 +8,7 @@ Last updated: 14 July 2026
 
 The client is temporarily away from the Vercel review environment. Client testing is deferred, not rejected and not accepted.
 
-This document collects every non-technical test that remains pending. Phase 4 Milestone 1 is implemented, merged, deployed and technically verified but remains open. Later Phase 4 work must keep these features visible and testable.
+This document collects every non-technical test that remains pending. Phase 4 Milestones 1-4 are implemented, merged, deployed and technically verified but remain open. All completed features must remain visible and testable.
 
 Use synthetic or clearly non-private data. Do not upload or display real account identifiers, private narration or secrets.
 
@@ -431,6 +431,123 @@ Delivery evidence:
 - [ ] Compact cards wrap on narrow mobile screens without horizontal scrolling.
 - [ ] No repeated technical explanation, internal confidence term or private source data is shown.
 - [ ] No financial calculation, recurring threshold, budget formula, reconciliation rule, report/export rule or navigation changed.
+
+## Phase 4 Milestone 4 - Beginner-First Full UI Overhaul
+
+Status: implemented, merged, deployed and technically verified; pending deferred client retesting.
+
+Review URL: https://spendgrove.vercel.app
+
+Delivery evidence:
+
+- PR #133: `2e6b194da5a20a1c7c66056f91801d4bbb905e03`;
+- PR #134: `7896f28e6a7b954d5108b00127888ced4c58cdc0`;
+- PR #135: `6c8822f7cfbdc1ed222d12ab7b96ba7022a94771`;
+- PR #136: `41523ac25089e74778cf25eb17e195a0dc6caffa`;
+- PR #137: `df6e6ef20046fe8dccb409178a3076cf28b87eea`;
+- 95 test files / 587 tests, TypeScript, lint and optimized build passed;
+- main deployment `dpl_2QKHYxtx8dNBW7VacD4eTGbirpTn` Ready.
+
+### App shell and navigation
+
+- [ ] The SpendGrove logo is clear and correctly proportioned.
+- [ ] Desktop shows a calm left sidebar without wasting the main content area.
+- [ ] Mobile shows a compact header and bottom navigation.
+- [ ] Primary navigation contains exactly Home, Transactions, Loans, Import and Settings.
+- [ ] Budgets and Regular payments remain easy to reach from Home without becoming extra primary tabs.
+- [ ] The current destination is obvious.
+- [ ] Browser zoom, keyboard focus and the Skip to content link remain usable.
+- [ ] No page has horizontal scrolling at a narrow phone width.
+- [ ] Important touch controls are comfortable to tap.
+- [ ] The visual system feels consistent, light and calm rather than card-heavy.
+
+### Home and onboarding
+
+- [ ] Home makes Import transactions the obvious next action.
+- [ ] The current month is understandable without finance terminology.
+- [ ] Budget and regular-payment summaries are compact and useful.
+- [ ] Empty sections do not clutter Home.
+- [ ] Add transaction remains available as a secondary action.
+- [ ] Onboarding explains CSV-first privacy in plain language.
+- [ ] Completing or dismissing onboarding does not hide essential features.
+
+### Transactions
+
+- [ ] Transactions open one month at a time.
+- [ ] Previous and next month controls are clear and accessible.
+- [ ] Search applies to the selected month.
+- [ ] Rows prioritise date, safe description/category and amount.
+- [ ] Opening one transaction provides its secondary actions without expanding every row.
+- [ ] Edit, Property link, split, duplicate and recoverable Delete remain reachable where applicable.
+- [ ] Long descriptions and category names wrap or truncate cleanly.
+- [ ] Transaction values, categories, split behaviour and cashflow totals are unchanged.
+
+### CSV Import
+
+- [ ] The flow clearly reads Choose file, Confirm columns, Review and Import.
+- [ ] A confidently mapped file does not show unnecessary mapping controls.
+- [ ] More column options remains available when needed.
+- [ ] Import, Skip and Merge decisions are easy to distinguish.
+- [ ] Category search and Property linking remain available only when relevant.
+- [ ] Duplicate warnings remain visible when action is required.
+- [ ] The import summary remains visible near the final action on mobile.
+- [ ] Pressing Import repeatedly cannot create duplicate submissions.
+- [ ] Raw filenames, rows, narration and private bank identifiers are not exposed or stored.
+
+### Budgets
+
+- [ ] Budgets opens as a focused subordinate Home workflow.
+- [ ] Add budget is the obvious primary action.
+- [ ] The create form stays hidden until Add budget is selected.
+- [ ] Active budgets clearly show used and remaining amounts.
+- [ ] Edit and Delete are secondary but discoverable.
+- [ ] Deleted budgets and Restore remain available without cluttering active budgets.
+- [ ] Monthly-only, no-rollover and existing spending calculations are unchanged.
+
+### Regular payments
+
+- [ ] Regular payments opens as a focused subordinate Home workflow.
+- [ ] Suggestions appear before confirmed regular payments.
+- [ ] Suggestion cards are compact until Edit details is selected.
+- [ ] Confirm and Dismiss remain obvious.
+- [ ] Only one suggestion or confirmed-item editor opens at a time.
+- [ ] Why was this suggested remains available without repeating long explanations.
+- [ ] Deleted regular payments and dismissed suggestions remain recoverable.
+- [ ] Confirmation remains required and no payment is moved or scheduled.
+
+### Loans and Property records
+
+- [ ] The Loans overview has a calm heading, compact cards and one View loan action per Loan.
+- [ ] Add loan is primary and Import repayments is secondary.
+- [ ] A selected Loan shows Back to loans, Loan repayments first and Property transactions second when applicable.
+- [ ] Healthy repayments do not show repetitive status labels.
+- [ ] Needs review remains obvious and actionable.
+- [ ] Repayment details, matching, correction, unlink, Delete and Restore remain reachable.
+- [ ] A non-Property Loan shows no empty Property section.
+- [ ] Property report/export remains available as a secondary workflow.
+- [ ] Deleted Loan recovery and privacy guidance remain accessible without dominating the page.
+- [ ] No repayment, everyday transaction or Property record appears twice.
+
+### Settings
+
+- [ ] Settings is organised into Preferences, Australian defaults and Data and privacy.
+- [ ] Simple Mode remains on by default.
+- [ ] The analytics preference remains understandable.
+- [ ] Currency, date and financial-year defaults are easy to inspect.
+- [ ] The privacy introduction remains reachable.
+- [ ] Import history, recovery and development-only tools remain secondary and appear only where allowed.
+- [ ] Unavailable or future features do not appear as distracting controls.
+
+### Cross-app safety and accessibility
+
+- [ ] Every page has one obvious title and next action.
+- [ ] Loading, empty, success and error states are concise and understandable.
+- [ ] Keyboard focus is visible on changed controls.
+- [ ] Dialogs and disclosures can be opened and closed without a mouse.
+- [ ] Screen-reader labels explain icon controls.
+- [ ] No private CSV/source value appears in UI errors or help text.
+- [ ] No financial calculation, recurring threshold, Budget formula, import decision, matching rule, Property-link rule or report/export value changed.
+- [ ] No Basiq, AI, payment, tax-advice, net-worth, valuation or debt-advice feature appears.
 
 ## Future additions
 
