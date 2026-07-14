@@ -57,7 +57,9 @@ export function ReviewCategoryPicker({
     () => getCategoryCatalogueSections(customCategories, row.categoryId)
       .map((section) => ({
         ...section,
-        categories: section.categories.filter((category) => categoryTypeIsAllowed(category.type)),
+        categories: section.categories.filter((category) => directionType === null
+          || category.type === directionType
+          || (directionType !== "TRANSFER" && category.type === "TRANSFER")),
       }))
       .filter((section) => section.categories.length > 0),
     [customCategories, row.categoryId, directionType],
