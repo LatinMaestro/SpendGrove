@@ -374,3 +374,47 @@ Status: approved and in progress. Phase 4 Milestones 1-4 remain open pending con
 - PR 4.28 must reuse or extract that approved server-side rule and prove exact reconciliation; search remains list-only.
 - No schema, migration, data rewrite, package, provider, secret, environment or financial-rule change is required or authorised.
 - Approved sequence: PR 4.27 contract; PR 4.28 implementation/tests; PR 4.29 QA and deferred-testing evidence; then stop.
+
+## Phase 4 Milestone 4 monthly category-spending enhancement evidence
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+Delivery:
+
+- PR #139 / 4.27 froze the aggregation and presentation contract, merge `f858566fa38fb4755ae11985b09785d216cd72e5`;
+- PR #140 / 4.28 delivered the chart, breakdown, same-month category filter and regressions, merge `1e347102f9583b33c1b873a340c64c38c151e382`;
+- PR 4.29 records QA and deferred client testing.
+
+Implemented rules:
+
+- the server reuses the selected Brisbane month and approved active-owned everyday-expense eligibility;
+- split children are included; split parents, income, transfers, deleted/inactive/cross-user rows and analytical loan records are excluded;
+- integer-cent category totals reconcile exactly to the donut total and the existing everyday monthly-spending total;
+- five or fewer categories show directly; larger sets show the five largest plus exact presentation-only Other;
+- the full breakdown lists every real category and Needs review;
+- search remains list-only; category selection applies a removable filter to the same month.
+
+Evidence:
+
+- 97 test files / 597 tests passed;
+- TypeScript and Next.js lint validity passed;
+- optimized production build passed;
+- Preview `dpl_FEx2aJUeSRNp7nZAPsgCNXMrSffH` is Ready;
+- merged-main deployment `dpl_BV7bZ6LX8tth2iMs96q7QgGmKe3W` is Ready;
+- canonical `https://spendgrove.vercel.app/transactions` returned HTTP 200;
+- deployed shell checks at approximately 390, 768, 1024 and 1440 px found no horizontal overflow and no browser console errors.
+
+Safety:
+
+- no Prisma schema or migration file changed;
+- no Preview or Production migration ran;
+- no package or lockfile changed;
+- no financial, refund, split, transfer, category, budget, recurring, import, loan, Property or navigation rule changed;
+- no raw CSV/source narration, filename, banking identifier, exact address or private import metadata reaches the chart.
+
+Known limitations:
+
+- income-style refunds keep the existing monthly-spending treatment and are not newly netted;
+- the whole-month chart intentionally ignores list search text;
+- colours are assigned by monthly rank and may differ between months;
+- signed-in populated-data visual and assistive-technology review remains in the consolidated client checklist.

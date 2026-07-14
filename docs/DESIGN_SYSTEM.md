@@ -174,3 +174,15 @@ Primary destinations remain exactly Home, Transactions, Loans, Import and Settin
 ### Review widths
 
 Where connected visual access permits, verify approximately 390px, 768px, 1024px and 1440px with no horizontal overflow, obscured actions or stretched mobile navigation.
+
+## Monthly category-spending visual
+
+- Use a compact accessible SVG donut only for the selected Transactions month.
+- Keep the donut approximately 120-140 px on mobile and 140-160 px on larger screens.
+- Use one centre value: authoritative monthly spending, labelled `Spent`.
+- Use the ranked palette `#0F766E`, `#2563EB`, `#D97706`, `#7C3AED`, `#C2415B`, `#4F7C3A` and `#64748B`; always pair colour with category text and amount.
+- Show all categories up to five. Above five, show the five largest plus presentation-only `Other`.
+- Full breakdowns list real categories, never a durable or synthetic `Other` record.
+- Long category names truncate visually but retain full accessible text.
+- Charts require an accessible title, concise description, readable legend and visible text action.
+- No decorative chart animation. Respect reduced motion and keep charts subordinate to the transaction task.

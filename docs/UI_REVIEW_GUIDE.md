@@ -77,3 +77,18 @@ Useful feedback examples:
 - “Show the duplicate warning more clearly.”
 
 The agent must translate plain-English feedback into implementation changes and summarise the changes in the next review package.
+
+## Transactions category chart
+
+Review signed-in Transactions with populated synthetic data:
+
+- chart month exactly matches the transaction month heading;
+- whole-month total does not change when list search text changes;
+- donut remains compact at 390, 768, 1024 and 1440 px;
+- legend has readable names and amounts and does not rely on colour;
+- more than five categories display five plus an exact Other;
+- View breakdown lists every real category;
+- selecting a category returns to the same month with a removable filter;
+- no-expense and one-category months remain understandable;
+- long names do not create horizontal overflow;
+- keyboard focus and screen-reader title/description are usable.
