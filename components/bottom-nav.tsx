@@ -5,15 +5,16 @@ import { FileUp, Home, Landmark, Settings, WalletCards } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export const navItems = [
-  { href: "/", label: "Home", icon: Home },
-  { href: "/transactions", label: "Transactions", icon: WalletCards },
-  { href: "/loans", label: "Loans", icon: Landmark },
-  { href: "/import", label: "Import", icon: FileUp },
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/", label: "Home", icon: Home, activePaths: ["/budgets", "/regular-payments"] },
+  { href: "/transactions", label: "Transactions", icon: WalletCards, activePaths: [] },
+  { href: "/loans", label: "Loans", icon: Landmark, activePaths: [] },
+  { href: "/import", label: "Import", icon: FileUp, activePaths: [] },
+  { href: "/settings", label: "Settings", icon: Settings, activePaths: [] },
 ] as const;
 
-function isCurrentPath(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+function isCurrentPath(pathname: string, item: (typeof navItems)[number]) {
+  if (item.activePaths.some((path) => pathname === path || pathname.startsWith(`${path}/`))) return true;
+  return item.href === "/" ? pathname === "/" : pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
 
 export function BottomNav() {
@@ -27,7 +28,7 @@ export function BottomNav() {
       <div className="mx-auto grid max-w-lg grid-cols-5">
         {navItems.map((item) => {
           const Icon = item.icon;
-          const active = isCurrentPath(pathname, item.href);
+          const active = isCurrentPath(pathname, item);
 
           return (
             <Link
@@ -56,7 +57,7 @@ export function DesktopNav() {
     <nav aria-label="Primary" className="mt-6 flex flex-1 flex-col gap-1">
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = isCurrentPath(pathname, item.href);
+        const active = isCurrentPath(pathname, item);
 
         return (
           <Link
