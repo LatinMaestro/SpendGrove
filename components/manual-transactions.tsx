@@ -266,7 +266,7 @@ export function ManualTransactions() {
   function openDuplicate(transaction: ManualTransaction) {
     setDetailId(null);
     setEditorError("");
-    setEditor({ mode: "duplicate", draft: duplicateManualTransactionToDraft(transaction) });
+    setEditor({ mode: "duplicate", draft: draftForDirectionCorrection(transaction) });
   }
 
   function saveEditor() {
