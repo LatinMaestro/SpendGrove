@@ -39,6 +39,7 @@ describe("canonical everyday spending eligibility", () => {
     ["deleted", { status: "DELETED", deletedAt: "2026-07-11T00:00:00.000Z" }],
     ["other owner", { userId: "user_2" }],
     ["other month", { date: "2026-08-01T00:00:00.000Z" }],
+    ["invalid date", { date: "not-a-date" }],
   ])("excludes %s", (_label, overrides) => {
     expect(isEligibleEverydayExpense("user_1", expense(overrides), july)).toBe(false);
   });
