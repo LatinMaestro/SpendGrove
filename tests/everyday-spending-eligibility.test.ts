@@ -1,12 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { isEligibleEverydayExpense } from "@/lib/everyday-spending-eligibility";
+import {
+  isEligibleEverydayExpense,
+  type EverydayExpenseEligibilityRecord,
+} from "@/lib/everyday-spending-eligibility";
 
 const july = {
   dateFrom: new Date("2026-07-01T00:00:00.000Z"),
   dateTo: new Date("2026-08-01T00:00:00.000Z"),
 };
 
-function expense(overrides: Record<string, unknown> = {}) {
+function expense(overrides: Partial<EverydayExpenseEligibilityRecord> = {}): EverydayExpenseEligibilityRecord {
   return {
     userId: "user_1",
     type: "EXPENSE",
