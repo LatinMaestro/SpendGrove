@@ -32,6 +32,7 @@ describe("transaction direction user experience", () => {
       expect(transactionUi).toContain("This transaction needs correction");
       expect(transactionUi).toContain("The amount and transaction direction do not agree.");
       expect(transactionUi).toContain("Review transaction");
+      expect(transactionUi).toContain('mode: "duplicate", draft: draftForDirectionCorrection(transaction)');
       expect(transactionUi).not.toContain("global direction warning");
     }
   });
