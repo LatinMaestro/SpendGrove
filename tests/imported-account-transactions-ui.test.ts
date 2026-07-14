@@ -4,9 +4,10 @@ import { describe, expect, it } from "vitest";
 async function source(path: string) { return readFile(new URL(`../${path}`, import.meta.url), "utf8"); }
 
 describe("imported account transactions UI", () => {
-  it("shows manual and imported transactions together with a clear source label", async () => {
+  it("shows manual and imported transactions together in compact rows with source in details", async () => {
     const component = await source("components/durable-manual-transactions.tsx");
-    expect(component).toContain("Manual and imported transactions are shown together");
+    expect(component).toContain("filteredTransactions.map");
+    expect(component).toContain('title="Transaction details"');
     expect(component).toContain('transaction.source === "IMPORTED" ? "Imported" : "Manual"');
     expect(component).toContain("Move to another month, add a transaction or import a reviewed CSV.");
   });
@@ -15,9 +16,9 @@ describe("imported account transactions UI", () => {
     const component = await source("components/durable-manual-transactions.tsx");
     expect(component).toContain("updateAccountTransaction");
     expect(component).toContain("deleteAccountTransaction");
-    expect(component).toContain("Import history is kept");
+    expect(component).toContain("kept recoverable");
     expect(component).toContain("Edit");
-    expect(component).toContain("Delete from active list");
+    expect(component).toContain("Delete transaction");
   });
 
   it("lets manual transaction create and edit choose a neutral Property record link", async () => {
