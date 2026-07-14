@@ -310,18 +310,11 @@ function DurableManualTransactionsExperience() {
   useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
-  const validSpendingCategoryIds = useMemo(
-    () => new Set(categorySpending?.categories.flatMap((category) => category.categoryId ? [category.categoryId] : []) ?? []),
-    [categorySpending],
-  );
   const categoryFilteredTransactions = useMemo(() => {
     if (!categoryFilter) return activeTransactions;
-    return activeTransactions.filter((transaction) => {
-      if (transaction.type !== "EXPENSE") return false;
-      if (categoryFilter.categoryId) return transaction.categoryId === categoryFilter.categoryId;
-      return !validSpendingCategoryIds.has(transaction.categoryId);
-    });
-  }, [activeTransactions, categoryFilter, validSpendingCategoryIds]);
+    const eligibleTransactionIds = new Set(categoryFilter.transactionIds);
+    return activeTransactions.filter((transaction) => eligibleTransactionIds.has(transaction.id));
+  }, [activeTransactions, categoryFilter]);
   const filteredTransactions = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("en-AU");
     if (!query) return categoryFilteredTransactions;
