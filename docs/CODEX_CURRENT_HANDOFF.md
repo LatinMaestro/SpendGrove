@@ -476,3 +476,18 @@ Safety:
 - no Production database or secret was accessed;
 - no signed-money, refund, split, transfer, budget-formula, import, Property, Loan, report/export or navigation rule changed;
 - no raw narration, filename, merchant/source text, account reference, banking identifier, exact address or private import metadata is exposed.
+
+## Phase 4 Milestone 4 transaction sign/type integrity gate (14 July 2026)
+
+Status: documentation-only audit complete; implementation stopped at a mandatory financial-rule decision gate. Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- The write-path audit is recorded in `docs/PHASE_4_MILESTONE_4_TRANSACTION_SIGN_TYPE_AUDIT.md`.
+- Confirmed defect: CSV Import preserves the signed row amount but currently derives durable transaction type from the reviewed category, so category can create a sign/type mismatch.
+- Manual create/edit already normalises income/expense signs and enforces category/type compatibility; imported anomalies can be corrected through the existing Edit transaction flow.
+- Skip creates no Transaction; Merge does not rewrite the existing target; Property linking and loan reconciliation do not alter amount/type/category.
+- Zero-value transactions are already rejected.
+- Repository truth does not fully define positive refunds, negative income adjustments, signed internal transfers or mixed-direction split children.
+- PR 4.34 implementation is blocked until the client explicitly approves those four proposed rules.
+- No implementation, schema, migration, data rewrite/backfill, manual SQL, package/provider/secret/environment, deployment or Production database work occurred.
+
+Exact next action: obtain the client's financial-rule decision. Do not implement, deploy, close a Phase 4 milestone or begin another milestone before approval.
