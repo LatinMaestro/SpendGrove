@@ -8,7 +8,7 @@ export function AuthControls({ clerkConfigured }: Readonly<{ clerkConfigured: bo
     return (
       <Link
         href="/sign-in"
-        className="rounded-full bg-brand-green/10 px-3 py-2 text-xs font-bold text-brand-deepTeal ring-1 ring-brand-green/20"
+        className="inline-flex min-h-11 items-center rounded-xl border border-border bg-surface-base px-3 text-xs font-bold text-brand-evergreen transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
       >
         Account setup
       </Link>
@@ -19,18 +19,26 @@ export function AuthControls({ clerkConfigured }: Readonly<{ clerkConfigured: bo
     <div className="flex items-center gap-2">
       <SignedOut>
         <SignInButton mode="modal">
-          <button className="rounded-full bg-white px-3 py-2 text-xs font-bold text-brand-deepTeal ring-1 ring-border" type="button">
+          <button
+            className="inline-flex min-h-11 items-center rounded-xl border border-border bg-surface-base px-3 text-xs font-bold text-brand-evergreen transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            type="button"
+          >
             Sign in
           </button>
         </SignInButton>
         <SignUpButton mode="modal">
-          <button className="rounded-full bg-brand-green px-3 py-2 text-xs font-bold text-white" type="button">
+          <button
+            className="inline-flex min-h-11 items-center rounded-xl bg-brand-evergreen px-3 text-xs font-bold text-white transition-colors hover:bg-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+            type="button"
+          >
             Sign up
           </button>
         </SignUpButton>
       </SignedOut>
       <SignedIn>
-        <UserButton afterSignOutUrl="/" />
+        <div className="flex min-h-11 min-w-11 items-center justify-center">
+          <UserButton afterSignOutUrl="/" />
+        </div>
       </SignedIn>
     </div>
   );

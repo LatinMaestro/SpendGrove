@@ -4,16 +4,20 @@
 
 :root {
   --font-sans: "Inter", "SF Pro Display", "Segoe UI", system-ui, sans-serif;
-  --background: 150 36% 98%;
-  --foreground: 190 62% 15%;
-  --border: 164 25% 84%;
-  --brand-deep-teal: 188 71% 16%;
-  --brand-green: 147 55% 42%;
-  --brand-teal: 176 55% 38%;
+  --background: 90 11% 97%;
+  --foreground: 180 39% 14%;
+  --muted: 170 9% 41%;
+  --border: 160 15% 88%;
+  --focus: 175 69% 29%;
+  --brand-deep-teal: 180 72% 17%;
+  --brand-green: 147 43% 50%;
+  --brand-teal: 176 56% 32%;
   --surface-base: 0 0% 100%;
-  --surface-mint: 150 56% 93%;
-  --warning-amber: 39 92% 56%;
-  --danger-red: 0 72% 52%;
+  --surface-subtle: 150 8% 95%;
+  --surface-mint: 150 38% 95%;
+  --warning-amber: 36 100% 35%;
+  --danger-red: 4 75% 40%;
+  --success-green: 146 55% 31%;
 }
 
 * {
@@ -23,16 +27,16 @@
 html {
   min-height: 100%;
   background: hsl(var(--background));
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100%;
   margin: 0;
   color: hsl(var(--foreground));
-  background:
-    radial-gradient(circle at top left, rgba(75, 194, 126, 0.16), transparent 34rem),
-    hsl(var(--background));
+  background: hsl(var(--background));
   font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -47,7 +51,40 @@ textarea {
   font: inherit;
 }
 
+button,
+a,
+input,
+select,
+textarea,
+summary {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid hsl(var(--focus) / 0.38);
+  outline-offset: 2px;
+}
+
 ::selection {
   color: white;
   background: hsl(var(--brand-teal));
+}
+
+.money-value {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

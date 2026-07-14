@@ -3,6 +3,9 @@ import { describe, expect, it } from "vitest";
 
 const componentPath = new URL("../components/category-budgets.tsx", import.meta.url);
 const homePath = new URL("../app/page.tsx", import.meta.url);
+const insightsPath = new URL("../components/everyday-insights.tsx", import.meta.url);
+const budgetPagePath = new URL("../app/budgets/page.tsx", import.meta.url);
+const navigationPath = new URL("../components/bottom-nav.tsx", import.meta.url);
 const routePath = new URL("../app/api/account/budgets/route.ts", import.meta.url);
 
 describe("category budget UI and API boundaries", () => {
@@ -26,16 +29,21 @@ describe("category budget UI and API boundaries", () => {
     expect(component).not.toMatch(/automatic budget|rollover|weekly budget|fortnightly budget|financial advice|tax deductible|claimable|ATO-ready|debt advice|credit advice|net worth|property profit|yield|equity|valuation|due soon|overdue|reminder/i);
   });
 
-  it("places budgets on Home without adding a navigation tab", async () => {
-    const [home, component] = await Promise.all([
+  it("keeps a compact budget preview on Home and the full manager in a subordinate view", async () => {
+    const [home, insights, budgetPage, navigation, component] = await Promise.all([
       readFile(homePath, "utf8"),
+      readFile(insightsPath, "utf8"),
+      readFile(budgetPagePath, "utf8"),
+      readFile(navigationPath, "utf8"),
       readFile(componentPath, "utf8"),
     ]);
 
-    expect(home).toContain("<CategoryBudgets");
-    expect(home).toContain("accountPersistenceAvailable");
+    expect(home).toContain("<EverydayInsights");
+    expect(insights).toContain("snapshot.budgets.slice(0, 3)");
+    expect(insights).toContain('href="/budgets"');
+    expect(budgetPage).toContain("<CategoryBudgets");
     expect(component).toContain('fetch("/api/account/budgets"');
-    expect(home).not.toContain('href="/budgets"');
+    expect(navigation).not.toContain('label: "Budgets"');
   });
 
   it("keeps the budget API authenticated with safe errors", async () => {
