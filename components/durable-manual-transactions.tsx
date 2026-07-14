@@ -363,7 +363,7 @@ function DurableManualTransactionsExperience() {
       });
     });
   }
-  function openDuplicate(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "duplicate", draft: duplicateManualTransactionToDraft(transaction as ManualTransaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
+  function openDuplicate(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "duplicate", draft: draftForDirectionCorrection(transaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
 
   async function saveEditor() {
     if (!editor || isSaving) return;
