@@ -734,3 +734,21 @@ Status: implemented, merged, deployed and technically verified; Phase 4 Mileston
 No schema, migration, package, provider, secret, environment, data rewrite, financial formula, import, budget, recurring, loan, Property, report/export or navigation change occurred. No Preview or Production migration ran.
 
 Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+
+
+## Phase 4 Milestone 4 chart correctness hardening (completed 14 July 2026)
+
+Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- [x] PR #142 / 4.30 audited the positive incoming record, import type/category path, chart, Home, category-comparison and budget impact; merge `6c2f9019d1476fe86a127d1ffd698e5bd3a68d7f`.
+- [x] PR #143 / 4.31 introduced one sign-safe everyday-expense eligibility helper, exact aggregate/drilldown record parity, small-percentage formatting, deterministic colours and focused regressions; merge `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`.
+- [x] PR 4.32 recorded QA, handoff and consolidated deferred testing.
+- [x] 99 test files / 612 tests, TypeScript validity, Next.js lint and optimized build passed.
+- [x] Preview `dpl_AgLcw4d35Z2WNU9yiGGLmZ7UEpCP` and main `dpl_Asvt3s72xB9grd9VSuyPWAk5fmst` are Ready.
+- [x] Public `/transactions` returned HTTP 200; Preview console and 390 px overflow checks passed.
+
+Canonical spending eligibility now requires a strictly negative signed `EXPENSE` in addition to the existing owner, active, split and date rules. This corrects an implementation defect without changing signed-money, refund, transfer, split, budget or import rules.
+
+No schema, migration, data rewrite/backfill, historical reclassification, package/provider/secret/environment, Property, Loan, report/export or navigation change occurred. The inconsistent existing positive `EXPENSE` record is not rewritten and remains user-correctable; it is excluded from spending.
+
+Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.

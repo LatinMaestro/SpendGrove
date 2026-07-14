@@ -584,4 +584,24 @@ Use owned synthetic transactions and review both desktop and mobile.
 14. Confirm no Property, tax, loan-balance, equity, valuation or net-worth statistics appear.
 15. Confirm existing transaction amounts, monthly spending, splits, transfers and refund treatment have not changed.
 
-Known review note: category colours follow monthly rank and can change between months. Currency amounts and category names are authoritative.
+Known review note: real categories now use deterministic non-persisted colours, while Needs review and Other use fixed colours. Currency amounts and category names remain authoritative.
+
+
+### Milestone 4 chart correctness hardening
+
+Use the client's existing July review dataset or equivalent owned synthetic records.
+
+1. Confirm incoming money is excluded from the monthly spending donut, legend and breakdown.
+2. Confirm both incoming and outgoing transfers are excluded from monthly spending.
+3. Confirm Needs review contains only otherwise eligible negative everyday expenses without a usable category.
+4. Open Needs review and confirm its displayed transactions add exactly to its chart value; the known `+$2,500.00` incoming row must not appear.
+5. Confirm the donut, legend, full breakdown and selected-category transaction filter reconcile for the same month.
+6. Confirm a positive category share below 0.1% displays `<0.1%`, while exact zero displays `0%`.
+7. Move between populated months and confirm each real category keeps an understandable consistent colour; Needs review and Other remain visually consistent.
+8. Type in transaction search and confirm the whole-month chart does not change.
+9. Confirm no narration, filename, account reference, banking identifier, exact address or other raw source information appears in chart or breakdown UI.
+10. Confirm Home monthly spending and category comparisons exclude the same positive incoming anomaly.
+11. If the anomaly's category has a budget, confirm it no longer inflates that budget's used amount.
+12. Edit the existing inconsistent transaction through the normal transaction correction flow and confirm no automatic data rewrite or duplicate transaction occurs.
+
+Technical verification already proves a `+250000` positive `EXPENSE` anomaly is excluded from aggregate and drilldown. The connected verification browser was signed out, so populated July visual confirmation remains a client test rather than a claimed technical observation.

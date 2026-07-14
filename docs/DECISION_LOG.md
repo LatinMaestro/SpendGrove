@@ -125,3 +125,27 @@ The client requested an immediate, beginner-friendly explanation of what makes u
 Boundaries:
 
 No new refund, split, transfer, category, budget, import, Property, loan or tax calculation; no schema/migration/package/provider/secret/environment change; no new primary navigation destination; no raw source data in chart presentation.
+
+
+## 2026-07-14 - Require sign-safe expense eligibility for everyday spending
+
+Decision:
+
+- An everyday record counts as spending only when it satisfies the existing ownership, active/deleted, split and date rules, has transaction type `EXPENSE`, and has a strictly negative integer-cent signed amount.
+- A positive or zero record typed `EXPENSE` is treated as an inconsistent record requiring user correction, not as spending.
+- `Needs review` is only an otherwise eligible expense without a usable active category.
+- Chart category drilldown uses the exact owned transaction IDs included in the server aggregate.
+- Home monthly spending, category comparisons and category-budget progress reuse the same canonical eligibility helper.
+- Existing inconsistent records are not rewritten or backfilled.
+
+Reason:
+
+Client recording showed a positive incoming transaction inside Needs review spending. Import review can preserve a positive source amount while the neutral fallback category supplies type `EXPENSE`; type-only eligibility followed by `abs()` therefore inflated spending. The sign guard enforces the existing money-out convention without changing transfer/refund treatment or import semantics.
+
+Approved by:
+
+Client-approved Phase 4 Milestone 4 correctness hardening; implemented by Codex within the audit contract.
+
+Implementation impact:
+
+One shared pure eligibility helper is authoritative for everyday spending; chart, breakdown and drilldown reconcile to one record set. Percentage copy uses `<0.1%` for positive sub-0.1% values, and category colours are deterministic without persistence. No schema, migration, rewrite/backfill, package/provider/secret/environment, signed-money, refund, transfer, split, category, import, Property, Loan, report/export or navigation change.
