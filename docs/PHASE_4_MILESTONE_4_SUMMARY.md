@@ -140,3 +140,57 @@ The existing Phase 4 Preview schema remains unchanged. No Production migration h
 The complete non-technical checklist for Phase 4 Milestones 1-4 is maintained in `docs/DEFERRED_CLIENT_RETESTING.md`.
 
 Do not formally accept or close any Phase 4 milestone until the client explicitly completes testing and records acceptance. Do not begin another milestone from this package.
+
+## Focused client-review enhancement - monthly category spending
+
+Status: implemented, merged, deployed and technically verified. Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+### Delivery
+
+- PR #139 / 4.27 contract and assessment: `f858566fa38fb4755ae11985b09785d216cd72e5`.
+- PR #140 / 4.28 implementation and regressions: `1e347102f9583b33c1b873a340c64c38c151e382`.
+- PR 4.29 QA and consolidated testing documentation.
+
+### User experience
+
+Transactions now places a compact selected-month category donut below the month/search toolbar and above the count/list. The centre shows one authoritative Spent total. The legend shows every category when there are five or fewer, otherwise the five largest plus exact presentation-only Other.
+
+View breakdown opens a focused subordinate Transactions view with every real category, amount, percentage and transaction count. Choosing a category returns to the same month with a removable filter. Search continues to affect only the list, not the whole-month chart.
+
+No-expense months show a concise empty state. Needs review spending remains visible. The SVG includes an accessible title/description and the legend provides a complete textual equivalent.
+
+### Financial source of truth
+
+The selected-month server query now produces safe aggregate values from the same approved expense eligibility used by everyday insights:
+
+- owned active everyday expenses only;
+- selected Brisbane calendar month;
+- split children included and split parents excluded;
+- income, transfers, analytical loan records, deleted/inactive and cross-user rows excluded;
+- absolute integer cents until display.
+
+Focused reconciliation tests prove the category sum and donut total equal the existing approved everyday monthly-spending total. Existing income-style refund treatment is unchanged.
+
+### Verification
+
+- 97 test files / 597 tests passed;
+- TypeScript and Next.js lint passed;
+- optimized production build passed;
+- Preview `dpl_FEx2aJUeSRNp7nZAPsgCNXMrSffH` Ready;
+- main `dpl_BV7bZ6LX8tth2iMs96q7QgGmKe3W` Ready;
+- canonical `/transactions` HTTP 200;
+- deployed responsive shell showed no horizontal overflow at approximately 390, 768, 1024 and 1440 px and no browser console errors.
+
+The connected browser had no signed-in data session, so populated-chart visual and screen-reader client review remains explicitly deferred rather than inferred.
+
+### Safety
+
+No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, secret or environment change. No Preview or Production migration. No transaction, refund, split, transfer, category, budget, recurring, import, loan, Property, report/export or navigation rule changed. The chart receives safe aggregate category names, totals, percentages, counts and month only.
+
+### Known limitations
+
+- search intentionally does not change the whole-month chart;
+- existing refund treatment is unchanged;
+- percentage display rounding may not total exactly 100%, while currency remains authoritative;
+- rank-based colours may change between months;
+- populated signed-in visual and assistive-technology review remains pending client acceptance.
