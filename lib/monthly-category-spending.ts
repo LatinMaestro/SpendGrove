@@ -1,6 +1,10 @@
+import { isEligibleEverydayExpense } from "@/lib/everyday-spending-eligibility";
+
 export const NEEDS_REVIEW_CATEGORY_KEY = "needs-review";
+export const OTHER_CATEGORY_KEY = "other";
 
 export type MonthlyCategorySpendingRecord = {
+  id?: string;
   userId: string;
   type: string;
   status?: string | null;
@@ -24,6 +28,7 @@ export type MonthlyCategorySpendingCategory = {
   name: string;
   amountCents: number;
   transactionCount: number;
+  transactionIds: string[];
 };
 
 export type MonthlyCategorySpending = {
@@ -34,29 +39,6 @@ export type MonthlyCategorySpending = {
 export type MonthlyCategoryChartSegment = MonthlyCategorySpendingCategory & {
   isOther?: boolean;
 };
-
-function recordTime(value: Date | string) {
-  const time = value instanceof Date ? value.getTime() : new Date(value).getTime();
-  return Number.isFinite(time) ? time : null;
-}
-
-function isEligibleExpense(
-  record: MonthlyCategorySpendingRecord,
-  userId: string,
-  dateFrom: Date,
-  dateTo: Date,
-) {
-  const time = recordTime(record.date);
-  return record.userId === userId
-    && record.type === "EXPENSE"
-    && (record.status == null || record.status === "ACTIVE")
-    && !record.deletedAt
-    && record.splitRole !== "PARENT"
-    && Number.isInteger(record.amountCents)
-    && time != null
-    && time >= dateFrom.getTime()
-    && time < dateTo.getTime();
-}
 
 function usableCategory(
   record: MonthlyCategorySpendingRecord,
@@ -85,7 +67,7 @@ export function aggregateMonthlyCategorySpending(
   const groups = new Map<string, MonthlyCategorySpendingCategory>();
 
   for (const record of records) {
-    if (!isEligibleExpense(record, userId, dateFrom, dateTo)) continue;
+    if (!isEligibleEverydayExpense(userId, record, { dateFrom, dateTo })) continue;
     const category = usableCategory(record, userId);
     const key = category?.key ?? NEEDS_REVIEW_CATEGORY_KEY;
     const amountCents = Math.abs(record.amountCents);
@@ -95,9 +77,13 @@ export function aggregateMonthlyCategorySpending(
       name: category?.name ?? "Needs review",
       amountCents: 0,
       transactionCount: 0,
+      transactionIds: [],
     };
     current.amountCents += amountCents;
     current.transactionCount += 1;
+    if (record.id && !current.transactionIds.includes(record.id)) {
+      current.transactionIds.push(record.id);
+    }
     groups.set(key, current);
   }
 
@@ -119,11 +105,12 @@ export function groupMonthlyCategoryChart(
   const visible: MonthlyCategoryChartSegment[] = categories.slice(0, visibleLimit).map((category) => ({ ...category }));
   const remainder = categories.slice(visibleLimit);
   visible.push({
-    key: "other",
+    key: OTHER_CATEGORY_KEY,
     categoryId: null,
     name: "Other",
     amountCents: remainder.reduce((total, category) => total + category.amountCents, 0),
     transactionCount: remainder.reduce((total, category) => total + category.transactionCount, 0),
+    transactionIds: remainder.flatMap((category) => category.transactionIds),
     isOther: true,
   });
   return visible;

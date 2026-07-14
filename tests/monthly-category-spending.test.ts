@@ -32,35 +32,54 @@ function record(overrides: Partial<MonthlyCategorySpendingRecord> = {}): Monthly
 }
 
 describe("monthly category spending", () => {
-  it("uses only selected-month active owned everyday expenses", () => {
+  it("uses only selected-month active owned negative everyday expenses", () => {
     const result = aggregateMonthlyCategorySpending("user_1", julyStart, augustStart, [
-      record({ amountCents: -1200 }),
-      record({ amountCents: -300, splitRole: "CHILD" }),
-      record({ amountCents: 500, type: "INCOME" }),
-      record({ amountCents: -600, type: "TRANSFER" }),
-      record({ amountCents: -700, type: "LOAN_REPAYMENT" }),
-      record({ amountCents: -800, splitRole: "PARENT" }),
-      record({ amountCents: -900, status: "DELETED", deletedAt: new Date("2026-07-11T00:00:00.000Z") }),
-      record({ amountCents: -1000, userId: "user_2" }),
-      record({ amountCents: -1100, date: new Date("2026-08-02T00:00:00.000Z") }),
+      record({ id: "expense_1", amountCents: -1200 }),
+      record({ id: "expense_2", amountCents: -300, splitRole: "CHILD" }),
+      record({ id: "positive_expense", amountCents: 250000 }),
+      record({ id: "income", amountCents: 500, type: "INCOME" }),
+      record({ id: "incoming_transfer", amountCents: 250000, type: "TRANSFER" }),
+      record({ id: "outgoing_transfer", amountCents: -600, type: "TRANSFER" }),
+      record({ id: "loan", amountCents: -700, type: "LOAN_REPAYMENT" }),
+      record({ id: "parent", amountCents: -800, splitRole: "PARENT" }),
+      record({ id: "deleted", amountCents: -900, status: "DELETED", deletedAt: new Date("2026-07-11T00:00:00.000Z") }),
+      record({ id: "foreign", amountCents: -1000, userId: "user_2" }),
+      record({ id: "later", amountCents: -1100, date: new Date("2026-08-02T00:00:00.000Z") }),
     ]);
 
     expect(result.totalCents).toBe(1500);
     expect(result.categories).toEqual([
-      { key: "groceries", categoryId: "groceries", name: "Groceries", amountCents: 1500, transactionCount: 2 },
+      {
+        key: "groceries",
+        categoryId: "groceries",
+        name: "Groceries",
+        amountCents: 1500,
+        transactionCount: 2,
+        transactionIds: ["expense_1", "expense_2"],
+      },
     ]);
   });
 
-  it("keeps unusable categories visible as Needs review", () => {
+  it("keeps only uncategorised eligible expenses visible as Needs review", () => {
     const result = aggregateMonthlyCategorySpending("user_1", julyStart, augustStart, [
-      record({ categoryKey: null, category: null }),
-      record({ categoryKey: "foreign", category: { id: "foreign", name: "Private", userId: "user_2" } }),
-      record({ categoryKey: "archived", category: { id: "archived", name: "Old", userId: "user_1", isArchived: true } }),
+      record({ id: "missing", categoryKey: null, category: null }),
+      record({ id: "foreign_category", categoryKey: "foreign", category: { id: "foreign", name: "Private", userId: "user_2" } }),
+      record({ id: "archived", categoryKey: "archived", category: { id: "archived", name: "Old", userId: "user_1", isArchived: true } }),
+      record({ id: "income", type: "INCOME", amountCents: 250000, categoryKey: null, category: null }),
+      record({ id: "transfer", type: "TRANSFER", amountCents: 250000, categoryKey: null, category: null }),
+      record({ id: "positive_expense", amountCents: 250000, categoryKey: null, category: null }),
     ]);
 
     expect(result.totalCents).toBe(3000);
     expect(result.categories).toEqual([
-      { key: NEEDS_REVIEW_CATEGORY_KEY, categoryId: null, name: "Needs review", amountCents: 3000, transactionCount: 3 },
+      {
+        key: NEEDS_REVIEW_CATEGORY_KEY,
+        categoryId: null,
+        name: "Needs review",
+        amountCents: 3000,
+        transactionCount: 3,
+        transactionIds: ["missing", "foreign_category", "archived"],
+      },
     ]);
   });
 
@@ -71,6 +90,7 @@ describe("monthly category spending", () => {
       name,
       amountCents: 700 - index * 100,
       transactionCount: 1,
+      transactionIds: [`transaction_${name}`],
     }));
     const grouped = groupMonthlyCategoryChart(categories);
 
@@ -81,6 +101,7 @@ describe("monthly category spending", () => {
       name: "Other",
       amountCents: 300,
       transactionCount: 2,
+      transactionIds: ["transaction_F", "transaction_G"],
       isOther: true,
     });
     expect(grouped.reduce((sum, item) => sum + item.amountCents, 0)).toBe(2800);
@@ -88,7 +109,14 @@ describe("monthly category spending", () => {
   });
 
   it("shows all categories when there are five or fewer and handles one or zero", () => {
-    const single = [{ key: "one", categoryId: "one", name: "One", amountCents: 100, transactionCount: 1 }];
+    const single = [{
+      key: "one",
+      categoryId: "one",
+      name: "One",
+      amountCents: 100,
+      transactionCount: 1,
+      transactionIds: ["transaction_one"],
+    }];
     expect(groupMonthlyCategoryChart(single)).toEqual(single);
     expect(groupMonthlyCategoryChart([])).toEqual([]);
   });
@@ -96,11 +124,12 @@ describe("monthly category spending", () => {
   it("reconciles exactly with the approved everyday monthly spending total", () => {
     const months = getEverydayInsightMonths(new Date("2026-07-14T00:00:00.000Z"));
     const records = [
-      record({ amountCents: -1234 }),
-      record({ amountCents: -456, splitRole: "CHILD" }),
-      record({ amountCents: 200, type: "INCOME" }),
-      record({ amountCents: -300, type: "TRANSFER" }),
-      record({ amountCents: -999, splitRole: "PARENT" }),
+      record({ id: "first", amountCents: -1234 }),
+      record({ id: "child", amountCents: -456, splitRole: "CHILD" }),
+      record({ id: "malformed_positive_expense", amountCents: 250000 }),
+      record({ id: "income", amountCents: 200, type: "INCOME" }),
+      record({ id: "transfer", amountCents: -300, type: "TRANSFER" }),
+      record({ id: "parent", amountCents: -999, splitRole: "PARENT" }),
     ];
     const insightRecords: InsightExpenseRecord[] = records.map((item) => ({
       userId: item.userId,
@@ -125,5 +154,6 @@ describe("monthly category spending", () => {
     expect(chart.totalCents).toBe(1690);
     expect(chart.totalCents).toBe(insight.currentMonth.spendCents);
     expect(chart.categories.reduce((sum, category) => sum + category.amountCents, 0)).toBe(chart.totalCents);
+    expect(chart.categories.flatMap((category) => category.transactionIds)).toEqual(["first", "child"]);
   });
 });

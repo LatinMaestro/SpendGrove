@@ -5,6 +5,8 @@ import { ArrowLeft, ChevronRight, PieChart } from "lucide-react";
 import { formatAudFromCents } from "@/lib/money";
 import {
   groupMonthlyCategoryChart,
+  NEEDS_REVIEW_CATEGORY_KEY,
+  OTHER_CATEGORY_KEY,
   type MonthlyCategorySpending,
   type MonthlyCategorySpendingCategory,
 } from "@/lib/monthly-category-spending";
@@ -12,20 +14,32 @@ import {
 const categoryPalette = [
   "#0F766E",
   "#2563EB",
-  "#D97706",
   "#7C3AED",
   "#C2415B",
   "#4F7C3A",
-  "#64748B",
+  "#B45309",
+  "#0369A1",
 ];
 
-export function monthlyCategoryColour(index: number) {
-  return categoryPalette[index % categoryPalette.length];
+const needsReviewColour = "#D97706";
+const otherColour = "#64748B";
+
+export function monthlyCategoryColour(categoryKey: string) {
+  if (categoryKey === NEEDS_REVIEW_CATEGORY_KEY) return needsReviewColour;
+  if (categoryKey === OTHER_CATEGORY_KEY) return otherColour;
+  let hash = 0;
+  for (const character of categoryKey) {
+    hash = ((hash << 5) - hash + character.codePointAt(0)!) | 0;
+  }
+  return categoryPalette[Math.abs(hash) % categoryPalette.length];
 }
 
-function roundedPercentage(amountCents: number, totalCents: number) {
-  if (totalCents <= 0) return 0;
-  return Math.round((amountCents / totalCents) * 100);
+export function formatSpendingPercentage(amountCents: number, totalCents: number) {
+  if (amountCents <= 0 || totalCents <= 0) return "0%";
+  const percentage = (amountCents / totalCents) * 100;
+  if (percentage < 0.1) return "<0.1%";
+  const rounded = percentage.toFixed(1);
+  return `${rounded.endsWith(".0") ? rounded.slice(0, -2) : rounded}%`;
 }
 
 type ChartProps = {
@@ -82,7 +96,7 @@ export function MonthlyCategoryChart({ monthLabel, spending, onViewBreakdown }: 
                     cy="50"
                     r={radius}
                     fill="none"
-                    stroke={monthlyCategoryColour(index)}
+                    stroke={monthlyCategoryColour(segment.key)}
                     strokeWidth="14"
                     strokeDasharray={`${length} ${circumference - length}`}
                     strokeDashoffset={dashOffset}
@@ -103,11 +117,11 @@ export function MonthlyCategoryChart({ monthLabel, spending, onViewBreakdown }: 
           <ul aria-label={`Category spending legend for ${monthLabel}`} className="space-y-1.5">
             {segments.map((segment, index) => (
               <li key={segment.key} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 text-sm">
-                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: monthlyCategoryColour(index) }} />
+                <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: monthlyCategoryColour(segment.key) }} />
                 <span title={segment.name} className="truncate text-muted">{segment.name}</span>
                 <span className="money-value whitespace-nowrap font-semibold text-foreground">
                   {formatAudFromCents(segment.amountCents)}
-                  <span className="ml-1 hidden text-xs font-normal text-muted lg:inline">({roundedPercentage(segment.amountCents, spending.totalCents)}%)</span>
+                  <span className="ml-1 hidden text-xs font-normal text-muted lg:inline">{formatSpendingPercentage(segment.amountCents, spending.totalCents)}</span>
                 </span>
               </li>
             ))}
@@ -144,8 +158,7 @@ export function CategoryBreakdownView({ monthLabel, spending, onBack, onSelectCa
         <p className="mt-1 text-sm text-muted">{monthLabel} · {formatAudFromCents(spending.totalCents)} spent</p>
       </header>
       <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base">
-        {spending.categories.map((category, index) => {
-          const percentage = spending.totalCents > 0 ? (category.amountCents / spending.totalCents) * 100 : 0;
+        {spending.categories.map((category) => {
           return (
             <button
               key={category.key}
@@ -154,10 +167,10 @@ export function CategoryBreakdownView({ monthLabel, spending, onBack, onSelectCa
               aria-label={`View ${monthLabel} ${category.name} transactions`}
               className="grid min-h-16 w-full grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-3 px-4 py-3 text-left hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus"
             >
-              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ backgroundColor: monthlyCategoryColour(index) }} />
+              <span aria-hidden="true" className="h-3 w-3 rounded-full" style={{ backgroundColor: monthlyCategoryColour(category.key) }} />
               <span className="min-w-0">
                 <span title={category.name} className="block truncate text-sm font-bold text-foreground">{category.name}</span>
-                <span className="mt-0.5 block text-xs text-muted">{category.transactionCount} transaction{category.transactionCount === 1 ? "" : "s"} · {percentage.toFixed(1)}%</span>
+                <span className="mt-0.5 block text-xs text-muted">{category.transactionCount} transaction{category.transactionCount === 1 ? "" : "s"} · {formatSpendingPercentage(category.amountCents, spending.totalCents)}</span>
               </span>
               <span className="money-value whitespace-nowrap text-sm font-bold text-foreground">{formatAudFromCents(category.amountCents)}</span>
               <ChevronRight aria-hidden="true" className="h-4 w-4 text-muted" />

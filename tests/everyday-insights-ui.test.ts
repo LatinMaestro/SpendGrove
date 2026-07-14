@@ -5,6 +5,7 @@ const componentPath = new URL("../components/everyday-insights.tsx", import.meta
 const homePath = new URL("../app/page.tsx", import.meta.url);
 const routePath = new URL("../app/api/account/insights/route.ts", import.meta.url);
 const serverPath = new URL("../src/server/everyday-insights.ts", import.meta.url);
+const eligibilityPath = new URL("../lib/everyday-spending-eligibility.ts", import.meta.url);
 
 describe("everyday dashboard and trend insight UI", () => {
   it("shows only contract-approved transparent metrics and concise empty states", async () => {
@@ -32,14 +33,18 @@ describe("everyday dashboard and trend insight UI", () => {
   });
 
   it("keeps Property, tax, loan-balance and advice statistics out while preserving no-double-count rules", async () => {
-    const [component, server] = await Promise.all([
+    const [component, server, eligibility] = await Promise.all([
       readFile(componentPath, "utf8"),
       readFile(serverPath, "utf8"),
+      readFile(eligibilityPath, "utf8"),
     ]);
 
     expect(component).not.toMatch(/net worth|property profit|property yield|equity|valuation|investment performance|deductible|claimable|ATO-ready|tax liability|loan balance|principal total|interest total|debt advice|credit advice|AI advice/i);
-    expect(server).toContain('record.splitRole !== "PARENT"');
-    expect(server).toContain('record.type === "EXPENSE"');
+    expect(server).toContain("isEligibleEverydayExpense");
+    expect(eligibility).toContain('record.splitRole === "PARENT"');
+    expect(eligibility).toContain('record.type !== "EXPENSE"');
+    expect(eligibility).toContain("record.amountCents >= 0");
+    expect(eligibility).not.toMatch(/description|merchant|narration|fileName|account|balance|address/i);
     expect(server).not.toMatch(/prisma\.loanRepayment\.(?:find|count|aggregate)/);
   });
 

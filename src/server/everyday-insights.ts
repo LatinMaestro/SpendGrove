@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { isEligibleEverydayExpense } from "@/lib/everyday-spending-eligibility";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
@@ -99,14 +100,7 @@ export function getEverydayInsightMonths(now = new Date()) {
 }
 
 function validExpense(userId: string, record: InsightExpenseRecord) {
-  const date = record.date instanceof Date ? record.date : new Date(record.date);
-  return record.userId === userId
-    && record.type === "EXPENSE"
-    && record.status === "ACTIVE"
-    && !record.deletedAt
-    && record.splitRole !== "PARENT"
-    && Number.isInteger(record.amountCents)
-    && !Number.isNaN(date.getTime());
+  return isEligibleEverydayExpense(userId, record);
 }
 
 function inWindow(record: InsightExpenseRecord, window: MonthWindow) {
@@ -249,6 +243,7 @@ export function createPrismaEverydayInsightStore(
         where: {
           userId,
           type: "EXPENSE",
+          amountCents: { lt: 0 },
           status: "ACTIVE",
           deletedAt: null,
           splitRole: { not: "PARENT" },
