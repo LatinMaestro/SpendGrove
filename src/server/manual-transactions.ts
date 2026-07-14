@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { getManualCategory, manualCategories, type ManualCategory, type ManualCategoryType } from "@/lib/manual-categories";
 import type { ManualTransactionMigrationItem } from "@/lib/manual-transaction-migration";
+import { aggregateMonthlyCategorySpending } from "@/lib/monthly-category-spending";
 import {
   validateManualTransactionDraft,
   type ManualTransaction,
@@ -20,6 +21,9 @@ export type DbManualTransactionCategoryRecord = {
   id: string;
   name: string;
   type: ManualCategoryType | string;
+  userId?: string | null;
+  isArchived?: boolean | null;
+  deletedAt?: Date | string | null;
   parent?: {
     name: string;
   } | null;
@@ -30,6 +34,8 @@ export type DbManualTransactionRecord = {
   userId: string;
   type: ManualCategoryType | string;
   source?: "MANUAL" | "IMPORTED" | string;
+  status?: string | null;
+  splitRole?: string | null;
   amountCents: number;
   date: Date | string;
   description: string;
@@ -386,8 +392,26 @@ export async function listDurableManualTransactionsForMonth(
     ? await store.hasActiveAfter(user.userId, window.dateTo)
     : false;
 
+  const categorySpending = aggregateMonthlyCategorySpending(
+    user.userId,
+    window.dateFrom,
+    window.dateTo,
+    records.map((record) => ({
+      userId: record.userId,
+      type: record.type,
+      status: record.status,
+      splitRole: record.splitRole,
+      deletedAt: record.deletedAt,
+      amountCents: record.amountCents,
+      date: record.date,
+      categoryKey: toManualCategoryId(record.category) || null,
+      category: record.category,
+    })),
+  );
+
   return {
     transactions: records.map(toAccountTransaction),
+    categorySpending,
     month: {
       key: window.key,
       label: new Intl.DateTimeFormat("en-AU", {
