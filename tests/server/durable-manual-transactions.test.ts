@@ -242,6 +242,41 @@ describe("durable manual transaction persistence", () => {
     expect(result.hasLaterTransactions).toBe(true);
   });
 
+  it("returns exact sign-safe category aggregate record ids for drilldown", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+    const categoryId = await store.resolveSeededCategoryId(user.userId, groceriesCategory);
+    const category = store.categories.get(`${user.userId}:${categoryId}`)!;
+    const eligible = store.addRecord({
+      userId: user.userId,
+      amountCents: -2000,
+      date: new Date("2026-07-05T00:00:00.000Z"),
+      description: "Eligible expense",
+      categoryId,
+      category,
+    });
+    store.addRecord({
+      userId: user.userId,
+      amountCents: 250000,
+      date: new Date("2026-07-06T00:00:00.000Z"),
+      description: "Positive expense anomaly",
+      categoryId,
+      category,
+    });
+
+    const result = await listDurableManualTransactionsForMonth(user, "2026-07", store);
+
+    expect(result.transactions).toHaveLength(2);
+    expect(result.categorySpending.totalCents).toBe(2000);
+    expect(result.categorySpending.categories).toEqual([
+      expect.objectContaining({
+        amountCents: 2000,
+        transactionCount: 1,
+        transactionIds: [eligible.id],
+      }),
+    ]);
+  });
+
   it("keeps the requested current month when it contains active transactions", async () => {
     const user = createTestUserContext("user_1");
     const store = createMemoryStore();
