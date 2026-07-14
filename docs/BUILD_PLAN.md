@@ -653,3 +653,34 @@ Evidence:
 Schema and migration status: no Prisma schema or migration change, no Preview migration, no Production migration, no data rewrite/backfill, no hard deletion, and no package/provider/secret/environment change.
 
 Mandatory next state: stop for consolidated client retesting; do not close any Phase 4 milestone or begin another milestone.
+
+
+## Phase 4 Milestone 4 - Beginner-First Full UI Overhaul (approved 14 July 2026)
+
+Status: approved and in progress. Phase 4 Milestones 1-3 remain open pending consolidated client testing; Milestone 4 must also remain open.
+
+Controlling contract: `docs/PHASE_4_MILESTONE_4_UI_OVERHAUL_CONTRACT.md`.
+
+Objective: rebuild the presentation, responsive shell and shared interaction patterns so SpendGrove is calm, compact and obvious to first-time budgeting users without changing any accepted product behaviour.
+
+- [x] Freeze the screen inventory, market-reference findings, approved logo use, visual tokens and progressive-disclosure contract in PR 4.18.
+- [ ] Add approved public brand assets, responsive mobile/desktop shell, tokens and shared primitives in PR 4.19.
+- [ ] Redesign Home and onboarding in PR 4.20.
+- [ ] Redesign Transactions and CSV Import in PR 4.21.
+- [ ] Redesign Budgets and regular payments in PR 4.22.
+- [ ] Redesign Loans and Property workflows in PR 4.23.
+- [ ] Redesign Settings and secondary management in PR 4.24.
+- [ ] Complete responsive, accessibility and consistency QA in PR 4.25.
+- [ ] Publish final evidence and consolidated Phase 4 Milestones 1-4 client package in PR 4.26.
+
+Visual deployment gates:
+
+1. responsive shell plus Home;
+2. Transactions/Import/Budgets/regular payments;
+3. completed app-wide overhaul.
+
+Use local/GitHub-side checks before deployment and do not create documentation-only Vercel builds solely for evidence.
+
+Schema and migration assessment: no Prisma schema change, Preview migration, Production migration, persistent data change, rewrite or backfill is expected or authorised.
+
+Stop if work needs any schema/migration, financial/import/matching/report/privacy-rule change, essential recovery removal, sixth navigation destination, provider, material package, secret, environment variable or unresolved brand decision.

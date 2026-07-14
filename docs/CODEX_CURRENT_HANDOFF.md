@@ -17,6 +17,10 @@ Last updated: 14 July 2026
 - Phase 4 Milestone 3 - Beginner-first UI Simplification and Product Polish is implemented, merged, deployed and technically verified, but remains open pending deferred client retesting.
 - Its UI-only delivery used internal work labels 4.12-4.17 to avoid collision with completed Milestone 2 labels 4.6-4.8.
 - Controlling documents: docs/PHASE_4_MILESTONE_3_UI_CONTRACT.md, docs/PHASE_4_MILESTONE_3_INTERFACE_AUDIT.md, docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md, docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md, docs/PHASE_4_MILESTONE_3_FINAL_LOANS_SIMPLICITY_CONTRACT.md and docs/PHASE_4_MILESTONE_3_SUMMARY.md.
+- Phase 4 Milestone 4 - Beginner-First Full UI Overhaul is approved and in progress.
+- Controlling Milestone 4 contract: docs/PHASE_4_MILESTONE_4_UI_OVERHAUL_CONTRACT.md.
+- Milestone 4 is presentation-only: no schema, migration, data, financial, import, matching, report/export, ownership or privacy-rule change is authorised.
+- Approved primary destinations remain exactly Home, Transactions, Loans, Import and Settings.
 
 ## Phase 4 Milestone 1 evidence
 
@@ -277,9 +281,38 @@ Known limitations:
 - signed-in narrow-width, keyboard, screen-reader and touch review remains in the consolidated client checklist;
 - opening balance remains absent because it is not an approved persisted repayment field.
 
+
+## Phase 4 Milestone 4 authorised delivery
+
+Objective: rebuild SpendGrove's presentation into a compact, logo-led, responsive consumer budgeting experience while keeping all accepted behaviour unchanged.
+
+Research and brand gate:
+
+- approved repository wordmark: `assets/brand/spendgrove-logo.png`;
+- approved compact icon source: `assets/brand/app-icon-source.png`;
+- comparison set: Buddy, Copilot Money, PocketGuard, Monarch Money and statement-first budgeting peers;
+- accepted synthesis: month-first focus, strong typography, compact aligned lists, restrained surfaces, progressive disclosure and one primary action;
+- rejected comparison scope: bank aggregation, AI, investments, net worth, debt advice, household features and dense all-in-one dashboards.
+
+Approved sequence:
+
+1. PR 4.18 - documentation-only contract, inventory and design specification;
+2. PR 4.19 - brand assets, tokens, responsive shell and shared components;
+3. PR 4.20 - Home and onboarding;
+4. PR 4.21 - Transactions and CSV Import;
+5. PR 4.22 - Budgets and regular payments;
+6. PR 4.23 - Loans and Property workflows;
+7. PR 4.24 - Settings and secondary management;
+8. PR 4.25 - responsive/accessibility/visual-consistency QA;
+9. PR 4.26 - evidence and consolidated client package.
+
+Meaningful Vercel gates are shell plus Home, core everyday workflows and the completed app-wide overhaul. Documentation-only work must not trigger a build solely for evidence.
+
+Permanent status rule: Phase 4 Milestones 1-4 remain open pending consolidated client testing. Do not accept or close any milestone on the client's behalf.
+
 ## Exact next action
 
-Stop for consolidated client retesting. Keep Phase 4 Milestones 1, 2 and 3 open; do not formally close them and do not begin another milestone.
+Complete and merge PR 4.18 as documentation-only, then proceed through the approved Milestone 4 implementation sequence unless a mandatory stop condition is reached.
 
 ## Explicit exclusions and stop conditions
 
