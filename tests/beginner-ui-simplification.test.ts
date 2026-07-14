@@ -25,7 +25,7 @@ describe("Phase 4 Milestone 3 beginner-first UI contract", () => {
   it("keeps Simple Mode as the default and removes unavailable feature clutter", async () => {
     const [settings, settingsPage] = await Promise.all([readFile(paths.settings, "utf8"), readFile(paths.settingsPage, "utf8")]);
     expect(defaultUserSettings.simpleMode).toBe(true);
-    expect(settings).toContain("Everyday preferences");
+    expect(settings).toContain('title="Preferences"');
     expect(settings).toContain("Show the essentials first.");
     expect(settings).not.toContain("Future features");
     expect(settings).not.toContain("All off");
