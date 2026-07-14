@@ -364,3 +364,13 @@ Stop after PR 4.26 and wait for consolidated client testing of Phase 4 Milestone
 ## Resume instruction
 
 Resume from repository truth. Read AGENTS.md, docs/CODEX_CONTEXT_AND_HANDOFF_PROTOCOL.md, this handoff, docs/PHASE_4_MILESTONE_1_CONTRACT.md, docs/PHASE_4_MILESTONE_1_SUMMARY.md, docs/PHASE_4_MILESTONE_2_CONTRACT.md, docs/PHASE_4_MILESTONE_2_SCHEMA_ASSESSMENT.md, docs/DEFERRED_CLIENT_RETESTING.md, docs/BUILD_PLAN.md and docs/DECISION_LOG.md.
+
+## Phase 4 Milestone 4 monthly category-spending enhancement
+
+Status: approved and in progress. Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- PR 4.27 freezes the aggregation, chart, breakdown, privacy, performance and accessibility contract in `docs/PHASE_4_MILESTONE_4_CATEGORY_CHART_CONTRACT.md`.
+- Existing Transactions month selection and everyday-insight expense rules are compatible: selected Brisbane month, owned active expenses, split children included, split parents/income/transfers/deleted/cross-user records excluded, and integer-cent absolute expense totals.
+- PR 4.28 must reuse or extract that approved server-side rule and prove exact reconciliation; search remains list-only.
+- No schema, migration, data rewrite, package, provider, secret, environment or financial-rule change is required or authorised.
+- Approved sequence: PR 4.27 contract; PR 4.28 implementation/tests; PR 4.29 QA and deferred-testing evidence; then stop.

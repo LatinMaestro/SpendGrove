@@ -708,3 +708,14 @@ Schema and migration status: no Prisma schema or migration change, no Preview mi
 
 Mandatory next state: stop for consolidated client retesting of Phase 4 Milestones 1-4; do not close any milestone or begin another milestone.
 
+
+## Phase 4 Milestone 4 monthly category-spending enhancement (approved 14 July 2026)
+
+Status: in progress; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+
+- [x] Assess existing Transactions month selection and everyday-spending aggregation compatibility.
+- [x] Freeze the chart, full-breakdown, category-filter, privacy, accessibility and performance rules in `docs/PHASE_4_MILESTONE_4_CATEGORY_CHART_CONTRACT.md` (PR 4.27).
+- [ ] Implement the accessible SVG donut, top-five-plus-Other summary, full real-category breakdown and selected-month category filter with focused regressions (PR 4.28).
+- [ ] Complete full QA, meaningful Preview/main verification, documentation and consolidated deferred testing (PR 4.29).
+
+Gate: no schema, migration, data rewrite/backfill, package/lockfile, provider, secret, environment, financial-formula, month-boundary, split, transfer, category, budget, import, Property, loan or primary-navigation change is authorised. Stop if existing monthly totals disagree.
