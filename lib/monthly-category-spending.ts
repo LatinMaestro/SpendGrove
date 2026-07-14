@@ -116,7 +116,7 @@ export function groupMonthlyCategoryChart(
   visibleLimit = 5,
 ): MonthlyCategoryChartSegment[] {
   if (categories.length <= visibleLimit) return categories.map((category) => ({ ...category }));
-  const visible = categories.slice(0, visibleLimit).map((category) => ({ ...category }));
+  const visible: MonthlyCategoryChartSegment[] = categories.slice(0, visibleLimit).map((category) => ({ ...category }));
   const remainder = categories.slice(visibleLimit);
   visible.push({
     key: "other",
