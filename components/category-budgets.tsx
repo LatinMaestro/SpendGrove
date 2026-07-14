@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { Pencil, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Pencil, PiggyBank, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { formatAudFromCents } from "@/lib/money";
 
