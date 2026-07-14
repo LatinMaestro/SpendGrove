@@ -563,3 +563,25 @@ When the client returns:
 4. Clearly distinguish technically verified from client accepted.
 5. Record client comments and perform only approved acceptance hardening.
 6. Do not formally close a milestone without explicit client acceptance.
+
+## Phase 4 Milestone 4 - Monthly category spending chart
+
+Use owned synthetic transactions and review both desktop and mobile.
+
+1. Confirm the chart defaults to the same month as Transactions.
+2. Use Previous month and Next month and confirm the chart updates with the heading.
+3. Add the visible category amounts and confirm they equal the donut-centre total.
+4. Confirm the largest categories appear first in the legend.
+5. Use a month with more than five categories and confirm the five largest plus accurate Other.
+6. Open View breakdown and confirm every real category appears instead of a synthetic Other row.
+7. Select a category and confirm its transactions appear for the same month with a clear removable filter.
+8. Confirm transactions needing category review remain represented as Needs review.
+9. Open a month with no eligible expenses and confirm the compact empty state.
+10. Type in transaction search and confirm it filters the list without changing the whole-month chart.
+11. Review at a narrow mobile width and confirm the chart remains compact with no horizontal scrolling.
+12. Confirm long category names truncate safely while the full name remains accessible.
+13. Navigate with a keyboard and confirm the chart description, View breakdown and category rows are available to assistive technology.
+14. Confirm no Property, tax, loan-balance, equity, valuation or net-worth statistics appear.
+15. Confirm existing transaction amounts, monthly spending, splits, transfers and refund treatment have not changed.
+
+Known review note: category colours follow monthly rank and can change between months. Currency amounts and category names are authoritative.
