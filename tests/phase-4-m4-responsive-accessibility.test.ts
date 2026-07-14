@@ -33,7 +33,7 @@ describe("Phase 4 Milestone 4 responsive and accessibility safeguards", () => {
   it("keeps one semantic page heading on each primary public surface", () => {
     expect(home).toContain('title="Home"');
     expect(transactions).toContain('title="Transactions"');
-    expect(importFlow).toContain('headingLevel={1}');
+    expect(importFlow).toContain("<h1");
     expect(loans).toContain("<h1");
     expect(settings).toContain('title="Settings"');
     expect(primitives).toContain("<h1");
