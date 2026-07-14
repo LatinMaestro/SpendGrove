@@ -1,7 +1,7 @@
 "use client";
 
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight, Repeat2, Target } from "lucide-react";
+import { ArrowDownRight, ArrowRight, ArrowUpRight, ChevronRight, Target } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LoadingState, ProgressRow, SectionHeader } from "@/components/ui/app-primitives";
