@@ -11,9 +11,7 @@ import {
 export const dynamic = "force-dynamic";
 
 type RouteContext = {
-  params: {
-    transactionId: string;
-  };
+  params: Promise<{ transactionId: string }>;
 };
 
 function safeApiError(error: unknown) {
@@ -46,7 +44,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const draft = await request.json() as ManualTransactionDraft;
-    const savedTransaction = await updateDurableManualTransaction(context, params.transactionId, draft);
+    const savedTransaction = await updateDurableManualTransaction(context, (await params).transactionId, draft);
     const transactions = await listDurableManualTransactions(context);
     return NextResponse.json({ ok: true, transactions, savedTransaction });
   } catch (error) {
@@ -57,7 +55,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
-    await softDeleteDurableManualTransaction(context, params.transactionId);
+    await softDeleteDurableManualTransaction(context, (await params).transactionId);
     const transactions = await listDurableManualTransactions(context);
     return NextResponse.json({ ok: true, transactions });
   } catch (error) {
