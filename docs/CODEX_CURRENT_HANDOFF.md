@@ -12,7 +12,16 @@ Last updated: 15 July 2026
 - Accepted Production baseline: `a401d40275c4c63d5759a690dbc4830e45d46917`, deployment `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`.
 - Final verification: 101 test files / 633 tests, TypeScript, Next.js lint and optimized production build passed; `/`, `/transactions` and `/import` returned HTTP 200; desktop route smoke and 390 px overflow checks passed.
 - The consolidated checklist in `docs/DEFERRED_CLIENT_RETESTING.md` is retained as historical acceptance and QA evidence.
-- Phase 5 is unapproved and not started. A separate client-approved planning gate is required before any Phase 5 work.
+- PR #149 was accepted as the Phase 5 planning baseline and merged as `bb715af100b65c8c5d9b74c701d1e135d50e332f`.
+- Phase 5 is active.
+- Only Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate — is approved for implementation.
+- Phase 5 Milestones 2–6 remain unapproved.
+- Immediate target: account-based controlled Australian web private beta.
+- PR 5.1A: patched supported Next.js 15.x security upgrade, minimum 15.5.18, with no Next.js 16 or unrelated dependency modernisation.
+- PR 5.1B: operational finance routes require authentication; public signed-out scope is limited to marketing, onboarding and authentication; browser-local data must be preserved and kept separate. This PR requires client UX approval before merge.
+- PR 5.1C: read-only Vercel/Clerk/Neon environment, migration and recovery readiness contract.
+- Analytics remains off. No monitoring, crash-reporting, support or analytics provider is approved.
+- No schema change, migration, Production data access/change, provider-plan purchase, environment/secret mutation, native packaging or App Store work is authorised.
 
 Controlling Phase 4 summaries:
 

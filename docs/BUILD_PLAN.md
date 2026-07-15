@@ -1,5 +1,35 @@
 # Build Plan
 
+## Current active delivery — 15 July 2026
+
+Status:
+
+- Phase 4 Milestones 1–4 are accepted and closed.
+- PR #149 is accepted and merged as the Phase 5 planning baseline.
+- Phase 5 is active, but only Milestone 1 — Readiness Contract, Critical Security and Environment Gate — is approved.
+- Milestones 2–6 remain unapproved.
+
+Approved Milestone 1 sequence:
+
+1. PR 5.1A — patched supported Next.js 15.x security upgrade and only required compatibility work.
+2. PR 5.1B — account-based private-beta authentication route posture and non-destructive browser-local preservation; client review required before merge.
+3. PR 5.1C — read-only environment, migration and recovery readiness contract.
+
+Approved boundaries:
+
+- controlled Australian web private beta;
+- operational finance screens require authentication;
+- signed-out access only for explicitly public marketing, onboarding and authentication surfaces;
+- existing browser-local data is preserved and remains separate;
+- analytics remains off;
+- no monitoring/analytics/support provider;
+- no Next.js 16 or unrelated dependency modernisation;
+- no schema change, migration, Production data access, environment/secret mutation or provider-plan purchase;
+- no native packaging or App Store work;
+- no Milestone 2 work.
+
+The first critical implementation gate is moving from affected Next.js 14 to a patched supported Next.js 15.x release. Next.js 15.5.18 is the minimum approved floor; a later stable patched 15.x may be used only after official verification and within the approved compatibility boundary.
+
 This plan is the working sequence for Codex or another autonomous coding agent. It must remain aligned with the v2.0.1 master specification.
 
 ## Delivery principle

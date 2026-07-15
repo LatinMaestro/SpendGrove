@@ -84,6 +84,33 @@ The agent must pause for the client before:
 
 ## Active phase rule
 
+Current controlling status — 15 July 2026:
+
+- Phase 4 Milestones 1–4 are client accepted, closed, technically verified and deployed.
+- PR #149 is the accepted Phase 5 planning baseline and merged as `bb715af100b65c8c5d9b74c701d1e135d50e332f`.
+- Phase 5 is active.
+- Only Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate — is approved for implementation.
+- Phase 5 Milestones 2–6 remain unapproved.
+- The release target is an account-based controlled Australian web private beta.
+- Signed-out access is limited to explicitly public marketing, onboarding and authentication surfaces; operational finance screens must require authentication.
+- Existing browser-local data must remain preserved, separate and never silently deleted, rewritten, uploaded or merged.
+- The first implementation gate is a patched supported Next.js 15.x release, with 15.5.18 as the minimum approved security floor. Next.js 16 and unrelated dependency modernisation are not authorised.
+- Analytics remains off. No monitoring, crash-reporting, support or analytics provider is approved.
+- No schema change, Preview or Production migration, Production data access, provider-plan purchase, secret/environment change or native/App Store work is authorised.
+- PR 5.1B changes the signed-out access experience and must remain open for explicit client review before merge.
+- Stop before Phase 5 Milestone 2 or any unapproved expansion.
+
+Controlling documents:
+
+- `docs/PHASE_5_PRODUCTION_READINESS_PROPOSAL.md`
+- `docs/PHASE_5_CURRENT_STATE_AUDIT.md`
+- `docs/BUILD_PLAN.md`
+- `docs/CODEX_CURRENT_HANDOFF.md`
+
+## Historical delivery context
+
+The following delivery notes are retained as historical context. Any earlier pre-acceptance wording about Phase 4 being open is superseded by the controlling status above.
+
 Phase 3B Milestone 1 - Loans-First Foundations is formally accepted and closed.
 
 Phase 3B Milestone 2 - Durable Loan Repayments and Reconciliation was formally accepted and closed by the client on 30 June 2026 after signed-in retesting completed with no further acceptance comments.

@@ -4,6 +4,7 @@ Material decisions should be recorded here. This prevents future agents from re-
 
 | Date | Decision | Reason | Approved by | Implementation impact |
 |---|---|---|---|---|
+| 2026-07-15 | Accept PR #149 and activate Phase 5 Milestone 1 only | Establish a controlled production-readiness programme while addressing the critical Next.js security and environment-truth gates before later account-lifecycle or release work | Client | Phase 5 is active for PRs 5.1A–5.1C only: target an account-based Australian web private beta; require authenticated finance routes while preserving browser-local data; upgrade only to patched supported Next.js 15.x (15.5.18 minimum); keep analytics off; no provider plan, schema, migration, Production data/configuration, native/App Store or Milestones 2–6 work; PR 5.1B requires client UX approval before merge |
 | 2026-06-08 | SpendGrove is CSV-first and privacy-first with no default live bank linking | Core product differentiator and user trust model | Client | Import workflow and product copy must reinforce no-bank-login promise |
 | 2026-06-08 | Use account-based architecture from inception | Future iOS/iPad/web sync without migration | Client | Data models should include user ownership even during prototype |
 | 2026-06-08 | Adopt Household Strategy Option A | Avoid MVP complexity while preserving future household mode | Client | Phase 1 is one account per user; household entities are future-ready only |
