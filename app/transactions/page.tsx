@@ -12,12 +12,13 @@ function safeImportedCount(value: string | string[] | undefined) {
   return Number(candidate);
 }
 
-export default function TransactionsPage({ searchParams }: { searchParams?: { import?: string | string[]; count?: string | string[] } }) {
+export default async function TransactionsPage({ searchParams }: { searchParams?: Promise<{ import?: string | string[]; count?: string | string[] }> }) {
+  const resolvedSearchParams = await searchParams;
   const clerkStatus = getBuildSafeClerkEnvStatus();
   const databaseStatus = getBuildSafeDatabaseEnvStatus();
   const accountPersistenceAvailable = clerkStatus.clerkConfigured && databaseStatus.runtimeDatabaseConfigured;
-  const importComplete = searchParams?.import === "complete";
-  const importedCount = safeImportedCount(searchParams?.count);
+  const importComplete = resolvedSearchParams?.import === "complete";
+  const importedCount = safeImportedCount(resolvedSearchParams?.count);
 
   return (
     <AppShell>
