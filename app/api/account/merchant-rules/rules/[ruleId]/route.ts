@@ -5,12 +5,12 @@ import { safeMerchantRouteError } from "@/src/server/merchant-route-errors";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { ruleId: string } };
+type RouteContext = { params: Promise<{ ruleId: string }> };
 
 export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const input = await request.json() as { isActive?: boolean };
-    const data = await updateDurableMerchantRule(await getCurrentUserContext(), params.ruleId, input);
+    const data = await updateDurableMerchantRule(await getCurrentUserContext(), (await params).ruleId, input);
     return NextResponse.json({ ok: true, data });
   } catch (error) {
     const safe = safeMerchantRouteError(error);
@@ -20,7 +20,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
-    const data = await deleteDurableMerchantRule(await getCurrentUserContext(), params.ruleId);
+    const data = await deleteDurableMerchantRule(await getCurrentUserContext(), (await params).ruleId);
     return NextResponse.json({ ok: true, data });
   } catch (error) {
     const safe = safeMerchantRouteError(error);
