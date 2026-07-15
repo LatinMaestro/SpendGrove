@@ -5,10 +5,10 @@ import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src
 export const dynamic = "force-dynamic";
 
 type LoansPageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     loanImport?: string | string[];
     saved?: string | string[];
-  };
+  }>;
 };
 
 function singleValue(value: string | string[] | undefined) {
@@ -20,17 +20,18 @@ function safeSavedCount(value: string | string[] | undefined) {
   return Number.isInteger(count) && count > 0 && count <= 5000 ? count : null;
 }
 
-export default function LoansPage({ searchParams }: Readonly<LoansPageProps>) {
+export default async function LoansPage({ searchParams }: Readonly<LoansPageProps>) {
+  const resolvedSearchParams = await searchParams;
   const clerk = getBuildSafeClerkEnvStatus();
   const database = getBuildSafeDatabaseEnvStatus();
-  const loanImportCompleted = singleValue(searchParams?.loanImport) === "saved";
+  const loanImportCompleted = singleValue(resolvedSearchParams?.loanImport) === "saved";
 
   return (
     <AppShell>
       <LoansManager
         accountPersistenceAvailable={clerk.clerkConfigured && database.runtimeDatabaseConfigured}
         loanImportCompleted={loanImportCompleted}
-        loanImportSavedCount={loanImportCompleted ? safeSavedCount(searchParams?.saved) : null}
+        loanImportSavedCount={loanImportCompleted ? safeSavedCount(resolvedSearchParams?.saved) : null}
       />
     </AppShell>
   );
