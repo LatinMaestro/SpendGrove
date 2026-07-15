@@ -177,3 +177,22 @@ CSV Import could preserve a positive signed amount while an expense-typed review
 Implementation impact:
 
 CSV Import, manual create/edit, generic transaction validation, category suggestions, Merge validation and split validation share the same direction rules. Transfer thresholds, duplicate scoring, refund calculations, budgets, Property/Loan/reporting, schema and persisted historical data remain unchanged.
+
+## 2026-07-15 - Formally close Phase 4 Milestones 1-4
+
+Decision:
+
+- The client accepted the merged Production walkthrough and formally closed Phase 4 Milestones 1, 2, 3 and 4.
+- All four milestones are client accepted, closed, technically verified and deployed to Production.
+- The accepted baseline is `main` commit `a401d40275c4c63d5759a690dbc4830e45d46917` and Production deployment `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`.
+- The accepted transaction sign/type precedence is confirmed transfer treatment, otherwise signed integer cents, then compatible categorisation.
+- Existing sign/type anomalies are not rewritten or backfilled.
+- Phase 5 remains unapproved and not started.
+
+Reason:
+
+The client completed the consolidated Production review and explicitly reported acceptance with no unresolved Phase 4 blocker. The accepted build passed 101 test files / 633 tests, TypeScript, lint, optimized build, route HTTP checks, desktop smoke and 390 px overflow verification.
+
+Implementation impact:
+
+Phase 4 is closed without application or data mutation. Historical QA and the consolidated client checklist remain preserved. Any Phase 5 progression requires a separate documentation-first planning gate and explicit client approval; this closure grants no Phase 5 implementation authority.

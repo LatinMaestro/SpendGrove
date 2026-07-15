@@ -409,7 +409,7 @@ Strict exclusions remain: no Production migration, new Preview migration without
 
 ### Milestone 1 - Foundations
 
-Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Delivered:
 
@@ -434,7 +434,7 @@ The client is temporarily away from the Vercel environment and explicitly deferr
 
 ### Milestone 2 - Recurring and Budget Lifecycle Recovery
 
-Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Objective:
 
@@ -468,13 +468,13 @@ Schema assessment: no schema change or migration is required. Use existing ACTIV
 
 No reminder behaviour is included. nextExpectedDate remains display context only. No push, email, SMS, due-status threshold, background schedule or external provider is authorised.
 
-Milestones 1 and 2 remain open pending deferred client retesting. Do not formally accept or close either milestone on the client's behalf.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Milestones 1 and 2 remain open pending deferred client retesting. Do not formally accept or close either milestone on the client's behalf.
 
 Strict exclusions: no Preview or Production migration, changed recurring thresholds, fuzzy matching, changed budget formulas, rollover, automatic transaction linking, reminder infrastructure, new navigation, tax advice, Property/net-worth statistics, loan forecasting, Basiq, AI, payments, household mode, document storage, package/provider/secret/environment change or unrelated later module.
 
 ### Milestone 3 - Beginner-first UI Simplification and Product Polish
 
-Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
 
 Objective: simplify presentation and wording across Home, Transactions, Import, regular payments, budgets, Loans, Property records and Settings while preserving all functionality, calculations, privacy and no-double-count rules.
 
@@ -497,12 +497,14 @@ Evidence:
 
 Schema assessment: no Prisma schema change, Preview migration, Production migration, data rewrite or backfill occurred. No package, provider, secret, environment, navigation-tab, financial-rule, import-rule, Property-rule or report/export-rule change occurred.
 
-Phase 4 Milestones 1, 2 and 3 remain open pending explicit client retesting and acceptance. Stop before another milestone.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Phase 4 Milestones 1, 2 and 3 remain open pending explicit client retesting and acceptance. Stop before another milestone.
 
 
 ## Phase 5 — Production Readiness
 
-Only begin after client approval.
+Status: unapproved and not started.
+
+Only begin after a separate client approval and documentation-first planning gate. The gate must define the exact objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions. Phase 4 closure does not authorise Phase 5 implementation.
 
 Scope:
 
@@ -549,7 +551,7 @@ Vercel preview deployments are configured. User-facing PRs must include preview 
 
 ## Phase 4 Milestone 3 acceptance hardening (completed 13 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
 
 - [x] Freeze rules in `docs/PHASE_4_MILESTONE_3_ACCEPTANCE_HARDENING_CONTRACT.md` (PR #121, merge `54ae6196ed12ff96495b7aed88beec893ddab1df`).
 - [x] Deliver month-focused Transactions, searchable category choice and Property progressive disclosure.
@@ -577,7 +579,7 @@ Mandatory next state: stop for client retesting; do not close any Phase 4 milest
 
 ## Phase 4 Milestone 3 second client-review hardening (completed 13 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
 
 - [x] Freeze presentation-only rules in `docs/PHASE_4_MILESTONE_3_SECOND_CLIENT_REVIEW_CONTRACT.md` (PR #124, merge `2e5e6f340bf00d41db04d27c9de55fe01021ea9b`).
 - [x] Make the initial Transactions month prefer current when populated and otherwise the latest populated owned active month.
@@ -604,7 +606,7 @@ Mandatory next state: stop for client retesting; do not close any Phase 4 milest
 
 ## Phase 4 Milestone 3 third client-review Loans hardening (completed 14 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
 
 - [x] Freeze canonical repayment, Property-transaction deduplication and report-placement rules in `docs/PHASE_4_MILESTONE_3_THIRD_CLIENT_REVIEW_LOANS_CONTRACT.md` (PR #127, merge `04e8099f8f2c6a41cbb3021c3b7efee2afdbff72`).
 - [x] Replace the separate Repayment breakdown and Linked everyday transaction histories with one `Loan repayments` presentation.
@@ -631,7 +633,7 @@ Mandatory next state: stop for consolidated client retesting; do not close any P
 
 ## Phase 4 Milestone 3 final Loans simplicity hardening (completed 14 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-3 remain open pending consolidated client retesting.
 
 - [x] Freeze the selected-loan subview, repayment-first hierarchy, plain matching copy and separate report dialog in `docs/PHASE_4_MILESTONE_3_FINAL_LOANS_SIMPLICITY_CONTRACT.md` (PR #130, merge `5f907c52ac586e34cc83ffd869b8985a99fc0862`).
 - [x] Replace inline Loan expansion with one focused selected-loan view and `Back to loans`.
@@ -657,7 +659,7 @@ Mandatory next state: stop for consolidated client retesting; do not close any P
 
 ## Phase 4 Milestone 4 - Beginner-First Full UI Overhaul (approved 14 July 2026)
 
-Status: implemented, merged, deployed and technically verified. Phase 4 Milestones 1-4 remain open pending consolidated client testing.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified. Phase 4 Milestones 1-4 remain open pending consolidated client testing.
 
 Controlling contract: `docs/PHASE_4_MILESTONE_4_UI_OVERHAUL_CONTRACT.md`.
 
@@ -711,7 +713,7 @@ Mandatory next state: stop for consolidated client retesting of Phase 4 Mileston
 
 ## Phase 4 Milestone 4 monthly category-spending enhancement (approved 14 July 2026)
 
-Status: in progress; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: in progress; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 - [x] Assess existing Transactions month selection and everyday-spending aggregation compatibility.
 - [x] Freeze the chart, full-breakdown, category-filter, privacy, accessibility and performance rules in `docs/PHASE_4_MILESTONE_4_CATEGORY_CHART_CONTRACT.md` (PR 4.27).
@@ -722,7 +724,7 @@ Gate: no schema, migration, data rewrite/backfill, package/lockfile, provider, s
 
 ## Phase 4 Milestone 4 monthly category-spending enhancement (completed 14 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 - [x] PR #139 / 4.27 contract and aggregation assessment: `f858566fa38fb4755ae11985b09785d216cd72e5`.
 - [x] PR #140 / 4.28 accessible selected-month SVG donut, exact top-five-plus-Other grouping, full real-category breakdown, removable same-month filter and focused regressions: `1e347102f9583b33c1b873a340c64c38c151e382`.
@@ -733,12 +735,12 @@ Status: implemented, merged, deployed and technically verified; Phase 4 Mileston
 
 No schema, migration, package, provider, secret, environment, data rewrite, financial formula, import, budget, recurring, loan, Property, report/export or navigation change occurred. No Preview or Production migration ran.
 
-Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
 
 
 ## Phase 4 Milestone 4 chart correctness hardening (completed 14 July 2026)
 
-Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 - [x] PR #142 / 4.30 audited the positive incoming record, import type/category path, chart, Home, category-comparison and budget impact; merge `6c2f9019d1476fe86a127d1ffd698e5bd3a68d7f`.
 - [x] PR #143 / 4.31 introduced one sign-safe everyday-expense eligibility helper, exact aggregate/drilldown record parity, small-percentage formatting, deterministic colours and focused regressions; merge `d6ae6bfaee81d475fd18387ad5a57b17dff97ee6`.
@@ -751,7 +753,7 @@ Canonical spending eligibility now requires a strictly negative signed `EXPENSE`
 
 No schema, migration, data rewrite/backfill, historical reclassification, package/provider/secret/environment, Property, Loan, report/export or navigation change occurred. The inconsistent existing positive `EXPENSE` record is not rewritten and remains user-correctable; it is excluded from spending.
 
-Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
 
 ## Phase 4 Milestone 4 transaction sign/type integrity hardening (gated 14 July 2026)
 
@@ -771,7 +773,7 @@ Mandatory gate: do not begin implementation while any listed edge rule is ambigu
 
 ## Phase 4 Milestone 4 transaction sign/type integrity hardening (completed 14 July 2026)
 
-Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 - [x] PR #145 / 4.33 audited every approved transaction write path and froze the edge-case contract; merge `53fadcbab4a009bbaec85e46f06f3a56602fc8f5`.
 - [x] Client approved zero-value rejection, positive-refund Money in treatment, negative-adjustment Money out treatment, signed transfers and same-direction splits.
@@ -786,4 +788,28 @@ No historical record was rewritten. Existing anomalies stay visible and user-cor
 
 No schema, migration, data rewrite/backfill, manual SQL, package/lockfile, provider, secret, environment, duplicate-scoring, financial-formula, Property, Loan, report/export or navigation change occurred. No Preview or Production migration ran and Production data was not accessed.
 
-Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Mandatory next state: stop for consolidated client acceptance; do not close any Phase 4 milestone or begin another milestone.
+
+## Phase 4 formal closure (15 July 2026)
+
+Status: client accepted, closed, technically verified and deployed to Production.
+
+Client acceptance date: 15 July 2026.
+
+Final accepted baseline:
+
+- PR #146 implementation merge: `78574362f07781a1181766a5ae68f663ee02d03f`;
+- PR #147 QA/handoff merge and accepted `main`: `a401d40275c4c63d5759a690dbc4830e45d46917`;
+- Production deployment: `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`, Ready from the accepted `main` commit;
+- 101 test files / 633 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- public `/`, `/transactions` and `/import` returned HTTP 200;
+- desktop route smoke and 390 px horizontal-overflow verification passed.
+
+The transaction sign/type invariant is accepted: confirmed transfer treatment takes precedence, otherwise signed integer cents determine direction, and categorisation must remain compatible with that direction. Existing inconsistent records were not rewritten, backfilled or silently reclassified; they remain user-correctable and excluded from incompatible calculations.
+
+No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-client checklist and all historical QA evidence remain preserved as the acceptance record.
+
+Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
+
+No application, schema, migration, data, package, provider, secret, environment or financial-calculation change is part of this closure.
