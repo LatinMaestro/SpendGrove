@@ -5,13 +5,13 @@ import { getPropertyRecordCsv } from "@/src/server/property-report-output";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { propertyId: string } };
+type RouteContext = { params: Promise<{ propertyId: string }> };
 
 export async function GET(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const endingYear = new URL(request.url).searchParams.get("financialYear");
-    const result = await getPropertyRecordCsv(context, params.propertyId, endingYear);
+    const result = await getPropertyRecordCsv(context, (await params).propertyId, endingYear);
     return new NextResponse(result.csv, {
       status: 200,
       headers: {
