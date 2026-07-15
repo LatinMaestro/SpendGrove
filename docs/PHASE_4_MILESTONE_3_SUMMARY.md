@@ -1,8 +1,8 @@
 # Phase 4 Milestone 3 Summary
 
-Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
+Status: client accepted and closed; implemented, merged, technically verified and deployed to Production
 
-Last updated: 14 July 2026
+Last updated: 15 July 2026
 
 ## Objective
 
@@ -330,8 +330,28 @@ No schema, migration, data rewrite/backfill, hard deletion, package, provider, s
 
 ## Deferred client testing
 
-The consolidated non-technical checklist for Phase 4 Milestones 1, 2 and 3 is maintained in `docs/DEFERRED_CLIENT_RETESTING.md`. All three milestones remain open until the client explicitly completes testing and records acceptance.
+The consolidated non-technical checklist remains preserved in `docs/DEFERRED_CLIENT_RETESTING.md`. The client formally accepted and closed Phase 4 Milestones 1, 2 and 3 on 15 July 2026.
 
 ## Excluded work
 
 No new milestone, Production migration, tax advice, automatic deductibility, Property profit/yield/equity/valuation/net-worth feature, Property/tax/loan Home statistics, loan forecasting, Basiq, AI, payments, household mode, document storage, new navigation tab, public launch or later module was started.
+
+## Formal closure evidence
+
+Client acceptance date: 15 July 2026.
+
+Final accepted baseline:
+
+- PR #146 implementation merge: `78574362f07781a1181766a5ae68f663ee02d03f`;
+- PR #147 QA/handoff merge and accepted `main`: `a401d40275c4c63d5759a690dbc4830e45d46917`;
+- Production deployment: `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`, Ready from the accepted `main` commit;
+- 101 test files / 633 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- public `/`, `/transactions` and `/import` returned HTTP 200;
+- desktop route smoke and 390 px horizontal-overflow verification passed.
+
+The transaction sign/type invariant is accepted: confirmed transfer treatment takes precedence, otherwise signed integer cents determine direction, and categorisation must remain compatible with that direction. Existing inconsistent records were not rewritten, backfilled or silently reclassified; they remain user-correctable and excluded from incompatible calculations.
+
+No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-client checklist and all historical QA evidence remain preserved as the acceptance record.
+
+Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.

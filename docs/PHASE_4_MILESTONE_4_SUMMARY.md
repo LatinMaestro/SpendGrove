@@ -1,14 +1,14 @@
 # Phase 4 Milestone 4 Summary
 
-Status: implemented, merged, deployed and technically verified; client retesting deferred. Not formally accepted or closed.
+Status: client accepted and closed; implemented, merged, technically verified and deployed to Production
 
-Last updated: 14 July 2026
+Last updated: 15 July 2026
 
 ## Objective
 
 Rebuild SpendGrove's presentation into a calm, compact, logo-led and responsive budgeting experience for beginners while preserving every accepted data, financial, import, matching, Property, reporting, ownership, privacy and no-double-count rule.
 
-Phase 4 Milestones 1, 2, 3 and 4 all remain open pending consolidated client testing.
+The client formally accepted and closed Phase 4 Milestones 1, 2, 3 and 4 on 15 July 2026 after consolidated Production review.
 
 ## Completed delivery
 
@@ -139,11 +139,11 @@ The existing Phase 4 Preview schema remains unchanged. No Production migration h
 
 The complete non-technical checklist for Phase 4 Milestones 1-4 is maintained in `docs/DEFERRED_CLIENT_RETESTING.md`.
 
-Do not formally accept or close any Phase 4 milestone until the client explicitly completes testing and records acceptance. Do not begin another milestone from this package.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Do not formally accept or close any Phase 4 milestone until the client explicitly completes testing and records acceptance. Do not begin another milestone from this package.
 
 ## Focused client-review enhancement - monthly category spending
 
-Status: implemented, merged, deployed and technically verified. Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified. Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 ### Delivery
 
@@ -193,12 +193,12 @@ No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, 
 - existing refund treatment is unchanged;
 - percentage display rounding may not total exactly 100%, while currency remains authoritative;
 - category colours are deterministic but palette collisions remain possible when many categories are present;
-- populated signed-in visual and assistive-technology review remains pending client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): - populated signed-in visual and assistive-technology review remains pending client acceptance.
 
 
 ## Chart correctness client-review hardening
 
-Status: implemented, merged, deployed and technically verified on 14 July 2026; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged, deployed and technically verified on 14 July 2026; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 ### Delivery
 
@@ -281,11 +281,11 @@ No Prisma schema, migration, data rewrite/backfill, package/lockfile, provider, 
 - income-style refund treatment is unchanged;
 - search intentionally remains list-only;
 - deterministic palette hashing can assign the same colour to different categories when many categories exist;
-- signed-in populated-data and assistive-technology review remain pending client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): - signed-in populated-data and assistive-technology review remain pending client acceptance.
 
 ## Transaction sign/type integrity delivery (14 July 2026)
 
-Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): Status: implemented, merged and technically verified; Phase 4 Milestones 1-4 remain open pending consolidated client acceptance.
 
 ### Delivery
 
@@ -348,4 +348,26 @@ No Prisma schema, migration, backfill, data rewrite, manual SQL, Production data
 - Negative income adjustments use the current Money out model; no contra-income model exists.
 - Mixed-direction splits are unsupported.
 - Narration-only transfer hints remain reviewable and are not authoritative.
-- Populated signed-in and assistive-technology checks remain pending consolidated client acceptance.
+Historical pre-acceptance record (superseded by the 15 July 2026 closure): - Populated signed-in and assistive-technology checks remain pending consolidated client acceptance.
+
+## Formal closure evidence
+
+Client acceptance date: 15 July 2026.
+
+Final accepted baseline:
+
+- PR #146 implementation merge: `78574362f07781a1181766a5ae68f663ee02d03f`;
+- PR #147 QA/handoff merge and accepted `main`: `a401d40275c4c63d5759a690dbc4830e45d46917`;
+- Production deployment: `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`, Ready from the accepted `main` commit;
+- 101 test files / 633 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- public `/`, `/transactions` and `/import` returned HTTP 200;
+- desktop route smoke and 390 px horizontal-overflow verification passed.
+
+The transaction sign/type invariant is accepted: confirmed transfer treatment takes precedence, otherwise signed integer cents determine direction, and categorisation must remain compatible with that direction. Existing inconsistent records were not rewritten, backfilled or silently reclassified; they remain user-correctable and excluded from incompatible calculations.
+
+No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-client checklist and all historical QA evidence remain preserved as the acceptance record.
+
+Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
+
+This closure accepts the transaction sign/type integrity work delivered through PR #146 and the QA/handoff delivered through PR #147. No unresolved Phase 4 blocker remains.

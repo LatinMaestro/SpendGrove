@@ -1,8 +1,10 @@
 # Phase 4 Milestone 1 Summary - Recurring, Budgets and Everyday Insights
 
-Status: implementation and QA complete; parked for client retesting
+Status: client accepted and closed; technically verified and deployed to Production
 
-Date: 12 July 2026
+Delivery date: 12 July 2026
+
+Client acceptance: 15 July 2026
 
 ## Delivered objective
 
@@ -13,7 +15,7 @@ Phase 4 Milestone 1 makes SpendGrove more useful between CSV imports with:
 - a simple everyday Home overview with transparent month and category calculations;
 - preserved CSV-first privacy, review-before-commit and no-double-count rules.
 
-The milestone is not formally closed. Client retesting and acceptance are still required.
+The client formally accepted and closed this milestone on 15 July 2026 after the consolidated Production review.
 
 ## Completed PRs
 
@@ -294,12 +296,32 @@ Use synthetic or clearly non-private test data only.
 2. Confirm the UI does not present tax, debt, credit or investment advice.
 3. Confirm no Property, tax, net-worth or loan-balance statistic appears.
 
-## Client stop gate
+## Historical client stop gate (completed)
 
 Stop here for client retesting.
 
-Do not formally close Phase 4 Milestone 1 until the client confirms acceptance. Do not begin a next milestone, Production migration, Basiq, AI, payments, household mode, document storage or later module.
+This pre-acceptance stop gate was completed by explicit client acceptance on 15 July 2026. Phase 5 remains separately gated and unapproved.
 
-## Recommendation after retesting
+## Retesting outcome
 
-If client retesting finds no acceptance issues, formally close Phase 4 Milestone 1 and prepare proposal-only next options. If a focused issue is found, perform only an approved Milestone 1 acceptance-hardening PR before closure.
+The consolidated review found no unresolved acceptance blocker. Phase 4 Milestone 1 is formally closed; any Phase 5 planning remains proposal-only until separately approved.
+
+## Formal closure evidence
+
+Client acceptance date: 15 July 2026.
+
+Final accepted baseline:
+
+- PR #146 implementation merge: `78574362f07781a1181766a5ae68f663ee02d03f`;
+- PR #147 QA/handoff merge and accepted `main`: `a401d40275c4c63d5759a690dbc4830e45d46917`;
+- Production deployment: `dpl_EYxdfCR5SdgAEdyDR2AZsX841wzJ`, Ready from the accepted `main` commit;
+- 101 test files / 633 tests passed;
+- TypeScript validity, Next.js lint and optimized production build passed;
+- public `/`, `/transactions` and `/import` returned HTTP 200;
+- desktop route smoke and 390 px horizontal-overflow verification passed.
+
+The transaction sign/type invariant is accepted: confirmed transfer treatment takes precedence, otherwise signed integer cents determine direction, and categorisation must remain compatible with that direction. Existing inconsistent records were not rewritten, backfilled or silently reclassified; they remain user-correctable and excluded from incompatible calculations.
+
+No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-client checklist and all historical QA evidence remain preserved as the acceptance record.
+
+Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
