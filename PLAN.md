@@ -23,9 +23,11 @@ Agents must also follow:
 
 Do not treat this file as a replacement for the master specification or the build plan.
 
-Current active approved phase until changed by the client:
+Current active approved scope until changed by the client:
 
-> Phase 3A - Persistence & Commit Foundation
+> Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate
+
+Only Milestone 1 is authorised. Phase 5 Milestones 2–6, Production migration, schema/data changes, provider changes, native packaging, App Store work and public launch remain unapproved. The immediate target is an account-based controlled Australian web private beta.
 
 SpendGrove now uses Autonomous Phase Delivery Mode. Within an approved phase, the agent may create focused PRs, run tests/build/Vercel checks, self-review, merge green in-scope routine PRs and continue to the next approved PR without waiting for PR-by-PR client approval.
 
