@@ -4,7 +4,7 @@ import { listLoanReconciliationCandidates } from "@/src/server/loan-reconciliati
 
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request, { params }: { params: { repaymentId: string } }) {
+export async function GET(request: Request, { params }: { params: Promise<{ repaymentId: string }> }) {
   try {
     const searchParams = new URL(request.url).searchParams;
     const requestedMode = searchParams.get("mode");
@@ -13,7 +13,7 @@ export async function GET(request: Request, { params }: { params: { repaymentId:
     if (mode === "OVERRIDE" && !/^\d{4}-\d{2}-\d{2}$/.test(overrideDate ?? "")) {
       return NextResponse.json({ ok: false, candidates: [], error: "Choose an exact transaction date for manual override search." }, { status: 400 });
     }
-    const candidates = await listLoanReconciliationCandidates(await getCurrentUserContext(), params.repaymentId, mode, undefined, overrideDate);
+    const candidates = await listLoanReconciliationCandidates(await getCurrentUserContext(), (await params).repaymentId, mode, undefined, overrideDate);
     return NextResponse.json({ ok: true, mode, candidates });
   } catch (error) {
     if (error instanceof Error) {
