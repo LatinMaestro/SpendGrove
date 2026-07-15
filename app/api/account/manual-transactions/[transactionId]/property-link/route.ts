@@ -9,7 +9,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { transactionId: string } };
+type RouteContext = { params: Promise<{ transactionId: string }> };
 
 function safeError(error: unknown) {
   if (error instanceof ZodError) return "Choose an active Property before linking.";
@@ -30,7 +30,7 @@ function errorResponse(error: unknown) {
 export async function GET(_request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
-    const snapshot = await getPropertyTransactionLinkSnapshot(context, params.transactionId);
+    const snapshot = await getPropertyTransactionLinkSnapshot(context, (await params).transactionId);
     return NextResponse.json({ ok: true, snapshot });
   } catch (error) {
     return errorResponse(error);
@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const input = await request.json();
-    const outcome = await linkTransactionToProperty(context, params.transactionId, input);
+    const outcome = await linkTransactionToProperty(context, (await params).transactionId, input);
     return NextResponse.json({ ok: true, ...outcome });
   } catch (error) {
     return errorResponse(error);
@@ -51,7 +51,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
-    const result = await unlinkTransactionFromProperty(context, params.transactionId);
+    const result = await unlinkTransactionFromProperty(context, (await params).transactionId);
     return NextResponse.json({ ok: true, result });
   } catch (error) {
     return errorResponse(error);
