@@ -28,13 +28,11 @@ The client acts as product owner, UX reviewer and acceptance tester.
 
 ## Active phase
 
-Initial active phase:
+> **Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate**
 
-> **Phase 1 - MVP Foundation**
+The immediate release target is an account-based controlled Australian web private beta. Milestone 1 covers only the approved Next.js 15 security upgrade, authenticated finance-route posture and read-only environment/migration/recovery readiness contract.
 
-Phase 1 is limited to app foundation, account-ready data model, onboarding/settings, categories, manual transactions, transaction CSV import foundations, privacy scanning, mapping/review, duplicate handling, basic merchant-rule foundations and import history.
-
-Do not implement Phase 2+ modules until the client approves progression.
+Phase 5 Milestones 2–6 remain unapproved. No Production migration, schema/data change, provider-plan purchase, monitoring/analytics provider, native packaging, App Store preparation or public launch is authorised.
 
 ## Required repository files
 
