@@ -9,9 +9,7 @@ import {
 export const dynamic = "force-dynamic";
 
 type RouteContext = {
-  params: {
-    categoryId: string;
-  };
+  params: Promise<{ categoryId: string }>;
 };
 
 const safeValidationMessages = new Set([
@@ -38,7 +36,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const input = await request.json() as { name?: string; isArchived?: boolean };
-    const category = await updateDurableCustomCategory(context, params.categoryId, input);
+    const category = await updateDurableCustomCategory(context, (await params).categoryId, input);
     const categories = await listDurableCustomCategories(context);
     return NextResponse.json({ ok: true, category, categories });
   } catch (error) {
