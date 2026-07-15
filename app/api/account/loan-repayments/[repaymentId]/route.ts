@@ -22,11 +22,11 @@ function safeError(error: unknown) {
   return { status: 400, message: "We could not update that repayment safely." };
 }
 
-export async function PUT(request: Request, { params }: { params: { repaymentId: string } }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ repaymentId: string }> }) {
   try {
     const repayment = await correctLoanRepayment(
       await getCurrentUserContext(),
-      params.repaymentId,
+      (await params).repaymentId,
       await request.json(),
     );
     return NextResponse.json({ ok: true, repayment });
@@ -36,11 +36,11 @@ export async function PUT(request: Request, { params }: { params: { repaymentId:
   }
 }
 
-export async function PATCH(request: Request, { params }: { params: { repaymentId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ repaymentId: string }> }) {
   try {
     const repayment = await updateLoanRepaymentArchiveState(
       await getCurrentUserContext(),
-      params.repaymentId,
+      (await params).repaymentId,
       await request.json(),
     );
     return NextResponse.json({ ok: true, repayment });
