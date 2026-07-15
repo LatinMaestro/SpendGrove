@@ -14,11 +14,11 @@ function safeError(error: unknown) {
   return "We could not update that loan safely. Please try again.";
 }
 
-export async function PATCH(request: Request, { params }: { params: { loanId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ loanId: string }> }) {
   try {
     const context = await getCurrentUserContext();
     const input = await request.json() as LoanAccountUpdateInput;
-    return NextResponse.json({ ok: true, ...(await updateLoanAccount(context, params.loanId, input)) });
+    return NextResponse.json({ ok: true, ...(await updateLoanAccount(context, (await params).loanId, input)) });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });
   }
