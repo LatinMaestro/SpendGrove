@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run test && next build",
+    "build": "npm run verify:framework && npm run test && next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
@@ -14,7 +14,8 @@
     "db:validate": "prisma validate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "prisma db seed"
+    "db:seed": "prisma db seed",
+    "verify:framework": "npm ls next react react-dom eslint-config-next"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.39.5",
@@ -23,19 +24,19 @@
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.468.0",
-    "next": "^14.2.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "next": "15.5.20",
+    "react": "19.1.8",
+    "react-dom": "19.1.8",
     "tailwind-merge": "^2.3.0",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "19.1.11",
+    "@types/react-dom": "19.1.7",
     "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
-    "eslint-config-next": "^14.2.4",
+    "eslint-config-next": "15.5.20",
     "postcss": "^8.4.39",
     "prisma": "^5.16.1",
     "tailwindcss": "^3.4.4",

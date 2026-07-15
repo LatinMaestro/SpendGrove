@@ -19,9 +19,9 @@ function safeError(error: unknown) {
   return { status: 400, message: "We could not update this repayment link safely." };
 }
 
-export async function POST(request: Request, { params }: { params: { repaymentId: string } }) {
+export async function POST(request: Request, { params }: { params: Promise<{ repaymentId: string }> }) {
   try {
-    const link = await linkLoanRepayment(await getCurrentUserContext(), params.repaymentId, await request.json());
+    const link = await linkLoanRepayment(await getCurrentUserContext(), (await params).repaymentId, await request.json());
     return NextResponse.json({ ok: true, link }, { status: 201 });
   } catch (error) {
     const safe = safeError(error);
@@ -29,9 +29,9 @@ export async function POST(request: Request, { params }: { params: { repaymentId
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: { repaymentId: string } }) {
+export async function DELETE(_request: Request, { params }: { params: Promise<{ repaymentId: string }> }) {
   try {
-    const result = await unlinkLoanRepayment(await getCurrentUserContext(), params.repaymentId);
+    const result = await unlinkLoanRepayment(await getCurrentUserContext(), (await params).repaymentId);
     return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     const safe = safeError(error);

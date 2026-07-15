@@ -6,7 +6,7 @@ import { summarizePropertyRecords } from "@/src/server/property-report-output";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { propertyId: string } };
+type RouteContext = { params: Promise<{ propertyId: string }> };
 
 function safeError(error: unknown) {
   if (error instanceof ZodError) return "Choose a valid financial year.";
@@ -23,7 +23,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
     const endingYear = new URL(request.url).searchParams.get("financialYear");
-    const review = await getPropertyRecordReview(context, params.propertyId, endingYear);
+    const review = await getPropertyRecordReview(context, (await params).propertyId, endingYear);
     return NextResponse.json({ ok: true, review, summary: summarizePropertyRecords(review) });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });

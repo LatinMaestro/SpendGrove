@@ -9,7 +9,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { profileId: string } };
+type RouteContext = { params: Promise<{ profileId: string }> };
 
 const safeMessages = new Set([
   "A saved mapping with this name already exists.",
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     const context = await getCurrentUserContext();
     const profile = await updateDurableSavedImportProfile(
       context,
-      params.profileId,
+      (await params).profileId,
       await request.json() as { displayName?: string; isEnabled?: boolean; markUsed?: boolean },
     );
     return NextResponse.json({ ok: true, profile, profiles: await listDurableSavedImportProfiles(context) });
@@ -43,7 +43,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
 export async function DELETE(_request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
-    await deleteDurableSavedImportProfile(context, params.profileId);
+    await deleteDurableSavedImportProfile(context, (await params).profileId);
     return NextResponse.json({ ok: true, profiles: await listDurableSavedImportProfiles(context) });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });

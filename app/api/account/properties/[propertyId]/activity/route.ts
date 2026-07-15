@@ -4,12 +4,12 @@ import { getPropertyActivity } from "@/src/server/property-activity";
 
 export const dynamic = "force-dynamic";
 
-type RouteContext = { params: { propertyId: string } };
+type RouteContext = { params: Promise<{ propertyId: string }> };
 
 export async function GET(_request: Request, { params }: RouteContext) {
   try {
     const context = await getCurrentUserContext();
-    const activity = await getPropertyActivity(context, params.propertyId);
+    const activity = await getPropertyActivity(context, (await params).propertyId);
     return NextResponse.json({ ok: true, activity });
   } catch (error) {
     const message = error instanceof Error && (

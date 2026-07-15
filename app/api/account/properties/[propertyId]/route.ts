@@ -14,11 +14,11 @@ function safeError(error: unknown) {
   return "We could not update that property safely. Please try again.";
 }
 
-export async function PATCH(request: Request, { params }: { params: { propertyId: string } }) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ propertyId: string }> }) {
   try {
     const context = await getCurrentUserContext();
     const input = await request.json() as PropertyUpdateInput;
-    return NextResponse.json({ ok: true, ...(await updatePropertyRecord(context, params.propertyId, input)) });
+    return NextResponse.json({ ok: true, ...(await updatePropertyRecord(context, (await params).propertyId, input)) });
   } catch (error) {
     return NextResponse.json({ ok: false, error: safeError(error) }, { status: 400 });
   }
