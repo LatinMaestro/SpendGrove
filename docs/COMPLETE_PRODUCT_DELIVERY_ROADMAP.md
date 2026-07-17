@@ -600,3 +600,14 @@ The first App Store release is eligible for final approval only when:
 ## Activation recommendation
 
 After this planning baseline is merged, activate Phase 6 Milestone 6.0. Its first PR should be documentation and interface-contract work only, followed by no-schema desktop shell and Import Centre improvements. Durable saved filters, bulk-operation history and undo remain separate schema gates.
+
+## Phase 8 delivery note — 17 July 2026
+
+The independently safe existing-schema portion of Phase 8 is delivered through PR #197:
+
+- responsive authenticated Report Centre;
+- Loan financial-year summaries and CSV;
+- Property financial-year summaries using the accepted linked-record source;
+- versioned accountant preparation manifest/readme and individual existing exports.
+
+No schema or migration was required. Tax-sensitive conclusions remain excluded pending qualified professional review. The separate Phase 6/7 Preview migration gate remains deferred and all affected runtime features remain disabled. Phase 9 may proceed only after its financial contract is merged.
