@@ -683,6 +683,42 @@ export const migrationProfiles = {
         delegate: "accountantAccessScope",
       },
     },
+  },
+  "20260717140000_phase_11_document_metadata_foundation": {
+    migrationName: "20260717140000_phase_11_document_metadata_foundation",
+    absentTables: ["Document", "DocumentLink"],
+    absentEnums: ["DocumentStatus", "DocumentCategory", "DocumentLinkTargetType"],
+    enums: {
+      DocumentStatus: ["PENDING_UPLOAD", "QUARANTINED", "AVAILABLE", "FAILED", "DELETED"],
+      DocumentCategory: ["RECEIPT", "INVOICE", "LOAN_STATEMENT", "PROPERTY_RECORD", "REPORT_EVIDENCE", "OTHER"],
+      DocumentLinkTargetType: ["TRANSACTION", "PROPERTY", "LOAN_ACCOUNT", "LOAN_REPAYMENT", "IMPORT_BATCH", "REPORT", "FINANCIAL_YEAR"],
+    },
+    auditEntityTypeAdditions: ["DOCUMENT", "DOCUMENT_LINK"],
+    existingCountDelegates: [
+      ["BulkOperation", "bulkOperation"], ["BulkOperationItem", "bulkOperationItem"],
+      ["TransferLink", "transferLink"], ["ImportUndoOperation", "importUndoOperation"], ["ImportUndoItem", "importUndoItem"],
+      ["RecurringInstance", "recurringInstance"], ["SavingsGoal", "savingsGoal"], ["SavingsGoalContribution", "savingsGoalContribution"],
+      ["NetWorthItem", "netWorthItem"], ["NetWorthValuation", "netWorthValuation"],
+      ["NetWorthSnapshot", "netWorthSnapshot"], ["NetWorthSnapshotEntry", "netWorthSnapshotEntry"],
+      ["ReminderPreference", "reminderPreference"], ["Reminder", "reminder"],
+      ["Household", "household"], ["HouseholdMembership", "householdMembership"],
+      ["HouseholdInvitation", "householdInvitation"], ["HouseholdRecordShare", "householdRecordShare"],
+      ["AccountantAccessGrant", "accountantAccessGrant"], ["AccountantAccessScope", "accountantAccessScope"],
+    ],
+    tables: {
+      Document: {
+        columns: ["availableAt", "category", "checksumSha256", "contentType", "createdAt", "deletedAt", "displayName", "documentDate", "failedAt", "financialYear", "id", "objectKey", "providerDeletedAt", "quarantinedAt", "sizeBytes", "status", "storageProvider", "updatedAt", "userId"],
+        indexes: ["Document_pkey", "Document_storageProvider_objectKey_key", "Document_userId_category_deletedAt_idx", "Document_userId_financialYear_idx", "Document_userId_status_createdAt_idx"],
+        constraints: ["Document_pkey", "Document_userId_fkey"],
+        delegate: "document",
+      },
+      DocumentLink: {
+        columns: ["createdAt", "documentId", "id", "linkedAt", "revokedAt", "targetEntityId", "targetKey", "targetType", "updatedAt", "userId"],
+        indexes: ["DocumentLink_documentId_revokedAt_idx", "DocumentLink_documentId_targetType_targetKey_key", "DocumentLink_pkey", "DocumentLink_userId_revokedAt_targetType_idx"],
+        constraints: ["DocumentLink_documentId_fkey", "DocumentLink_pkey", "DocumentLink_userId_fkey"],
+        delegate: "documentLink",
+      },
+    },
   }
 };
 
