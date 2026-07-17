@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, FileSearch, FileUp, RefreshCw, ShieldCheck, TableProperties } from "lucide-react";
 import { ImportReviewFoundation } from "@/components/import-review-foundation";
+import { SavedImportProfilesPanel } from "@/components/saved-import-profiles-panel";
 import {
   MAX_CSV_FILE_SIZE_BYTES,
   parseCsvDocument,
@@ -44,7 +45,7 @@ function StepHeading({ step, title, description }: { step: number; title: string
         ))}
       </ol>
       <p className="mt-6 text-sm font-semibold text-muted">Step {step} of 4</p>
-      <h1 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h1>
+      <h2 className="mt-1 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{title}</h2>
       <p className="mt-2 max-w-2xl text-sm leading-6 text-muted">{description}</p>
     </header>
   );
@@ -81,6 +82,11 @@ export function CsvImportFoundation() {
   function updateMapping(columnIndex: number, role: CsvColumnRole) {
     if (!document || !scan) return;
     setScan(scanCsvDocument(document, { ...scan.mapping, [columnIndex]: role })); setMappingConfirmed(false); setError("");
+  }
+  function applySavedProfile(nextScan: CsvScanResult) {
+    setScan(nextScan);
+    setMappingConfirmed(false);
+    setError("");
   }
   function confirmMapping() {
     if (!scan || scan.mappingIssues.length > 0) { setError("Check the required column matches before confirming."); return; }
@@ -123,6 +129,20 @@ export function CsvImportFoundation() {
     return <div className="space-y-5">
       <StepHeading step={2} title="Check the columns" description="Confirm the required columns. You can change any match before reviewing transactions." />
       <section className="rounded-2xl border border-border bg-surface-base p-5 sm:p-6"><div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between"><div><p className="text-sm font-semibold text-brand-teal">Selected CSV file</p><h2 className="mt-1 text-xl font-bold text-brand-deepTeal">Ready to match</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{selectedFileSize === null ? "File size unavailable" : formatFileSize(selectedFileSize)} · {scan.parsedRowCount} transaction row{scan.parsedRowCount === 1 ? "" : "s"} found</p>{!scan.hasHeader && <p className="mt-2 text-sm font-semibold text-brand-green">We kept the first line as a transaction and added simple column labels.</p>}</div><button type="button" onClick={clearFile} className="min-h-12 rounded-full border border-brand-teal px-5 text-sm font-bold text-brand-deepTeal">Choose another file</button></div>{scan.profile.requiresManualMapping && <div role="status" className="mt-5 flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm leading-6 text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p><strong>Please check the column matches.</strong> Nothing moves forward until the required choices are complete.</p></div>}</section>
+      <details className="group rounded-2xl border border-border bg-surface-base">
+        <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:px-6">
+          Use or manage a saved column setup
+          <span aria-hidden="true" className="text-muted transition group-open:rotate-90">›</span>
+        </summary>
+        <div className="border-t border-border p-4 sm:p-6">
+          <SavedImportProfilesPanel
+            document={document}
+            scan={scan}
+            mappingConfirmed={mappingConfirmed}
+            onApplyScan={applySavedProfile}
+          />
+        </div>
+      </details>
       <section className="rounded-2xl border border-border bg-surface-base p-5 sm:p-6" aria-labelledby="column-mapping-heading"><div className="flex items-start gap-3"><TableProperties aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="column-mapping-heading" className="text-xl font-bold text-brand-deepTeal">Match and confirm your columns</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Choose what each available column means. Negative amounts are money out and positive amounts are money in.</p></div></div><div className="mt-5 space-y-3">{scan.columns.filter((column) => !column.isPrivate).map((column) => <label key={column.index} className="grid gap-2 rounded-2xl border border-border p-4 sm:grid-cols-[1fr_14rem] sm:items-center"><span><strong className="block text-brand-deepTeal">{column.safeLabel}</strong><span className="mt-1 block text-xs text-brand-deepTeal/60">Column {column.index + 1}</span></span><select value={scan.mapping[column.index]} onChange={(event) => updateMapping(column.index, event.target.value as CsvColumnRole)} className="min-h-12 rounded-2xl border border-border bg-white px-4 text-sm font-semibold text-brand-deepTeal">{roleOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>)}</div>
         {scan.mappingIssues.length > 0 && <div role="status" className="mt-5 rounded-2xl bg-warning-amber/10 p-4"><p className="font-bold text-brand-deepTeal">Please finish matching the required columns</p><ul className="mt-2 space-y-1 text-sm text-brand-deepTeal/75">{scan.mappingIssues.map((issue) => <li key={issue}>• {issue}</li>)}</ul></div>}
         <div className="mt-6 border-t border-border pt-6"><h2 className="text-xl font-bold text-brand-deepTeal">Preview</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check that these look right before reviewing all transactions.</p>{previewRows.length === 0 ? <p className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">Match the required columns to see a preview.</p> : <div className="mt-4 grid gap-3 lg:grid-cols-3">{previewRows.map((row) => { const category = getManualCategory(row.categoryId); return <article key={row.id} className="rounded-2xl bg-surface-mint p-4"><dl className="space-y-3 text-sm"><div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Date</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{formatPreviewDate(row.date)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Amount</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{row.amountCents === null ? "Check amount" : formatAudFromCents(row.amountCents)}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Description / merchant</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{row.merchantName || "Payment"}</dd></div><div><dt className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">Suggested category</dt><dd className="mt-1 font-semibold text-brand-deepTeal">{category?.name ?? "Needs review"}</dd></div></dl></article>; })}</div>}</div>
