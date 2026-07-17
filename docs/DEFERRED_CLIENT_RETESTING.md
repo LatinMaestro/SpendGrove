@@ -773,3 +773,36 @@ These checks remain blocked until the proposed schemas are safely migrated and t
 - [ ] Partial outcomes are explained without private values.
 - [ ] Restore import restores only exact unchanged records and creates no duplicate.
 - [ ] Existing historical imports are not backfilled or silently changed.
+
+
+## Complete-product Phase 7 import and merchant review
+
+Status: delivered portions technically verified; consolidated client review deferred
+
+### Supported formats and guidance
+
+- [ ] CommBank, ANZ, NAB and Westpac named everyday profiles remain accurate with synthetic fixtures.
+- [ ] Other target banks are clearly described as generic/manual mapping, not falsely claimed as named support.
+- [ ] Loan import explains component-column and row-event-ledger modes without claiming lender-specific support.
+- [ ] Help guidance never asks for a real CSV, bank identifiers or private screenshots.
+- [ ] Unsupported or ambiguous layouts stop for review rather than guessing.
+
+### Merchant profiles
+
+- [ ] Settings can edit a saved cleaned merchant name.
+- [ ] Settings can change the future suggested category.
+- [ ] Remove merchant stops future suggestions without changing historical transactions.
+- [ ] Removed merchants are secondary and can be restored.
+- [ ] Restore preserves each alias and rule's prior enabled/disabled state.
+- [ ] Another user's profile or category cannot be read or changed.
+- [ ] Raw narration, account references, filenames and private identifiers never appear in merchant management.
+
+### Blocked future checks
+
+- [ ] Durable transfer linking is tested only after the isolated Preview migration gate is satisfied.
+- [ ] Future-import undo is tested only after its ordered Preview migration and operation journal are verified.
+- [ ] Fifteen additional named everyday-bank formats are tested only when safe exact-layout evidence and synthetic fixtures exist.
+- [ ] Named lender profiles are tested only when safe lender format evidence exists.
+- [ ] Merchant merge/all-history correction is tested only after reversible operation journalling is available.
+
+Delivery evidence: PRs #177–#184 and `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
