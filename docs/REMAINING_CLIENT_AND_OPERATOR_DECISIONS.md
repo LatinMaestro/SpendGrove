@@ -386,22 +386,21 @@ Needed by: Phase 12.3.
 
 # 7. Native and Apple decisions
 
-## D-060 Native framework
+## D-060 Native framework — resolved 17 July 2026
 
-Class: Major architecture/client gate.
+Class: Resolved repository architecture decision.
 
-Choose after a proof-based comparison of:
+Decision:
 
-- Capacitor;
-- Expo/React Native;
-- SwiftUI;
-- any credible current alternative.
+- React Native with Expo and Expo Router is selected.
+- Keep Next.js web independently deployed.
+- Use authenticated versioned server APIs and share only platform-neutral TypeScript.
+- Capacitor remains a fallback; SwiftUI remains an escalation path for discrete Apple-only needs.
+- Custom Clerk Expo flows are planned; beta prebuilt native views are not the sole release path.
 
-Compare reuse, polish, performance, Clerk, CSV files, downloads, notifications, widgets, biometrics, share extensions, accessibility, App Store risk, maintenance and cost.
+Evidence: `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`.
 
-Current recommendation: compare Capacitor and Expo/React Native first; do not commit a framework in planning.
-
-Needed by: Phase 13.0.
+Still gated: deterministic package/lockfile bootstrap, native proof, EAS/provider configuration, Apple identity/payment, signing, TestFlight and App Store actions.
 
 ## D-061 Apple developer identity
 
