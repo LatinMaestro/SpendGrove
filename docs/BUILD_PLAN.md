@@ -1,5 +1,14 @@
 # Build Plan
 
+## Preview environment gate update — 17 July 2026
+
+- The independent empty Neon Free project `cold-field-54187673` / branch `br-sweet-flower-aj2ng7ix` is the retained non-Production Preview destination.
+- Vercel Preview database variables are mapped to it; Vercel Production variables remain unchanged.
+- GitHub Actions Preview secrets still require operator reauthentication before they can be replaced and proven. Until then, all committed migrations remain unexecuted against the retained project.
+- Phase 6 bulk operations, Phase 7 transfer links/import undo and later additive schema work may be prepared in focused repository PRs, but runtime activation and Preview migration evidence remain blocked.
+- No Production migration or database access is authorised.
+
+
 ## Current active delivery — 17 July 2026
 
 Status:
