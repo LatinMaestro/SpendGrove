@@ -1,0 +1,348 @@
+import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
+import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
+import { getPrismaClient } from "@/src/server/db";
+
+export const ACCOUNT_EXPORT_CONTRACT = "spendgrove.account-export";
+export const ACCOUNT_EXPORT_VERSION = 1 as const;
+
+type JsonPrimitive = string | number | boolean | null;
+export type ExportJsonValue = JsonPrimitive | ExportJsonValue[] | { [key: string]: ExportJsonValue };
+export type ExportRecord = { [key: string]: ExportJsonValue };
+
+export type AccountExportData = {
+  profile: ExportRecord;
+  settings: ExportRecord | null;
+  categories: ExportRecord[];
+  transactions: ExportRecord[];
+  importBatches: ExportRecord[];
+  importRows: ExportRecord[];
+  bankImportProfiles: ExportRecord[];
+  merchantProfiles: ExportRecord[];
+  merchantAliases: ExportRecord[];
+  merchantRules: ExportRecord[];
+  properties: ExportRecord[];
+  loanAccounts: ExportRecord[];
+  loanRepayments: ExportRecord[];
+  loanReconciliationLinks: ExportRecord[];
+  propertyTransactionLinks: ExportRecord[];
+  propertyReportReviews: ExportRecord[];
+  recurringItems: ExportRecord[];
+  recurringSuggestionDismissals: ExportRecord[];
+  categoryBudgets: ExportRecord[];
+  auditEvents: ExportRecord[];
+};
+
+export type SpendGroveAccountExport = {
+  contract: typeof ACCOUNT_EXPORT_CONTRACT;
+  version: typeof ACCOUNT_EXPORT_VERSION;
+  generatedAt: string;
+  currency: "AUD";
+  calendarTimezone: string;
+  moneyRepresentation: "signed integer cents";
+  australianDateRepresentation: "YYYY-MM-DD";
+  timestampRepresentation: "UTC ISO 8601";
+  recordCounts: Record<string, number>;
+  data: AccountExportData;
+};
+
+export type AccountExportStore = {
+  read(userId: string): Promise<AccountExportData | null>;
+};
+
+export class AccountExportUnavailableError extends Error {
+  constructor() {
+    super("Your account export could not be prepared safely. Please try again.");
+    this.name = "AccountExportUnavailableError";
+  }
+}
+
+function toDateOnly(value: Date) {
+  return value.toISOString().slice(0, 10);
+}
+
+function toSafeJson(value: unknown, dateOnly = false): ExportJsonValue {
+  if (value === null) return null;
+  if (value instanceof Date) return dateOnly ? toDateOnly(value) : value.toISOString();
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.map((item) => toSafeJson(item));
+  if (typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value)
+        .filter(([, item]) => item !== undefined)
+        .map(([key, item]) => [key, toSafeJson(item)]),
+    );
+  }
+  throw new AccountExportUnavailableError();
+}
+
+function serializeRecord<T extends object>(record: T, dateOnlyFields: readonly string[] = []): ExportRecord {
+  const dateFields = new Set(dateOnlyFields);
+  return Object.fromEntries(
+    Object.entries(record)
+      .filter(([, value]) => value !== undefined)
+      .map(([key, value]) => [key, toSafeJson(value, dateFields.has(key))]),
+  );
+}
+
+function serializeRows<T extends object>(rows: T[], dateOnlyFields: readonly string[] = []) {
+  return rows.map((row) => serializeRecord(row, dateOnlyFields));
+}
+
+const defaultAccountExportStore: AccountExportStore = {
+  async read(userId) {
+    const db = getPrismaClient();
+    const [
+      profile,
+      settings,
+      categories,
+      transactions,
+      importBatches,
+      importRows,
+      bankImportProfiles,
+      merchantProfiles,
+      merchantAliases,
+      merchantRules,
+      properties,
+      loanAccounts,
+      loanRepayments,
+      loanReconciliationLinks,
+      propertyTransactionLinks,
+      propertyReportReviews,
+      recurringItems,
+      recurringSuggestionDismissals,
+      categoryBudgets,
+      auditEvents,
+    ] = await db.$transaction([
+      db.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true, email: true, name: true, status: true, country: true, timezone: true,
+          createdAt: true, updatedAt: true,
+        },
+      }),
+      db.userSettings.findUnique({
+        where: { userId },
+        select: {
+          id: true, userId: true, simpleMode: true, currency: true, locale: true,
+          financialYearStartMonth: true, featureFlags: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.category.findMany({
+        where: { userId },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true, userId: true, name: true, type: true, parentId: true, colour: true, icon: true,
+          isSeeded: true, isArchived: true, deletedAt: true, sortOrder: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.transaction.findMany({
+        where: { userId },
+        orderBy: [{ date: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true, userId: true, categoryId: true, importBatchId: true, merchantProfileId: true,
+          type: true, source: true, status: true, splitRole: true, parentTransactionId: true,
+          amountCents: true, date: true, description: true, importedDescriptionSanitized: true,
+          merchantName: true, notes: true, reviewedAt: true, deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.importBatch.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, type: true, status: true, bankImportProfileId: true,
+          fileSizeBytes: true, rowCount: true, parsedRowCount: true, privateFieldCount: true,
+          importedCount: true, skippedCount: true, mergedCount: true, warningCodes: true,
+          createdAt: true, completedAt: true, deletedAt: true, updatedAt: true,
+        },
+      }),
+      db.importRow.findMany({
+        where: { userId },
+        orderBy: [{ importBatchId: "asc" }, { rowNumber: "asc" }],
+        select: {
+          id: true, userId: true, importBatchId: true, rowNumber: true, action: true, status: true,
+          mappedDate: true, amountCents: true, categoryId: true, matchedTransactionId: true,
+          committedTransactionId: true, warningCodes: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.bankImportProfile.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, displayName: true, bankName: true, accountType: true, hasHeader: true,
+          dateFormats: true, columnMapping: true, ignoredHeaders: true, privateHeaderPatterns: true,
+          confidence: true, isUserConfirmed: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.merchantProfile.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, name: true, normalizedName: true, defaultCategoryId: true,
+          isActive: true, deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.merchantAlias.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, merchantProfileId: true, aliasName: true, normalizedAlias: true,
+          isActive: true, deactivatedAt: true, deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.merchantRule.findMany({
+        where: { userId },
+        orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+        select: {
+          id: true, userId: true, merchantProfileId: true, categoryId: true, type: true, pattern: true,
+          normalizedPattern: true, priority: true, isActive: true, deactivatedAt: true, deletedAt: true,
+          createdAt: true, updatedAt: true,
+        },
+      }),
+      db.property.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, nickname: true, usage: true, isArchived: true, archivedAt: true,
+          deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.loanAccount.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, propertyId: true, nickname: true, lenderName: true, purpose: true,
+          type: true, currentBalanceCents: true, balanceAsOf: true, isArchived: true, archivedAt: true,
+          deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.loanRepayment.findMany({
+        where: { userId },
+        orderBy: [{ repaymentDate: "asc" }, { createdAt: "asc" }],
+        select: {
+          id: true, userId: true, loanAccountId: true, importBatchId: true, repaymentDate: true,
+          totalPaymentCents: true, principalCents: true, interestCents: true, feeCents: true,
+          balanceAfterCents: true, source: true, reconciliationStatus: true, isArchived: true,
+          archivedAt: true, deletedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.loanReconciliationLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, loanRepaymentId: true, transactionId: true, confidence: true,
+          amountVarianceCents: true, dateDifferenceDays: true, method: true, reason: true,
+          unlinkedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.propertyTransactionLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, transactionId: true, propertyId: true, unlinkedAt: true,
+          createdAt: true, updatedAt: true,
+        },
+      }),
+      db.propertyReportReview.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, propertyId: true, transactionId: true, classification: true,
+          createdAt: true, updatedAt: true,
+        },
+      }),
+      db.recurringItem.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, categoryId: true, label: true, transactionType: true,
+          expectedAmountCents: true, cadence: true, nextExpectedDate: true, status: true,
+          archivedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.recurringSuggestionDismissal.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, suggestionKey: true, dismissedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.categoryBudget.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, categoryId: true, amountCents: true, period: true, status: true,
+          archivedAt: true, createdAt: true, updatedAt: true,
+        },
+      }),
+      db.auditEvent.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true, userId: true, entityType: true, entityId: true, action: true, createdAt: true,
+        },
+      }),
+    ]);
+
+    if (!profile) return null;
+
+    return {
+      profile: serializeRecord(profile),
+      settings: settings ? serializeRecord(settings) : null,
+      categories: serializeRows(categories),
+      transactions: serializeRows(transactions, ["date"]),
+      importBatches: serializeRows(importBatches),
+      importRows: serializeRows(importRows, ["mappedDate"]),
+      bankImportProfiles: serializeRows(bankImportProfiles),
+      merchantProfiles: serializeRows(merchantProfiles),
+      merchantAliases: serializeRows(merchantAliases),
+      merchantRules: serializeRows(merchantRules),
+      properties: serializeRows(properties),
+      loanAccounts: serializeRows(loanAccounts, ["balanceAsOf"]),
+      loanRepayments: serializeRows(loanRepayments, ["repaymentDate"]),
+      loanReconciliationLinks: serializeRows(loanReconciliationLinks),
+      propertyTransactionLinks: serializeRows(propertyTransactionLinks),
+      propertyReportReviews: serializeRows(propertyReportReviews),
+      recurringItems: serializeRows(recurringItems, ["nextExpectedDate"]),
+      recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
+      categoryBudgets: serializeRows(categoryBudgets),
+      auditEvents: serializeRows(auditEvents),
+    };
+  },
+};
+
+function countRecords(data: AccountExportData) {
+  return Object.fromEntries(
+    Object.entries(data)
+      .filter(([, value]) => Array.isArray(value))
+      .map(([key, value]) => [key, (value as ExportRecord[]).length]),
+  );
+}
+
+export async function createAccountExport(
+  context: AuthenticatedUserContext | null | undefined,
+  store: AccountExportStore = defaultAccountExportStore,
+  now = new Date(),
+): Promise<SpendGroveAccountExport> {
+  const user = requireAuthenticatedUserContext(context);
+  const data = await store.read(user.userId);
+  if (!data) throw new AccountExportUnavailableError();
+
+  return {
+    contract: ACCOUNT_EXPORT_CONTRACT,
+    version: ACCOUNT_EXPORT_VERSION,
+    generatedAt: now.toISOString(),
+    currency: "AUD",
+    calendarTimezone: typeof data.profile.timezone === "string"
+      ? data.profile.timezone
+      : "Australia/Brisbane",
+    moneyRepresentation: "signed integer cents",
+    australianDateRepresentation: "YYYY-MM-DD",
+    timestampRepresentation: "UTC ISO 8601",
+    recordCounts: countRecords(data),
+    data,
+  };
+}
+
+export function accountExportFileName(now = new Date()) {
+  return `spendgrove-account-export-${now.toISOString().slice(0, 10)}.json`;
+}
