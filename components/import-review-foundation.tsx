@@ -27,10 +27,9 @@ import { learnEditedMerchantName, learnMerchantCategory } from "@/lib/import-rev
 import { createImportReviewWorkingSet, countImportReviewRowsNeedingAttention, countReadyImportRows, filterImportReviewRowsByWorkingSet, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
 import { createTransientImportReviewSourceDetails } from "@/lib/import-review-source-details";
 import { isRowPotentiallyDeductible, updateTaxReviewMetadata, type ImportReviewTaxMetadata } from "@/lib/import-review-metadata";
-import { applyMerchantSuggestionsToRows, createTransientImportReviewRows, loadImportHistoryFromStorage, summarizeImportReview, updateImportReviewAction, updateImportReviewDetails, updateImportReviewPropertyLink, type ImportHistoryEntry, type ImportReviewAction, type ImportReviewEditType, type ImportReviewRow } from "@/lib/import-review";
-import { loadManualTransactionsFromStorage } from "@/lib/manual-transaction-storage";
+import { applyMerchantSuggestionsToRows, createTransientImportReviewRows, summarizeImportReview, updateImportReviewAction, updateImportReviewDetails, updateImportReviewPropertyLink, type ImportHistoryEntry, type ImportReviewAction, type ImportReviewEditType, type ImportReviewRow } from "@/lib/import-review";
 import { manualCategories } from "@/lib/manual-categories";
-import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, loadMerchantRulesFromStorage, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, saveMerchantRulesToStorage, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
+import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
 
 type PendingMerchantConflict = { kind: "RULE" | "ALIAS"; rowId: string; alias?: string; conflict: MerchantConflict };
 type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "SIGNED_OUT" | "UNAVAILABLE";
@@ -57,7 +56,6 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   const [historyEntries, setHistoryEntries] = useState<ImportHistoryEntry[]>([]);
   const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
   const [merchantUndo, setMerchantUndo] = useState<LocalMerchantData | null>(null);
-  const [browserTransactions, setBrowserTransactions] = useState<ExistingAccountTransaction[]>([]);
   const [existingTransactions, setExistingTransactions] = useState<ExistingAccountTransaction[]>([]);
   const [mergeSelections, setMergeSelections] = useState<Record<string, MergeTargetReviewSelection>>({});
   const [historyRecovered, setHistoryRecovered] = useState(false);
@@ -79,14 +77,19 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("SIGNED_OUT");
 
   useEffect(() => {
-    const history = loadImportHistoryFromStorage(window.localStorage);
-    const merchants = loadMerchantRulesFromStorage(window.localStorage);
-    const manual = loadManualTransactionsFromStorage(window.localStorage);
-    setHistoryEntries(history.entries); setHistoryRecovered(history.recoveredFromCorruption); setStorageAvailable(history.storageAvailable);
-    setMerchantData(merchants.data); setMerchantRecovered(merchants.recoveredFromCorruption); setMerchantMigrated(merchants.migrated); setMerchantStaleReferenceCount(merchants.staleReferenceCount); setMerchantStorageAvailable(merchants.storageAvailable);
-    setBrowserTransactions(manual.transactions); setExistingTransactions(manual.transactions); setManualRecovered(manual.recoveredFromCorruption); setManualStorageAvailable(manual.storageAvailable);
-    if (merchants.migrated || merchants.staleReferenceCount > 0) saveMerchantRulesToStorage(window.localStorage, merchants.data);
-    setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, merchants.data) : current);
+    // Private-beta account screens never read or rewrite earlier browser-only
+    // prototype records. Account-backed catalogues load through their own APIs.
+    setHistoryEntries([]);
+    setHistoryRecovered(false);
+    setStorageAvailable(true);
+    setMerchantData(emptyLocalMerchantData());
+    setMerchantRecovered(false);
+    setMerchantMigrated(false);
+    setMerchantStaleReferenceCount(0);
+    setMerchantStorageAvailable(true);
+    setExistingTransactions([]);
+    setManualRecovered(false);
+    setManualStorageAvailable(true);
     setLocalReviewDataReady(true);
   }, []);
 
@@ -118,9 +121,9 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
       return;
     }
     if (!isSignedIn) {
-      setExistingTransactions(browserTransactions);
-      setDuplicateAnalysisStatus("SIGNED_OUT");
-      setDuplicateAnalysisError("");
+      setExistingTransactions([]);
+      setDuplicateAnalysisStatus("UNAVAILABLE");
+      setDuplicateAnalysisError("Your session ended. Sign in again before reviewing this import.");
       return;
     }
 
@@ -141,7 +144,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
       setDuplicateAnalysisStatus("READY");
     });
     return () => { cancelled = true; };
-  }, [browserTransactions, duplicateAnalysisAttempt, isLoaded, isSignedIn, localReviewDataReady, reviewStarted]);
+  }, [duplicateAnalysisAttempt, isLoaded, isSignedIn, localReviewDataReady, reviewStarted]);
 
   useEffect(() => {
     if (!reviewStarted) {
@@ -190,7 +193,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   function setNeedsReviewFilter(enabled: boolean) { setOnlyNeedsReview(enabled); setReviewWorkingSet(enabled ? createImportReviewWorkingSet(rows, mergeSelections) : null); setReviewPage(1); }
   function refreshNeedsReviewFilter() { setReviewWorkingSet(createImportReviewWorkingSet(rows, mergeSelections)); setReviewPage(1); setNotice("Resolved items were hidden and the Needs review list was refreshed."); }
   function updateAction(rowId: string, action: ImportReviewAction) { if (!reviewRows) return; actionReviewedRowIds.current.add(rowId); setReviewRows(updateImportReviewAction(reviewRows, rowId, action)); if (action !== "MERGE") setMergeSelections((current) => { const next = { ...current }; delete next[rowId]; return next; }); setNotice(action === "MERGE" ? "Merge selected. Choose an eligible existing manual transaction in the duplicate check before final account save." : ""); }
-  function persistMerchantData(nextData: LocalMerchantData, successNotice: string, allowUndo = false) { if (allowUndo) setMerchantUndo(merchantData); const saved = saveMerchantRulesToStorage(window.localStorage, nextData); setMerchantStorageAvailable(saved); replaceMerchantData(nextData); setNotice(saved ? successNotice : "Browser storage is unavailable. The merchant choice will last only while this review is open."); }
+  function persistMerchantData(nextData: LocalMerchantData, successNotice: string, allowUndo = false) { if (allowUndo) setMerchantUndo(merchantData); setMerchantStorageAvailable(true); replaceMerchantData(nextData); setNotice(successNotice); }
   function saveRule(row: ImportReviewRow, resolution?: MerchantConflictResolution, automatic = false) { try { const nextData = learnMerchantCategory(merchantData, row, resolution); const categoryName = getReviewCategory(customCategoryCatalogue.categories, row.categoryId)?.name ?? "your category"; persistMerchantData(nextData, resolution === "KEEP_EXISTING" ? "The existing saved rule was kept." : automatic ? `Saved for next time: ${row.merchantName} → ${categoryName}` : "Merchant rule saved. Your review choices were kept.", automatic); setPendingConflict(null); } catch (error) { if (error instanceof MerchantConflictError) setPendingConflict({ kind: "RULE", rowId: row.id, conflict: error.conflict }); else setNotice(error instanceof Error ? error.message : "This merchant rule could not be saved."); } }
   function saveEditedMerchantName(row: ImportReviewRow, previousMerchantName: string, resolution?: MerchantConflictResolution) { try { const nextData = learnEditedMerchantName(merchantData, { previousMerchantName, merchantName: row.merchantName, categoryId: row.categoryId, resolution }); persistMerchantData(nextData, `Saved for next time: ${previousMerchantName} → ${row.merchantName}`, true); setPendingConflict(null); } catch (error) { if (error instanceof MerchantConflictError) setPendingConflict({ kind: "ALIAS", rowId: row.id, alias: previousMerchantName, conflict: error.conflict }); else setNotice(error instanceof Error ? error.message : "This merchant name could not be saved."); } }
   function updateDetails(rowId: string, details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }) { if (!reviewRows) return; try { const nextRows = updateImportReviewDetails(reviewRows, rowId, details); setReviewRows(nextRows); setNotice(""); if (details.editType === "CATEGORY_EDIT" && details.categoryId !== categoryId("Needs review")) { const changedRow = nextRows.find((row) => row.id === rowId); if (changedRow) saveRule(changedRow, undefined, true); } } catch { setNotice("That merchant or category choice was not accepted because it was unsafe or unavailable."); } }
