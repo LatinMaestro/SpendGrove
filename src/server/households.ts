@@ -343,8 +343,10 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_INVITATION_ACCEPTED",
           ),
         });
-        return (await householdForMember(tx, userId, invitation.householdId))
-          as unknown as HouseholdViewRecord | null;
+        return (
+          (await householdForMember(tx, userId, invitation.householdId))
+          as unknown as HouseholdViewRecord | null
+        );
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
 
@@ -371,8 +373,10 @@ export function createPrismaHouseholdStore(
             `HOUSEHOLD_ROLE_${role}`,
           ),
         });
-        return (await householdForMember(tx, userId, householdId))
-          as unknown as HouseholdViewRecord | null;
+        return (
+          (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null
+        );
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
 
@@ -405,8 +409,10 @@ export function createPrismaHouseholdStore(
         });
         const household = isSelf
           ? null
-          : (await householdForMember(tx, userId, householdId))
-            as unknown as HouseholdViewRecord | null;
+          : (
+            (await householdForMember(tx, userId, householdId))
+            as unknown as HouseholdViewRecord | null
+          );
         return { ended: true, household };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
@@ -430,8 +436,10 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_RECORD_SHARED",
           ),
         });
-        return (await householdForMember(tx, userId, householdId))
-          as unknown as HouseholdViewRecord | null;
+        return (
+          (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null
+        );
       });
     },
 
@@ -448,8 +456,10 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_RECORD_SHARE_REVOKED",
           ),
         });
-        return (await householdForMember(tx, userId, householdId))
-          as unknown as HouseholdViewRecord | null;
+        return (
+          (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null
+        );
       });
     },
   };
