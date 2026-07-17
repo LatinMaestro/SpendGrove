@@ -29,7 +29,6 @@ export type AccountExportData = {
   recurringItems: ExportRecord[];
   recurringSuggestionDismissals: ExportRecord[];
   categoryBudgets: ExportRecord[];
-  bulkOperations: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -112,7 +111,6 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringItems,
       recurringSuggestionDismissals,
       categoryBudgets,
-      bulkOperations,
       auditEvents,
     ] = await db.$transaction([
       db.user.findUnique({
@@ -276,15 +274,6 @@ const defaultAccountExportStore: AccountExportStore = {
           archivedAt: true, createdAt: true, updatedAt: true,
         },
       }),
-      db.bulkOperation.findMany({
-        where: { userId },
-        orderBy: { createdAt: "asc" },
-        select: {
-          id: true, userId: true, type: true, status: true, requestedCount: true,
-          appliedCount: true, skippedCount: true, failedCount: true, undoBlockedCount: true,
-          createdAt: true, completedAt: true, undoExpiresAt: true, revertedAt: true, updatedAt: true,
-        },
-      }),
       db.auditEvent.findMany({
         where: { userId },
         orderBy: { createdAt: "asc" },
@@ -316,7 +305,6 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringItems: serializeRows(recurringItems, ["nextExpectedDate"]),
       recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
       categoryBudgets: serializeRows(categoryBudgets),
-      bulkOperations: serializeRows(bulkOperations),
       auditEvents: serializeRows(auditEvents),
     };
   },
