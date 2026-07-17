@@ -148,7 +148,7 @@ function toView(record: AdvancedRecurringItemRecord) {
       .map((instance) => ({
         id: instance.id,
         transactionId: instance.transactionId,
-        date: iso(instance.transaction.date).slice(0, 10),
+        date: (iso(instance.transaction.date) as string).slice(0, 10),
         amountCents: instance.transaction.amountCents,
       })),
   };
