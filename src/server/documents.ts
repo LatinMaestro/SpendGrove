@@ -448,10 +448,15 @@ export async function mutateDocumentMetadata(
   const resolvedStore = store ?? createPrismaDocumentStore();
 
   if (request.action === "LINK") {
-    const targetEntityId = "targetEntityId" in request ? request.targetEntityId : null;
-    const targetKey = targetEntityId
-      ? `${request.targetType}:${targetEntityId}`
-      : request.targetKey;
+    let targetEntityId: string | null;
+    let targetKey: string;
+    if ("targetEntityId" in request) {
+      targetEntityId = request.targetEntityId;
+      targetKey = `${request.targetType}:${request.targetEntityId}`;
+    } else {
+      targetEntityId = null;
+      targetKey = request.targetKey;
+    }
     const document = await resolvedStore.addLink(
       user.userId,
       request.documentId,
