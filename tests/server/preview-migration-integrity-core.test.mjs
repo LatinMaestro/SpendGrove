@@ -296,3 +296,77 @@ describe("Phase 7 import-undo Preview migration profile", () => {
     ]);
   });
 });
+
+describe("Phase 9 advanced personal-finance Preview migration profile", () => {
+  const migrationName = "20260717120000_phase_9_advanced_personal_finance_foundation";
+
+  it("defines exact additive enums, tables, audit additions and altered RecurringItem fields", () => {
+    const profile = migrationProfileFor(migrationName);
+
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toHaveLength(9);
+    expect(profile?.absentTables).toContain("RecurringInstance");
+    expect(profile?.absentTables).toContain("SavingsGoal");
+    expect(profile?.absentTables).toContain("NetWorthSnapshotEntry");
+    expect(profile?.absentTables).toContain("Reminder");
+    expect(profile?.enums.RecurringItemStatus).toEqual([
+      "ACTIVE",
+      "PAUSED",
+      "CANCELLED",
+      "UNKNOWN",
+      "NEEDS_REVIEW",
+      "ARCHIVED",
+    ]);
+    expect(profile?.auditEntityTypeAdditions).toEqual([
+      "RECURRING_INSTANCE",
+      "SAVINGS_GOAL",
+      "SAVINGS_GOAL_CONTRIBUTION",
+      "NET_WORTH_ITEM",
+      "NET_WORTH_VALUATION",
+      "NET_WORTH_SNAPSHOT",
+      "REMINDER_PREFERENCE",
+      "REMINDER",
+    ]);
+    expect(profile?.absentColumns.RecurringItem).toEqual([
+      "detectionConfidence",
+      "expectedAmountMaxCents",
+      "expectedAmountMinCents",
+      "source",
+    ]);
+    expect(profile?.requiredIndexes.RecurringItem).toEqual([
+      "RecurringItem_userId_source_idx",
+    ]);
+  });
+
+  it("protects every earlier prepared migration table with aggregate counts", () => {
+    expect(migrationProfileFor(migrationName)?.existingCountDelegates).toEqual([
+      ["BulkOperation", "bulkOperation"],
+      ["BulkOperationItem", "bulkOperationItem"],
+      ["TransferLink", "transferLink"],
+      ["ImportUndoOperation", "importUndoOperation"],
+      ["ImportUndoItem", "importUndoItem"],
+    ]);
+  });
+
+  it("requires owner and source foreign keys plus exact unique/index sets", () => {
+    const tables = migrationProfileFor(migrationName)?.tables;
+
+    expect(tables?.RecurringInstance.indexes).toContain("RecurringInstance_transactionId_key");
+    expect(tables?.RecurringInstance.constraints).toEqual([
+      "RecurringInstance_pkey",
+      "RecurringInstance_recurringItemId_fkey",
+      "RecurringInstance_transactionId_fkey",
+      "RecurringInstance_userId_fkey",
+    ]);
+    expect(tables?.NetWorthItem.indexes).toContain("NetWorthItem_userId_propertyId_key");
+    expect(tables?.NetWorthItem.indexes).toContain("NetWorthItem_userId_loanAccountId_key");
+    expect(tables?.NetWorthSnapshotEntry.constraints).toContain("NetWorthSnapshotEntry_snapshotId_fkey");
+    expect(tables?.ReminderPreference.indexes).toContain("ReminderPreference_userId_family_key");
+    expect(tables?.Reminder.indexes).toContain("Reminder_userId_dedupeKey_key");
+    expect(exactNameSetMatches(
+      [...(tables?.Reminder.indexes ?? [])].reverse(),
+      tables?.Reminder.indexes ?? [],
+    )).toBe(true);
+  });
+});
+
