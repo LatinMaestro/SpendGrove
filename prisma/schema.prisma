@@ -109,6 +109,14 @@ enum AuditEntityType {
   BULK_OPERATION
   TRANSFER_LINK
   IMPORT_UNDO_OPERATION
+  RECURRING_INSTANCE
+  SAVINGS_GOAL
+  SAVINGS_GOAL_CONTRIBUTION
+  NET_WORTH_ITEM
+  NET_WORTH_VALUATION
+  NET_WORTH_SNAPSHOT
+  REMINDER_PREFERENCE
+  REMINDER
 }
 
 enum AuditAction {
@@ -192,6 +200,10 @@ enum RecurringCadence {
 
 enum RecurringItemStatus {
   ACTIVE
+  PAUSED
+  CANCELLED
+  UNKNOWN
+  NEEDS_REVIEW
   ARCHIVED
 }
 
@@ -201,6 +213,64 @@ enum BudgetPeriod {
 
 enum BudgetStatus {
   ACTIVE
+  ARCHIVED
+}
+
+enum RecurringItemSource {
+  MANUAL
+  CONFIRMED_SUGGESTION
+}
+
+enum RecurringDetectionConfidence {
+  USER_CONFIRMED
+  CLEAR_PATTERN
+  REVIEW_PATTERN
+}
+
+enum SavingsGoalStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum NetWorthItemKind {
+  ASSET
+  LIABILITY
+}
+
+enum NetWorthItemCategory {
+  CASH
+  PROPERTY
+  INVESTMENT
+  SUPERANNUATION
+  VEHICLE
+  OTHER_ASSET
+  HOME_LOAN
+  PERSONAL_LOAN
+  CREDIT_CARD
+  OTHER_LIABILITY
+}
+
+enum NetWorthItemStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum ReminderFamily {
+  RECURRING_EXPECTED_DATE
+  BUDGET_EIGHTY_PERCENT
+  BUDGET_FULL
+  IMPORT
+  SAVINGS_GOAL
+  UNMATCHED_LOAN
+  EOFY_PREPARATION
+}
+
+enum ReminderStatus {
+  ACTIVE
+  ACKNOWLEDGED
+  DISMISSED
   ARCHIVED
 }
 
@@ -316,6 +386,15 @@ model User {
   transferLinks                TransferLink[]
   importUndoOperations         ImportUndoOperation[]
   importUndoItems              ImportUndoItem[]
+  recurringInstances           RecurringInstance[]
+  savingsGoals                 SavingsGoal[]
+  savingsGoalContributions     SavingsGoalContribution[]
+  netWorthItems                NetWorthItem[]
+  netWorthValuations           NetWorthValuation[]
+  netWorthSnapshots            NetWorthSnapshot[]
+  netWorthSnapshotEntries      NetWorthSnapshotEntry[]
+  reminderPreferences          ReminderPreference[]
+  reminders                    Reminder[]
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -407,6 +486,7 @@ model Transaction {
   outgoingTransferLinks    TransferLink[]            @relation("OutgoingTransferTransaction")
   incomingTransferLinks    TransferLink[]            @relation("IncomingTransferTransaction")
   importUndoItems          ImportUndoItem[]
+  recurringInstance       RecurringInstance?
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -614,6 +694,7 @@ model Property {
   transactionLinks PropertyTransactionLink[]
   reportReviews         PropertyReportReview[]
   bulkTargetOperations BulkOperation[] @relation("BulkOperationTargetProperty")
+  netWorthItems        NetWorthItem[]
 
   @@unique([userId, nickname])
   @@index([userId, usage])
@@ -638,7 +719,8 @@ model LoanAccount {
 
   user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   property   Property?       @relation(fields: [propertyId], references: [id], onDelete: SetNull)
-  repayments LoanRepayment[]
+  repayments    LoanRepayment[]
+  netWorthItems NetWorthItem[]
 
   @@unique([userId, nickname])
   @@index([userId, propertyId])
@@ -733,25 +815,31 @@ model PropertyReportReview {
 }
 
 model RecurringItem {
-  id                  String              @id @default(cuid())
-  userId              String
-  categoryId          String?
-  label               String
-  transactionType     TransactionType
-  expectedAmountCents Int?
-  cadence             RecurringCadence
-  nextExpectedDate    DateTime?
-  status              RecurringItemStatus @default(ACTIVE)
-  archivedAt          DateTime?
-  createdAt           DateTime            @default(now())
-  updatedAt           DateTime            @updatedAt
+  id                         String                         @id @default(cuid())
+  userId                     String
+  categoryId                 String?
+  label                      String
+  transactionType            TransactionType
+  expectedAmountCents        Int?
+  expectedAmountMinCents     Int?
+  expectedAmountMaxCents     Int?
+  cadence                    RecurringCadence
+  nextExpectedDate           DateTime?
+  source                     RecurringItemSource?
+  detectionConfidence        RecurringDetectionConfidence?
+  status                     RecurringItemStatus            @default(ACTIVE)
+  archivedAt                 DateTime?
+  createdAt                  DateTime                       @default(now())
+  updatedAt                  DateTime                       @updatedAt
 
-  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  Category?           @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  instances RecurringInstance[]
 
   @@index([userId, status])
   @@index([userId, categoryId])
   @@index([userId, cadence])
+  @@index([userId, source])
 }
 
 model RecurringSuggestionDismissal {
@@ -787,6 +875,183 @@ model CategoryBudget {
   @@index([userId, categoryId, period, status])
 }
 
+
+
+model RecurringInstance {
+  id              String    @id @default(cuid())
+  userId          String
+  recurringItemId String
+  transactionId   String    @unique
+  linkedAt        DateTime  @default(now())
+  unlinkedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  recurringItem RecurringItem @relation(fields: [recurringItemId], references: [id], onDelete: Cascade)
+  transaction   Transaction   @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, recurringItemId, unlinkedAt])
+  @@index([userId, transactionId, unlinkedAt])
+}
+
+model SavingsGoal {
+  id                   String            @id @default(cuid())
+  userId               String
+  name                 String
+  targetAmountCents    Int
+  targetDate           DateTime?
+  openingProgressCents Int               @default(0)
+  status               SavingsGoalStatus @default(ACTIVE)
+  completedAt          DateTime?
+  archivedAt           DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  user          User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions SavingsGoalContribution[]
+
+  @@unique([userId, name])
+  @@index([userId, status, targetDate])
+}
+
+model SavingsGoalContribution {
+  id               String    @id @default(cuid())
+  userId           String
+  savingsGoalId    String
+  amountCents      Int
+  contributionDate DateTime
+  note             String?
+  deletedAt        DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  savingsGoal SavingsGoal @relation(fields: [savingsGoalId], references: [id], onDelete: Cascade)
+
+  @@index([userId, savingsGoalId, contributionDate])
+  @@index([userId, deletedAt])
+}
+
+model NetWorthItem {
+  id            String               @id @default(cuid())
+  userId        String
+  propertyId    String?
+  loanAccountId String?
+  name          String
+  kind          NetWorthItemKind
+  category      NetWorthItemCategory
+  status        NetWorthItemStatus   @default(ACTIVE)
+  archivedAt    DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  user            User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property        Property?               @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  loanAccount     LoanAccount?            @relation(fields: [loanAccountId], references: [id], onDelete: SetNull)
+  valuations      NetWorthValuation[]
+  snapshotEntries NetWorthSnapshotEntry[]
+
+  @@unique([userId, name])
+  @@unique([userId, propertyId])
+  @@unique([userId, loanAccountId])
+  @@index([userId, kind, status])
+  @@index([userId, category, status])
+}
+
+model NetWorthValuation {
+  id             String    @id @default(cuid())
+  userId         String
+  netWorthItemId String
+  valueCents     Int
+  valuationDate  DateTime
+  note           String?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  netWorthItem NetWorthItem @relation(fields: [netWorthItemId], references: [id], onDelete: Cascade)
+
+  @@unique([netWorthItemId, valuationDate])
+  @@index([userId, valuationDate])
+  @@index([userId, deletedAt])
+}
+
+model NetWorthSnapshot {
+  id                  String    @id @default(cuid())
+  userId              String
+  snapshotDate        DateTime
+  totalAssetCents     Int
+  totalLiabilityCents Int
+  netWorthCents       Int
+  archivedAt          DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user    User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries NetWorthSnapshotEntry[]
+
+  @@unique([userId, snapshotDate])
+  @@index([userId, archivedAt, snapshotDate])
+}
+
+model NetWorthSnapshotEntry {
+  id               String               @id @default(cuid())
+  userId           String
+  snapshotId       String
+  netWorthItemId   String
+  itemName         String
+  kind             NetWorthItemKind
+  category         NetWorthItemCategory
+  valueCents       Int
+  valuationDate    DateTime
+  createdAt        DateTime             @default(now())
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  snapshot     NetWorthSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+  netWorthItem NetWorthItem     @relation(fields: [netWorthItemId], references: [id], onDelete: Restrict)
+
+  @@unique([snapshotId, netWorthItemId])
+  @@index([userId, snapshotId])
+}
+
+model ReminderPreference {
+  id               String         @id @default(cuid())
+  userId           String
+  family           ReminderFamily
+  isEnabled        Boolean        @default(false)
+  leadDays         Int            @default(0)
+  thresholdPercent Int?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, family])
+  @@index([userId, isEnabled])
+}
+
+model Reminder {
+  id             String         @id @default(cuid())
+  userId         String
+  family         ReminderFamily
+  sourceEntityId String?
+  dedupeKey      String
+  dueDate        DateTime
+  status         ReminderStatus @default(ACTIVE)
+  acknowledgedAt DateTime?
+  dismissedAt    DateTime?
+  archivedAt     DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, status, dueDate])
+  @@index([userId, family, status])
+}
 
 model BulkOperation {
   id               String              @id @default(cuid())
