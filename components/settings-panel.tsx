@@ -111,8 +111,8 @@ export function SettingsPanel() {
             <p className="mt-1 text-sm leading-5 text-muted">No bank login is required and raw CSV files are not stored.</p>
           </div>
           <Link
-            href="/onboarding"
-            aria-label="Review privacy introduction"
+            href="/privacy"
+            aria-label="Read SpendGrove privacy information"
             className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"
           >
             Privacy <ChevronRight aria-hidden="true" className="h-4 w-4" />
