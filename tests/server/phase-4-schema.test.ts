@@ -31,7 +31,7 @@ describe("Phase 4 Milestone 1 schema foundation", () => {
     expect(scopedSchema).toContain("model RecurringItem");
     expect(scopedSchema).toContain("model RecurringSuggestionDismissal");
     expect(scopedSchema).toContain("model CategoryBudget");
-    expect(scopedSchema).toMatch(/expectedAmountCents\\s+Int\\?/);
+    expect(scopedSchema).toMatch(/expectedAmountCents\s+Int\?/);
     expect(scopedSchema).toContain("amountCents Int");
     expect(scopedSchema).toContain("suggestionKey String");
 
