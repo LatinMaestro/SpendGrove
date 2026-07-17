@@ -1,34 +1,29 @@
 # Build Plan
 
-## Current active delivery — 15 July 2026
+## Current active delivery — 17 July 2026
 
 Status:
 
 - Phase 4 Milestones 1–4 are accepted and closed.
-- PR #149 is accepted and merged as the Phase 5 planning baseline.
-- Phase 5 is active, but only Milestone 1 — Readiness Contract, Critical Security and Environment Gate — is approved.
-- Milestones 2–6 remain unapproved.
+- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
+- Phase 5 is not formally closed. Phase 6 is unapproved and not started.
+- The controlled Australian account-based web private beta remains conditional on the Clerk Production, environment-separation, migration-health, recovery, Groveware contact and legal-review gates.
+- PR #163 merged as `668c09cae49ce1ff58021c95be1c199eb39c0127` with the consolidated Phase 5 summary and client checklist.
 
-Approved Milestone 1 sequence:
+Current boundaries:
 
-1. PR 5.1A — patched supported Next.js 15.x security upgrade and only required compatibility work.
-2. PR 5.1B — account-based private-beta authentication route posture and non-destructive browser-local preservation; client review required before merge.
-3. PR 5.1C — read-only environment, migration and recovery readiness contract.
+- do not invite private-beta users until every mandatory operator gate passes;
+- do not run a Production migration or access Production financial rows;
+- do not change schema/data/provider/secret/environment state without a new approval;
+- analytics and external monitoring remain off;
+- no native package, App Store action, public launch or Phase 6 work;
+- do not formally close Phase 5 without explicit client acceptance.
 
-Approved boundaries:
+Controlling records:
 
-- controlled Australian web private beta;
-- operational finance screens require authentication;
-- signed-out access only for explicitly public marketing, onboarding and authentication surfaces;
-- existing browser-local data is preserved and remains separate;
-- analytics remains off;
-- no monitoring/analytics/support provider;
-- no Next.js 16 or unrelated dependency modernisation;
-- no schema change, migration, Production data access, environment/secret mutation or provider-plan purchase;
-- no native packaging or App Store work;
-- no Milestone 2 work.
-
-The first critical implementation gate is moving from affected Next.js 14 to a patched supported Next.js 15.x release. Next.js 15.5.18 is the minimum approved floor; a later stable patched 15.x may be used only after official verification and within the approved compatibility boundary.
+- `docs/PHASE_5_SUMMARY.md`;
+- `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`;
+- `docs/CODEX_CURRENT_HANDOFF.md`.
 
 This plan is the working sequence for Codex or another autonomous coding agent. It must remain aligned with the v2.0.1 master specification.
 

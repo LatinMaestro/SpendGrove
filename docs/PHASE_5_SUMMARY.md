@@ -46,7 +46,7 @@ Phase 5 remains pending client acceptance and is not formally closed. Phase 6 ha
 | #160 | Safe error surfaces and operational runbooks | `ae47e7cc2584df3e6fe126b78673d88ecc59a100` | Merged |
 | #161 | Deterministic lockfile and production dependency security gate | `1c048abf363b2c9d97818e6724d549725509eeda` | Merged and Production deployed |
 | #162 | Platform packaging and App Store readiness documents | `f545828dcd84575a9a6b51de8f12adedf5564f10` | Merged; documentation only |
-| #163 | Private-beta QA and consolidated handoff | Pending this PR | Pending merge |
+| #163 | Private-beta QA and consolidated handoff | `668c09cae49ce1ff58021c95be1c199eb39c0127` | Merged; final client package |
 
 ## Milestone 1 — Readiness, authentication and environment gate
 
@@ -260,7 +260,13 @@ Dependency gate:
 - high/critical production advisory gate passed;
 - framework tree matched the versions above.
 
-Final documentation PR will receive its own exact-head verification before merge.
+Final handoff PR #163 exact-head verification:
+
+- GitHub Actions run `29551103860`;
+- exact head `65a022a54448d9d5b2f9116fc7c9fb2c6c2ad088`;
+- 110 test files / 677 tests passed;
+- TypeScript, Next.js lint and optimized Next.js `15.5.20` build passed;
+- merged as `668c09cae49ce1ff58021c95be1c199eb39c0127`.
 
 ### Deployment evidence
 
