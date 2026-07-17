@@ -1,5 +1,16 @@
 # Build Plan
 
+## Phase 7 prepared transfer service update — 17 July 2026
+
+- [x] Prepare and merge deterministic durable transfer-link service/routes behind a disabled runtime gate (PR #192, `e49bac5b6e05b4fb863cab4294062caf3eecd961`).
+- [x] Verify owner isolation, exact amount, two-day calendar boundary, split exclusion, active-link exclusion, explicit confirmation and safe unlink behaviour with 123 test files / 750 tests.
+- [ ] Run ordered Preview migrations after operator-authenticated GitHub secret replacement.
+- [ ] Obtain and execute a separate Production migration gate.
+- [ ] Enable the transfer-link runtime and connect the accepted minimal transaction-details UI only after the table exists in every target environment.
+- [ ] Implement import undo after its own migration succeeds.
+
+No runtime activation, migration, data rewrite/backfill, Production access, calculation change, package/provider/secret/environment change occurred.
+
 ## Phase 6–7 prepared implementation update — 17 July 2026
 
 - [x] Merge owner-safe Phase 6 bulk-operation server preparation behind a disabled runtime gate (PR #188, `910608ee48c1a6f03eb109cd79b56af5f29e7276`).
