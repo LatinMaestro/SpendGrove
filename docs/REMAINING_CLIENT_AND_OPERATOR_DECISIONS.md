@@ -1,5 +1,17 @@
 # Remaining Client and Operator Decisions
 
+## Phase 9 decision update — 17 July 2026
+
+The merged Phase 9 financial contract resolves the repository implementation defaults for D-020 through D-023:
+
+- budgets remain monthly with no rollover and unchanged refund treatment;
+- savings goals use manual planning contributions only, with no inferred progress or forecast;
+- net worth uses manual values and explicit snapshots only, with no live valuation provider;
+- reminders are in-app only; remote push remains an activation/provider decision.
+
+The fourth ordered Preview migration and runtime activation remain operator gates. These defaults do not approve remote push, live valuation, forecasting, provider spend or Production migration.
+
+
 Prepared: 17 July 2026  
 Scope: decisions that cannot be safely inferred or completed by repository work alone
 

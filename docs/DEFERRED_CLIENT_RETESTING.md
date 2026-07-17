@@ -855,3 +855,48 @@ Delivery evidence: PRs #194–#197, final implementation merge `9dcd9807d969987a
 - [ ] Qualified Australian tax/accounting review confirms final EOFY, Property, Loan, evidence and accountant-pack terminology.
 - [ ] The isolated Preview operator action is completed later in the exact migration order before bulk operations, durable transfer links or import undo are activated.
 - [ ] None of those guarded Phase 6/7 features appears available before its migration and activation PR.
+
+
+## Phase 9 Advanced Personal Finance — guarded preparation
+
+Status: repository foundations technically verified; runtime disabled; Preview migration pending; client review deferred
+
+### Activation and safety
+
+- [ ] The four ordered Preview migrations have passed individually against the retained isolated synthetic Preview database.
+- [ ] No guarded control appears available before its table exists and focused activation is merged.
+- [ ] No missing-table query occurs while the Phase 9 runtime gate is disabled.
+- [ ] No Production migration or historical backfill occurred.
+
+### Regular payments
+
+- [ ] Active, paused, cancelled, unknown, needs-review and deleted states are understandable.
+- [ ] Status changes require user action.
+- [ ] An imported transaction may be linked once as an instance without creating another transaction.
+- [ ] Direction, split and signed-amount compatibility is enforced.
+- [ ] Weekly, fortnightly and monthly detection thresholds remain unchanged.
+- [ ] Unlink remains safe and no duplicate cashflow appears.
+
+### Savings goals
+
+- [ ] A goal uses a positive target and optional target date.
+- [ ] Manual contributions update planning progress.
+- [ ] Contributions do not become income, expenses or transfers.
+- [ ] Pause, complete, delete and restore behaviour is recoverable.
+- [ ] Another user's goal or contribution is never visible.
+
+### Manual net worth
+
+- [ ] Assets and liabilities use manual values with clear “as at” dates.
+- [ ] A snapshot adds assets and subtracts liabilities exactly once.
+- [ ] Deleted valuations and items without an eligible valuation are excluded.
+- [ ] Property and Loan links are owner scoped and do not infer values.
+- [ ] No live balances, market values, forecast or advice appears.
+
+### In-app reminders
+
+- [ ] Reminder families and preferences are opt-in.
+- [ ] Duplicate candidates do not create duplicate reminders.
+- [ ] Dismiss and acknowledge work safely.
+- [ ] No amount, merchant, raw source description or banking identifier is stored in reminder metadata.
+- [ ] No email, SMS, remote push or provider delivery is implied or active.

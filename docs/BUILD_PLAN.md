@@ -1,5 +1,20 @@
 # Build Plan
 
+## Phase 9 guarded repository preparation update — 17 July 2026
+
+- [x] Merge the Phase 9 financial contract.
+- [x] Prepare the additive schema, unexecuted fourth migration, migration-integrity profile and hard-false runtime gate.
+- [x] Prepare owner-scoped savings-goal, manual net-worth, recurring-instance and in-app reminder services behind the gate.
+- [x] Preserve sole-cashflow, recurring-threshold, monthly/no-rollover budget, transfer, split, privacy and no-advice rules.
+- [x] Verify 135 test files / 810 tests, TypeScript, lint and optimized production build.
+- [ ] Complete the four ordered Preview migrations after the deferred operator credential action.
+- [ ] Run full synthetic Preview regression and activate each capability only through focused PRs.
+- [ ] Implement and verify the guarded user interfaces after schema activation.
+- [ ] Obtain consolidated client acceptance.
+
+No guarded Phase 9 capability is operational. No Preview or Production migration, database access, backfill, package/provider/secret/environment change occurred.
+
+
 ## Phase 8 reporting delivery update — 17 July 2026
 
 - [x] Deliver authenticated Report Centre without adding a sixth primary navigation destination.
