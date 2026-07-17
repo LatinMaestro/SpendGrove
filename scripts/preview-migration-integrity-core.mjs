@@ -336,6 +336,12 @@ export const migrationProfiles = {
       ],
     },
     auditEntityTypeAdditions: ["IMPORT_UNDO_OPERATION"],
+    absentColumns: {
+      ImportRow: ["committedTransactionUpdatedAt"],
+    },
+    requiredColumns: {
+      ImportRow: ["committedTransactionUpdatedAt"],
+    },
     existingCountDelegates: [
       ["BulkOperation", "bulkOperation"],
       ["BulkOperationItem", "bulkOperationItem"],
