@@ -5,6 +5,7 @@ const reports = readFileSync("app/reports/page.tsx", "utf8");
 const nav = readFileSync("components/bottom-nav.tsx", "utf8");
 const routePolicy = readFileSync("src/server/auth/route-policy.ts", "utf8");
 const home = readFileSync("app/page.tsx", "utf8");
+const settings = readFileSync("components/settings-panel.tsx", "utf8");
 
 describe("Phase 8 Report Centre", () => {
   it("provides one authenticated responsive hub for existing report and export workflows", () => {
@@ -21,12 +22,14 @@ describe("Phase 8 Report Centre", () => {
     expect(reports).toContain("md:grid-cols-2");
   });
 
-  it("keeps Reports discoverable without crowding the five-item mobile navigation", () => {
-    expect(nav).toContain('{ href: "/reports", label: "Reports"');
-    expect(nav).toContain("mobile: false");
+  it("keeps Reports discoverable without crowding the five approved primary destinations", () => {
+    expect(nav).not.toContain('label: "Reports"');
+    expect(nav.match(/label: "/g)).toHaveLength(5);
     expect(nav).toContain("grid-cols-5");
     expect(home).toContain('href="/reports"');
     expect(home).toContain("View reports");
+    expect(settings).toContain('href="/reports"');
+    expect(settings).toContain("Report Centre");
   });
 
   it("protects the route and keeps future or guarded functionality unavailable", () => {
