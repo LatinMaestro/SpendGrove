@@ -19,9 +19,7 @@ export type EverydayBankFormatEntry = {
   profiles: readonly ConfirmedEverydayCsvProfile[];
 };
 
-const profile = (
-  value: Omit<ConfirmedEverydayCsvProfile, "bankId" | "bankName">,
-) => value;
+const profile = (value: ConfirmedEverydayCsvProfile) => value;
 
 export const everydayBankFormatRegister: readonly EverydayBankFormatEntry[] = [
   {
