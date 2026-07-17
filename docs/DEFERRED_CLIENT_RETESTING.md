@@ -806,3 +806,52 @@ Status: delivered portions technically verified; consolidated client review defe
 - [ ] Merchant merge/all-history correction is tested only after reversible operation journalling is available.
 
 Delivery evidence: PRs #177–#184 and `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
+
+## Complete-product Phase 8 reporting and accountant preparation
+
+Status: repository delivery technically verified; consolidated client review deferred.
+
+Delivery evidence: PRs #194–#197, final implementation merge `9dcd9807d969987a04d21342d4b52aad1defe7e3`, 130 test files / 776 tests, TypeScript, lint and optimized build passed.
+
+### Report Centre
+
+- [ ] Reports is easy to find from Home and Settings without appearing as a new primary tab.
+- [ ] Monthly money, category, regular-payment, budget, Loan, Property, import-history and account-export destinations are understandable.
+- [ ] Mobile and desktop layouts remain readable and keyboard accessible.
+- [ ] Loading, empty and safe error states do not expose private data.
+
+### Loan reporting
+
+- [ ] Financial-year selection uses 1 July to 30 June.
+- [ ] Repayment, principal, interest and fee totals match the source Loan records.
+- [ ] Matched and unresolved repayments remain traceable.
+- [ ] Linked everyday cashflow is not counted twice.
+- [ ] Recorded balances appear only where present and are not forecasts.
+- [ ] CSV opens safely without formula execution.
+
+### Property reporting
+
+- [ ] Only the selected owned Property and financial year are shown.
+- [ ] Linked money in, money out and Loan-payment context remain distinct.
+- [ ] Loan interest and fees are separate from principal.
+- [ ] Principal is not presented as a Property expense.
+- [ ] Needs-review records can be traced to the accepted source record.
+- [ ] Existing Property export contents remain unchanged.
+- [ ] No deductibility, investment-use or tax-return conclusion is presented.
+
+### Accountant preparation pack
+
+- [ ] The manifest, readme, Loan CSV, each Property CSV and full account export are available as separate downloads.
+- [ ] The selected financial year is clear.
+- [ ] Current budgets and regular payments are clearly a present planning snapshot.
+- [ ] Import history appears only as safe aggregate totals.
+- [ ] Evidence placeholders explain that document upload is not active.
+- [ ] No ZIP, document upload, accountant account or collaboration feature is implied.
+- [ ] No raw CSV, filename, narration, banking identifier, exact address or another user's data appears.
+- [ ] The organisational-tool disclaimer is clear and non-advisory.
+
+### Deferred external and migration gates
+
+- [ ] Qualified Australian tax/accounting review confirms final EOFY, Property, Loan, evidence and accountant-pack terminology.
+- [ ] The isolated Preview operator action is completed later in the exact migration order before bulk operations, durable transfer links or import undo are activated.
+- [ ] None of those guarded Phase 6/7 features appears available before its migration and activation PR.

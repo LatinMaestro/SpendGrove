@@ -262,3 +262,23 @@ Implementation impact:
 - GitHub Actions Preview secrets remain an operator-authenticated gate because GitHub required fresh account confirmation. No migration may be dispatched until those secrets are replaced and proven.
 - No provider purchase, Production migration/data access, schema change, data rewrite/backfill or application behaviour change formed part of this decision.
 
+## 17 July 2026 — Reuse verified records for Phase 8 reporting
+
+Decision:
+
+- Build Phase 8 reports from existing authenticated owner-scoped Transaction, Loan, LoanRepayment, reconciliation, Property-link, recurring, budget and import-history services.
+- Keep active owned everyday Transactions as the sole cashflow records.
+- Keep LoanRepayment components analytical and never add linked cashflow a second time.
+- Use 1 July to 30 June Australian financial years and integer cents.
+- Keep Property-linked cashflow and Loan interest/fee/principal context distinct.
+- Provide accountant preparation as versioned individual downloads rather than adding ZIP/storage infrastructure.
+- Use neutral organisational wording and retain professional review for tax-sensitive language.
+- Do not reactivate dormant Property report-only classification as a mandatory inclusion gate.
+
+Reason:
+
+Existing verified models and accepted calculations support useful record preparation without a new schema, migration or tax conclusion. Reuse reduces financial and privacy risk while allowing the deferred Preview migration gate to remain isolated.
+
+Implementation impact:
+
+PRs #194–#197 deliver the Report Centre, Loan reports, Property reports and accountant preparation pack. No schema, migration, data rewrite/backfill, package, provider, secret or environment change occurred. Phase 8 remains pending consolidated client acceptance and professional review.

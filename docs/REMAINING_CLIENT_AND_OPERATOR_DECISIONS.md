@@ -628,3 +628,17 @@ Not approved now:
 - prices or real-user invitations.
 
 This register must be updated when a decision is made; historical entries should be preserved rather than silently rewritten.
+
+## Phase 8 delivery status — professional review remains
+
+Repository-safe Phase 8 reporting is complete through PR #197. The Report Centre, Loan reporting, Property reporting and accountant preparation pack use existing owner-scoped records and neutral wording.
+
+D-013 remains open for a qualified Australian tax/accounting professional to review:
+
+- final EOFY and report labels;
+- Property and Loan component presentation;
+- evidence expectations;
+- accountant-pack wording and disclaimer placement;
+- any future tax-sensitive grouping.
+
+Until that review, SpendGrove must not claim deductibility, tax-return readiness, claimable amounts or professional accounting conclusions. This is a professional-review gate, not a blocker to unrelated repository work.
