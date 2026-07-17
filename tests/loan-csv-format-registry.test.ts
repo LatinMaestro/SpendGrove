@@ -50,8 +50,7 @@ describe("Phase 7 loan CSV format registry", () => {
     const help = await readFile(helpPath, "utf8");
 
     expect(help).toContain("loanCsvStructuralModes.map");
-    expect(help).toContain("Repayment breakdown");
-    expect(help).toContain("Loan ledger");
+    expect(loanCsvStructuralModes.map((mode) => mode.displayName)).toEqual(["Repayment breakdown", "Loan ledger"]);
     expect(help).toContain("not claims of automatic support for a named lender");
     expect(help).toContain("Check every loan mapping before review");
   });
