@@ -230,7 +230,7 @@ export function SavedImportProfilesPanel({
       <div className="flex items-start gap-3">
         {accountBacked ? <Cloud aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /> : <Bookmark aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />}
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked ? "Saved to your account" : "Saved on this device"}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked ? "Saved to your account" : "Account unavailable"}</p>
           <h2 id="saved-mapping-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Reuse a column mapping</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
             Saved mappings can skip repetitive setup next time. You can always review or change the columns before continuing.
@@ -262,7 +262,7 @@ export function SavedImportProfilesPanel({
             <label className="text-sm font-bold text-brand-deepTeal">Account type<select value={accountType} onChange={(event) => setAccountType(event.target.value as ImportProfileAccountType)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">{accountTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
             <label className="text-sm font-bold text-brand-deepTeal sm:col-span-2">Bank name <span className="font-normal text-brand-deepTeal/60">(optional)</span><input value={bankName} onChange={(event) => setBankName(event.target.value)} placeholder="Example: Australian bank" className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label>
           </div>
-          <button type="button" onClick={saveCurrentMapping} disabled={!profileName.trim() || (storageMode === "device" && !storageAvailable)} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:opacity-45"><Save aria-hidden="true" className="h-4 w-4" /> Save this mapping</button>
+          <button type="button" onClick={saveCurrentMapping} disabled={!profileName.trim() || storageMode !== "account"} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:opacity-45"><Save aria-hidden="true" className="h-4 w-4" /> Save this mapping</button>
           <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">Only column positions and safe setup details are saved. File names, transaction examples, balances and account details are never included.</p>
         </div>
       )}
