@@ -9,5 +9,9 @@ export function ClerkAppProvider({ children }: Readonly<{ children: React.ReactN
     return <>{children}</>;
   }
 
-  return <ClerkProvider publishableKey={publishableKey}>{children}</ClerkProvider>;
+  return (
+    <ClerkProvider publishableKey={publishableKey} dynamic>
+      {children}
+    </ClerkProvider>
+  );
 }
