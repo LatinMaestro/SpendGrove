@@ -27,7 +27,6 @@ describe("Phase 8 accountant-pack UI", () => {
     expect(page).toContain("Download CSV");
     expect(page).toContain("No ZIP tool or document upload is required");
     expect(page).not.toContain("JSZip");
-    expect(page).not.toContain("upload");
   });
 
   it("keeps cache, privacy and professional-review boundaries explicit", () => {
