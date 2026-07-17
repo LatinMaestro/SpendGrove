@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 12 optional enrichment and AI contract — 17 July 2026
+
+- [x] Freeze local-first precedence and user confirmation.
+- [x] Define a cleaned-description-only Basiq fallback boundary.
+- [x] Define opt-in, provider-neutral AI assistance classes and safe request shapes.
+- [x] Record official Basiq sandbox/rate/commercial gates and AI retention-review needs.
+- [ ] Prepare independent hard-false Basiq and AI adapter boundaries without provider packages.
+- [ ] Verify local short-circuit, forbidden-field exclusion, no mutation and failure fallback.
+- [ ] Keep all provider calls, UI controls, secrets and Production use disabled.
+- [ ] Complete Phase 12 QA and handoff.
+
+Controlling contract: `docs/PHASE_12_OPTIONAL_ENRICHMENT_AI_CONTRACT.md`.
+
+
 ## Phase 11 guarded repository preparation — 17 July 2026
 
 - [x] Compare current official private-object-storage capabilities and costs.
