@@ -969,3 +969,14 @@ No parser, repayment, reconciliation, schema, migration, package, provider, secr
 - [ ] Require a separate Production migration gate.
 
 No existing import is backfilled or made undoable. No durable transfer is auto-created. No schema/migration file, database, package, provider, secret or environment was changed.
+
+
+## Phase 7 Milestone 7.5 — Merchant profile completion
+
+- [x] Audit existing MerchantProfile, MerchantAlias and MerchantRule domain/UI.
+- [x] Confirm no schema change is needed for profile edit and reversible remove/restore.
+- [ ] Implement profile name/default-category edit and profile remove/restore.
+- [ ] Verify owner isolation, suggestion precedence, no transaction rewrite and responsive Settings UI.
+- [ ] Keep merchant merge and all-history mutation blocked pending operation-journal migration.
+
+Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`.
