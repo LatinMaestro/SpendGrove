@@ -1,4 +1,5 @@
 import { AccountDeletion } from "@/components/account-deletion";
+import { AccountDataManagement } from "@/components/account-data-management";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
 import { AppShell } from "@/components/app-shell";
 import { DevelopmentTransactionResetPanel } from "@/components/development-transaction-reset-panel";
@@ -22,6 +23,8 @@ export default function SettingsPage() {
         />
 
         <SettingsPanel />
+
+        {accountHistoryAvailable && <AccountDataManagement />}
 
         {(accountHistoryAvailable || developmentTestingAvailable) && (
           <section className="mt-6" aria-labelledby="advanced-tools-heading">
