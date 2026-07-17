@@ -117,6 +117,12 @@ enum AuditEntityType {
   NET_WORTH_SNAPSHOT
   REMINDER_PREFERENCE
   REMINDER
+  HOUSEHOLD
+  HOUSEHOLD_MEMBERSHIP
+  HOUSEHOLD_INVITATION
+  HOUSEHOLD_RECORD_SHARE
+  ACCOUNTANT_ACCESS_GRANT
+  ACCOUNTANT_ACCESS_SCOPE
 }
 
 enum AuditAction {
@@ -274,6 +280,58 @@ enum ReminderStatus {
   ARCHIVED
 }
 
+enum HouseholdStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum HouseholdRole {
+  ADMIN
+  MEMBER
+}
+
+enum HouseholdMembershipStatus {
+  ACTIVE
+  LEFT
+  REMOVED
+}
+
+enum CollaborationInvitationStatus {
+  PENDING
+  ACCEPTED
+  REVOKED
+  EXPIRED
+}
+
+enum HouseholdShareEntityType {
+  TRANSACTION
+  PROPERTY
+  LOAN_ACCOUNT
+  CATEGORY_BUDGET
+  RECURRING_ITEM
+  SAVINGS_GOAL
+  NET_WORTH_SNAPSHOT
+  REPORT
+}
+
+enum AccountantGrantStatus {
+  PENDING
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum AccountantScopeType {
+  REPORT
+  TRANSACTION
+  PROPERTY
+  LOAN_ACCOUNT
+  CATEGORY_BUDGET
+  RECURRING_ITEM
+  SAVINGS_GOAL
+  NET_WORTH_SNAPSHOT
+}
+
 enum ImportUndoOperationStatus {
   RUNNING
   UNDONE
@@ -395,6 +453,14 @@ model User {
   netWorthSnapshotEntries      NetWorthSnapshotEntry[]
   reminderPreferences          ReminderPreference[]
   reminders                    Reminder[]
+  createdHouseholds            Household[]                 @relation("HouseholdCreator")
+  householdMemberships         HouseholdMembership[]       @relation("HouseholdMember")
+  householdInvitationsSent     HouseholdInvitation[]       @relation("HouseholdInviter")
+  householdInvitationsAccepted HouseholdInvitation[]       @relation("HouseholdInvitationAcceptedUser")
+  householdRecordSharesOwned   HouseholdRecordShare[]      @relation("HouseholdShareOwner")
+  accountantGrantsOwned        AccountantAccessGrant[]     @relation("AccountantGrantOwner")
+  accountantGrantsAccepted     AccountantAccessGrant[]     @relation("AccountantGrantAccountant")
+  accountantScopesOwned        AccountantAccessScope[]     @relation("AccountantScopeOwner")
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -1051,6 +1117,130 @@ model Reminder {
   @@unique([userId, dedupeKey])
   @@index([userId, status, dueDate])
   @@index([userId, family, status])
+}
+
+
+model Household {
+  id            String          @id @default(cuid())
+  creatorUserId String
+  name          String
+  status        HouseholdStatus @default(ACTIVE)
+  archivedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  creator     User                    @relation("HouseholdCreator", fields: [creatorUserId], references: [id], onDelete: Restrict)
+  memberships HouseholdMembership[]
+  invitations HouseholdInvitation[]
+  shares      HouseholdRecordShare[]
+
+  @@index([creatorUserId, status])
+  @@index([status, createdAt])
+}
+
+model HouseholdMembership {
+  id          String                    @id @default(cuid())
+  householdId String
+  userId      String
+  role        HouseholdRole
+  status      HouseholdMembershipStatus @default(ACTIVE)
+  joinedAt    DateTime                  @default(now())
+  endedAt     DateTime?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user      User      @relation("HouseholdMember", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, userId])
+  @@index([userId, status])
+  @@index([householdId, role, status])
+}
+
+model HouseholdInvitation {
+  id                   String                        @id @default(cuid())
+  householdId          String
+  inviterUserId        String
+  acceptedUserId       String?
+  intendedIdentityHash String?
+  tokenHash            String                        @unique
+  role                 HouseholdRole
+  status               CollaborationInvitationStatus @default(PENDING)
+  expiresAt            DateTime
+  acceptedAt           DateTime?
+  revokedAt            DateTime?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  inviter     User      @relation("HouseholdInviter", fields: [inviterUserId], references: [id], onDelete: Cascade)
+  acceptedUser User?    @relation("HouseholdInvitationAcceptedUser", fields: [acceptedUserId], references: [id], onDelete: SetNull)
+
+  @@index([householdId, status, expiresAt])
+  @@index([inviterUserId, status, createdAt])
+  @@index([acceptedUserId, status])
+  @@index([intendedIdentityHash, status])
+}
+
+model HouseholdRecordShare {
+  id          String                   @id @default(cuid())
+  householdId String
+  ownerUserId String
+  entityType  HouseholdShareEntityType
+  entityId    String
+  sharedAt    DateTime                 @default(now())
+  revokedAt   DateTime?
+  createdAt   DateTime                 @default(now())
+  updatedAt   DateTime                 @updatedAt
+
+  household Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  owner     User      @relation("HouseholdShareOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([householdId, ownerUserId, entityType, entityId])
+  @@index([householdId, revokedAt, entityType])
+  @@index([ownerUserId, revokedAt, entityType])
+}
+
+model AccountantAccessGrant {
+  id                   String                @id @default(cuid())
+  ownerUserId          String
+  accountantUserId     String?
+  intendedIdentityHash String?
+  tokenHash            String                @unique
+  status               AccountantGrantStatus @default(PENDING)
+  expiresAt            DateTime
+  acceptedAt           DateTime?
+  revokedAt            DateTime?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  owner      User                    @relation("AccountantGrantOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+  accountant User?                   @relation("AccountantGrantAccountant", fields: [accountantUserId], references: [id], onDelete: SetNull)
+  scopes     AccountantAccessScope[]
+
+  @@index([ownerUserId, status, expiresAt])
+  @@index([accountantUserId, status, expiresAt])
+  @@index([intendedIdentityHash, status])
+}
+
+model AccountantAccessScope {
+  id          String              @id @default(cuid())
+  grantId     String
+  ownerUserId String
+  scopeType   AccountantScopeType
+  scopeKey    String
+  entityId    String?
+  sharedAt    DateTime            @default(now())
+  revokedAt   DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  grant AccountantAccessGrant @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  owner User                  @relation("AccountantScopeOwner", fields: [ownerUserId], references: [id], onDelete: Cascade)
+
+  @@unique([grantId, scopeType, scopeKey])
+  @@index([ownerUserId, revokedAt, scopeType])
+  @@index([grantId, revokedAt, scopeType])
 }
 
 model BulkOperation {

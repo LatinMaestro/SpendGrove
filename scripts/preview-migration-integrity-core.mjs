@@ -622,6 +622,67 @@ export const migrationProfiles = {
         delegate: "reminder",
       },
     },
+  },
+  "20260717130000_phase_10_household_accountant_foundation": {
+    migrationName: "20260717130000_phase_10_household_accountant_foundation",
+    absentTables: ["Household", "HouseholdMembership", "HouseholdInvitation", "HouseholdRecordShare", "AccountantAccessGrant", "AccountantAccessScope"],
+    absentEnums: ["HouseholdStatus", "HouseholdRole", "HouseholdMembershipStatus", "CollaborationInvitationStatus", "HouseholdShareEntityType", "AccountantGrantStatus", "AccountantScopeType"],
+    enums: {
+      HouseholdStatus: ["ACTIVE", "ARCHIVED"],
+      HouseholdRole: ["ADMIN", "MEMBER"],
+      HouseholdMembershipStatus: ["ACTIVE", "LEFT", "REMOVED"],
+      CollaborationInvitationStatus: ["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"],
+      HouseholdShareEntityType: ["TRANSACTION", "PROPERTY", "LOAN_ACCOUNT", "CATEGORY_BUDGET", "RECURRING_ITEM", "SAVINGS_GOAL", "NET_WORTH_SNAPSHOT", "REPORT"],
+      AccountantGrantStatus: ["PENDING", "ACTIVE", "REVOKED", "EXPIRED"],
+      AccountantScopeType: ["REPORT", "TRANSACTION", "PROPERTY", "LOAN_ACCOUNT", "CATEGORY_BUDGET", "RECURRING_ITEM", "SAVINGS_GOAL", "NET_WORTH_SNAPSHOT"],
+    },
+    auditEntityTypeAdditions: ["HOUSEHOLD", "HOUSEHOLD_MEMBERSHIP", "HOUSEHOLD_INVITATION", "HOUSEHOLD_RECORD_SHARE", "ACCOUNTANT_ACCESS_GRANT", "ACCOUNTANT_ACCESS_SCOPE"],
+    existingCountDelegates: [
+      ["BulkOperation", "bulkOperation"], ["BulkOperationItem", "bulkOperationItem"],
+      ["TransferLink", "transferLink"], ["ImportUndoOperation", "importUndoOperation"], ["ImportUndoItem", "importUndoItem"],
+      ["RecurringInstance", "recurringInstance"], ["SavingsGoal", "savingsGoal"], ["SavingsGoalContribution", "savingsGoalContribution"],
+      ["NetWorthItem", "netWorthItem"], ["NetWorthValuation", "netWorthValuation"],
+      ["NetWorthSnapshot", "netWorthSnapshot"], ["NetWorthSnapshotEntry", "netWorthSnapshotEntry"],
+      ["ReminderPreference", "reminderPreference"], ["Reminder", "reminder"],
+    ],
+    tables: {
+      Household: {
+        columns: ["archivedAt", "createdAt", "creatorUserId", "id", "name", "status", "updatedAt"],
+        indexes: ["Household_creatorUserId_status_idx", "Household_pkey", "Household_status_createdAt_idx"],
+        constraints: ["Household_creatorUserId_fkey", "Household_pkey"],
+        delegate: "household",
+      },
+      HouseholdMembership: {
+        columns: ["createdAt", "endedAt", "householdId", "id", "joinedAt", "role", "status", "updatedAt", "userId"],
+        indexes: ["HouseholdMembership_householdId_role_status_idx", "HouseholdMembership_householdId_userId_key", "HouseholdMembership_pkey", "HouseholdMembership_userId_status_idx"],
+        constraints: ["HouseholdMembership_householdId_fkey", "HouseholdMembership_pkey", "HouseholdMembership_userId_fkey"],
+        delegate: "householdMembership",
+      },
+      HouseholdInvitation: {
+        columns: ["acceptedAt", "acceptedUserId", "createdAt", "expiresAt", "householdId", "id", "intendedIdentityHash", "inviterUserId", "revokedAt", "role", "status", "tokenHash", "updatedAt"],
+        indexes: ["HouseholdInvitation_acceptedUserId_status_idx", "HouseholdInvitation_householdId_status_expiresAt_idx", "HouseholdInvitation_intendedIdentityHash_status_idx", "HouseholdInvitation_inviterUserId_status_createdAt_idx", "HouseholdInvitation_pkey", "HouseholdInvitation_tokenHash_key"],
+        constraints: ["HouseholdInvitation_acceptedUserId_fkey", "HouseholdInvitation_householdId_fkey", "HouseholdInvitation_inviterUserId_fkey", "HouseholdInvitation_pkey"],
+        delegate: "householdInvitation",
+      },
+      HouseholdRecordShare: {
+        columns: ["createdAt", "entityId", "entityType", "householdId", "id", "ownerUserId", "revokedAt", "sharedAt", "updatedAt"],
+        indexes: ["HouseholdRecordShare_householdId_ownerUserId_entityType_entityId_key", "HouseholdRecordShare_householdId_revokedAt_entityType_idx", "HouseholdRecordShare_ownerUserId_revokedAt_entityType_idx", "HouseholdRecordShare_pkey"],
+        constraints: ["HouseholdRecordShare_householdId_fkey", "HouseholdRecordShare_ownerUserId_fkey", "HouseholdRecordShare_pkey"],
+        delegate: "householdRecordShare",
+      },
+      AccountantAccessGrant: {
+        columns: ["acceptedAt", "accountantUserId", "createdAt", "expiresAt", "id", "intendedIdentityHash", "ownerUserId", "revokedAt", "status", "tokenHash", "updatedAt"],
+        indexes: ["AccountantAccessGrant_accountantUserId_status_expiresAt_idx", "AccountantAccessGrant_intendedIdentityHash_status_idx", "AccountantAccessGrant_ownerUserId_status_expiresAt_idx", "AccountantAccessGrant_pkey", "AccountantAccessGrant_tokenHash_key"],
+        constraints: ["AccountantAccessGrant_accountantUserId_fkey", "AccountantAccessGrant_ownerUserId_fkey", "AccountantAccessGrant_pkey"],
+        delegate: "accountantAccessGrant",
+      },
+      AccountantAccessScope: {
+        columns: ["createdAt", "entityId", "grantId", "id", "ownerUserId", "revokedAt", "scopeKey", "scopeType", "sharedAt", "updatedAt"],
+        indexes: ["AccountantAccessScope_grantId_revokedAt_scopeType_idx", "AccountantAccessScope_grantId_scopeType_scopeKey_key", "AccountantAccessScope_ownerUserId_revokedAt_scopeType_idx", "AccountantAccessScope_pkey"],
+        constraints: ["AccountantAccessScope_grantId_fkey", "AccountantAccessScope_ownerUserId_fkey", "AccountantAccessScope_pkey"],
+        delegate: "accountantAccessScope",
+      },
+    },
   }
 };
 
