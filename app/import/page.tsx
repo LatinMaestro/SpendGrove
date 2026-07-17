@@ -1,10 +1,10 @@
 import { AppShell } from "@/components/app-shell";
-import { CsvImportFoundation } from "@/components/csv-import-foundation";
+import { ImportCentre } from "@/components/import-centre";
 
 export default function ImportPage() {
   return (
     <AppShell>
-      <CsvImportFoundation />
+      <ImportCentre />
     </AppShell>
   );
 }
