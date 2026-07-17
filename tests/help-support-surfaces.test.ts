@@ -17,7 +17,7 @@ describe("Phase 5 help and safe support", () => {
     expect(csv).toContain("MAX_CSV_ROWS = 5000");
     expect(help).toContain("5 MB and 5,000 rows");
     expect(help).toContain("Import, Skip or Merge");
-    expect(help).toContain("review rows before import");
+    expect(help).toContain("Review every row");
   });
 
   it("warns users not to send real financial files or screenshots", async () => {
