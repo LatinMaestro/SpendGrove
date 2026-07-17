@@ -33,11 +33,11 @@ export async function POST(request: Request) {
     const authenticationError = error instanceof Error
       && (error.name === "CurrentUserAuthenticationError" || error.name === "AuthenticationRequiredError");
     const ownershipError = error instanceof Error && error.name === "AccountDeletionOwnershipError";
-    const requestBodyError = error instanceof SafeRequestBodyError;
+    const requestBodyError = error instanceof SafeRequestBodyError ? error : null;
     const status = authenticationError
       ? 401
       : requestBodyError
-        ? error.status
+        ? requestBodyError.status
         : error instanceof ZodError
           ? 400
           : ownershipError
