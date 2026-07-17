@@ -1,8 +1,27 @@
 # Current Codex Handoff
 
-Last updated: 15 July 2026
+Last updated: 17 July 2026
 
-## Current phase and status
+## Phase 5 controlling status
+
+- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
+- Phase 5 is not formally closed. Phase 6 is unapproved and not started.
+- Current release classification: conditionally ready for a controlled Australian account-based web private beta after mandatory provider, recovery and legal operator actions.
+- Planning baseline: PR #149, merge `bb715af100b65c8c5d9b74c701d1e135d50e332f`.
+- Latest application delivery: PR #161, merge `1c048abf363b2c9d97818e6724d549725509eeda`.
+- Latest platform-readiness documentation: PR #162, merge `f545828dcd84575a9a6b51de8f12adedf5564f10`.
+- Latest inspected Ready Production deployment: `dpl_8bfqT5DskyyaiLHAsgPwzNTLngMn`, commit `1c048abf363b2c9d97818e6724d549725509eeda`.
+- Latest completed online application gate before the final handoff: 110 test files / 677 tests, TypeScript, Next.js lint and optimized build passed.
+- Next.js `15.5.20`, React `19.1.8` and React DOM `19.1.8` are locked and no Next.js 14 package remains.
+- Account export, immediate account deletion, public Privacy and Help, authentication route protection, security headers, request limits, safe error surfaces, operational runbooks and the dependency gate are implemented.
+- Production still uses a Clerk development/test instance. This is a mandatory private-beta blocker.
+- Preview/Production Vercel–Clerk–Neon mapping, Production migration health and non-Production restore evidence remain operator gates.
+- No Phase 5 Prisma schema change, migration, backfill, manual SQL or Production financial-row access occurred.
+- Analytics and external monitoring remain off. No provider plan was purchased or upgraded.
+- No native package, Apple enrolment, App Store Connect record, build upload, TestFlight distribution, App Store submission, public launch or Phase 6 work occurred.
+- Controlling final documents: `docs/PHASE_5_SUMMARY.md` and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
+
+## Historical phase status
 
 - Phase 3A is formally accepted and closed.
 - Phase 3B Milestones 1, 2 and 3 are formally accepted and closed.
