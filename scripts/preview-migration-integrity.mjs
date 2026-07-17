@@ -34,6 +34,7 @@ const SAFE_FAILURE_CODES = new Set([
   "EXPECTED_ENUM_MISMATCH",
   "EXPECTED_COLUMNS_MISMATCH",
   "EXPECTED_COLUMN_ALREADY_PRESENT",
+  "EXPECTED_INDEX_ALREADY_PRESENT",
   "EXPECTED_INDEXES_MISMATCH",
   "EXPECTED_CONSTRAINTS_MISMATCH",
   "EXPECTED_TABLE_NOT_EMPTY",
@@ -150,6 +151,12 @@ async function runPre(prisma, stateFile, profile) {
       fail("EXPECTED_COLUMN_ALREADY_PRESENT");
     }
   }
+  for (const [tableName, indexNames] of Object.entries(profile.absentIndexes ?? {})) {
+    const indexes = await tableIndexes(prisma, tableName);
+    if (indexNames.some((indexName) => indexes.includes(indexName))) {
+      fail("EXPECTED_INDEX_ALREADY_PRESENT");
+    }
+  }
   if (profile.auditEntityTypeAdditions.length > 0) {
     const auditValues = await enumValues(prisma, "AuditEntityType");
     if (profile.auditEntityTypeAdditions.some((value) => auditValues.includes(value))) {
@@ -239,6 +246,12 @@ async function runPost(prisma, stateFile, expectedCountsJson, profile) {
     const columns = await tableColumns(prisma, tableName);
     if (columnNames.some((columnName) => !columns.includes(columnName))) {
       fail("EXPECTED_COLUMNS_MISMATCH");
+    }
+  }
+  for (const [tableName, indexNames] of Object.entries(profile.requiredIndexes ?? {})) {
+    const indexes = await tableIndexes(prisma, tableName);
+    if (indexNames.some((indexName) => !indexes.includes(indexName))) {
+      fail("EXPECTED_INDEXES_MISMATCH");
     }
   }
   for (const [tableName, expected] of Object.entries(profile.tables)) {
