@@ -257,6 +257,10 @@ export const migrationProfiles = {
     absentEnums: [],
     enums: {},
     auditEntityTypeAdditions: ["TRANSFER_LINK"],
+    existingCountDelegates: [
+      ["BulkOperation", "bulkOperation"],
+      ["BulkOperationItem", "bulkOperationItem"],
+    ],
     tables: {
       TransferLink: {
         columns: [
