@@ -62,7 +62,7 @@ export type HouseholdStore = {
     membershipId: string,
     status: "LEFT" | "REMOVED",
     now: Date,
-  ): Promise<HouseholdViewRecord | null>;
+  ): Promise<{ ended: boolean; household: HouseholdViewRecord | null }>;
   shareRecord(
     userId: string,
     householdId: string,
@@ -382,14 +382,16 @@ export function createPrismaHouseholdStore(
         const target = await tx.householdMembership.findFirst({
           where: { id: membershipId, householdId, status: "ACTIVE" },
         });
-        if (!actor || !target) return null;
+        if (!actor || !target) return { ended: false, household: null };
         const isSelf = actor.id === target.id;
-        if ((!isSelf && actor.role !== "ADMIN") || (isSelf && status !== "LEFT")) return null;
+        if ((!isSelf && actor.role !== "ADMIN") || (isSelf && status !== "LEFT")) {
+          return { ended: false, household: null };
+        }
         if (target.role === "ADMIN") {
           const admins = await tx.householdMembership.count({
             where: { householdId, status: "ACTIVE", role: "ADMIN" },
           });
-          if (admins <= 1) return null;
+          if (admins <= 1) return { ended: false, household: null };
         }
         await tx.householdMembership.update({
           where: { id: target.id },
@@ -401,10 +403,11 @@ export function createPrismaHouseholdStore(
             status === "LEFT" ? "HOUSEHOLD_MEMBER_LEFT" : "HOUSEHOLD_MEMBER_REMOVED",
           ),
         });
-        return isSelf
+        const household = isSelf
           ? null
-          : householdForMember(tx, userId, householdId)
-            as unknown as Promise<HouseholdViewRecord | null>;
+          : await householdForMember(tx, userId, householdId)
+            as unknown as HouseholdViewRecord | null;
+        return { ended: true, household };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
 
@@ -514,12 +517,12 @@ export async function mutateHousehold(
       user.userId, request.householdId, request.membershipId, request.role,
     );
   } else if (request.action === "END_MEMBERSHIP") {
-    household = await resolvedStore.endMembership(
+    const result = await resolvedStore.endMembership(
       user.userId, request.householdId, request.membershipId, request.status, now,
     );
-    if (request.status === "LEFT" && household === null) {
-      return { type: "LEFT" as const };
-    }
+    if (!result.ended) throw new HouseholdConflictError();
+    if (request.status === "LEFT") return { type: "LEFT" as const };
+    household = result.household;
   } else if (request.action === "SHARE") {
     household = await resolvedStore.shareRecord(
       user.userId, request.householdId, request.entityType, request.entityId, now,
