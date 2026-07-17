@@ -12,6 +12,14 @@ Last updated: 17 July 2026
 - Phase 6 remains active and partially delivered. Bulk actions are blocked by the isolated-Preview operator gate; independent Phase 7 contract and parser work may continue.
 - Phase 5 remains technically complete but pending deferred client acceptance.
 
+## Phase 7 Milestone 7.0 — import and data-quality contract
+
+- Phase 7 contract work is active in parallel only because it is independent of the blocked Phase 6 Preview migration.
+- The master specification targets 19 Australian banks. CommBank, ANZ, NAB and Westpac have named profiles; the remaining 15 are generic-only until safe exact-layout evidence and synthetic fixtures exist.
+- Controlling documents: `docs/PHASE_7_IMPORT_DATA_QUALITY_CONTRACT.md` and `docs/PHASE_7_BANK_FORMAT_REGISTER.md`.
+- Next implementation scope is a no-schema typed profile registry and quality manifest. It may reorganize existing parser metadata but must not claim new bank support.
+- No transfer-link, import-undo or merchant-history schema work may begin without its exact contract and migration gate.
+
 ## Complete-product controlling status
 
 - Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
