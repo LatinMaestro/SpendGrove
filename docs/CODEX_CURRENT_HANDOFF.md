@@ -1,5 +1,19 @@
 # Current Codex Handoff
 
+## Phase 11 guarded document preparation — 17 July 2026
+
+- PR #211 / `4342215ba952a6d5107218a2982c0e273b7e228e`: storage/privacy contract and official provider assessment.
+- PR #212 / `300ffc448471093f5a8924540d81968be25a93f9`: additive metadata schema, exact unexecuted sixth migration, verifier profile and hard-false runtime gate.
+- PR #213 / `254929c6538e821ebbedb8ab619c1dea062a2224`: owner-scoped metadata/link service and disabled provider adapter boundary.
+- Latest exact-head evidence: 140 test files / 854 tests, TypeScript, lint and optimized production build passed.
+- `PHASE_11_DOCUMENTS_RUNTIME_ENABLED` remains false; no provider adapter, route, UI, upload/download, OCR/AI or missing-table query is active.
+- The sixth migration `20260717140000_phase_11_document_metadata_foundation` remains unexecuted after the five existing pending migrations.
+- Vercel Private Blob is only the preferred later candidate. No provider/store/package/credential/environment/cost is selected or activated.
+- No Preview/Production migration, database/storage access, file upload, data rewrite/backfill or Production data use occurred.
+- Controlling evidence: `docs/PHASE_11_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Client review remains deferred. Phase 11 repository foundations are prepared, not operational or closed.
+
+
 ## Phase 10 guarded collaboration preparation — 17 July 2026
 
 - PR #206 / `2a07c62cb8ef5884bf57a309a106777028e1a5dd`: personal-by-default privacy and permissions contract.
