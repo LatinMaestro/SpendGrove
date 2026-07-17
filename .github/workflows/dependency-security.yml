@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "package.json"
+      - "package-lock.json"
       - ".github/workflows/dependency-security.yml"
   workflow_dispatch:
 
@@ -22,8 +23,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Install dependency tree without lifecycle scripts
+      - name: Generate dependency lockfile without lifecycle scripts
         run: npm install --ignore-scripts
+      - name: Publish generated lockfile for review
+        uses: actions/upload-artifact@v4
+        with:
+          name: spendgrove-package-lock
+          path: package-lock.json
+          if-no-files-found: error
+          retention-days: 1
       - name: Reject high or critical production advisories
         run: npm audit --omit=dev --audit-level=high
       - name: Confirm framework versions
