@@ -1014,3 +1014,41 @@ Status: repository boundaries technically verified; both runtime gates disabled;
 - [ ] No package, secret or environment change occurs outside an approved operator gate.
 - [ ] Local categorisation, transfer treatment, signed-money, split and no-double-count rules remain unchanged.
 - [ ] No optional provider is represented as operational before focused activation and client testing.
+
+
+## Phase 13 Native iPhone/iPad — architecture and future proof
+
+Status: Expo/React Native architecture selected; no native project, signed build or distribution exists; client review deferred
+
+### Bootstrap and authentication
+
+- [ ] Native app uses SpendGrove's calm visual system and native controls on iPhone and iPad.
+- [ ] Sign-in, sign-up, recovery, session renewal, expiry and sign-out work.
+- [ ] Signed-out users cannot access finance records.
+- [ ] Two-user owner isolation is proven through direct API requests.
+- [ ] Secure session storage and sign-out cleanup work on a real device.
+- [ ] Existing browser-local data is not silently imported, shared or deleted.
+
+### Files and exports
+
+- [ ] A synthetic CSV can be selected through the system picker.
+- [ ] Type/size/privacy checks run before commit.
+- [ ] Temporary copies are cleaned after success, cancellation, failure and sign-out.
+- [ ] Raw CSV is not durably retained.
+- [ ] Safe exports can be downloaded/shared through system controls.
+
+### Navigation, device and parity
+
+- [ ] Deep links open only authenticated authorised destinations.
+- [ ] Offline and failed requests recover without duplicate writes.
+- [ ] iPhone compact and iPad regular-width layouts are usable without horizontal overflow.
+- [ ] Dynamic Type, screen reader, keyboard and focus behaviour pass.
+- [ ] Native money, date, split, transfer and no-double-count results match web/server fixtures.
+- [ ] No server-only, Prisma or secret-bearing module is bundled in the native client.
+
+### External gates
+
+- [ ] Apple legal identity, membership, bundle identifier and signing custody are approved.
+- [ ] EAS/build-provider and environment separation are approved before configuration.
+- [ ] Device capabilities receive separate privacy/product approval.
+- [ ] TestFlight upload, tester invitation, App Store submission and public launch each receive explicit approval.

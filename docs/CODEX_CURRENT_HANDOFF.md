@@ -1,5 +1,17 @@
 # Current Codex Handoff
 
+## Phase 13 native architecture decision — 17 July 2026
+
+- React Native with Expo and Expo Router is selected for the future iPhone/iPad client.
+- The accepted Next.js web product remains separately deployed; native work must reuse pure TypeScript contracts and server-authoritative APIs rather than web components or Prisma.
+- Custom Clerk Expo auth is the planned release path. Clerk's beta prebuilt native views are not the sole dependency.
+- Capacitor remains a fallback; SwiftUI remains an escalation path for discrete Apple-only requirements.
+- The selected architecture supports system CSV selection, secure storage, biometrics, notifications, deep links, sharing and adaptive iPhone/iPad layouts, subject to focused proof.
+- No native package/project, EAS/provider account, Apple payment, signing credential, TestFlight build, App Store record, submission or public launch exists.
+- Controlling decision: `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`.
+- Next repository step is a focused online-verifiable bootstrap proof. If deterministic package/lockfile generation or native verification cannot be performed safely online, preserve this as an explicit tooling/operator gate and continue other independent preparation.
+
+
 ## Phase 12 guarded optional-provider preparation — 17 July 2026
 
 - PR #215 / `131c9911a6e8d6d65e76a7ce9e7998d6fbec78ea`: local-first optional enrichment and provider-neutral assistance contract.

@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 13 native architecture gate — 17 July 2026
+
+- [x] Review current official Apple, Expo/React Native, Capacitor and Clerk capabilities.
+- [x] Compare reuse, native quality, authentication, CSV files, secure storage, notifications, deep links, iPhone/iPad, accessibility and maintenance.
+- [x] Select React Native with Expo and Expo Router for the native client.
+- [x] Keep the accepted Next.js web application independently deployed.
+- [x] Define server-authoritative API, shared-domain, temporary-file, session and privacy boundaries.
+- [ ] Bootstrap `apps/native` only in a focused PR that generates and verifies its deterministic lockfile online.
+- [ ] Prove Clerk auth, owner isolation, synthetic CSV selection/cleanup, export sharing, deep links, offline recovery and iPhone/iPad layouts.
+- [ ] Keep Apple payment, signing, EAS/provider setup, TestFlight, App Store records and public launch blocked.
+
+Controlling decision: `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`.
+
+
 ## Phase 12 optional enrichment and AI contract — 17 July 2026
 
 - [x] Freeze local-first precedence and user confirmation.

@@ -360,3 +360,24 @@ The complete-product roadmap includes optional enrichment and assistance, but lo
 Implementation impact:
 
 PRs #215–#216 deliver the contract and disabled adapter boundaries. Verification passed 141 test files / 864 tests, TypeScript, lint and optimized production build. No provider, package, schema, migration, database access, route, UI, secret, environment change or Production use occurred.
+
+
+## 17 July 2026 — Select Expo/React Native for the native SpendGrove client
+
+Decision:
+
+- Use React Native with Expo and Expo Router for the planned iPhone/iPad application.
+- Keep the accepted Next.js web product independently deployed.
+- Share only platform-neutral TypeScript domain contracts, calculations and synthetic parity fixtures.
+- Use authenticated versioned server endpoints; the native client must not connect to Neon or Prisma.
+- Plan custom Clerk Expo authentication, secure session storage, system CSV selection and explicit temporary-file cleanup.
+- Retain Capacitor as a fallback and SwiftUI for discrete Apple-only escalation.
+- Do not make Clerk's beta prebuilt Expo native components the sole release authentication path.
+
+Reason:
+
+Expo/React Native provides native controls and a credible iPhone/iPad experience while retaining meaningful TypeScript domain reuse and official support for the required files, secure storage, authentication, biometrics, notifications, sharing and deep links. Capacitor maximises web reuse but carries greater thin-wrapper/runtime risk; SwiftUI creates the largest duplicate-client and parity burden.
+
+Implementation impact:
+
+The decision is documentation-only. A later focused bootstrap must generate a deterministic lockfile and prove authentication, owner isolation, synthetic CSV lifecycle, export sharing, deep links, offline recovery, accessibility and adaptive layouts. No Apple payment, signing, EAS/provider configuration, TestFlight, App Store record, submission or public launch is authorised.
