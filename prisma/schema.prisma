@@ -123,6 +123,8 @@ enum AuditEntityType {
   HOUSEHOLD_RECORD_SHARE
   ACCOUNTANT_ACCESS_GRANT
   ACCOUNTANT_ACCESS_SCOPE
+  DOCUMENT
+  DOCUMENT_LINK
 }
 
 enum AuditAction {
@@ -332,6 +334,33 @@ enum AccountantScopeType {
   NET_WORTH_SNAPSHOT
 }
 
+enum DocumentStatus {
+  PENDING_UPLOAD
+  QUARANTINED
+  AVAILABLE
+  FAILED
+  DELETED
+}
+
+enum DocumentCategory {
+  RECEIPT
+  INVOICE
+  LOAN_STATEMENT
+  PROPERTY_RECORD
+  REPORT_EVIDENCE
+  OTHER
+}
+
+enum DocumentLinkTargetType {
+  TRANSACTION
+  PROPERTY
+  LOAN_ACCOUNT
+  LOAN_REPAYMENT
+  IMPORT_BATCH
+  REPORT
+  FINANCIAL_YEAR
+}
+
 enum ImportUndoOperationStatus {
   RUNNING
   UNDONE
@@ -461,6 +490,8 @@ model User {
   accountantGrantsOwned        AccountantAccessGrant[]     @relation("AccountantGrantOwner")
   accountantGrantsAccepted     AccountantAccessGrant[]     @relation("AccountantGrantAccountant")
   accountantScopesOwned        AccountantAccessScope[]     @relation("AccountantScopeOwner")
+  documents                    Document[]
+  documentLinks                DocumentLink[]
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -1241,6 +1272,56 @@ model AccountantAccessScope {
   @@unique([grantId, scopeType, scopeKey])
   @@index([ownerUserId, revokedAt, scopeType])
   @@index([grantId, revokedAt, scopeType])
+}
+
+model Document {
+  id                String           @id @default(cuid())
+  userId            String
+  displayName       String
+  category          DocumentCategory
+  status            DocumentStatus   @default(PENDING_UPLOAD)
+  contentType       String
+  sizeBytes         Int
+  checksumSha256    String?
+  storageProvider   String?
+  objectKey         String?
+  documentDate      DateTime?
+  financialYear     String?
+  availableAt       DateTime?
+  quarantinedAt     DateTime?
+  failedAt          DateTime?
+  deletedAt         DateTime?
+  providerDeletedAt DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  user  User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  links DocumentLink[]
+
+  @@unique([storageProvider, objectKey])
+  @@index([userId, status, createdAt])
+  @@index([userId, category, deletedAt])
+  @@index([userId, financialYear])
+}
+
+model DocumentLink {
+  id             String                 @id @default(cuid())
+  userId         String
+  documentId     String
+  targetType     DocumentLinkTargetType
+  targetKey      String
+  targetEntityId String?
+  linkedAt       DateTime               @default(now())
+  revokedAt      DateTime?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, targetType, targetKey])
+  @@index([userId, revokedAt, targetType])
+  @@index([documentId, revokedAt])
 }
 
 model BulkOperation {
