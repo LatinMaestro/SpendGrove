@@ -370,3 +370,62 @@ describe("Phase 9 advanced personal-finance Preview migration profile", () => {
   });
 });
 
+
+
+describe("Phase 10 collaboration Preview migration profile", () => {
+  const migrationName = "20260717130000_phase_10_household_accountant_foundation";
+
+  it("defines exact additive enums, tables and safe audit additions", () => {
+    const profile = migrationProfileFor(migrationName);
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toEqual([
+      "Household",
+      "HouseholdMembership",
+      "HouseholdInvitation",
+      "HouseholdRecordShare",
+      "AccountantAccessGrant",
+      "AccountantAccessScope",
+    ]);
+    expect(profile?.enums.HouseholdRole).toEqual(["ADMIN", "MEMBER"]);
+    expect(profile?.enums.AccountantGrantStatus).toEqual([
+      "PENDING", "ACTIVE", "REVOKED", "EXPIRED",
+    ]);
+    expect(profile?.auditEntityTypeAdditions).toEqual([
+      "HOUSEHOLD",
+      "HOUSEHOLD_MEMBERSHIP",
+      "HOUSEHOLD_INVITATION",
+      "HOUSEHOLD_RECORD_SHARE",
+      "ACCOUNTANT_ACCESS_GRANT",
+      "ACCOUNTANT_ACCESS_SCOPE",
+    ]);
+  });
+
+  it("protects all earlier prepared foundation counts", () => {
+    const delegates = migrationProfileFor(migrationName)?.existingCountDelegates ?? [];
+    expect(delegates).toContainEqual(["BulkOperation", "bulkOperation"]);
+    expect(delegates).toContainEqual(["TransferLink", "transferLink"]);
+    expect(delegates).toContainEqual(["ImportUndoOperation", "importUndoOperation"]);
+    expect(delegates).toContainEqual(["RecurringInstance", "recurringInstance"]);
+    expect(delegates).toContainEqual(["SavingsGoal", "savingsGoal"]);
+    expect(delegates).toContainEqual(["NetWorthSnapshot", "netWorthSnapshot"]);
+    expect(delegates).toContainEqual(["Reminder", "reminder"]);
+  });
+
+  it("requires exact token, scope, owner indexes and foreign keys", () => {
+    const tables = migrationProfileFor(migrationName)?.tables;
+    expect(tables?.HouseholdInvitation.indexes).toContain(
+      "HouseholdInvitation_tokenHash_key",
+    );
+    expect(tables?.HouseholdRecordShare.indexes).toContain(
+      "HouseholdRecordShare_householdId_ownerUserId_entityType_entityId_key",
+    );
+    expect(tables?.AccountantAccessScope.indexes).toContain(
+      "AccountantAccessScope_grantId_scopeType_scopeKey_key",
+    );
+    expect(tables?.AccountantAccessGrant.constraints).toEqual([
+      "AccountantAccessGrant_accountantUserId_fkey",
+      "AccountantAccessGrant_ownerUserId_fkey",
+      "AccountantAccessGrant_pkey",
+    ]);
+  });
+});
