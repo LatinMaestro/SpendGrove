@@ -11,7 +11,8 @@ Status:
 - Phase 6 — Desktop Web Platform and Bulk Workflows remains active but its durable bulk-operation implementation is blocked by the isolated Preview migration gate.
 - Independent Phase 7 no-schema delivery is merged through PR #184; exact transfer-link/import-undo contracts are complete but their schema work is blocked by the same ordered Preview gate.
 - Latest verification is 119 test files / 722 tests plus green TypeScript, lint and optimized build.
-- Continue with the next independent roadmap work that requires no blocked schema/provider/client decision; preserve every mandatory gate.
+- Phase 8 current-state and financial/reporting contracts are now prepared; tax-sensitive work is blocked pending professional review, and all additive schema remains blocked pending isolated Preview proof.
+- Independent no-schema reporting aggregation may proceed only after its exact formula is confirmed non-tax-sensitive; preserve every mandatory gate.
 - Consolidated client review is deferred until the complete pre-release application is ready.
 
 Current boundaries:
@@ -35,7 +36,9 @@ Controlling records:
 - `docs/PHASE_5_SUMMARY.md`;
 - `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`;
 - `docs/CODEX_CURRENT_HANDOFF.md`;
-- `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
+- `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`;
+- `docs/PHASE_8_CURRENT_STATE_AUDIT.md`;
+- `docs/PHASE_8_FINANCIAL_REPORTING_CONTRACT.md`.
 
 ## Delivery principle
 
