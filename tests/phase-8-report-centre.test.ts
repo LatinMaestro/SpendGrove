@@ -34,7 +34,8 @@ describe("Phase 8 Report Centre", () => {
 
   it("protects the route and keeps future or guarded functionality unavailable", () => {
     expect(routePolicy).toContain('"/reports"');
-    expect(reports).toContain("A structured preparation pack is being completed in Phase 8");
+    expect(reports).toContain('href="/reports/accountant-pack"');
+    expect(reports).toContain("Prepare files");
     expect(reports).not.toContain("BULK_OPERATIONS_RUNTIME_ENABLED");
     expect(reports).not.toContain("TRANSFER_LINK_RUNTIME_ENABLED");
     expect(reports).not.toContain("PropertyReportReview");
