@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { PublicInformationShell } from "@/components/public-information-shell";
 import { RELEASE_CONTACT_PLACEHOLDER } from "@/lib/release-contact";
 import { everydayBankFormatRegister } from "@/lib/csv-bank-profiles";
+import { loanCsvStructuralModes, namedLoanCsvProfiles } from "@/lib/loan-csv-format-registry";
 
 export const metadata: Metadata = {
   title: "Help | SpendGrove",
@@ -80,6 +81,18 @@ export default function HelpPage() {
           </ul>
         </details>
         <p>Loan repayment CSVs use the separate Loans import workflow and must still be reviewed before commit.</p>
+        <p>SpendGrove currently recognises two reviewed loan CSV structures:</p>
+        <ul className="grid gap-2 sm:grid-cols-2" aria-label="Reviewed loan CSV structures">
+          {loanCsvStructuralModes.map((mode) => (
+            <li key={mode.id} className="rounded-xl bg-surface-mint px-3 py-2">
+              <span className="font-semibold text-foreground">{mode.displayName}</span>
+              <span className="mt-1 block">{mode.description}</span>
+            </li>
+          ))}
+        </ul>
+        {namedLoanCsvProfiles.length === 0 && (
+          <p>These are flexible CSV structures, not claims of automatic support for a named lender. Check every loan mapping before review.</p>
+        )}
         <p>If a format is not recognised, do not send a real statement or CSV. Recreate only the column structure with invented rows in a synthetic sample.</p>
       </HelpSection>
 
