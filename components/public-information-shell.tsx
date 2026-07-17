@@ -26,7 +26,7 @@ export function PublicInformationShell({
             <span className="font-bold text-brand-evergreen">SpendGrove</span>
           </Link>
           <nav aria-label="Public information" className="flex items-center gap-2 text-sm font-semibold">
-            <Link href="/privacy" className="min-h-11 rounded-xl px-3 py-3 text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Privacy</Link>
+            <Link href="/help" className="min-h-11 rounded-xl px-3 py-3 text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Help</Link>\n            <Link href="/privacy" className="min-h-11 rounded-xl px-3 py-3 text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Privacy</Link>
             <Link href="/sign-in" className="min-h-11 rounded-xl border border-brand-teal px-3 py-3 text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Sign in</Link>
           </nav>
         </div>
@@ -44,7 +44,7 @@ export function PublicInformationShell({
           <span>SpendGrove by Groveware</span>
           <div className="flex gap-4">
             <Link href="/onboarding" className="font-semibold text-brand-teal">About SpendGrove</Link>
-            <Link href="/privacy" className="font-semibold text-brand-teal">Privacy</Link>
+            <Link href="/help" className="font-semibold text-brand-teal">Help</Link>\n            <Link href="/privacy" className="font-semibold text-brand-teal">Privacy</Link>
           </div>
         </div>
       </footer>
