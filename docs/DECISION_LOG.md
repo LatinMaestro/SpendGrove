@@ -1,5 +1,16 @@
 # Decision Log
 
+## 2026-07-17 — Prepare ordered Phase 6–7 foundations without database execution
+
+Decision: keep complete-product delivery moving by merging exact, additive schema and guarded service preparation while the GitHub Preview-secret update remains blocked by fresh operator reauthentication.
+
+- Phase 6 bulk services are present but fail closed before table access; the UI is not connected.
+- Missing or cross-owner opaque bulk request IDs are not persisted as item foreign keys; only the owner operation's safe aggregate failure evidence is retained.
+- Transfer linking uses a separate lifecycle table with active-only uniqueness and no calculation change.
+- Import undo uses a separate operation journal plus a nullable committed transaction version for future imports; existing imports remain unsupported without backfill.
+- All three migrations remain unexecuted and must run in order against the isolated Preview database.
+- Production migration, runtime activation, backfill and private-row inspection remain prohibited without later gates.
+
 Material decisions should be recorded here. This prevents future agents from re-litigating settled choices.
 
 | Date | Decision | Reason | Approved by | Implementation impact |

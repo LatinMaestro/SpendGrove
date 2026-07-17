@@ -1,5 +1,16 @@
 # Current Codex Handoff
 
+## Phase 6–7 prepared runtime and schema state — 17 July 2026
+
+- PR #188 merged as `910608ee48c1a6f03eb109cd79b56af5f29e7276`. It prepares owner-scoped Phase 6 bulk-operation services and authenticated routes behind `BULK_OPERATIONS_RUNTIME_ENABLED = false`; no UI is connected and no operation-journal table is queried while the gate is off.
+- PR #189 merged as `287225949c1a6eb4f21cff487fb23978216932e9`. It adds the exact additive `TransferLink` schema, unexecuted migration `20260717100000_phase_7_transfer_link_foundation`, integrity-check profile and tests.
+- PR #190 merged as `318b6577de6e96b4a587547c76f86d0b952342bd`. It adds the exact additive import-undo schema, unexecuted migration `20260717110000_phase_7_import_undo_foundation`, altered-column checks and tests.
+- PR #190 exact-head verification passed 122 test files / 744 tests, TypeScript, lint and optimized production build. Its Vercel Preview was green.
+- None of the Phase 6 or Phase 7 migrations ran. No schema object was created in Preview or Production, no existing row was rewritten/backfilled, and no Production content was accessed.
+- The migration order is fixed: `20260717090000_phase_6_bulk_operation_foundation`, then transfer link, then import undo. Do not advance the workflow profile or activate runtime code out of order.
+- The remaining external gate is operator-authenticated replacement of `NEON_PREVIEW_DATABASE_URL` and `NEON_PREVIEW_DIRECT_DATABASE_URL` with the retained isolated Preview project's pooled/direct values. GitHub required fresh account reauthentication; no bypass was attempted.
+- Account export remains intentionally independent of the unexecuted bulk/transfer/import-undo tables. Add those safe summaries only after the schema exists in every environment where export runs.
+
 Last updated: 17 July 2026
 
 ## Isolated Preview environment update — 17 July 2026

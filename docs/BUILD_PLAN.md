@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 6–7 prepared implementation update — 17 July 2026
+
+- [x] Merge owner-safe Phase 6 bulk-operation server preparation behind a disabled runtime gate (PR #188, `910608ee48c1a6f03eb109cd79b56af5f29e7276`).
+- [x] Merge the exact unexecuted Phase 7 transfer-link schema/migration/checker foundation (PR #189, `287225949c1a6eb4f21cff487fb23978216932e9`).
+- [x] Merge the exact unexecuted Phase 7 import-undo schema/migration/checker foundation (PR #190, `318b6577de6e96b4a587547c76f86d0b952342bd`).
+- [x] Verify the latest exact head with 122 test files / 744 tests, TypeScript, lint, optimized build and green Vercel Preview.
+- [ ] Operator completes GitHub fresh reauthentication and updates the two Preview-only Neon secrets to the retained isolated project.
+- [ ] Dispatch and verify the three Preview migrations one at a time in repository order; stop on any failure without retry/reset/manual resolution.
+- [ ] Propose and approve a separate safe Production migration gate before enabling any migration-dependent runtime.
+- [ ] Activate and complete Phase 6 bulk UI only after the required table exists in the target environment.
+- [ ] Implement Phase 7 durable transfer linking and import undo only after their respective ordered migration succeeds.
+
+No Preview or Production migration, manual SQL, data rewrite/backfill, Production private-row access, provider purchase, package or financial-rule change occurred.
+
 ## Preview environment gate update — 17 July 2026
 
 - The independent empty Neon Free project `cold-field-54187673` / branch `br-sweet-flower-aj2ng7ix` is the retained non-Production Preview destination.
