@@ -1,6 +1,6 @@
 # Phase 6 Preview Migration Gate
 
-Status: blocked safely before migration  
+Status: isolated database established; GitHub credential gate remains before migration  
 Date: 17 July 2026  
 Target migration: `20260717090000_phase_6_bulk_operation_foundation`
 
@@ -11,7 +11,7 @@ Target migration: `20260717090000_phase_6_bulk_operation_foundation`
 - PR #172 merged the migration-aware Preview integrity checker as `25b6a717bac5fae9481b7bee9ba6aaa72d72bdad`.
 - The schema/checker exact-head verification passed 113 test files / 697 tests, TypeScript, lint and optimized build.
 
-## Preview run evidence
+## Earlier failed Preview run
 
 GitHub Actions run [29555735427](https://github.com/LatinMaestro/SpendGrove/actions/runs/29555735427) was dispatched once from `main` in `migrate` mode.
 
@@ -28,31 +28,63 @@ Safe result:
 
 No Preview migration, Production migration, manual SQL, reset, history resolution, rewrite or backfill occurred.
 
-## Confirmed environment blocker
+## Isolated Preview destination established
 
-Safe connected Neon metadata still shows one SpendGrove project with one visible primary branch named `production`. No separate Preview branch is visible. This matches the unresolved Phase 5 environment-readiness gate.
+A separate empty Neon project was created on the existing Free organization through the connected Neon workflow:
 
-The repository cannot prove that the GitHub Preview secrets currently target a live, isolated non-Production destination. The generic preflight failure is consistent with an unavailable or stale Preview target, but the secret values were not inspected and the exact endpoint was not exposed.
+- project: `SpendGrove Preview Isolated`;
+- safe project ID: `cold-field-54187673`;
+- safe branch ID: `br-sweet-flower-aj2ng7ix`;
+- branch: `main`;
+- database: `neondb`;
+- plan: Free;
+- declaration: new empty project, not a child branch of the SpendGrove Production project, with no copied Production users, identities, financial records or other rows.
 
-## Operator action required
+Neon Free officially permits multiple projects; no provider purchase, plan change or payment detail was required. Two transient empty setup projects were deleted immediately after their generated credentials appeared in connector/browser output. Their credentials were thereby invalidated. The retained project's credential was not recorded in repository content, issues, PRs or documentation.
 
-Before another migration request:
+## Vercel Preview mapping
 
-1. In Neon, create or confirm a dedicated non-Production Preview branch/database for SpendGrove.
-2. Confirm it is not the primary `production` branch.
-3. In GitHub Actions secrets, set:
-   - `NEON_PREVIEW_DATABASE_URL` to the pooled Preview-only connection;
-   - `NEON_PREVIEW_DIRECT_DATABASE_URL` to the direct Preview-only connection.
-4. Do not copy either value into GitHub files, issues, PRs, chat or screenshots.
-5. Confirm no Production URL or secret is mapped by the workflow.
-6. Re-run the existing workflow once only after the operator gate is complete.
-7. If preflight fails again, stop without retry, reset, manual SQL or migration-history resolution.
+On 17 July 2026:
 
-No provider plan purchase or upgrade is implied. If the current plan cannot provide an isolated Preview destination, record that limitation for a separate client decision.
+- the SpendGrove project's Preview-only `DATABASE_URL` was replaced with the retained isolated project's pooled connection;
+- Preview-only `DIRECT_DATABASE_URL` was replaced with the retained isolated project's direct connection;
+- both variables remain Sensitive and Preview-scoped;
+- Production `DATABASE_URL` and `DIRECT_DATABASE_URL` entries were not opened or edited and retained their prior metadata;
+- no redeployment was triggered solely for this environment update.
+
+No Clerk, Production Neon, provider-plan, package, source, schema or data setting changed.
+
+## Remaining GitHub credential gate
+
+The connected GitHub session reached the existing Actions secret update form, but GitHub required fresh account reauthentication before accepting the secret. That credential step is unavailable to the autonomous connected session and must not be bypassed.
+
+The existing secrets therefore have **not** been proven to contain the retained isolated project's credentials:
+
+- `NEON_PREVIEW_DATABASE_URL`;
+- `NEON_PREVIEW_DIRECT_DATABASE_URL`.
+
+Do not dispatch the migration until the operator completes the checklist below.
+
+## Exact operator checklist
+
+1. Open Neon Console and select project `SpendGrove Preview Isolated` with safe ID `cold-field-54187673`.
+2. Select branch `main` / `br-sweet-flower-aj2ng7ix` and database `neondb`.
+3. Obtain the pooled connection for `NEON_PREVIEW_DATABASE_URL` and the direct, non-pooler connection for `NEON_PREVIEW_DIRECT_DATABASE_URL`.
+4. Open [SpendGrove Actions secrets](https://github.com/LatinMaestro/SpendGrove/settings/secrets/actions).
+5. Update the two existing repository secrets with the corresponding Preview-only values.
+6. Complete GitHub's fresh account confirmation. Do not paste either value into source files, documentation, issues, PRs, chat, screenshots or logs.
+7. Confirm the Vercel Preview entries remain Preview-only and the Production entries remain unchanged.
+8. Dispatch the existing `Preview Prisma Migration` workflow once from `main` in `migrate` mode with confirmation `RUN PREVIEW MIGRATION`.
+9. If any preflight or migration step fails, stop. Do not retry automatically, reset, use `migrate dev`, run manual SQL or resolve history.
+10. If green, verify all committed migrations are recorded chronologically, the expected Phase 6 schema exists, no failed state exists and only synthetic/empty data is present.
+11. Record the workflow run ID and post-migration evidence before enabling migration-dependent application work.
 
 ## Delivery impact
 
+- The isolated Neon and Vercel Preview parts of the environment gate are complete.
+- GitHub Actions secret reauthentication and the migration run remain operator-blocked.
 - The Phase 6 bulk schema remains repository-only and unexecuted.
-- Bulk-operation application code must not be merged into the Production-deployed branch while Production lacks the required tables.
-- Independent no-schema Phase 6 and Phase 7 repository work may continue.
+- Production-facing bulk-operation code must not be deployed while Production lacks the required tables.
+- Repository-side bulk, transfer-link and import-undo work may be prepared and exact-head verified, but migration-dependent runtime activation remains blocked.
+- No Production migration, Production database access, data copy, rewrite or backfill is authorised.
 - No public launch, real-user invitation or App Store action is authorised.
