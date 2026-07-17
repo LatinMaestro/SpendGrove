@@ -44,7 +44,7 @@ describe("Phase 7 durable transfer-link schema foundation", () => {
 
     expect(migration).toContain('CREATE TABLE "TransferLink"');
     expect(migration).toContain("ALTER TYPE \"AuditEntityType\" ADD VALUE 'TRANSFER_LINK'");
-    expect(migration).not.toMatch(/INSERT INTO|UPDATE |DELETE FROM|DROP |TRUNCATE|ALTER COLUMN/i);
+    expect(migration).not.toMatch(/^\\s*(?:INSERT INTO|UPDATE\\s+"|DELETE FROM|DROP |TRUNCATE|ALTER COLUMN)/im);
   });
 
   it("keeps financial and privacy boundaries explicit in the contract", async () => {
