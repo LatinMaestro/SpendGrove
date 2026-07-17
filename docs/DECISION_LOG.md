@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-17 — Keep Basiq and AI optional, local-first and provider-neutral
+
+Decision: reliable local merchant rules prevent external calls; any later Basiq request is limited to cleaned merchant text and minimum safe AU context; AI assistance is opt-in, typed, bounded and incapable of direct financial mutation. Every durable change remains user-confirmed through existing owner-scoped services.
+
+No provider, package, credential, environment variable, call, payload persistence, schema, migration or Production activation is approved. Basiq and AI use separate hard-false gates and provider-neutral adapters.
+
+
 ## 2026-07-17 — Keep Phase 11 file storage provider-neutral and disabled
 
 Decision: store only owner-scoped document metadata and links in PostgreSQL; keep file bytes in a later private object store; use opaque random object keys; require quarantine, content-signature validation, deletion/export reconciliation and explicit owner checks; and prohibit OCR/AI or automatic Phase 10 sharing.
