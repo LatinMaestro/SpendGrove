@@ -79,7 +79,7 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 | TX-02 | Signed money/type invariant | HD | C | shared validation; tests C | F | N | R; maintain | FIN |
 | TX-03 | Split transactions | MS, HD | C/W | parent/child fields; tests C | F | N | R; maintain | FIN, no double count |
 | TX-04 | Transfer classification | MS, HD | C/W | TRANSFER type; tests C | F | N | R; maintain | FIN |
-| TX-05 | Durable transfer pair/link | MS, CD | M | no link model | F | exact pairing contract; A/G | R; 7.3 | ambiguity, unlink, no double count |
+| TX-05 | Durable transfer pair/link | MS, CD | O/B; exact contract and schema assessment complete | TransferLink proposed; implementation absent | F | A/G; isolated Preview gate | R; 7.3 contract delivered | exact opposite amount, two-day window, user confirmation, unlink, no double count |
 | TX-06 | Delete/restore lifecycle | MS, HD | C/W | soft-delete state; tests C | F | N | R | recovery and audit |
 | TX-07 | Search/month/category filters | MS, HD | C/W | month queries; tests C | F | N | R; 6.2 polish | OWN, A11Y |
 | TX-08 | Saved filters/views | MS, CD | M | no model | L/F | A/G or browser preference decision | R; 6.2 | ownership/export/deletion |
@@ -93,7 +93,7 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 | IMP-05 | Import/Skip/Merge | MS, HD | C/W | C; tests C | F | N | R | FIN/idempotency |
 | IMP-06 | Duplicate detection | MS, HD | C/W | deterministic score; tests C | F | N | R | no threshold drift |
 | IMP-07 | Import history | MS, HD | C/W | ImportBatch/Row; tests C | H/F | N | R | OWN, privacy |
-| IMP-08 | Import undo | MS, CD | M | no undo model/action | F/H | A/G | R; 7.4 | edits/links/merge safety |
+| IMP-08 | Import undo | MS, CD | O/B; exact contract and schema assessment complete | operation/item models proposed; implementation absent | F/H | A/G; isolated Preview gate | R; 7.4 contract delivered | future imports only; edits/links/merge safety; no backfill |
 | IMP-09 | CommBank named profile | MS, HD | C | parser + fixtures | H/F | N | R; regression | fixture matrix |
 | IMP-10 | ANZ named profile | MS, HD | C | parser + fixtures | H/F | N | R | fixture matrix |
 | IMP-11 | NAB named profile | MS, HD | C | parser + fixtures | H/F | N | R | fixture matrix |
