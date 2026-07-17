@@ -7,7 +7,7 @@ import {
 } from "./preview-migration-integrity-core.mjs";
 
 const DEFAULT_MIGRATION = "20260717090000_phase_6_bulk_operation_foundation";
-const BASE_EXISTING_COUNT_DELEGATES = [
+const EXISTING_COUNT_DELEGATES = [
   ["User", "user"],
   ["Category", "category"],
   ["Transaction", "transaction"],
@@ -70,7 +70,7 @@ function parseArguments() {
 
 async function existingCounts(prisma, profile) {
   const delegates = [
-    ...BASE_EXISTING_COUNT_DELEGATES,
+    ...EXISTING_COUNT_DELEGATES,
     ...(profile.existingCountDelegates ?? []),
   ];
   const entries = await Promise.all(delegates.map(async ([name, delegate]) => [
