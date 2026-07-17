@@ -144,12 +144,13 @@ export default function ReportsPage() {
           <div className="min-w-0">
             <h2 id="accountant-pack-heading" className="text-base font-semibold text-foreground">Accountant pack preparation</h2>
             <p className="mt-1 text-sm leading-5 text-muted">
-              A structured preparation pack is being completed in Phase 8. No tax conclusion, document upload or accountant access is active here.
+              Download a structured set of existing reports and exports. No tax conclusion, document upload or accountant access is active here.
             </p>
-            <p className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-muted">
-              <ShieldCheck aria-hidden="true" className="h-4 w-4 text-brand-teal" />
-              Existing reports remain available above.
-            </p>
+            <Link href="/reports/accountant-pack" className="mt-3 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+              <ShieldCheck aria-hidden="true" className="h-4 w-4" />
+              Prepare files
+              <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
