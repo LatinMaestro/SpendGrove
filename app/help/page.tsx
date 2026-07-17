@@ -3,15 +3,16 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { PublicInformationShell } from "@/components/public-information-shell";
 import { RELEASE_CONTACT_PLACEHOLDER } from "@/lib/release-contact";
+import { everydayBankFormatRegister } from "@/lib/csv-bank-profiles";
 
 export const metadata: Metadata = {
   title: "Help | SpendGrove",
   description: "Beginner-friendly help for SpendGrove accounts, transactions and CSV imports.",
 };
 
-function HelpSection({ title, children }: Readonly<{ title: string; children: ReactNode }>) {
+function HelpSection({ id, title, children }: Readonly<{ id?: string; title: string; children: ReactNode }>) {
   return (
-    <section className="rounded-2xl border border-border bg-surface-base p-5 sm:p-6">
+    <section id={id} className="rounded-2xl border border-border bg-surface-base p-5 sm:p-6">
       <h2 className="text-xl font-semibold text-foreground">{title}</h2>
       <div className="mt-3 space-y-3 text-sm leading-6 text-muted">{children}</div>
     </section>
@@ -19,6 +20,9 @@ function HelpSection({ title, children }: Readonly<{ title: string; children: Re
 }
 
 export default function HelpPage() {
+  const confirmedBanks = everydayBankFormatRegister.filter((entry) => entry.supportStatus === "CONFIRMED_PROFILE");
+  const genericOnlyBanks = everydayBankFormatRegister.filter((entry) => entry.supportStatus === "GENERIC_ONLY");
+
   return (
     <PublicInformationShell
       title="SpendGrove help"
@@ -56,10 +60,27 @@ export default function HelpPage() {
         <p>If a screenshot is ever needed for support, use synthetic data and crop or cover names, amounts, merchants, account details, Property details and browser identifiers.</p>
       </HelpSection>
 
-      <HelpSection title="Supported bank formats">
-        <p>SpendGrove supports ordinary transaction CSVs that provide a date, an amount or debit/credit columns, and a transaction description. Some known layouts can be mapped automatically; others need a one-time review.</p>
-        <p>Loan repayment CSVs are supported only through the Loans import workflow and must still be reviewed before commit.</p>
-        <p>If a format is not recognised, do not submit a real statement. Create a synthetic sample with the same headers and invented rows.</p>
+      <HelpSection id="supported-bank-formats" title="Supported bank formats">
+        <p>SpendGrove has confirmed automatic column matching for these everyday transaction CSVs:</p>
+        <ul className="grid gap-2 sm:grid-cols-2" aria-label="Confirmed everyday bank CSV formats">
+          {confirmedBanks.map((entry) => (
+            <li key={entry.bankId} className="rounded-xl bg-surface-mint px-3 py-2 font-semibold text-foreground">
+              {entry.bankName}
+            </li>
+          ))}
+        </ul>
+        <p>Other banks can still use the generic importer when the file contains a date, an amount or debit/credit columns, and a description. SpendGrove will ask the user to check the columns before review.</p>
+        <details className="rounded-xl border border-border px-4 py-3">
+          <summary className="min-h-11 cursor-pointer py-2 font-semibold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            Banks currently using checked manual mapping
+          </summary>
+          <p className="mt-2">These are target banks, not confirmed automatic formats:</p>
+          <ul className="mt-2 list-disc columns-1 space-y-1 pl-5 sm:columns-2" aria-label="Generic-only target bank formats">
+            {genericOnlyBanks.map((entry) => <li key={entry.bankId}>{entry.bankName}</li>)}
+          </ul>
+        </details>
+        <p>Loan repayment CSVs use the separate Loans import workflow and must still be reviewed before commit.</p>
+        <p>If a format is not recognised, do not send a real statement or CSV. Recreate only the column structure with invented rows in a synthetic sample.</p>
       </HelpSection>
 
       <HelpSection title="Account data and this browser">
