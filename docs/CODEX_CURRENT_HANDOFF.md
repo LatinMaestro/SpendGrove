@@ -2,6 +2,14 @@
 
 Last updated: 17 July 2026
 
+## Phase 8 contract gate — 17 July 2026
+
+- Repository audit and reporting contract are recorded in `docs/PHASE_8_CURRENT_STATE_AUDIT.md` and `docs/PHASE_8_FINANCIAL_REPORTING_CONTRACT.md`.
+- Current linked-record Property reporting and Loan component sources are reusable; advanced reports and accountant packs remain incomplete.
+- Dormant `PropertyReportReview` classification must not be reactivated as a mandatory second reporting workflow.
+- Tax-sensitive terminology, allocations and preparation flags are blocked pending qualified Australian tax/accounting review.
+- Any additive schema remains blocked by the isolated Preview environment gate. No schema/migration implementation began.
+
 ## Phase 7 delivery update — 17 July 2026
 
 - Phase 7 contracts, truthful format registries, Help guidance and no-schema merchant-profile completion are merged through PR #184 / `4798a09059931e703195677b265958bc245f8b6a`.
