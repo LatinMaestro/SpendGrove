@@ -8,9 +8,10 @@ Status:
 - Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
 - PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec` and records the complete-product audit, feature register, App Store delivery plan, decision register and revised Phase 6–15 roadmap.
 - The former limited Phase 6–7 ending is superseded.
-- Phase 6 — Desktop Web Platform and Bulk Workflows is active.
-- Immediate task: Milestone 6.0 desktop contract and interface inventory, including exact bulk-action/undo safety rules and schema assessment.
-- After 6.0, continue through the approved Phase 6 sequence and later merged-roadmap phases while all mandatory gates are satisfied.
+- Phase 6 — Desktop Web Platform and Bulk Workflows remains active but its durable bulk-operation implementation is blocked by the isolated Preview migration gate.
+- Independent Phase 7 no-schema delivery is merged through PR #184; exact transfer-link/import-undo contracts are complete but their schema work is blocked by the same ordered Preview gate.
+- Latest verification is 119 test files / 722 tests plus green TypeScript, lint and optimized build.
+- Continue with the next independent roadmap work that requires no blocked schema/provider/client decision; preserve every mandatory gate.
 - Consolidated client review is deferred until the complete pre-release application is ready.
 
 Current boundaries:
@@ -33,7 +34,8 @@ Controlling records:
 - `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`;
 - `docs/PHASE_5_SUMMARY.md`;
 - `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`;
-- `docs/CODEX_CURRENT_HANDOFF.md`.
+- `docs/CODEX_CURRENT_HANDOFF.md`;
+- `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
 
 ## Delivery principle
 

@@ -2,6 +2,17 @@
 
 Last updated: 17 July 2026
 
+## Phase 7 delivery update — 17 July 2026
+
+- Phase 7 contracts, truthful format registries, Help guidance and no-schema merchant-profile completion are merged through PR #184 / `4798a09059931e703195677b265958bc245f8b6a`.
+- Latest exact-head verification: GitHub Actions run `29560669053`, 119 test files / 722 tests, TypeScript, Next.js lint and optimized production build passed.
+- Merchant profiles now support safe cleaned-name/default-category edits plus reversible Remove/Restore; historical transactions are never recategorised.
+- Exact transfer-link and future-import undo contracts are complete, but implementation remains blocked by the isolated Preview database gate and the ordered Phase 6 migration dependency.
+- Fifteen target banks remain generic/manual-mapping only; named lender profiles also remain evidence-blocked. No unsupported format is claimed.
+- No Preview or Production migration, data rewrite/backfill, Production financial-row access, package/provider/secret/environment change or financial-rule change occurred.
+- Controlling summary: `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
+- Phase 7 remains partially delivered and unaccepted; consolidated client review remains deferred.
+
 ## Phase 6 delivery update — 17 July 2026
 
 - Phase 6 no-schema delivery now includes the Import Centre, desktop monthly transaction ledger, transient direction/category filters, consolidated category/merchant/saved-mapping administration, and concise access to existing monthly and Property report workflows.
@@ -41,9 +52,10 @@ Last updated: 17 July 2026
 ## Phase 7 Milestone 7.5 — Merchant profile completion
 
 - Existing owner-scoped profiles, aliases, rules, conflict handling and safe lifecycle were confirmed.
-- No-schema implementation is approved only for editing a profile's cleaned name/default suggestion category and removing/restoring the profile.
+- PR #184 / `4798a09059931e703195677b265958bc245f8b6a` implements owned cleaned-name/default-category editing and reversible Remove/Restore.
+- Profile inactivity suppresses future suggestions while aliases/rules retain their own lifecycle state; no historical transaction is changed.
 - Merchant merge and all-history mutation remain blocked by the reversible-operation journal and isolated Preview environment gate.
-- Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`.
+- Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`; evidence: `docs/PHASE_7_IMPORT_DATA_QUALITY_SUMMARY.md`.
 
 ## Complete-product controlling status
 

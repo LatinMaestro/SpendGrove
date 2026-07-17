@@ -99,9 +99,9 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 | IMP-11 | NAB named profile | MS, HD | C | parser + fixtures | H/F | N | R | fixture matrix |
 | IMP-12 | Westpac named profile | MS, HD | C | parser + fixtures | H/F | N | R | fixture matrix |
 | IMP-13 | Remaining 15 target-bank profiles | MS, CD | P/M; generic fallback only | parser profiles/fixtures missing | H/F | N | R; 7.1 batches | synthetic samples/format truth |
-| IMP-14 | Loan CSV format matrix | MS, HD | P | accepted formats exist, coverage not complete | H/F | N mostly | R; 7.2/8.1 | synthetic samples |
+| IMP-14 | Loan CSV format matrix | MS, HD | P; truthful two-mode registry and Help delivered in PR #181 | accepted structural modes exist; named lender coverage incomplete | H/F | N mostly | R; 7.2 delivered/8.1 expand | named lender evidence and synthetic samples |
 | IMP-15 | Safe bank-format contribution | MS, CD | M | no intake workflow | H | support/privacy contract | R; 7.6/15.2 | never request real CSV |
-| IMP-16 | Parser quality reporting | CD | M | no quality dashboard/manifest | L | N | R; 7.6 | no private data |
+| IMP-16 | Parser quality reporting | CD | P; typed registry/quality boundaries and truthful Help exist | no private quality dashboard | L | N | R; 7.1 delivered/7.6 expand | no private data; safe contribution workflow missing |
 
 ## Merchants and categories
 
@@ -109,7 +109,7 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 |---|---|---|---|---|---|---|---|---|
 | MER-01 | Clean merchant names | MS, HD | C/W | deterministic normalization | F | N | R | no raw narration persistence expansion |
 | MER-02 | Merchant aliases | MS, HD | C/W | MerchantAlias; tests C | F | N | R; 6.4 polish | OWN |
-| MER-03 | Merchant profiles | MS, HD | P; existing rules/admin consolidated in Settings PR #174 | core model/actions; no richer profile expansion | F | A for richer defaults | R; 6.4 foundation/7.5 | OWN; profile completion remains |
+| MER-03 | Merchant profiles | MS, HD | C/W for safe name/category edit and reversible lifecycle; PR #184 | existing owner-scoped model/actions; tests C | F | N for delivered profile completion | R; 7.5 delivered | OWN; merge/history remains separately blocked |
 | MER-04 | User-confirmed category rules | MS, HD | C/W | MerchantRule; tests C | F | N | R | direction compatibility |
 | MER-05 | Local keyword/brand suggestions | HD | C/W | deterministic client/server helpers | F | N | R | false-positive tests |
 | MER-06 | Apply to same merchant | MS, CD | P in review/rules, incomplete durable bulk | existing rules + new bulk action | F | A/G if undo journal | R; 6.3/7.5 | explicit scope/preview |
@@ -202,7 +202,7 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 | OPS-04 | Incident response/rollback | MS, HD | P/O | runbooks partial | H | monitoring/operator | R; 15.3/15.5 | drill |
 | LEG-01 | Professionally reviewed Privacy Policy/Terms | MS, CD | P/B; product disclosures exist | content only | I/H/E | legal review/business facts | R; 15.2 | external review |
 | LEG-02 | Tax/report disclaimer review | MS, CD | P/B | no-advice copy exists | F/H | tax/legal professional | R; 8.0/15.2 | external review |
-| QA-01 | Full regression and bank matrix | MS, HD | C baseline; expands with scope | 677 current tests | H/F | all phases | R; every QA/15.4 | exact-head green |
+| QA-01 | Full regression and bank matrix | MS, HD | C baseline; expands with scope | 722 tests at PR #184 exact head | H/F | all phases | R; every QA/15.4 | exact-head green |
 | QA-02 | Accessibility audit | MS, HD | P/C baseline | current checks | L/H | final full-app review | R; 15.4 | WCAG/device |
 | QA-03 | iPhone/iPad real-device matrix | MS, CD | M | no native build | H | Phase 13 | R; 13/15 | DEV |
 | QA-04 | Security/penetration review | MS, CD | M/B | internal tests only | H | external provider/professional | R; 15.1 | no high severity |
