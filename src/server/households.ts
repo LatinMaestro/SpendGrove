@@ -343,8 +343,8 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_INVITATION_ACCEPTED",
           ),
         });
-        return householdForMember(tx, userId, invitation.householdId)
-          as unknown as Promise<HouseholdViewRecord | null>;
+        return (await householdForMember(tx, userId, invitation.householdId))
+          as unknown as HouseholdViewRecord | null;
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
 
@@ -371,8 +371,8 @@ export function createPrismaHouseholdStore(
             `HOUSEHOLD_ROLE_${role}`,
           ),
         });
-        return householdForMember(tx, userId, householdId)
-          as unknown as Promise<HouseholdViewRecord | null>;
+        return (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null;
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     },
 
@@ -405,7 +405,7 @@ export function createPrismaHouseholdStore(
         });
         const household = isSelf
           ? null
-          : await householdForMember(tx, userId, householdId)
+          : (await householdForMember(tx, userId, householdId))
             as unknown as HouseholdViewRecord | null;
         return { ended: true, household };
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
@@ -430,8 +430,8 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_RECORD_SHARED",
           ),
         });
-        return householdForMember(tx, userId, householdId)
-          as unknown as Promise<HouseholdViewRecord | null>;
+        return (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null;
       });
     },
 
@@ -448,8 +448,8 @@ export function createPrismaHouseholdStore(
             "HOUSEHOLD_RECORD_SHARE_REVOKED",
           ),
         });
-        return householdForMember(tx, userId, householdId)
-          as unknown as Promise<HouseholdViewRecord | null>;
+        return (await householdForMember(tx, userId, householdId))
+          as unknown as HouseholdViewRecord | null;
       });
     },
   };
