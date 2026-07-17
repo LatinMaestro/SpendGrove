@@ -943,3 +943,43 @@ Status: repository foundations technically verified; runtime disabled; fifth Pre
 - [ ] No real invitation is sent during repository preparation.
 - [ ] Professional review confirms accountant-role wording where required.
 - [ ] Phase 10 is activated only after synthetic Preview verification and a focused activation PR.
+
+
+## Phase 11 Documents, Receipts and Evidence — guarded preparation
+
+Status: repository foundations technically verified; runtime/provider disabled; sixth Preview migration pending; client review deferred
+
+### Activation and privacy
+
+- [ ] All six ordered Preview migrations have passed against the retained isolated synthetic Preview database.
+- [ ] No document control appears operational before the table, provider, malware and focused activation gates pass.
+- [ ] No file bytes, OCR text, raw filename or public object URL is stored in PostgreSQL.
+- [ ] No missing-table or provider query occurs while Phase 11 is disabled.
+- [ ] No Production migration, real file upload, data rewrite or backfill occurred.
+
+### Metadata and links
+
+- [ ] Documents remain owner scoped and another user cannot read or link them by ID.
+- [ ] Safe labels, PDF/JPEG/PNG types and 10 MiB limit are enforced.
+- [ ] Object keys contain no identity, filename or financial content.
+- [ ] Transaction, split-child, Property, Loan, Loan repayment, import-audit, report and financial-year links require the same owner.
+- [ ] Linking one record does not automatically link related records or share it with a household/accountant.
+- [ ] Link revocation takes effect on the next read.
+
+### Provider and lifecycle
+
+- [ ] Preview and Production private stores are proven separate.
+- [ ] Upload authorization is short-lived, single-object, owner authorised and constrained by type/size/key.
+- [ ] Unsafe or unverified content remains quarantined and unavailable.
+- [ ] Normal deletion revokes access immediately and provider cleanup is reconciled honestly.
+- [ ] Account export includes a safe manifest and only retrievable owned files.
+- [ ] Account deletion does not claim completion while provider erasure remains unresolved.
+- [ ] No real finance document is submitted through public support.
+
+### External gates
+
+- [ ] Provider, region, cost and spend controls receive approval.
+- [ ] Package/OIDC/secret/environment treatment receives approval.
+- [ ] Malware controls and incident response are verified.
+- [ ] Retention/recovery, backup and deletion propagation receive approval.
+- [ ] OCR/AI remains unavailable unless separately approved after privacy review.
