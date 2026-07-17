@@ -900,3 +900,46 @@ Status: repository foundations technically verified; runtime disabled; Preview m
 - [ ] Dismiss and acknowledge work safely.
 - [ ] No amount, merchant, raw source description or banking identifier is stored in reminder metadata.
 - [ ] No email, SMS, remote push or provider delivery is implied or active.
+
+
+## Phase 10 Household and Accountant Collaboration — guarded preparation
+
+Status: repository foundations technically verified; runtime disabled; fifth Preview migration pending; invitation delivery unavailable; client review deferred
+
+### Activation and privacy
+
+- [ ] All five ordered Preview migrations have passed individually against the retained isolated synthetic Preview database.
+- [ ] No household or accountant control appears operational before the Phase 10 table and focused activation PR exist.
+- [ ] Existing personal records remain private and are not automatically shared after household creation or joining.
+- [ ] Browser-local prototype data is not uploaded, merged, deleted or exposed.
+- [ ] No missing-table query occurs while the Phase 10 runtime gate is disabled.
+- [ ] No Production migration, data rewrite or backfill occurred.
+
+### Household
+
+- [ ] Creating a household creates one administrator membership and shares no records.
+- [ ] Invitation acceptance requires an authenticated account, an unexpired single-use token and any intended-identity restriction.
+- [ ] Raw invitation tokens are not stored, logged or audited.
+- [ ] Administrators can manage membership but cannot see unshared member records.
+- [ ] A member can share and revoke only their own eligible records.
+- [ ] Sharing a Property or Loan does not automatically share related records.
+- [ ] Revocation denies the next shared read.
+- [ ] The final administrator cannot leave or be demoted/removed without another administrator.
+- [ ] Leaving or removal does not alter the former member's underlying personal records.
+
+### Accountant access
+
+- [ ] Accountant access is separate from household membership.
+- [ ] The owner selects each report or record scope explicitly.
+- [ ] The accountant can read only accepted, unexpired, unrevoked selected scopes.
+- [ ] Accountant access cannot create, edit, categorise, delete or onward-share financial records.
+- [ ] Revoking a scope or grant denies the next read.
+- [ ] Another owner, accountant or direct record ID cannot bypass the selected scope.
+- [ ] Accountant wording remains neutral and does not imply registration, tax conclusions or advice.
+
+### External gates
+
+- [ ] An invitation-delivery provider and minimum identity/contact fields receive separate approval before use.
+- [ ] No real invitation is sent during repository preparation.
+- [ ] Professional review confirms accountant-role wording where required.
+- [ ] Phase 10 is activated only after synthetic Preview verification and a focused activation PR.
