@@ -2,11 +2,12 @@
 
 ## Ordered prepared migration inventory — 17 July 2026
 
-The repository now contains three additive migrations, all unexecuted against the retained isolated Preview project:
+The repository now contains four additive migrations, all unexecuted against the retained isolated Preview project:
 
 1. `20260717090000_phase_6_bulk_operation_foundation`
 2. `20260717100000_phase_7_transfer_link_foundation`
 3. `20260717110000_phase_7_import_undo_foundation`
+4. `20260717120000_phase_9_advanced_personal_finance_foundation`
 
 The migration-aware integrity checker contains a separate exact profile for each migration. Later profiles protect aggregate counts for earlier foundation tables and the import-undo profile verifies the nullable `ImportRow.committedTransactionUpdatedAt` column without reading row content.
 
@@ -120,9 +121,15 @@ The operator must later:
    1. `20260717090000_phase_6_bulk_operation_foundation`;
    2. `20260717100000_phase_7_transfer_link_foundation`;
    3. `20260717110000_phase_7_import_undo_foundation`;
+   4. `20260717120000_phase_9_advanced_personal_finance_foundation`;
 4. inspect secret-safe preflight and post-migration evidence;
 5. confirm the Preview database contains only synthetic test data;
 6. run full Preview regression;
 7. activate each guarded runtime only in a later focused PR.
 
-Until then, bulk-operation execution/undo, durable transfer linking and import undo remain disabled and must perform no missing-table query. Phase 8 reports and account export remain independent of these unexecuted tables.
+Until then, bulk-operation execution/undo, durable transfer linking, import undo and Phase 9 advanced-finance runtime remain disabled and must perform no missing-table query. Phase 8 reports and account export remain independent of these unexecuted tables.
+
+
+## Phase 9 addition — 17 July 2026
+
+PR #200 merged the exact additive Phase 9 profile and unexecuted migration. PRs #201–#204 prepared owner-scoped services behind `PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED = false`. The operator must run the Phase 9 migration only after the preceding three migrations have each succeeded and passed exact post-migration verification. No guarded feature may be activated from this document.
