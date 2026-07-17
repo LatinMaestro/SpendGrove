@@ -250,6 +250,36 @@ function snapshotView(record: NetWorthSnapshotRecord) {
   };
 }
 
+export function buildNetWorthSnapshotValues(
+  items: NetWorthItemRecord[],
+) {
+  const entries = items.flatMap((item) => {
+    const valuation = item.valuations
+      .filter((candidate) => !candidate.deletedAt)
+      .sort((a, b) => iso(b.valuationDate).localeCompare(iso(a.valuationDate)))[0];
+    return valuation ? [{
+      netWorthItemId: item.id,
+      itemName: item.name,
+      kind: item.kind,
+      category: item.category,
+      valueCents: valuation.valueCents,
+      valuationDate: valuation.valuationDate,
+    }] : [];
+  });
+  const totalAssetCents = entries
+    .filter((entry) => entry.kind === "ASSET")
+    .reduce((sum, entry) => sum + entry.valueCents, 0);
+  const totalLiabilityCents = entries
+    .filter((entry) => entry.kind === "LIABILITY")
+    .reduce((sum, entry) => sum + entry.valueCents, 0);
+  return {
+    entries,
+    totalAssetCents,
+    totalLiabilityCents,
+    netWorthCents: totalAssetCents - totalLiabilityCents,
+  };
+}
+
 async function ownedItem(tx: Prisma.TransactionClient, userId: string, itemId: string) {
   return tx.netWorthItem.findFirst({
     where: { id: itemId, userId },
@@ -373,33 +403,20 @@ export function createPrismaNetWorthStore(
           },
           orderBy: { name: "asc" },
         });
-        const entries = items.flatMap((item) => {
-          const valuation = item.valuations[0];
-          return valuation ? [{
-            userId,
-            netWorthItemId: item.id,
-            itemName: item.name,
-            kind: item.kind,
-            category: item.category,
-            valueCents: valuation.valueCents,
-            valuationDate: valuation.valuationDate,
-          }] : [];
-        });
-        const totalAssetCents = entries
-          .filter((entry) => entry.kind === "ASSET")
-          .reduce((sum, entry) => sum + entry.valueCents, 0);
-        const totalLiabilityCents = entries
-          .filter((entry) => entry.kind === "LIABILITY")
-          .reduce((sum, entry) => sum + entry.valueCents, 0);
+        const snapshot = buildNetWorthSnapshotValues(
+          items as unknown as NetWorthItemRecord[],
+        );
         const created = await tx.netWorthSnapshot.create({
           data: {
             userId,
             snapshotDate,
-            totalAssetCents,
-            totalLiabilityCents,
-            netWorthCents: totalAssetCents - totalLiabilityCents,
+            totalAssetCents: snapshot.totalAssetCents,
+            totalLiabilityCents: snapshot.totalLiabilityCents,
+            netWorthCents: snapshot.netWorthCents,
             createdAt: now,
-            entries: { create: entries },
+            entries: {
+              create: snapshot.entries.map((entry) => ({ userId, ...entry })),
+            },
           },
           include: { entries: true },
         });
