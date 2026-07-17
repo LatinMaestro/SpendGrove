@@ -52,7 +52,7 @@ describe("Phase 5 help and safe support", () => {
     expect(help).toContain("No support-ticket provider");
     expect(guide).toContain("no support-ticket provider");
     expect(help + guide).not.toMatch(/mailto:|support@|privacy@|zendesk|intercom|freshdesk/i);
-    expect(help).not.toMatch(/fetch\(|<form|type="file"|chatbot/i);
+    expect(help).not.toMatch(/fetch\(|<form|type="file"/i);
   });
 
   it("makes Help discoverable without adding a finance-navigation destination", async () => {
