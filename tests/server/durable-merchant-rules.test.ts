@@ -12,6 +12,7 @@ import {
   saveDurableMerchantAlias,
   saveDurableMerchantRule,
   updateDurableMerchantAlias,
+  updateDurableMerchantProfile,
   updateDurableMerchantRule,
   type MerchantPersistenceStore,
 } from "@/src/server/merchant-rules";
@@ -123,6 +124,35 @@ describe("durable merchant aliases and rules", () => {
     expect(data.aliases).toEqual([]);
     data = await deleteDurableMerchantRule(user, ruleId, store);
     expect(data.rules).toEqual([]);
+  });
+
+  it("updates only an owned merchant profile with an available category and preserves reversible lifecycle state", async () => {
+    const user = createTestUserContext("user_1");
+    const store = createMemoryStore();
+    store.categoryAvailable = async (_userId, candidateCategoryId) => candidateCategoryId === groceries;
+    const saved = await saveDurableMerchantAlias(user, {
+      alias: "Lantern Coffee",
+      canonicalName: "Blue Lantern",
+      categoryId: dining,
+    }, store);
+    const profileId = saved.profiles[0].id;
+
+    const updated = await updateDurableMerchantProfile(user, profileId, {
+      name: "Blue Lantern Market",
+      categoryId: groceries,
+      isActive: false,
+    }, store);
+    expect(updated.profiles[0]).toMatchObject({
+      name: "Blue Lantern Market",
+      defaultCategoryId: groceries,
+      isActive: false,
+    });
+    expect(updated.rules.every((rule) => rule.categoryId === groceries)).toBe(true);
+
+    const restored = await updateDurableMerchantProfile(user, profileId, { isActive: true }, store);
+    expect(restored.profiles[0].isActive).toBe(true);
+    await expect(updateDurableMerchantProfile(user, profileId, { categoryId: dining }, store))
+      .rejects.toThrow(OwnershipError);
   });
 
   it("blocks cross-user entity access and requires auth before store access", async () => {
