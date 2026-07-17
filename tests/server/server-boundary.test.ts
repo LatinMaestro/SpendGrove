@@ -166,6 +166,15 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/net-worth.ts",
+    new Set([
+      "netWorthItem.write",
+      "netWorthValuation.write",
+      "netWorthSnapshot.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
     "src/server/bulk-operations.ts",
     new Set([
       "transaction.updateMany",
