@@ -571,6 +571,39 @@ export function renameMerchantProfile(
   return validateCurrentData({ profiles, aliases: data.aliases, rules });
 }
 
+export function updateMerchantProfile(
+  data: LocalMerchantData,
+  profileId: string,
+  input: { name?: string; categoryId?: string; isActive?: boolean },
+  now = new Date(),
+) {
+  if (input.name === undefined && input.categoryId === undefined && input.isActive === undefined) {
+    throw new Error("Choose a merchant change before saving.");
+  }
+  let next = input.name === undefined ? data : renameMerchantProfile(data, profileId, input.name, now);
+  const profile = next.profiles.find((candidate) => candidate.id === profileId);
+  if (!profile) throw new Error("Saved merchant not found.");
+  const categoryId = input.categoryId?.trim();
+  if (input.categoryId !== undefined && !categoryId) throw new Error("Choose a category.");
+
+  const updatedProfile = profileSchema.parse({
+    ...profile,
+    ...(categoryId ? { defaultCategoryId: categoryId } : {}),
+    ...(input.isActive === undefined ? {} : { isActive: input.isActive }),
+    updatedAt: now.toISOString(),
+  });
+  next = {
+    profiles: next.profiles.map((candidate) => candidate.id === profileId ? updatedProfile : candidate),
+    aliases: next.aliases,
+    rules: categoryId
+      ? next.rules.map((rule) => rule.merchantProfileId === profileId
+        ? ruleSchema.parse({ ...rule, categoryId, updatedAt: now.toISOString() })
+        : rule)
+      : next.rules,
+  };
+  return validateCurrentData(next);
+}
+
 export function renameMerchantAlias(
   data: LocalMerchantData,
   aliasId: string,
