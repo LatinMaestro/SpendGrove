@@ -30,5 +30,8 @@ jobs:
         run: git diff --exit-code -- package-lock.json
       - name: Reject high or critical production advisories
         run: npm audit --omit=dev --audit-level=high
+      - name: Inventory full-tree high or critical advisories
+        continue-on-error: true
+        run: npm audit --audit-level=high
       - name: Confirm framework versions
         run: npm ls next react react-dom eslint-config-next
