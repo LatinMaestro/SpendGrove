@@ -678,3 +678,47 @@ It covers:
 - future App Store documentation review.
 
 Phase 5 remains open until the client completes that checklist and explicitly accepts closure. Phase 6 remains unapproved.
+
+
+## Phase 6 — Desktop foundation deferred client review
+
+Phase 6 is active and partially delivered. The checks below cover only merged, technically verified scope. Bulk actions are intentionally absent until the Preview environment and migration gate is resolved.
+
+### Import Centre
+
+- New import is the clear initial task.
+- Past imports are available without crowding the upload flow.
+- Saved mappings remain secondary and are understandable.
+- Existing CSV privacy scanning, review-before-commit and Import / Skip / Merge behaviour remain unchanged.
+
+### Desktop transactions
+
+- At wide desktop width, the selected month is presented as a compact ledger rather than an oversized mobile-card list.
+- At mobile width, the accepted compact transaction list remains intact.
+- Direction and category filters apply only to the selected month.
+- Existing search, month navigation, category drilldown, Add transaction and correction actions remain available.
+- No horizontal scrolling appears at common desktop or 390 px widths.
+
+### Account data administration
+
+- Settings provides one secondary place to manage custom categories, merchant rules and saved mappings.
+- Existing create, edit, delete/restore or remove behaviour remains understandable.
+- Another signed-in user cannot access the account's categories, merchant rules or saved mappings.
+
+### Records and reports
+
+- Settings links to the existing monthly transaction breakdown.
+- Settings links to the existing Property report/export workflow only when appropriate.
+- No new report calculation, export format or navigation tab has been introduced.
+
+### Migration and bulk-workflow status
+
+- Bulk categorisation and bulk Property linking are not yet available.
+- No Preview or Production migration has run.
+- Do not test or expect bulk undo until the isolated Preview database gate is resolved and the feature is implemented.
+
+### General regression
+
+- Mobile everyday workflows remain usable.
+- Financial calculations, split and transfer rules, import semantics, loan reconciliation and Property reporting remain unchanged.
+- No private CSV or account source fields are exposed.
