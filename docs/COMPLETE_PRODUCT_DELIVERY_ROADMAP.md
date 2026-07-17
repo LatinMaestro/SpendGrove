@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 11 contract status — 17 July 2026
+
+The storage/privacy contract is prepared in `docs/PHASE_11_DOCUMENT_STORAGE_PRIVACY_CONTRACT.md`. It recommends Vercel Private Blob only as a later candidate, keeps file bytes out of PostgreSQL, requires private owner-authorised objects and malware/quarantine controls, and leaves all provider, upload and migration runtime disabled.
+
+
 ## Phase 10 repository preparation status — 17 July 2026
 
 The contract, additive schema, fifth unexecuted migration, household service and separate read-only accountant service are prepared through PR #209. Personal ownership remains unchanged; sharing is explicit and revocable; accountant access is selected-scope and read-only. Runtime remains hard-disabled pending all five ordered Preview migrations and a later activation PR. Invitation delivery and real-user invitations remain externally gated. Phase 10 is not operational or client accepted.
