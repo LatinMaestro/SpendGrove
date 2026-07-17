@@ -38,6 +38,13 @@ Last updated: 17 July 2026
 - No schema or migration file was changed, no Preview or Production migration ran, and no existing record was rewritten.
 - Implementation remains blocked until the isolated Preview Neon destination and GitHub Preview-only secret mapping are proven.
 
+## Phase 7 Milestone 7.5 — Merchant profile completion
+
+- Existing owner-scoped profiles, aliases, rules, conflict handling and safe lifecycle were confirmed.
+- No-schema implementation is approved only for editing a profile's cleaned name/default suggestion category and removing/restoring the profile.
+- Merchant merge and all-history mutation remain blocked by the reversible-operation journal and isolated Preview environment gate.
+- Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`.
+
 ## Complete-product controlling status
 
 - Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
