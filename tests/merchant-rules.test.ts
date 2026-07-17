@@ -17,6 +17,7 @@ import {
   setMerchantAliasActive,
   setMerchantRuleActive,
   suggestMerchantCategory,
+  updateMerchantProfile,
 } from "@/lib/merchant-rules";
 
 function categoryId(name: string) {
@@ -129,6 +130,39 @@ describe("browser-local merchant aliases and rules", () => {
       source: "USER_RULE",
       categoryId: categoryId("Coffee / takeaway"),
     });
+  });
+
+  it("edits the safe merchant profile and preserves child lifecycle state through remove and restore", () => {
+    const saved = saveMerchantAlias(emptyLocalMerchantData(), {
+      alias: "Lantern Coffee",
+      canonicalName: "Blue Lantern",
+      categoryId: categoryId("Coffee / takeaway"),
+      now,
+    });
+    const profileId = saved.profiles[0].id;
+    const aliasId = saved.aliases[0].id;
+    const aliasDisabled = setMerchantAliasActive(saved, aliasId, false, now);
+    const updated = updateMerchantProfile(aliasDisabled, profileId, {
+      name: "Blue Lantern Cafe",
+      categoryId: categoryId("Dining out"),
+    }, now);
+
+    expect(updated.profiles[0]).toMatchObject({
+      name: "Blue Lantern Cafe",
+      defaultCategoryId: categoryId("Dining out"),
+      isActive: true,
+    });
+    expect(updated.rules.every((rule) => rule.categoryId === categoryId("Dining out"))).toBe(true);
+    expect(updated.aliases[0].isActive).toBe(false);
+
+    const removed = updateMerchantProfile(updated, profileId, { isActive: false }, now);
+    expect(suggestMerchantCategory("Blue Lantern Cafe", removed).source).toBe("FALLBACK");
+    const restored = updateMerchantProfile(removed, profileId, { isActive: true }, now);
+    expect(suggestMerchantCategory("Blue Lantern Cafe", restored)).toMatchObject({
+      source: "USER_RULE",
+      categoryId: categoryId("Dining out"),
+    });
+    expect(restored.aliases[0].isActive).toBe(false);
   });
 
   it("requires an explicit choice when a saved rule conflicts", () => {

@@ -9,6 +9,7 @@ import {
   updateAccountSavedImportProfile,
 } from "@/lib/account-saved-import-profiles";
 import type { SavedImportProfile } from "@/lib/saved-import-profiles";
+import { manualCategories } from "@/lib/manual-categories";
 import {
   CustomCategoryManager,
   useCustomCategoryCatalogue,
@@ -19,8 +20,8 @@ import {
   deleteMerchantRule,
   emptyLocalMerchantData,
   renameMerchantAlias,
-  renameMerchantProfile,
   setMerchantAliasActive,
+  updateMerchantProfile,
   setMerchantRuleActive,
   type LocalMerchantData,
   type MerchantConflictResolution,
@@ -178,6 +179,12 @@ function SavedMappingAdministration() {
 export function AccountDataManagement() {
   const categories = useCustomCategoryCatalogue();
   const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
+  const categoryOptions = [
+    ...manualCategories,
+    ...categories.categories.filter((category) => !category.isArchived),
+  ].filter((category, index, catalogue) =>
+    catalogue.findIndex((candidate) => candidate.id === category.id) === index,
+  ).map(({ id, name, group }) => ({ id, name, group }));
 
   return (
     <section className="mt-6" aria-labelledby="account-data-management-heading">
@@ -207,7 +214,8 @@ export function AccountDataManagement() {
             migrated={false}
             staleReferenceCount={0}
             onDataChange={setMerchantData}
-            onRenameProfile={(id, name) => setMerchantData((current) => renameMerchantProfile(current, id, name))}
+            categoryOptions={categoryOptions}
+            onUpdateProfile={(id, input) => setMerchantData((current) => updateMerchantProfile(current, id, input))}
             onRenameAlias={(id, name, resolution?: MerchantConflictResolution) => setMerchantData((current) => renameMerchantAlias(current, id, name, resolution))}
             onAliasActiveChange={(id, active) => setMerchantData((current) => setMerchantAliasActive(current, id, active))}
             onDeleteAlias={(id) => setMerchantData((current) => deleteMerchantAlias(current, id))}

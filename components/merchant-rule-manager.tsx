@@ -49,7 +49,8 @@ export function MerchantRuleManager({
   migrated,
   staleReferenceCount,
   onDataChange,
-  onRenameProfile,
+  categoryOptions,
+  onUpdateProfile,
   onRenameAlias,
   onAliasActiveChange,
   onDeleteAlias,
@@ -63,7 +64,8 @@ export function MerchantRuleManager({
   migrated: boolean;
   staleReferenceCount: number;
   onDataChange(data: LocalMerchantData): void;
-  onRenameProfile(profileId: string, name: string): void;
+  categoryOptions: Array<{ id: string; name: string; group: string }>;
+  onUpdateProfile(profileId: string, input: { name?: string; categoryId?: string; isActive?: boolean }): void;
   onRenameAlias(aliasId: string, name: string, resolution?: MerchantConflictResolution): void;
   onAliasActiveChange(aliasId: string, isActive: boolean): void;
   onDeleteAlias(aliasId: string): void;
@@ -71,7 +73,7 @@ export function MerchantRuleManager({
   onDeleteRule(ruleId: string): void;
   onClear(): void;
 }) {
-  const [profileEdit, setProfileEdit] = useState<{ id: string; name: string } | null>(null);
+  const [profileEdit, setProfileEdit] = useState<{ id: string; name: string; categoryId: string } | null>(null);
   const [aliasEdit, setAliasEdit] = useState<{ id: string; name: string } | null>(null);
   const [aliasConflict, setAliasConflict] = useState<MerchantConflict | null>(null);
   const [message, setMessage] = useState("");
@@ -136,14 +138,17 @@ export function MerchantRuleManager({
     });
   }, [data]);
 
-  function finishProfileRename() {
+  function finishProfileUpdate() {
     if (!profileEdit) return;
     try {
-      onRenameProfile(profileEdit.id, profileEdit.name);
+      onUpdateProfile(profileEdit.id, {
+        name: profileEdit.name,
+        categoryId: profileEdit.categoryId,
+      });
       setProfileEdit(null);
-      setMessage(accountBacked ? "Saving merchant name to your account…" : "Merchant name updated for this review only.");
+      setMessage(accountBacked ? "Saving merchant details to your account…" : "Merchant details updated for this review only.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "The merchant name could not be updated.");
+      setMessage(error instanceof Error ? error.message : "The merchant details could not be updated.");
     }
   }
 
@@ -165,6 +170,9 @@ export function MerchantRuleManager({
       else setMessage(error instanceof Error ? error.message : "The matching name could not be updated.");
     }
   }
+
+  const activeProfiles = data.profiles.filter((profile) => profile.isActive);
+  const removedProfiles = data.profiles.filter((profile) => !profile.isActive);
 
   return (
     <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="merchant-rules-heading">
@@ -189,23 +197,42 @@ export function MerchantRuleManager({
       <details className="mt-4 rounded-2xl border border-border p-4">
         <summary className="cursor-pointer font-bold text-brand-deepTeal">Manage aliases and merchant names</summary>
         <div className="mt-4 space-y-4">
-          {data.profiles.length === 0 ? (
+          {activeProfiles.length === 0 ? (
             <p className="rounded-2xl bg-surface-mint p-4 text-sm text-brand-deepTeal/70">No saved merchant names yet.</p>
-          ) : data.profiles.map((profile) => {
-            const categoryName = getManualCategory(profile.defaultCategoryId)?.name ?? "Category unavailable";
+          ) : activeProfiles.map((profile) => {
+            const categoryName = categoryOptions.find((category) => category.id === profile.defaultCategoryId)?.name
+              ?? getManualCategory(profile.defaultCategoryId)?.name
+              ?? "Category unavailable";
             const aliases = data.aliases.filter((alias) => alias.merchantProfileId === profile.id);
             const rules = data.rules.filter((rule) => rule.merchantProfileId === profile.id);
             return (
               <article key={profile.id} className="rounded-2xl bg-surface-mint p-4">
                 {profileEdit?.id === profile.id ? (
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <input value={profileEdit.name} onChange={(event) => setProfileEdit({ ...profileEdit, name: event.target.value })} aria-label="Main merchant name" className="min-h-11 flex-1 rounded-2xl border border-border bg-white px-4 text-sm" />
-                    <button type="button" onClick={finishProfileRename} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-xs font-bold text-white">Save name</button>
+                  <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="text-sm font-bold text-brand-deepTeal">
+                        Merchant name
+                        <input value={profileEdit.name} onChange={(event) => setProfileEdit({ ...profileEdit, name: event.target.value })} className="mt-2 min-h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm" />
+                      </label>
+                      <label className="text-sm font-bold text-brand-deepTeal">
+                        Suggested category
+                        <select value={profileEdit.categoryId} onChange={(event) => setProfileEdit({ ...profileEdit, categoryId: event.target.value })} className="mt-2 min-h-11 w-full rounded-2xl border border-border bg-white px-4 text-sm">
+                          {categoryOptions.map((category) => <option key={category.id} value={category.id}>{category.group} · {category.name}</option>)}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={finishProfileUpdate} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-xs font-bold text-white">Save changes</button>
+                      <button type="button" onClick={() => setProfileEdit(null)} className="min-h-11 rounded-full border border-brand-teal px-4 text-xs font-bold text-brand-deepTeal">Cancel</button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div><p className="font-bold text-brand-deepTeal">{profile.name}</p><p className="mt-1 text-xs text-brand-deepTeal/60">Suggested category: {categoryName}</p></div>
-                    <button type="button" onClick={() => { setProfileEdit({ id: profile.id, name: profile.name }); setMessage(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal bg-white px-3 text-xs font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Rename merchant</button>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" onClick={() => { setProfileEdit({ id: profile.id, name: profile.name, categoryId: profile.defaultCategoryId }); setMessage(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal bg-white px-3 text-xs font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Edit merchant</button>
+                      <button type="button" onClick={() => onUpdateProfile(profile.id, { isActive: false })} className="min-h-10 rounded-full px-3 text-xs font-bold text-danger-red">Remove merchant</button>
+                    </div>
                   </div>
                 )}
 
@@ -226,6 +253,22 @@ export function MerchantRuleManager({
             );
           })}
         </div>
+        {removedProfiles.length > 0 && (
+          <details className="mt-4 rounded-2xl border border-border bg-surface-mint/50 p-3">
+            <summary className="cursor-pointer text-sm font-bold text-brand-deepTeal">Removed merchants ({removedProfiles.length})</summary>
+            <div className="mt-3 space-y-2">
+              {removedProfiles.map((profile) => (
+                <div key={profile.id} className="flex flex-col gap-2 rounded-xl bg-white p-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-bold text-brand-deepTeal">{profile.name}</p>
+                    <p className="mt-1 text-xs text-brand-deepTeal/60">Not used for new suggestions</p>
+                  </div>
+                  <button type="button" onClick={() => onUpdateProfile(profile.id, { isActive: true })} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal"><RotateCcw aria-hidden="true" className="h-3.5 w-3.5" /> Restore merchant</button>
+                </div>
+              ))}
+            </div>
+          </details>
+        )}
         {aliasConflict && aliasEdit && <div className="mt-4"><MerchantConflictPrompt conflict={aliasConflict} onChoose={finishAliasRename} /></div>}
       </details>
 

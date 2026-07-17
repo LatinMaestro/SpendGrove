@@ -29,7 +29,7 @@ import { createTransientImportReviewSourceDetails } from "@/lib/import-review-so
 import { isRowPotentiallyDeductible, updateTaxReviewMetadata, type ImportReviewTaxMetadata } from "@/lib/import-review-metadata";
 import { applyMerchantSuggestionsToRows, createTransientImportReviewRows, summarizeImportReview, updateImportReviewAction, updateImportReviewDetails, updateImportReviewPropertyLink, type ImportReviewAction, type ImportReviewEditType, type ImportReviewRow } from "@/lib/import-review";
 import { manualCategories } from "@/lib/manual-categories";
-import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
+import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, MerchantConflictError, renameMerchantAlias, setMerchantAliasActive, setMerchantRuleActive, updateMerchantProfile, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
 
 type PendingMerchantConflict = { kind: "RULE" | "ALIAS"; rowId: string; alias?: string; conflict: MerchantConflict };
 type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "UNAVAILABLE";
@@ -96,6 +96,12 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   const overlappingImport = looksLikeOverlappingImport(likelyExistingDuplicateCount, rows.length);
   const canStartReview = scan.mappingIssues.length === 0;
   const reviewStarted = reviewRows !== null;
+  const merchantCategoryOptions = useMemo(() => [
+    ...manualCategories,
+    ...customCategoryCatalogue.categories.filter((category) => !category.isArchived),
+  ].filter((category, index, catalogue) =>
+    catalogue.findIndex((candidate) => candidate.id === category.id) === index,
+  ).map(({ id, name, group }) => ({ id, name, group })), [customCategoryCatalogue.categories]);
 
   useEffect(() => { setReviewPage((page) => Math.min(page, pageCount)); }, [pageCount]);
 
@@ -229,7 +235,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
     {!reviewRows && <>
       <details className="rounded-2xl border border-border bg-surface-base"><summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Import settings</summary><div className="space-y-4 border-t border-border p-4">
       <CustomCategoryManager categories={customCategoryCatalogue.categories} storageAvailable={customCategoryCatalogue.storageAvailable} recoveredFromCorruption={customCategoryCatalogue.recoveredFromCorruption} unsupportedVersion={customCategoryCatalogue.unsupportedVersion} notice={customCategoryCatalogue.notice} onRename={customCategoryCatalogue.rename} onArchiveChange={customCategoryCatalogue.setArchived} />
-      <MerchantRuleManager data={merchantData} storageAvailable={merchantStorageAvailable} recoveredFromCorruption={merchantRecovered} migrated={merchantMigrated} staleReferenceCount={merchantStaleReferenceCount} onDataChange={replaceMerchantData} onRenameProfile={(id, name) => persistMerchantData(renameMerchantProfile(merchantData, id, name), "Merchant name updated.")} onRenameAlias={(id, name, resolution) => persistMerchantData(renameMerchantAlias(merchantData, id, name, resolution), resolution === "KEEP_EXISTING" ? "The existing matching name was kept." : "Matching merchant name updated.")} onAliasActiveChange={(id, active) => persistMerchantData(setMerchantAliasActive(merchantData, id, active), active ? "Matching merchant name restored." : "Matching merchant name disabled.")} onDeleteAlias={(id) => persistMerchantData(deleteMerchantAlias(merchantData, id), "Matching merchant name deleted.")} onRuleActiveChange={(id, active) => persistMerchantData(setMerchantRuleActive(merchantData, id, active), active ? "Merchant rule restored." : "Merchant rule disabled.")} onDeleteRule={(id) => persistMerchantData(deleteMerchantRule(merchantData, id), "Merchant rule deleted.")} onClear={() => persistMerchantData(emptyLocalMerchantData(), "Saved merchant suggestions cleared from your account.")} />
+      <MerchantRuleManager data={merchantData} storageAvailable={merchantStorageAvailable} recoveredFromCorruption={merchantRecovered} migrated={merchantMigrated} staleReferenceCount={merchantStaleReferenceCount} onDataChange={replaceMerchantData} categoryOptions={merchantCategoryOptions} onUpdateProfile={(id, input) => persistMerchantData(updateMerchantProfile(merchantData, id, input), "Merchant details updated.")} onRenameAlias={(id, name, resolution) => persistMerchantData(renameMerchantAlias(merchantData, id, name, resolution), resolution === "KEEP_EXISTING" ? "The existing matching name was kept." : "Matching merchant name updated.")} onAliasActiveChange={(id, active) => persistMerchantData(setMerchantAliasActive(merchantData, id, active), active ? "Matching merchant name restored." : "Matching merchant name disabled.")} onDeleteAlias={(id) => persistMerchantData(deleteMerchantAlias(merchantData, id), "Matching merchant name deleted.")} onRuleActiveChange={(id, active) => persistMerchantData(setMerchantRuleActive(merchantData, id, active), active ? "Merchant rule restored." : "Merchant rule disabled.")} onDeleteRule={(id) => persistMerchantData(deleteMerchantRule(merchantData, id), "Merchant rule deleted.")} onClear={() => persistMerchantData(emptyLocalMerchantData(), "Saved merchant suggestions cleared from your account.")} />
       </div></details>
       
       <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Your privacy</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Your CSV file stays in this browser. Only the cleaned transaction details you approve are saved.</p></section>

@@ -55,8 +55,15 @@ export function saveAccountMerchantAlias(input: {
   return jsonRequest("/api/account/merchant-rules", "POST", { kind: "ALIAS", ...input });
 }
 
+export function updateAccountMerchantProfile(
+  profileId: string,
+  input: { name?: string; categoryId?: string; isActive?: boolean },
+) {
+  return jsonRequest(`/api/account/merchant-rules/profiles/${encodeURIComponent(profileId)}`, "PATCH", input);
+}
+
 export function renameAccountMerchantProfile(profileId: string, name: string) {
-  return jsonRequest(`/api/account/merchant-rules/profiles/${encodeURIComponent(profileId)}`, "PATCH", { name });
+  return updateAccountMerchantProfile(profileId, { name });
 }
 
 export function updateAccountMerchantAlias(aliasId: string, input: {

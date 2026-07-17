@@ -6,12 +6,12 @@ import {
   emptyLocalMerchantData,
   MerchantConflictError,
   renameMerchantAlias,
-  renameMerchantProfile,
   saveConfirmedMerchantRule,
   saveMerchantAlias,
   serializeMerchantRuleStorage,
   setMerchantAliasActive,
   setMerchantRuleActive,
+  updateMerchantProfile,
   type LocalMerchantData,
   type MerchantConflictResolution,
 } from "@/lib/merchant-rules";
@@ -67,6 +67,7 @@ type DbMerchantRuleRecord = {
 
 export type MerchantPersistenceStore = {
   list(userId: string): Promise<LocalMerchantData>;
+  categoryAvailable?(userId: string, categoryId: string): Promise<boolean>;
   saveSnapshot(userId: string, data: LocalMerchantData, now?: Date): Promise<LocalMerchantData>;
 };
 
@@ -224,6 +225,13 @@ export function createPrismaMerchantStore(prisma: PrismaClient = getPrismaClient
   return {
     list(userId) {
       return loadSnapshot(prisma, userId);
+    },
+    async categoryAvailable(userId, categoryId) {
+      if (getManualCategory(categoryId)) return true;
+      return Boolean(await prisma.category.findFirst({
+        where: { id: categoryId, userId, isArchived: false, deletedAt: null },
+        select: { id: true },
+      }));
     },
     async saveSnapshot(userId, data, now = new Date()) {
       serializeMerchantRuleStorage(data);
@@ -398,15 +406,27 @@ export async function saveDurableMerchantAlias(
   return next === data ? data : store.saveSnapshot(user.userId, next);
 }
 
+export async function updateDurableMerchantProfile(
+  context: AuthenticatedUserContext | null | undefined,
+  profileId: string,
+  input: { name?: string; categoryId?: string; isActive?: boolean },
+  store: MerchantPersistenceStore = createPrismaMerchantStore(),
+) {
+  const { user, data } = await ownedSnapshot(context, store);
+  requireProfile(data, profileId);
+  if (input.categoryId !== undefined && store.categoryAvailable && !await store.categoryAvailable(user.userId, input.categoryId)) {
+    throw new OwnershipError("available category");
+  }
+  return store.saveSnapshot(user.userId, updateMerchantProfile(data, profileId, input));
+}
+
 export async function renameDurableMerchantProfile(
   context: AuthenticatedUserContext | null | undefined,
   profileId: string,
   name: string,
   store: MerchantPersistenceStore = createPrismaMerchantStore(),
 ) {
-  const { user, data } = await ownedSnapshot(context, store);
-  requireProfile(data, profileId);
-  return store.saveSnapshot(user.userId, renameMerchantProfile(data, profileId, name));
+  return updateDurableMerchantProfile(context, profileId, { name }, store);
 }
 
 export async function updateDurableMerchantAlias(
