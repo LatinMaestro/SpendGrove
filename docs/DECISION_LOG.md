@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-17 — Use explicit application-owned household and accountant permissions
+
+Decision: keep every existing record personally owned and private by default. Household sharing is owner-selected and revocable; household administrators do not gain access to unshared member records. Accountant access is separate, read-only, selected-scope, time-bounded where configured and immediately revocable.
+
+SpendGrove will use application-owned permission records linked to existing Clerk identities rather than requiring Clerk Organizations. Invitation tokens are hashed and single-use. No email provider, real invitation, migration or runtime activation is approved by the contract.
+
+
 ## 2026-07-17 — Freeze Phase 9 advanced-finance rules and prepare services behind the deferred migration gate
 
 Decision: preserve Transactions as the sole cashflow ledger; keep recurring detector thresholds unchanged; use manual planning contributions for savings goals; use manual positive asset/liability values and explicit snapshots for net worth; retain monthly budgets with no rollover; and implement in-app reminder records without remote delivery.
