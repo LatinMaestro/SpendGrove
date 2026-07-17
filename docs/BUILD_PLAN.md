@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 11 storage and privacy contract — 17 July 2026
+
+- [x] Compare current official private-object-storage capabilities and costs.
+- [x] Recommend Vercel Private Blob as the later preferred candidate without selecting, configuring or purchasing it.
+- [x] Freeze metadata-only PostgreSQL, private opaque object keys, owner-scoped links, quarantine, deletion/export and no-OCR rules.
+- [x] Define PDF/JPEG/PNG and 10 MiB conservative activation policy.
+- [ ] Prepare the exact additive sixth schema migration, verifier profile and hard-false runtime gate.
+- [ ] Prepare owner-scoped metadata/link services with a disabled provider adapter.
+- [ ] Keep active upload/download unavailable pending provider, malware, environment, migration and privacy gates.
+- [ ] Complete Phase 11 QA and handoff.
+
+Controlling contract: `docs/PHASE_11_DOCUMENT_STORAGE_PRIVACY_CONTRACT.md`.
+
+
 ## Phase 10 guarded repository preparation — 17 July 2026
 
 - [x] Define personal-by-default ownership, explicit selected sharing, household roles and separate read-only accountant grants.
