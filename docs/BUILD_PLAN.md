@@ -1033,3 +1033,15 @@ No existing import is backfilled or made undoable. No durable transfer is auto-c
 - [ ] Keep merchant merge and all-history mutation blocked pending operation-journal migration.
 
 Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`.
+
+## Phase 9 financial-contract gate — 17 July 2026
+
+- [x] Audit current recurring, budget, Transaction, Loan, Property, export and schema foundations.
+- [x] Freeze Phase 9 direction, split, transfer, refund, no-double-count and privacy rules in `docs/PHASE_9_FINANCIAL_CONTRACT.md`.
+- [ ] Propose exact additive Prisma/SQL/checker foundation with runtime gates false.
+- [ ] Prepare recurring/subscription lifecycle and instance linking behind the schema gate.
+- [ ] Refine budgets without rollover.
+- [ ] Prepare manual savings goals, manual net-worth records/snapshots and in-app reminders behind the schema gate.
+- [ ] Complete Phase 9 QA and migration/activation handoff.
+
+The three deferred Phase 6/7 Preview migrations remain first in order. No Phase 9 missing-table query or Production migration is permitted.
