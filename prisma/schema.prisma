@@ -106,6 +106,7 @@ enum AuditEntityType {
   RECURRING_ITEM
   RECURRING_SUGGESTION_DISMISSAL
   CATEGORY_BUDGET
+  BULK_OPERATION
 }
 
 enum AuditAction {
@@ -201,6 +202,46 @@ enum BudgetStatus {
   ARCHIVED
 }
 
+enum BulkOperationType {
+  SET_CATEGORY
+  APPLY_MERCHANT_CATEGORY
+  LINK_PROPERTY
+  UNLINK_PROPERTY
+}
+
+enum BulkOperationStatus {
+  RUNNING
+  COMPLETED
+  PARTIAL
+  FAILED
+  REVERTED
+  PARTIALLY_REVERTED
+}
+
+enum BulkOperationItemStatus {
+  APPLIED
+  SKIPPED
+  FAILED
+  REVERTED
+  UNDO_BLOCKED
+}
+
+enum BulkOperationReason {
+  ALREADY_APPLIED
+  ALREADY_LINKED_TO_PROPERTY
+  ALREADY_LINKED_TO_ANOTHER_PROPERTY
+  CATEGORY_INCOMPATIBLE
+  CATEGORY_UNAVAILABLE
+  PROPERTY_UNAVAILABLE
+  NOT_ACTIVE
+  SPLIT_PARENT
+  DIRECTION_NEEDS_CORRECTION
+  MERCHANT_IDENTITY_MISMATCH
+  STALE_RECORD
+  NOT_FOUND_OR_NOT_OWNED
+  UNEXPECTED_SAFE_FAILURE
+}
+
 model User {
   id                 String        @id @default(cuid())
   authProvider       AuthProvider?
@@ -231,6 +272,8 @@ model User {
   recurringItems               RecurringItem[]
   recurringSuggestionDismissals RecurringSuggestionDismissal[]
   categoryBudgets              CategoryBudget[]
+  bulkOperations               BulkOperation[]
+  bulkOperationItems           BulkOperationItem[]
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -273,7 +316,8 @@ model Category {
   merchantProfiles MerchantProfile[] @relation("MerchantDefaultCategory")
   merchantRules    MerchantRule[]    @relation("MerchantRuleCategory")
   recurringItems   RecurringItem[]
-  categoryBudgets  CategoryBudget[]
+  categoryBudgets       CategoryBudget[]
+  bulkTargetOperations BulkOperation[] @relation("BulkOperationTargetCategory")
 
   @@unique([userId, name, type])
   @@index([userId, type])
@@ -317,6 +361,7 @@ model Transaction {
   loanReconciliationLinks LoanReconciliationLink[]
   propertyLink            PropertyTransactionLink?
   propertyReportReview    PropertyReportReview?
+  bulkOperationItems       BulkOperationItem[]
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -519,7 +564,8 @@ model Property {
   user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
   loanAccounts     LoanAccount[]
   transactionLinks PropertyTransactionLink[]
-  reportReviews    PropertyReportReview[]
+  reportReviews         PropertyReportReview[]
+  bulkTargetOperations BulkOperation[] @relation("BulkOperationTargetProperty")
 
   @@unique([userId, nickname])
   @@index([userId, usage])
@@ -691,4 +737,61 @@ model CategoryBudget {
   @@index([userId, categoryId])
   @@index([userId, period, status])
   @@index([userId, categoryId, period, status])
+}
+
+
+model BulkOperation {
+  id               String              @id @default(cuid())
+  userId           String
+  type             BulkOperationType
+  status           BulkOperationStatus @default(RUNNING)
+  targetCategoryId String?
+  targetPropertyId String?
+  requestedCount   Int                 @default(0)
+  appliedCount     Int                 @default(0)
+  skippedCount     Int                 @default(0)
+  failedCount      Int                 @default(0)
+  undoBlockedCount Int                 @default(0)
+  createdAt        DateTime            @default(now())
+  completedAt      DateTime?
+  undoExpiresAt    DateTime?
+  revertedAt       DateTime?
+  updatedAt        DateTime            @updatedAt
+
+  user           User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetCategory Category?           @relation("BulkOperationTargetCategory", fields: [targetCategoryId], references: [id], onDelete: SetNull)
+  targetProperty Property?           @relation("BulkOperationTargetProperty", fields: [targetPropertyId], references: [id], onDelete: SetNull)
+  items          BulkOperationItem[]
+
+  @@index([userId, status, createdAt])
+  @@index([userId, type, createdAt])
+  @@index([targetCategoryId])
+  @@index([targetPropertyId])
+}
+
+model BulkOperationItem {
+  id                          String                  @id @default(cuid())
+  userId                      String
+  operationId                 String
+  transactionId               String
+  status                      BulkOperationItemStatus
+  reason                      BulkOperationReason?
+  beforeCategoryId            String?
+  afterCategoryId             String?
+  beforePropertyId            String?
+  afterPropertyId             String?
+  beforeTransactionUpdatedAt  DateTime?
+  appliedTransactionUpdatedAt DateTime?
+  revertedAt                  DateTime?
+  createdAt                   DateTime                @default(now())
+  updatedAt                   DateTime                @updatedAt
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation   BulkOperation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  transaction Transaction   @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@unique([operationId, transactionId])
+  @@index([userId, status, createdAt])
+  @@index([operationId, status])
+  @@index([transactionId, createdAt])
 }
