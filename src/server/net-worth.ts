@@ -177,7 +177,7 @@ function validateItemFields(
   }
 }
 
-export const netWorthMutationSchema = z.discriminatedUnion("action", [
+export const netWorthMutationSchema = z.union([
   itemFieldsSchema.extend({ action: z.literal("CREATE_ITEM") }).strict()
     .superRefine(validateItemFields),
   z.object({
