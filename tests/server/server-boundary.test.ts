@@ -168,6 +168,13 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/transfer-links.ts",
+    new Set([
+      "transferLink.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
     "src/server/account-deletion.ts",
     new Set([
       "transaction.deleteMany",
