@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 10 contract status — 17 July 2026
+
+The privacy and permissions contract is prepared in `docs/PHASE_10_PRIVACY_PERMISSIONS_CONTRACT.md`. It freezes personal-by-default ownership, explicit selected sharing, application-owned roles, separate read-only accountant grants, hashed invitations and fail-closed migration/runtime treatment. No household/accountant capability is operational.
+
+
 ## Phase 9 implementation status — 17 July 2026
 
 The financial contract, additive schema foundation and owner-scoped recurring-instance, savings-goal, manual-net-worth and in-app-reminder services are prepared through PR #204. All migration-dependent runtime remains disabled pending the four-migration isolated Preview operator gate. These foundations are not operational or client accepted. Existing budgets remain monthly/no-rollover and no forecasting, live valuation or push provider has been activated.
