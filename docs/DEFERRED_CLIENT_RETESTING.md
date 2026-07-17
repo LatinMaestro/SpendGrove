@@ -722,3 +722,30 @@ Phase 6 is active and partially delivered. The checks below cover only merged, t
 - Mobile everyday workflows remain usable.
 - Financial calculations, split and transfer rules, import semantics, loan reconciliation and Property reporting remain unchanged.
 - No private CSV or account source fields are exposed.
+
+
+## Phase 7 — Import coverage and data quality deferred review
+
+### Support truthfulness
+
+- Confirmed banks are clearly distinguished from generic/manual mapping.
+- A target bank is not described as supported before its synthetic regression evidence exists.
+- Unknown or changed formats remain importable through reviewable manual mapping where structurally safe.
+
+### Parser safety
+
+- Signed amounts and debit/credit columns keep the correct Money in/Money out direction.
+- Australian dates remain correct.
+- Headerless files retain their first transaction row.
+- Private columns stay excluded and cannot be selected.
+- Original filenames and raw source values are not shown or retained.
+- Import / Skip / Merge and duplicate review behave exactly as before.
+
+### Quality matrix
+
+- Every confirmed profile has a named synthetic fixture and regression test.
+- Similar layouts do not false-match the wrong bank.
+- File and row limits produce clear errors.
+- Generic/manual mapping remains usable on mobile and desktop.
+
+Transfer linking, import undo and additional merchant-history workflows will receive separate checklist sections only after their contracts and implementation gates are complete.

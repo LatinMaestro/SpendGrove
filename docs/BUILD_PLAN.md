@@ -916,3 +916,19 @@ Blocked:
 - bulk operation implementation, Preview verification and any later Production migration remain gated.
 
 No Preview or Production migration, data rewrite, backfill, provider purchase, secret change or Production private-data access occurred. See `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md` and `docs/PHASE_6_DESKTOP_FOUNDATION_SUMMARY.md`.
+
+
+## Phase 7 Milestone 7.0 — Import and data-quality contract
+
+Phase 7 contract work may proceed independently while Phase 6 bulk operations remain blocked by the Preview environment gate.
+
+Current bank matrix:
+
+- 19 master-specification targets;
+- 4 named profiles: CommBank, ANZ, NAB and Westpac;
+- 15 generic-only targets pending exact safe format evidence;
+- generic/manual mapping remains the required fallback.
+
+Next PR: no-schema parser profile registry and quality manifest. New named profiles require safe layout evidence plus synthetic fixtures and false-positive tests. Durable transfer links, import undo and richer merchant history remain separate schema/migration gates.
+
+See `docs/PHASE_7_IMPORT_DATA_QUALITY_CONTRACT.md` and `docs/PHASE_7_BANK_FORMAT_REGISTER.md`.
