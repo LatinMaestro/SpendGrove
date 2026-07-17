@@ -5,27 +5,35 @@
 Status:
 
 - Phase 4 Milestones 1–4 are accepted and closed.
-- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
-- Phase 5 is not formally closed. Phase 6 is unapproved and not started.
-- The controlled Australian account-based web private beta remains conditional on the Clerk Production, environment-separation, migration-health, recovery, Groveware contact and legal-review gates.
-- PR #163 merged as `668c09cae49ce1ff58021c95be1c199eb39c0127` with the consolidated Phase 5 summary and client checklist.
+- Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
+- PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec` and records the complete-product audit, feature register, App Store delivery plan, decision register and revised Phase 6–15 roadmap.
+- The former limited Phase 6–7 ending is superseded.
+- Phase 6 — Desktop Web Platform and Bulk Workflows is active.
+- Immediate task: Milestone 6.0 desktop contract and interface inventory, including exact bulk-action/undo safety rules and schema assessment.
+- After 6.0, continue through the approved Phase 6 sequence and later merged-roadmap phases while all mandatory gates are satisfied.
+- Consolidated client review is deferred until the complete pre-release application is ready.
 
 Current boundaries:
 
-- do not invite private-beta users until every mandatory operator gate passes;
-- do not run a Production migration or access Production financial rows;
-- do not change schema/data/provider/secret/environment state without a new approval;
-- analytics and external monitoring remain off;
-- no native package, App Store action, public launch or Phase 6 work;
-- do not formally close Phase 5 without explicit client acceptance.
+- preserve accepted Phase 1–5 behaviour and financial/privacy rules;
+- do not work outside `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`;
+- contract material schema changes before implementation and use Preview-only migration gates;
+- no Production migration, private Production financial-row access or unapproved backfill;
+- no provider purchase/upgrade, secret/environment exposure or live external-provider activation;
+- no automatic browser-local deletion/migration;
+- no real-user invitation, public launch, TestFlight external distribution or App Store submission;
+- do not formally close Phase 5 or later phases without client acceptance.
 
 Controlling records:
 
+- `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`;
+- `docs/COMPLETE_PRODUCT_CURRENT_STATE_AUDIT.md`;
+- `docs/COMPLETE_PRODUCT_FEATURE_REGISTER.md`;
+- `docs/APP_STORE_END_TO_END_DELIVERY_PLAN.md`;
+- `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`;
 - `docs/PHASE_5_SUMMARY.md`;
 - `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`;
 - `docs/CODEX_CURRENT_HANDOFF.md`.
-
-This plan is the working sequence for Codex or another autonomous coding agent. It must remain aligned with the v2.0.1 master specification.
 
 ## Delivery principle
 
