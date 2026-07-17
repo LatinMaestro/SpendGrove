@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ChevronDown, ChevronRight, LockKeyhole, SlidersHorizontal } from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, FileText, LockKeyhole, SlidersHorizontal } from "lucide-react";
 import { AccountDataExport } from "@/components/account-data-export";
 import { useUserSettings } from "@/components/settings-provider";
 
@@ -99,6 +99,19 @@ export function SettingsPanel() {
             <div className="bg-surface-base p-4"><dt className="text-xs text-muted">Financial year</dt><dd className="mt-1 font-semibold text-foreground">1 July to 30 June</dd></div>
           </dl>
         </details>
+      </SettingsGroup>
+
+      <SettingsGroup title="Records and reports" description="Open the existing records you need without adding another navigation destination.">
+        <Link href="/transactions" className="flex min-h-16 items-center gap-3 px-4 py-4 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-mint text-brand-teal"><BarChart3 aria-hidden="true" className="h-4 w-4" /></span>
+          <span className="min-w-0 flex-1"><strong className="block text-sm text-foreground">Transactions and monthly spending</strong><span className="mt-1 block text-sm text-muted">Review monthly records and the existing category breakdown.</span></span>
+          <span className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-teal">Open <ChevronRight aria-hidden="true" className="h-4 w-4" /></span>
+        </Link>
+        <Link href="/loans" className="flex min-h-16 items-center gap-3 border-t border-border px-4 py-4 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-mint text-brand-teal"><FileText aria-hidden="true" className="h-4 w-4" /></span>
+          <span className="min-w-0 flex-1"><strong className="block text-sm text-foreground">Property records and exports</strong><span className="mt-1 block text-sm text-muted">Open a linked Loan Account to view the accepted Property report and export.</span></span>
+          <span className="inline-flex min-h-11 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-teal">Open <ChevronRight aria-hidden="true" className="h-4 w-4" /></span>
+        </Link>
       </SettingsGroup>
 
       <SettingsGroup title="Data and privacy" description="Your files and account data remain under your control.">
