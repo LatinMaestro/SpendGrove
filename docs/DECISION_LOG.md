@@ -197,3 +197,16 @@ The client completed the consolidated Production review and explicitly reported 
 Implementation impact:
 
 Phase 4 is closed without application or data mutation. Historical QA and the consolidated client checklist remain preserved. Any Phase 5 progression requires a separate documentation-first planning gate and explicit client approval; this closure grants no Phase 5 implementation authority.
+
+
+## 17 July 2026 — Phase 5 repository delivery complete pending client acceptance
+
+- **Decision:** Complete all authorised repository-side Phase 5 Milestones 1–6 under the web-first controlled Australian private-beta target.
+- **Approved by:** Client through the autonomous Phase 5 continuation direction.
+- **Implemented:** Account-protected finance routes, browser-local data segregation, complete account export, immediate account deletion, Privacy/Help, browser security headers, bounded request bodies, safe errors, operations runbooks, deterministic dependency locking and future App Store/platform documentation.
+- **Dependency decision:** Keep Next.js at supported patched `15.5.20` with React/React DOM `19.1.8`; add a committed lockfile and high/critical Production audit gate; do not use `--force`, Next.js 16 or an unrelated tooling migration.
+- **Platform decision:** Complete web private-beta readiness first. Capacitor, React Native/Expo and SwiftUI remain unselected future options. No native or App Store action occurred.
+- **Provider decision:** Analytics and external monitoring remain off. No provider or paid plan was added or upgraded.
+- **Data decision:** Phase 5 required no Prisma schema change, migration, backfill, data rewrite, manual SQL or Production financial-row access.
+- **Release decision:** SpendGrove is conditionally ready only after Clerk Production, environment separation, migration-health, recovery, contact and legal gates pass. It is not approved for beta invitations, public launch or App Store submission today.
+- **Status:** Phase 5 remains open pending consolidated client acceptance. Phase 6 is unapproved and not started.
