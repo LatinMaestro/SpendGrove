@@ -2,19 +2,20 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 const settingsPanel = readFileSync("components/settings-panel.tsx", "utf8");
+const reportCentre = readFileSync("app/reports/page.tsx", "utf8");
 
-describe("Phase 6 records and reports consolidation", () => {
-  it("keeps existing transaction and Property record workflows reachable from Settings", () => {
+describe("records and reports consolidation", () => {
+  it("keeps existing transaction and Property record workflows reachable from the Report Centre", () => {
     expect(settingsPanel).toContain('title="Records and reports"');
-    expect(settingsPanel).toContain('href="/transactions"');
-    expect(settingsPanel).toContain("Transactions and monthly spending");
-    expect(settingsPanel).toContain('href="/loans"');
-    expect(settingsPanel).toContain("Property records and exports");
+    expect(settingsPanel).toContain('href="/reports"');
+    expect(settingsPanel).toContain("Report Centre");
+    expect(reportCentre).toContain('href: "/transactions"');
+    expect(reportCentre).toContain("Monthly income and spending");
+    expect(reportCentre).toContain('href: "/loans"');
+    expect(reportCentre).toContain("Property records");
   });
 
-  it("does not add a report route, navigation destination or new calculation", () => {
-    expect(settingsPanel).not.toContain('href="/reports"');
-    expect(settingsPanel).not.toContain('href="/insights"');
+  it("keeps account export, privacy and help reachable without adding calculations to Settings", () => {
     expect(settingsPanel).not.toContain("calculate");
     expect(settingsPanel).toContain("<AccountDataExport />");
     expect(settingsPanel).toContain('href="/privacy"');

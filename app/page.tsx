@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileUp, Plus } from "lucide-react";
+import { BarChart3, FileUp, Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EverydayInsights } from "@/components/everyday-insights";
 import { OnboardingPrompt } from "@/components/onboarding-prompt";
@@ -39,6 +39,13 @@ export default function HomePage() {
           >
             <Plus aria-hidden="true" className="h-4 w-4" />
             Add transaction
+          </Link>
+          <Link
+            href="/reports"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface-base px-4 text-sm font-bold text-brand-evergreen transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
+          >
+            <BarChart3 aria-hidden="true" className="h-4 w-4" />
+            View reports
           </Link>
         </div>
       </section>

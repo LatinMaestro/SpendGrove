@@ -9,6 +9,7 @@ const protectedPages = [
   "app/loans/import/page.tsx",
   "app/budgets/page.tsx",
   "app/regular-payments/page.tsx",
+  "app/reports/page.tsx",
   "app/settings/page.tsx",
 ];
 
