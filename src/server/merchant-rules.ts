@@ -6,7 +6,6 @@ import {
   emptyLocalMerchantData,
   MerchantConflictError,
   renameMerchantAlias,
-  renameMerchantProfile,
   saveConfirmedMerchantRule,
   saveMerchantAlias,
   serializeMerchantRuleStorage,
