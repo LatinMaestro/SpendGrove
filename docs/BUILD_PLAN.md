@@ -932,3 +932,16 @@ Current bank matrix:
 Next PR: no-schema parser profile registry and quality manifest. New named profiles require safe layout evidence plus synthetic fixtures and false-positive tests. Durable transfer links, import undo and richer merchant history remain separate schema/migration gates.
 
 See `docs/PHASE_7_IMPORT_DATA_QUALITY_CONTRACT.md` and `docs/PHASE_7_BANK_FORMAT_REGISTER.md`.
+
+
+## Phase 7 Milestone 7.2 — Loan CSV format coverage
+
+Current implemented support is structural rather than lender-branded:
+
+- repayment component columns;
+- row-event ledgers;
+- browser-local review and private-field exclusion;
+- accepted two-cent component tolerance;
+- duplicate review and existing repayment reconciliation.
+
+No named lender profile may be added without exact safe layout evidence and a synthetic fixture. Next safe PR: typed mode registry and Help guidance with no schema or financial-rule change. See `docs/PHASE_7_LOAN_CSV_FORMAT_MATRIX.md`.
