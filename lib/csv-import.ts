@@ -93,6 +93,11 @@ export type CsvScanResult = {
   amountMode: CsvAmountMode;
 };
 
+type CsvHeaderDetection = {
+  hasHeader: boolean;
+  confidence: number;
+};
+
 const privateHeaderRules: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\bbsb\b/i, reason: "BSB" },
   { pattern: /\baccount\s*(?:number|no|name|id)\b/i, reason: "Account identifier" },
