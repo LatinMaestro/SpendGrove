@@ -412,7 +412,7 @@ export const migrationProfiles = {
         delegate: "importUndoItem",
       },
     },
-  },,
+  },
   "20260717120000_phase_9_advanced_personal_finance_foundation": {
     migrationName: "20260717120000_phase_9_advanced_personal_finance_foundation",
     absentTables: [
