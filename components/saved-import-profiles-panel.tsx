@@ -6,7 +6,6 @@ import {
   createAccountSavedImportProfile,
   deleteAccountSavedImportProfile,
   listAccountSavedImportProfiles,
-  migrateAccountSavedImportProfiles,
   resetAccountSavedImportProfiles,
   updateAccountSavedImportProfile,
 } from "@/lib/account-saved-import-profiles";
@@ -20,12 +19,9 @@ import {
   applySavedImportProfile,
   createSavedImportProfile,
   deleteSavedImportProfile,
-  loadSavedImportProfilesFromStorage,
   markSavedImportProfileUsed,
   matchSavedImportProfiles,
   renameSavedImportProfile,
-  resetSavedImportProfilesInStorage,
-  saveSavedImportProfilesToStorage,
   setSavedImportProfileEnabled,
   type SavedImportProfile,
 } from "@/lib/saved-import-profiles";
@@ -56,7 +52,7 @@ export function SavedImportProfilesPanel({
   onApplyScan: (scan: CsvScanResult) => void;
 }) {
   const [profiles, setProfiles] = useState<SavedImportProfile[]>([]);
-  const [storageMode, setStorageMode] = useState<"loading" | "account" | "device">("loading");
+  const [storageMode, setStorageMode] = useState<"loading" | "account" | "unavailable">("loading");
   const [profileName, setProfileName] = useState("");
   const [bankName, setBankName] = useState(() => inferredBankName(scan));
   const [accountType, setAccountType] = useState<ImportProfileAccountType>("UNKNOWN");
@@ -68,62 +64,35 @@ export function SavedImportProfilesPanel({
 
   useEffect(() => {
     let cancelled = false;
-    const loaded = loadSavedImportProfilesFromStorage(window.localStorage);
-    setProfiles(loaded.profiles);
-    setStorageAvailable(loaded.storageAvailable);
-    if (!loaded.storageAvailable) setNotice("Browser storage is unavailable. You can still continue without saving this mapping.");
-    else if (loaded.unsupportedVersion) setNotice("Saved mappings from a newer app version were ignored for safety.");
-    else if (loaded.recoveredFromCorruption) setNotice("An unreadable saved mapping was ignored safely.");
-    else if (loaded.migrated) saveSavedImportProfilesToStorage(window.localStorage, loaded.profiles);
 
-    async function loadAccountProfiles() {
-      try {
-        const result = await listAccountSavedImportProfiles();
-        if (cancelled) return;
-        if (!result.ok) {
-          setStorageMode("device");
-          return;
-        }
-
-        let accountProfiles = result.profiles;
-        if (loaded.profiles.length > 0 && window.confirm(
-          `Move ${loaded.profiles.length} saved mapping${loaded.profiles.length === 1 ? "" : "s"} from this device to your SpendGrove account? The device copy will be removed only after the move succeeds.`,
-        )) {
-          const migration = await migrateAccountSavedImportProfiles(loaded.profiles);
-          if (cancelled) return;
-          if (migration.ok) {
-            accountProfiles = migration.profiles;
-            const cleared = resetSavedImportProfilesInStorage(window.localStorage);
-            setStorageAvailable(cleared);
-            setNotice(`Moved ${migration.importedCount ?? 0} saved mapping${migration.importedCount === 1 ? "" : "s"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}.`);
-          } else {
-            setNotice(`${migration.error} Your device copy was kept.`);
-          }
-        }
-
-        setProfiles(accountProfiles);
-        setStorageMode("account");
-      } catch {
-        if (!cancelled) setStorageMode("device");
+    void listAccountSavedImportProfiles().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setStorageMode("unavailable");
+        setStorageAvailable(false);
+        setNotice(result.error);
+        return;
       }
-    }
 
-    void loadAccountProfiles();
+      setProfiles(result.profiles);
+      setStorageMode("account");
+      setStorageAvailable(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setStorageMode("unavailable");
+      setStorageAvailable(false);
+      setNotice("Account mappings are unavailable right now. Browser-only mappings were not changed.");
+    });
+
     return () => { cancelled = true; };
   }, []);
 
   const matches = useMemo(() => matchSavedImportProfiles(profiles, scan), [profiles, scan]);
 
-  function persistDevice(nextProfiles: SavedImportProfile[], successNotice: string) {
-    setProfiles(nextProfiles);
-    if (!saveSavedImportProfilesToStorage(window.localStorage, nextProfiles)) {
-      setStorageAvailable(false);
-      setNotice("Browser storage is unavailable. You can still continue without saving this mapping.");
-      return false;
-    }
-    setStorageAvailable(true);
-    setNotice(successNotice);
-    return true;
+  function persistDevice(_nextProfiles: SavedImportProfile[], _successNotice: string) {
+    setStorageAvailable(false);
+    setNotice("Account mappings are unavailable. Browser-only mappings were not changed.");
+    return false;
   }
 
   function useProfile(profile: SavedImportProfile) {
@@ -243,12 +212,7 @@ export function SavedImportProfilesPanel({
   function resetProfiles() {
     setError("");
     if (storageMode !== "account") {
-      if (!resetSavedImportProfilesInStorage(window.localStorage)) {
-        setNotice("Browser storage is unavailable.");
-        return;
-      }
-      setProfiles([]);
-      setNotice("Saved mappings deleted from this device.");
+      setNotice("Account mappings are unavailable. Browser-only mappings were not changed.");
       return;
     }
     const previous = profiles;
