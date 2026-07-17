@@ -100,7 +100,8 @@ No Property address, tax conclusion, Loan relationship or automatic match is inv
 - process targets in bounded server batches;
 - revalidate immediately before each write;
 - use a short database transaction per bounded batch or per record, not one unbounded account-wide lock;
-- create one item result for every requested unique transaction ID;
+- create one item result for every requested unique transaction ID that resolves to an active owner-owned transaction;
+- for a missing or non-owned opaque ID, record only the owner operation's aggregate failed count and the safe NOT_FOUND_OR_NOT_OWNED reason; do not persist that opaque ID or create a cross-owner foreign-key relationship;
 - independent successes remain successful if another record fails;
 - never retry a failed financial mutation automatically;
 - finalize as COMPLETED, PARTIAL or FAILED from item outcomes;
@@ -185,7 +186,7 @@ Do not store:
 
 - operation history remains account data until the complete-product retention policy is approved;
 - account deletion cascades operations/items;
-- account export includes a safe operation summary: type, status, timestamps and counts;
+- account export will include a safe operation summary only after the operation-journal migration is verified in every environment where export runs; prepared code must not query an unavailable table;
 - per-item internal undo references are excluded from normal export unless required for data portability review;
 - future retention cleanup must not run before a separate Phase 15 policy.
 
