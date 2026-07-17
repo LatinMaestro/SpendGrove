@@ -1,5 +1,17 @@
 # Current Codex Handoff
 
+## Phase 9 guarded repository preparation — 17 July 2026
+
+- Phase 9 financial contract and independently safe repository foundations are merged through PR #204 / `eff2ad0e95bd2ced0c647113f830ab2705186b88`.
+- Prepared capabilities: user-controlled recurring lifecycle and existing-transaction instances; manual savings goals/contributions; manual assets/liabilities/valuations/snapshots; in-app reminder preferences and deduplicated records.
+- `PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED` remains false. No route, page, export or account-deletion path queries the unexecuted tables.
+- Latest exact-head evidence: 135 test files / 810 tests, TypeScript, lint and optimized production build passed.
+- The fourth migration `20260717120000_phase_9_advanced_personal_finance_foundation` remains unexecuted after the three existing pending migrations.
+- No Preview/Production migration, database access, rewrite/backfill, package/provider/secret/environment change or Production data use occurred.
+- Controlling evidence: `docs/PHASE_9_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Client review remains deferred. Phase 9 guarded foundations are prepared, not operational or closed.
+
+
 ## Phase 8 reporting delivery — 17 July 2026
 
 - Phase 8 independently safe existing-schema reporting is merged through PR #197.
