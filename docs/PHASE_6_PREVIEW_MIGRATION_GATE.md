@@ -107,3 +107,22 @@ Do not dispatch the migration until the operator completes the checklist below.
 - Repository-side bulk, transfer-link and import-undo work may be prepared and exact-head verified, but migration-dependent runtime activation remains blocked.
 - No Production migration, Production database access, data copy, rewrite or backfill is authorised.
 - No public launch, real-user invitation or App Store action is authorised.
+
+## Consolidated deferred operator action — retained during Phase 8
+
+The client has deferred GitHub reauthentication and migration execution. Treat this as one later operator action, not an autonomous-development blocker.
+
+The operator must later:
+
+1. reauthenticate in GitHub repository settings;
+2. update `NEON_PREVIEW_DATABASE_URL` and `NEON_PREVIEW_DIRECT_DATABASE_URL` to the retained isolated Preview project without recording either value;
+3. run individually, stopping on any failure:
+   1. `20260717090000_phase_6_bulk_operation_foundation`;
+   2. `20260717100000_phase_7_transfer_link_foundation`;
+   3. `20260717110000_phase_7_import_undo_foundation`;
+4. inspect secret-safe preflight and post-migration evidence;
+5. confirm the Preview database contains only synthetic test data;
+6. run full Preview regression;
+7. activate each guarded runtime only in a later focused PR.
+
+Until then, bulk-operation execution/undo, durable transfer linking and import undo remain disabled and must perform no missing-table query. Phase 8 reports and account export remain independent of these unexecuted tables.
