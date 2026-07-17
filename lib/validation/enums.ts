@@ -48,6 +48,7 @@ export const auditEntityTypeSchema = z.enum([
   "RECURRING_SUGGESTION_DISMISSAL",
   "CATEGORY_BUDGET",
   "BULK_OPERATION",
+  "TRANSFER_LINK",
 ]);
 export const auditActionSchema = z.enum([
   "CREATED",

@@ -251,6 +251,46 @@ export const migrationProfiles = {
       },
     },
   },
+  "20260717100000_phase_7_transfer_link_foundation": {
+    migrationName: "20260717100000_phase_7_transfer_link_foundation",
+    absentTables: ["TransferLink"],
+    absentEnums: [],
+    enums: {},
+    auditEntityTypeAdditions: ["TRANSFER_LINK"],
+    existingCountDelegates: [
+      ["BulkOperation", "bulkOperation"],
+      ["BulkOperationItem", "bulkOperationItem"],
+    ],
+    tables: {
+      TransferLink: {
+        columns: [
+          "confirmedAt",
+          "createdAt",
+          "id",
+          "incomingTransactionId",
+          "outgoingTransactionId",
+          "unlinkedAt",
+          "updatedAt",
+          "userId",
+        ],
+        indexes: [
+          "TransferLink_incomingTransactionId_active_key",
+          "TransferLink_outgoingTransactionId_active_key",
+          "TransferLink_pkey",
+          "TransferLink_userId_incomingTransactionId_unlinkedAt_idx",
+          "TransferLink_userId_outgoingTransactionId_unlinkedAt_idx",
+          "TransferLink_userId_unlinkedAt_createdAt_idx",
+        ],
+        constraints: [
+          "TransferLink_incomingTransactionId_fkey",
+          "TransferLink_outgoingTransactionId_fkey",
+          "TransferLink_pkey",
+          "TransferLink_userId_fkey",
+        ],
+        delegate: "transferLink",
+      },
+    },
+  },
 };
 
 export function migrationProfileFor(migrationName) {
