@@ -81,8 +81,8 @@ const recordReports: ReportDestination[] = [
   {
     title: "Loan repayment records",
     description: "Open an owned Loan Account to review repayment components, matching status and source cashflow.",
-    href: "/loans",
-    action: "Open Loan Accounts",
+    href: "/reports/loans",
+    action: "Open Loan report",
     icon: Landmark,
   },
   {
