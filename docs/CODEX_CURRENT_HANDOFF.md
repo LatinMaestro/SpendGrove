@@ -1,5 +1,21 @@
 # Current Codex Handoff
 
+## Phase 8 reporting delivery — 17 July 2026
+
+- Phase 8 independently safe existing-schema reporting is merged through PR #197.
+- PR #194 / `1c8f241c3543937385406c2d823a50c983f74407`: authenticated responsive Report Centre.
+- PR #195 / `cb3055ee8b60709155b58d71f8b85f500344c651`: Australian financial-year Loan reporting and formula-safe CSV.
+- PR #196 / `e77b4e01ca8f01b216633bc4c04f4bb78ac5978e`: Property reporting using the accepted linked-record source and separate Loan components.
+- PR #197 / `9dcd9807d969987a04d21342d4b52aad1defe7e3`: versioned accountant preparation manifest/readme plus individual existing exports.
+- Latest exact-head evidence: 130 test files / 776 tests, TypeScript, lint and optimized production build passed.
+- Everyday Transactions remain the sole cashflow records; LoanRepayment remains analytical; split, ownership, transfer and sign rules are unchanged.
+- No schema, migration, data, package, provider, secret or environment change occurred in Phase 8.
+- Final tax/accounting terminology and evidence expectations remain on the professional-review register. No tax advice, deductibility conclusion or tax return is produced.
+- Vercel Preview `dpl_8ajdH7DtR9gWfENauDVkaKL7LcN2` was Ready for an intermediate PR #197 commit; no exact-final-head deployment is claimed.
+- Controlling evidence: `docs/PHASE_8_SUMMARY.md`.
+- Consolidated client review remains deferred; Phase 8 is technically delivered but not formally client accepted or closed.
+
+
 ## Phase 7 guarded transfer-link preparation — 17 July 2026
 
 - PR #192 merged as `e49bac5b6e05b4fb863cab4294062caf3eecd961`.
