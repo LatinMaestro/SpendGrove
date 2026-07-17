@@ -104,7 +104,11 @@ describe("Phase 11 guarded document metadata service", () => {
   });
 
   it("passes only opaque object metadata to an explicitly enabled adapter", async () => {
-    const prepareUpload = vi.fn(async () => ({
+    const prepareUpload = vi.fn(async (_input: {
+      objectKey: string;
+      contentType: string;
+      sizeBytes: number;
+    }) => ({
       uploadAuthorization: "one-time-upload-authorization",
     }));
     const { store, calls } = memoryStore();
@@ -125,7 +129,8 @@ describe("Phase 11 guarded document metadata service", () => {
     );
 
     expect(prepareUpload).toHaveBeenCalledOnce();
-    const providerInput = prepareUpload.mock.calls[0][0];
+    const providerInput = prepareUpload.mock.calls[0]?.[0];
+    if (!providerInput) throw new Error("Expected safe provider input.");
     expect(providerInput.objectKey).toMatch(/^documents\/[a-f0-9]{48}$/);
     expect(providerInput).toEqual({
       objectKey: providerInput.objectKey,
