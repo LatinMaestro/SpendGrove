@@ -213,7 +213,7 @@ describe("Phase 6 prepared bulk operation boundary", () => {
     expect(service).toContain("NOT_FOUND_OR_NOT_OWNED");
     expect(service).toContain("Do not persist a missing or another user's opaque transaction ID");
     expect(createRoute).toContain("getCurrentUserContext()");
-    expect(createRoute).toContain("readBoundedJsonBody");
+    expect(createRoute).toContain("readBoundedJson");
     expect(createRoute).toContain("BulkOperationsUnavailableError");
     expect(readRoute).toContain("getCurrentUserContext()");
     expect(undoRoute).toContain("getCurrentUserContext()");
