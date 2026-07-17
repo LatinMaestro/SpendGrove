@@ -676,3 +676,12 @@ Delivered repository boundaries:
 Exact-head verification passed 141 test files / 864 tests, TypeScript, lint and optimized production build. Vercel was blocked by the account build-rate limit rather than an application failure; no redundant deployment was triggered.
 
 Phase 12 adds no schema or migration. Provider/model selection, commercial terms, privacy and retention review, secure configuration, sandbox/evaluation evidence and focused activation PRs remain later gates. Production activation is not authorised.
+
+
+## Phase 13 architecture activation note — 17 July 2026
+
+React Native with Expo and Expo Router is selected for SpendGrove's native iPhone/iPad client. The evidence, candidate comparison and safety boundary are in `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`.
+
+The Next.js web product remains independently deployed. Native work will consume authenticated versioned server endpoints and share only platform-neutral TypeScript contracts, calculations and synthetic parity fixtures. It will not import Prisma/server modules or silently migrate browser-local data.
+
+The next Phase 13 milestone is a focused bootstrap proof. Apple enrolment/payment, bundle identifiers, signing, EAS/provider configuration, TestFlight, App Store records, real-user distribution and public launch remain hard gates. Capacitor remains a fallback and SwiftUI remains an escalation path if a mandatory Expo capability fails objective proof.
