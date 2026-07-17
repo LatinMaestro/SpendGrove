@@ -200,3 +200,44 @@ describe("Phase 6 Preview migration profile", () => {
     expect(exactNameSetMatches([...expected, "unexpected_idx"], expected)).toBe(false);
   });
 });
+
+
+describe("Phase 7 transfer-link Preview migration profile", () => {
+  const migrationName = "20260717100000_phase_7_transfer_link_foundation";
+
+  it("defines the exact empty table and audit addition", () => {
+    const profile = migrationProfileFor(migrationName);
+
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toEqual(["TransferLink"]);
+    expect(profile?.absentEnums).toEqual([]);
+    expect(profile?.auditEntityTypeAdditions).toEqual(["TRANSFER_LINK"]);
+    expect(profile?.existingCountDelegates).toEqual([
+      ["BulkOperation", "bulkOperation"],
+      ["BulkOperationItem", "bulkOperationItem"],
+    ]);
+  });
+
+  it("requires active-only indexes and all owner/transaction foreign keys", () => {
+    const table = migrationProfileFor(migrationName)?.tables.TransferLink;
+
+    expect(table?.indexes).toEqual([
+      "TransferLink_incomingTransactionId_active_key",
+      "TransferLink_outgoingTransactionId_active_key",
+      "TransferLink_pkey",
+      "TransferLink_userId_incomingTransactionId_unlinkedAt_idx",
+      "TransferLink_userId_outgoingTransactionId_unlinkedAt_idx",
+      "TransferLink_userId_unlinkedAt_createdAt_idx",
+    ]);
+    expect(table?.constraints).toEqual([
+      "TransferLink_incomingTransactionId_fkey",
+      "TransferLink_outgoingTransactionId_fkey",
+      "TransferLink_pkey",
+      "TransferLink_userId_fkey",
+    ]);
+    expect(exactNameSetMatches(
+      [...(table?.indexes ?? [])].reverse(),
+      table?.indexes ?? [],
+    )).toBe(true);
+  });
+});
