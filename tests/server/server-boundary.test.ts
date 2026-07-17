@@ -37,6 +37,8 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "householdRecordShare.write", pattern: /householdRecordShare\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "accountantAccessGrant.write", pattern: /accountantAccessGrant\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "accountantAccessScope.write", pattern: /accountantAccessScope\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "document.write", pattern: /document\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "documentLink.write", pattern: /documentLink\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -211,6 +213,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     new Set([
       "accountantAccessGrant.write",
       "accountantAccessScope.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
+    "src/server/documents.ts",
+    new Set([
+      "document.write",
+      "documentLink.write",
       "auditEvent.write",
     ]),
   ],
