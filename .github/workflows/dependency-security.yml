@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "package.json"
-      - "package-lock.json"
       - ".github/workflows/dependency-security.yml"
   workflow_dispatch:
 
@@ -23,7 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: npm
       - name: Install dependency tree without lifecycle scripts
         run: npm install --ignore-scripts
       - name: Reject high or critical production advisories
