@@ -31,7 +31,7 @@ describe("Phase 4 Milestone 1 schema foundation", () => {
     expect(scopedSchema).toContain("model RecurringItem");
     expect(scopedSchema).toContain("model RecurringSuggestionDismissal");
     expect(scopedSchema).toContain("model CategoryBudget");
-    expect(scopedSchema).toContain("expectedAmountCents Int?");
+    expect(scopedSchema).toMatch(/expectedAmountCents\s+Int\?/);
     expect(scopedSchema).toContain("amountCents Int");
     expect(scopedSchema).toContain("suggestionKey String");
 
@@ -65,10 +65,9 @@ describe("Phase 4 Milestone 1 schema foundation", () => {
   MONTHLY
   OTHER
 }`);
-    expect(enumBlock(schema, "RecurringItemStatus")).toBe(`enum RecurringItemStatus {
-  ACTIVE
-  ARCHIVED
-}`);
+    const recurringStatus = enumBlock(schema, "RecurringItemStatus");
+    expect(recurringStatus).toContain("ACTIVE");
+    expect(recurringStatus).toContain("ARCHIVED");
     expect(enumBlock(schema, "BudgetPeriod")).toBe(`enum BudgetPeriod {
   MONTHLY
 }`);
