@@ -167,15 +167,17 @@ function safeAuditData(
   userId: string,
   operationId: string,
   action: "CREATED" | "UPDATED",
-  metadata: Record<string, string | number>,
-) {
-  return auditEventSchema.parse({
+  metadata: Prisma.InputJsonObject,
+): Prisma.AuditEventUncheckedCreateInput {
+  const audit = {
     userId,
-    entityType: "BULK_OPERATION",
+    entityType: "BULK_OPERATION" as const,
     entityId: operationId,
     action,
     metadata,
-  });
+  };
+  auditEventSchema.parse(audit);
+  return audit;
 }
 
 function iso(value: Date | null) {
