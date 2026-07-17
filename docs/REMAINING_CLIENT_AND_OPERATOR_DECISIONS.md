@@ -1,5 +1,20 @@
 # Remaining Client and Operator Decisions
 
+## Phase 10 operator and activation decisions — 17 July 2026
+
+Repository preparation is complete for personal-by-default household sharing and separate read-only accountant access. The following remain external gates:
+
+- execute the fifth Preview migration only after the preceding four ordered migrations pass;
+- verify all five foundations with synthetic Preview regression;
+- approve and configure an invitation-delivery provider before any real invitation is sent;
+- decide the minimum identity/contact fields permitted for delivery;
+- complete professional review of accountant-role wording where required;
+- approve a focused runtime activation PR after Preview verification;
+- separately approve any Production migration.
+
+No provider, secret, environment mutation, real-user invitation, Production migration or runtime activation is implied by the prepared services.
+
+
 ## Phase 9 decision update — 17 July 2026
 
 The merged Phase 9 financial contract resolves the repository implementation defaults for D-020 through D-023:

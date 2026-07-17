@@ -1,15 +1,20 @@
 # Build Plan
 
-## Phase 10 contract gate — 17 July 2026
+## Phase 10 guarded repository preparation — 17 July 2026
 
 - [x] Define personal-by-default ownership, explicit selected sharing, household roles and separate read-only accountant grants.
 - [x] Select application-owned collaboration records with existing Clerk identities; no Clerk Organizations/provider-plan dependency.
 - [x] Define hashed single-use invitations, revocation, last-administrator, export/deletion, audit and browser-local safeguards.
-- [ ] Prepare the exact additive fifth schema migration and hard-false runtime gate.
-- [ ] Prepare owner-scoped services and tests without sending invitations or querying missing tables.
-- [ ] Run ordered Preview migrations through the deferred operator gate before any activation.
+- [x] Prepare the exact additive fifth schema migration, verifier profile and hard-false runtime gate.
+- [x] Prepare owner-scoped household membership, invitation and explicit record-sharing services.
+- [x] Prepare separate read-only accountant grants, selected scopes, exact authorization and revocation.
+- [x] Verify 138 test files / 837 tests, TypeScript, lint and optimized production build.
+- [ ] Run all five ordered Preview migrations through the deferred operator gate.
+- [ ] Add invitation delivery only after a separately approved provider/operator decision.
+- [ ] Activate household/accountant runtime only through a later focused PR after migration and synthetic Preview verification.
 
-Controlling contract: `docs/PHASE_10_PRIVACY_PERMISSIONS_CONTRACT.md`.
+Controlling contract: `docs/PHASE_10_PRIVACY_PERMISSIONS_CONTRACT.md`.  
+Controlling handoff: `docs/PHASE_10_REPOSITORY_PREPARATION_SUMMARY.md`.
 
 
 ## Phase 9 guarded repository preparation update — 17 July 2026

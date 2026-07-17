@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-17 — Prepare Phase 10 collaboration behind the fifth migration gate
+
+Decision: implement application-owned household memberships, hashed invitations, explicit owner-selected record shares and separate read-only accountant grants/scopes without changing source-record ownership. Persist only invitation-token hashes; return raw tokens only in one-time repository service state; require active membership/grant and exact scope on every shared authorization; block last-administrator loss; and revoke access immediately on the next server read.
+
+The additive Phase 10 migration is fifth in the ordered isolated Preview queue. `PHASE_10_COLLABORATION_RUNTIME_ENABLED` remains false. No UI, route, invitation provider, real-user invitation, migration, database access, Production activation or financial-record mutation is authorised by this preparation.
+
+
 ## 2026-07-17 — Use explicit application-owned household and accountant permissions
 
 Decision: keep every existing record personally owned and private by default. Household sharing is owner-selected and revocable; household administrators do not gain access to unshared member records. Accountant access is separate, read-only, selected-scope, time-bounded where configured and immediately revocable.
