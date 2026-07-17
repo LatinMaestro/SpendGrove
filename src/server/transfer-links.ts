@@ -77,7 +77,7 @@ export class TransferLinkNotFoundError extends Error {
   }
 }
 
-type TransferRecord = {
+export type TransferRecord = {
   id: string;
   amountCents: number;
   date: Date;
@@ -109,6 +109,21 @@ function isUnlinkedTransfer(record: TransferRecord) {
     && record.splitRole === "NONE"
     && record.outgoingTransferLinks.length === 0
     && record.incomingTransferLinks.length === 0;
+}
+
+export function isEligibleTransferPair(
+  outgoing: TransferRecord,
+  incoming: TransferRecord,
+) {
+  return isUnlinkedTransfer(outgoing)
+    && isUnlinkedTransfer(incoming)
+    && outgoing.amountCents < 0
+    && incoming.amountCents > 0
+    && outgoing.amountCents === -incoming.amountCents
+    && Math.abs(
+      australianCalendarDayNumber(outgoing.date)
+      - australianCalendarDayNumber(incoming.date),
+    ) <= TRANSFER_LINK_MAX_CALENDAR_DAY_DIFFERENCE;
 }
 
 function safeAuditData(
@@ -166,21 +181,10 @@ export function createPrismaTransferLinkStore(
             }),
           ]);
           if (!outgoing || !requestedIncoming) throw new TransferLinkEligibilityError();
-          if (
-            !isUnlinkedTransfer(outgoing as TransferRecord)
-            || !isUnlinkedTransfer(requestedIncoming as TransferRecord)
-            || outgoing.amountCents >= 0
-            || requestedIncoming.amountCents <= 0
-            || outgoing.amountCents !== -requestedIncoming.amountCents
-          ) {
-            throw new TransferLinkEligibilityError();
-          }
-
-          const dayDifference = Math.abs(
-            australianCalendarDayNumber(outgoing.date)
-            - australianCalendarDayNumber(requestedIncoming.date),
-          );
-          if (dayDifference > TRANSFER_LINK_MAX_CALENDAR_DAY_DIFFERENCE) {
+          if (!isEligibleTransferPair(
+            outgoing as TransferRecord,
+            requestedIncoming as TransferRecord,
+          )) {
             throw new TransferLinkEligibilityError();
           }
 
