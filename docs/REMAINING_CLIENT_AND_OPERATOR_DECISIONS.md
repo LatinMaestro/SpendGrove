@@ -686,3 +686,28 @@ D-013 remains open for a qualified Australian tax/accounting professional to rev
 - any future tax-sensitive grouping.
 
 Until that review, SpendGrove must not claim deductibility, tax-return readiness, claimable amounts or professional accounting conclusions. This is a professional-review gate, not a blocker to unrelated repository work.
+
+
+## Phase 12 activation decisions remain open — 17 July 2026
+
+Repository preparation is complete through PR #216, but no optional provider is selected or operational.
+
+Before optional merchant enrichment can be activated, the client/operator must separately approve:
+
+- exact provider and account;
+- sandbox and Production commercial terms, quotas and cost ceiling;
+- permitted cleaned-description payload and retention/cache rules;
+- privacy and App Store disclosures;
+- secure environment configuration;
+- synthetic sandbox evidence and focused runtime-activation PR.
+
+Before optional AI assistance can be activated, the client/operator must separately approve:
+
+- exact provider/model and region;
+- pricing and spend controls;
+- request catalogue and minimum-data policy;
+- retention, training, deletion/export and incident treatment;
+- evaluation criteria and failure behaviour;
+- secure environment configuration and focused runtime-activation PR.
+
+The current runtime constants remain false. No provider credential should be entered and no service should be activated from this documentation state. These open decisions do not block unrelated repository preparation.
