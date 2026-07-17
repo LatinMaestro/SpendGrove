@@ -37,7 +37,7 @@ export function AuthControls({ clerkConfigured }: Readonly<{ clerkConfigured: bo
       </SignedOut>
       <SignedIn>
         <div className="flex min-h-11 min-w-11 items-center justify-center">
-          <UserButton afterSignOutUrl="/" />
+          <UserButton afterSignOutUrl="/sign-in" />
         </div>
       </SignedIn>
     </div>
