@@ -2,6 +2,16 @@
 
 Last updated: 17 July 2026
 
+## Isolated Preview environment update — 17 July 2026
+
+- A separate empty Neon Free project now exists for non-Production work: safe project ID `cold-field-54187673`, branch `br-sweet-flower-aj2ng7ix`, database `neondb`.
+- It is an independent project, not a branch cloned from the SpendGrove Production project; no Production identities, users, finance rows or other data were copied.
+- Vercel Preview-only `DATABASE_URL` and `DIRECT_DATABASE_URL` were updated to the retained isolated project. Production variables were not edited and no redeploy was forced.
+- GitHub Actions secret updates remain blocked by GitHub fresh account reauthentication. The exact operator checklist is in `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md`.
+- Do not dispatch the Preview migration until `NEON_PREVIEW_DATABASE_URL` and `NEON_PREVIEW_DIRECT_DATABASE_URL` are updated to the retained project through the operator-authenticated GitHub settings flow.
+- No Preview or Production migration ran; no data rewrite/backfill, Production content access, provider purchase, package or application change occurred.
+- Repository-side Phase 6–15 work may continue where it does not require the unexecuted migration. Migration-dependent runtime activation remains externally blocked.
+
 ## Phase 8 contract gate — 17 July 2026
 
 - Repository audit and reporting contract are recorded in `docs/PHASE_8_CURRENT_STATE_AUDIT.md` and `docs/PHASE_8_FINANCIAL_REPORTING_CONTRACT.md`.
