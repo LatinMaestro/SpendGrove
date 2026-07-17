@@ -6,6 +6,7 @@ const navigation = readFileSync("components/bottom-nav.tsx", "utf8");
 const primitives = readFileSync("components/ui/app-primitives.tsx", "utf8");
 const home = readFileSync("app/page.tsx", "utf8");
 const transactions = readFileSync("app/transactions/page.tsx", "utf8");
+const importCentre = readFileSync("components/import-centre.tsx", "utf8");
 const importFlow = readFileSync("components/csv-import-foundation.tsx", "utf8");
 const loans = readFileSync("components/loans-manager.tsx", "utf8");
 const settings = readFileSync("app/settings/page.tsx", "utf8");
@@ -33,14 +34,15 @@ describe("Phase 4 Milestone 4 responsive and accessibility safeguards", () => {
   it("keeps one semantic page heading on each primary public surface", () => {
     expect(home).toContain('title="Home"');
     expect(transactions).toContain('title="Transactions"');
-    expect(importFlow).toContain("<h1");
+    expect(importCentre).toContain("<h1");
+    expect(importFlow).toContain("<h2");
     expect(loans).toContain("<h1");
     expect(settings).toContain('title="Settings"');
     expect(primitives).toContain("<h1");
   });
 
   it("keeps visible focus and labelled icon controls", () => {
-    const changedSurface = [shell, navigation, primitives, importFlow, loans, settings].join("\n");
+    const changedSurface = [shell, navigation, primitives, importCentre, importFlow, loans, settings].join("\n");
     expect(changedSurface).toContain("focus-visible:ring");
     expect(changedSurface).toContain("focus:ring-2");
     expect(loans).toContain('aria-label="Close"');
@@ -49,7 +51,7 @@ describe("Phase 4 Milestone 4 responsive and accessibility safeguards", () => {
   });
 
   it("keeps beginner surfaces free from prohibited feature language", () => {
-    const beginnerSurface = [home, transactions, importFlow, loans, settings].join("\n");
+    const beginnerSurface = [home, transactions, importCentre, importFlow, loans, settings].join("\n");
     expect(beginnerSurface).not.toMatch(/net worth|property profit|property yield|equity valuation|ATO-ready|accountant approved|AI advice|live bank/i);
   });
 });
