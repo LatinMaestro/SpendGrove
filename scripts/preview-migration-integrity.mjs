@@ -7,7 +7,7 @@ import {
 } from "./preview-migration-integrity-core.mjs";
 
 const DEFAULT_MIGRATION = "20260717090000_phase_6_bulk_operation_foundation";
-const EXISTING_COUNT_DELEGATES = [
+const BASE_EXISTING_COUNT_DELEGATES = [
   ["User", "user"],
   ["Category", "category"],
   ["Transaction", "transaction"],
@@ -68,8 +68,12 @@ function parseArguments() {
   return { mode, stateFile, expectedCountsJson, profile };
 }
 
-async function existingCounts(prisma) {
-  const entries = await Promise.all(EXISTING_COUNT_DELEGATES.map(async ([name, delegate]) => [
+async function existingCounts(prisma, profile) {
+  const delegates = [
+    ...BASE_EXISTING_COUNT_DELEGATES,
+    ...(profile.existingCountDelegates ?? []),
+  ];
+  const entries = await Promise.all(delegates.map(async ([name, delegate]) => [
     name,
     await prisma[delegate].count(),
   ]));
@@ -146,7 +150,7 @@ async function runPre(prisma, stateFile, profile) {
     }
   }
 
-  const counts = await existingCounts(prisma);
+  const counts = await existingCounts(prisma, profile);
   await writeFile(stateFile, JSON.stringify(counts), { encoding: "utf8", mode: 0o600 });
   reportCounts("Pre-migration", counts);
   console.log(`Pre-migration integrity checks passed for ${profile.migrationName}: migration state is clear and expected objects are absent.`);
@@ -232,7 +236,7 @@ async function runPost(prisma, stateFile, expectedCountsJson, profile) {
   }
 
   const baselineCounts = await beforeCounts(stateFile, expectedCountsJson);
-  const afterCounts = await existingCounts(prisma);
+  const afterCounts = await existingCounts(prisma, profile);
   assertCountsUnchanged(baselineCounts, afterCounts);
 
   reportCounts("Post-migration", afterCounts);
