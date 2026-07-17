@@ -84,26 +84,25 @@ The agent must pause for the client before:
 
 ## Active phase rule
 
-Current controlling status — 15 July 2026:
+Current controlling status — 17 July 2026:
 
-- Phase 4 Milestones 1–4 are client accepted, closed, technically verified and deployed.
-- PR #149 is the accepted Phase 5 planning baseline and merged as `bb715af100b65c8c5d9b74c701d1e135d50e332f`.
-- Phase 5 is active.
-- Only Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate — is approved for implementation.
-- Phase 5 Milestones 2–6 remain unapproved.
-- The release target is an account-based controlled Australian web private beta.
-- Signed-out access is limited to explicitly public marketing, onboarding and authentication surfaces; operational finance screens must require authentication.
-- Existing browser-local data must remain preserved, separate and never silently deleted, rewritten, uploaded or merged.
-- The first implementation gate is a patched supported Next.js 15.x release, with 15.5.18 as the minimum approved security floor. Next.js 16 and unrelated dependency modernisation are not authorised.
-- Analytics remains off. No monitoring, crash-reporting, support or analytics provider is approved.
-- No schema change, Preview or Production migration, Production data access, provider-plan purchase, secret/environment change or native/App Store work is authorised.
-- PR 5.1B changes the signed-out access experience and must remain open for explicit client review before merge.
-- Stop before Phase 5 Milestone 2 or any unapproved expansion.
+- Phase 4 Milestones 1–4 are client accepted and closed.
+- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
+- Phase 5 is not formally closed. Phase 6 is unapproved and must not start.
+- The target remains a controlled Australian account-based web private beta.
+- Current release recommendation is conditional: complete the Clerk Production, Vercel/Clerk/Neon separation, migration-health, recovery, contact and legal operator gates first.
+- No Production migration, schema/data rewrite, provider-plan purchase, secret/environment mutation, public launch, native package or App Store action is authorised.
+- Analytics and external monitoring remain off.
+- Browser-local prototype data must remain preserved and separate.
+- No beta invitation may be issued until the operator gates and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md` pass.
+- Do not mark Phase 5 accepted or closed without explicit client confirmation.
 
 Controlling documents:
 
-- `docs/PHASE_5_PRODUCTION_READINESS_PROPOSAL.md`
-- `docs/PHASE_5_CURRENT_STATE_AUDIT.md`
+- `docs/PHASE_5_SUMMARY.md`
+- `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`
+- `docs/PHASE_5_MILESTONE_1_ENVIRONMENT_READINESS.md`
+- `docs/PHASE_5_DEPENDENCY_SECURITY_REVIEW.md`
 - `docs/BUILD_PLAN.md`
 - `docs/CODEX_CURRENT_HANDOFF.md`
 
