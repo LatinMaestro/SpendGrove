@@ -706,3 +706,13 @@ No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-
 Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
 
 Current next action: stop. Do not begin Phase 5 until the client separately approves its planning contract and delivery sequence.
+
+## Phase 9 financial contract — 17 July 2026
+
+- Phase 8 safe reporting delivery is complete through PR #198; client review remains deferred.
+- `docs/PHASE_9_FINANCIAL_CONTRACT.md` now governs advanced personal-finance repository work.
+- Existing recurring thresholds, monthly budgets/no rollover, Transaction direction, split/transfer treatment and Loan no-double-count rules are frozen.
+- Savings contributions and net-worth values are manual planning records; no inferred cashflow, balances, market values or advice.
+- In-app reminder preparation is allowed; remote push remains disabled.
+- Any Phase 9 schema must be additive, unexecuted, ordered after the three pending Phase 6/7 migrations and protected by false runtime gates.
+- No Preview/Production migration, data rewrite/backfill, provider, package, secret or environment change occurred in the contract PR.
