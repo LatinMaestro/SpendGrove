@@ -6,7 +6,6 @@ import {
   createAccountSavedImportProfile,
   deleteAccountSavedImportProfile,
   listAccountSavedImportProfiles,
-  migrateAccountSavedImportProfiles,
   resetAccountSavedImportProfiles,
   updateAccountSavedImportProfile,
 } from "@/lib/account-saved-import-profiles";
@@ -20,12 +19,9 @@ import {
   applySavedImportProfile,
   createSavedImportProfile,
   deleteSavedImportProfile,
-  loadSavedImportProfilesFromStorage,
   markSavedImportProfileUsed,
   matchSavedImportProfiles,
   renameSavedImportProfile,
-  resetSavedImportProfilesInStorage,
-  saveSavedImportProfilesToStorage,
   setSavedImportProfileEnabled,
   type SavedImportProfile,
 } from "@/lib/saved-import-profiles";
@@ -56,7 +52,7 @@ export function SavedImportProfilesPanel({
   onApplyScan: (scan: CsvScanResult) => void;
 }) {
   const [profiles, setProfiles] = useState<SavedImportProfile[]>([]);
-  const [storageMode, setStorageMode] = useState<"loading" | "account" | "device">("loading");
+  const [storageMode, setStorageMode] = useState<"loading" | "account" | "unavailable">("loading");
   const [profileName, setProfileName] = useState("");
   const [bankName, setBankName] = useState(() => inferredBankName(scan));
   const [accountType, setAccountType] = useState<ImportProfileAccountType>("UNKNOWN");
@@ -68,65 +64,38 @@ export function SavedImportProfilesPanel({
 
   useEffect(() => {
     let cancelled = false;
-    const loaded = loadSavedImportProfilesFromStorage(window.localStorage);
-    setProfiles(loaded.profiles);
-    setStorageAvailable(loaded.storageAvailable);
-    if (!loaded.storageAvailable) setNotice("Browser storage is unavailable. You can still continue without saving this mapping.");
-    else if (loaded.unsupportedVersion) setNotice("Saved mappings from a newer app version were ignored for safety.");
-    else if (loaded.recoveredFromCorruption) setNotice("An unreadable saved mapping was ignored safely.");
-    else if (loaded.migrated) saveSavedImportProfilesToStorage(window.localStorage, loaded.profiles);
 
-    async function loadAccountProfiles() {
-      try {
-        const result = await listAccountSavedImportProfiles();
-        if (cancelled) return;
-        if (!result.ok) {
-          setStorageMode("device");
-          return;
-        }
-
-        let accountProfiles = result.profiles;
-        if (loaded.profiles.length > 0 && window.confirm(
-          `Move ${loaded.profiles.length} saved mapping${loaded.profiles.length === 1 ? "" : "s"} from this device to your SpendGrove account? The device copy will be removed only after the move succeeds.`,
-        )) {
-          const migration = await migrateAccountSavedImportProfiles(loaded.profiles);
-          if (cancelled) return;
-          if (migration.ok) {
-            accountProfiles = migration.profiles;
-            const cleared = resetSavedImportProfilesInStorage(window.localStorage);
-            setStorageAvailable(cleared);
-            setNotice(`Moved ${migration.importedCount ?? 0} saved mapping${migration.importedCount === 1 ? "" : "s"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}.`);
-          } else {
-            setNotice(`${migration.error} Your device copy was kept.`);
-          }
-        }
-
-        setProfiles(accountProfiles);
-        setStorageMode("account");
-      } catch {
-        if (!cancelled) setStorageMode("device");
+    void listAccountSavedImportProfiles().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setStorageMode("unavailable");
+        setStorageAvailable(false);
+        setNotice(result.error);
+        return;
       }
-    }
 
-    void loadAccountProfiles();
+      setProfiles(result.profiles);
+      setStorageMode("account");
+      setStorageAvailable(true);
+    }).catch(() => {
+      if (cancelled) return;
+      setStorageMode("unavailable");
+      setStorageAvailable(false);
+      setNotice("Account mappings are unavailable right now. Browser-only mappings were not changed.");
+    });
+
     return () => { cancelled = true; };
   }, []);
 
   const matches = useMemo(() => matchSavedImportProfiles(profiles, scan), [profiles, scan]);
 
-  function persistDevice(nextProfiles: SavedImportProfile[], successNotice: string) {
-    setProfiles(nextProfiles);
-    if (!saveSavedImportProfilesToStorage(window.localStorage, nextProfiles)) {
-      setStorageAvailable(false);
-      setNotice("Browser storage is unavailable. You can still continue without saving this mapping.");
-      return false;
-    }
-    setStorageAvailable(true);
-    setNotice(successNotice);
-    return true;
+  function persistDevice(_nextProfiles: SavedImportProfile[], _successNotice: string) {
+    setStorageAvailable(false);
+    setNotice("Account mappings are unavailable. Browser-only mappings were not changed.");
+    return false;
   }
 
-  function useProfile(profile: SavedImportProfile) {
+  function applyProfile(profile: SavedImportProfile) {
     setError("");
     try {
       const appliedScan = applySavedImportProfile(document, profile);
@@ -243,12 +212,7 @@ export function SavedImportProfilesPanel({
   function resetProfiles() {
     setError("");
     if (storageMode !== "account") {
-      if (!resetSavedImportProfilesInStorage(window.localStorage)) {
-        setNotice("Browser storage is unavailable.");
-        return;
-      }
-      setProfiles([]);
-      setNotice("Saved mappings deleted from this device.");
+      setNotice("Account mappings are unavailable. Browser-only mappings were not changed.");
       return;
     }
     const previous = profiles;
@@ -266,7 +230,7 @@ export function SavedImportProfilesPanel({
       <div className="flex items-start gap-3">
         {accountBacked ? <Cloud aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /> : <Bookmark aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" />}
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked ? "Saved to your account" : "Saved on this device"}</p>
+          <p className="text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked ? "Saved to your account" : "Account unavailable"}</p>
           <h2 id="saved-mapping-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Reuse a column mapping</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
             Saved mappings can skip repetitive setup next time. You can always review or change the columns before continuing.
@@ -280,7 +244,7 @@ export function SavedImportProfilesPanel({
           <p className="mt-1 text-sm text-brand-deepTeal/70">These mappings fit the selected file structure. Apply one, then check the preview below.</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {matches.map(({ profile, reason }) => (
-              <button key={profile.id} type="button" onClick={() => useProfile(profile)} className="min-h-12 rounded-2xl border border-brand-teal bg-white px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
+              <button key={profile.id} type="button" onClick={() => applyProfile(profile)} className="min-h-12 rounded-2xl border border-brand-teal bg-white px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
                 <span className="block font-bold text-brand-deepTeal">{profile.contract.displayName}</span>
                 <span className="mt-1 block text-xs leading-5 text-brand-deepTeal/65">{reason}</span>
               </button>
@@ -298,7 +262,7 @@ export function SavedImportProfilesPanel({
             <label className="text-sm font-bold text-brand-deepTeal">Account type<select value={accountType} onChange={(event) => setAccountType(event.target.value as ImportProfileAccountType)} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">{accountTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
             <label className="text-sm font-bold text-brand-deepTeal sm:col-span-2">Bank name <span className="font-normal text-brand-deepTeal/60">(optional)</span><input value={bankName} onChange={(event) => setBankName(event.target.value)} placeholder="Example: Australian bank" className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm font-semibold outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label>
           </div>
-          <button type="button" onClick={saveCurrentMapping} disabled={!profileName.trim() || (storageMode === "device" && !storageAvailable)} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:opacity-45"><Save aria-hidden="true" className="h-4 w-4" /> Save this mapping</button>
+          <button type="button" onClick={saveCurrentMapping} disabled={!profileName.trim() || storageMode !== "account"} className="mt-4 inline-flex min-h-12 items-center gap-2 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-green disabled:cursor-not-allowed disabled:opacity-45"><Save aria-hidden="true" className="h-4 w-4" /> Save this mapping</button>
           <p className="mt-3 text-xs leading-5 text-brand-deepTeal/60">Only column positions and safe setup details are saved. File names, transaction examples, balances and account details are never included.</p>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { CheckCircle2, ChevronLeft, ChevronRight, Cloud, History, LockKeyhole, RefreshCw, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Cloud, LockKeyhole, RefreshCw, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
 import { listAccountTransactionsForImportReview } from "@/lib/account-manual-transactions";
 import { CustomCategoryManager, useCustomCategoryCatalogue } from "@/components/custom-category-controls";
 import { ImportCommitPanel } from "@/components/import-commit-panel";
@@ -27,17 +27,15 @@ import { learnEditedMerchantName, learnMerchantCategory } from "@/lib/import-rev
 import { createImportReviewWorkingSet, countImportReviewRowsNeedingAttention, countReadyImportRows, filterImportReviewRowsByWorkingSet, importReviewBlockerMessage, importReviewRowBlockers, importReviewRowNeedsAttention } from "@/lib/import-review-readiness";
 import { createTransientImportReviewSourceDetails } from "@/lib/import-review-source-details";
 import { isRowPotentiallyDeductible, updateTaxReviewMetadata, type ImportReviewTaxMetadata } from "@/lib/import-review-metadata";
-import { applyMerchantSuggestionsToRows, createTransientImportReviewRows, loadImportHistoryFromStorage, summarizeImportReview, updateImportReviewAction, updateImportReviewDetails, updateImportReviewPropertyLink, type ImportHistoryEntry, type ImportReviewAction, type ImportReviewEditType, type ImportReviewRow } from "@/lib/import-review";
-import { loadManualTransactionsFromStorage } from "@/lib/manual-transaction-storage";
+import { applyMerchantSuggestionsToRows, createTransientImportReviewRows, summarizeImportReview, updateImportReviewAction, updateImportReviewDetails, updateImportReviewPropertyLink, type ImportReviewAction, type ImportReviewEditType, type ImportReviewRow } from "@/lib/import-review";
 import { manualCategories } from "@/lib/manual-categories";
-import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, loadMerchantRulesFromStorage, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, saveMerchantRulesToStorage, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
+import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
 
 type PendingMerchantConflict = { kind: "RULE" | "ALIAS"; rowId: string; alias?: string; conflict: MerchantConflict };
-type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "SIGNED_OUT" | "UNAVAILABLE";
+type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "UNAVAILABLE";
 type PropertyOptionsStatus = "SIGNED_OUT" | "LOADING" | "READY" | "UNAVAILABLE";
 const categoryId = (name: string) => manualCategories.find((category) => category.name === name)!.id;
 
-function formatHistoryTimestamp(timestamp: string) { return new Intl.DateTimeFormat("en-AU", { dateStyle: "medium", timeStyle: "short" }).format(new Date(timestamp)); }
 function visibleReviewPageNumbers(currentPage: number, pageCount: number) {
   return [...new Set([1, currentPage - 1, currentPage, currentPage + 1, pageCount])]
     .filter((page) => page >= 1 && page <= pageCount)
@@ -54,20 +52,14 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   const [onlyNeedsReview, setOnlyNeedsReview] = useState(false);
   const [reviewWorkingSet, setReviewWorkingSet] = useState<string[] | null>(null);
   const [taxMetadata, setTaxMetadata] = useState<ImportReviewTaxMetadata>({});
-  const [historyEntries, setHistoryEntries] = useState<ImportHistoryEntry[]>([]);
   const [merchantData, setMerchantData] = useState<LocalMerchantData>(emptyLocalMerchantData());
   const [merchantUndo, setMerchantUndo] = useState<LocalMerchantData | null>(null);
-  const [browserTransactions, setBrowserTransactions] = useState<ExistingAccountTransaction[]>([]);
   const [existingTransactions, setExistingTransactions] = useState<ExistingAccountTransaction[]>([]);
   const [mergeSelections, setMergeSelections] = useState<Record<string, MergeTargetReviewSelection>>({});
-  const [historyRecovered, setHistoryRecovered] = useState(false);
   const [merchantRecovered, setMerchantRecovered] = useState(false);
   const [merchantMigrated, setMerchantMigrated] = useState(false);
   const [merchantStaleReferenceCount, setMerchantStaleReferenceCount] = useState(0);
-  const [manualRecovered, setManualRecovered] = useState(false);
-  const [storageAvailable, setStorageAvailable] = useState(true);
   const [merchantStorageAvailable, setMerchantStorageAvailable] = useState(true);
-  const [manualStorageAvailable, setManualStorageAvailable] = useState(true);
   const [applyUndo, setApplyUndo] = useState<ApplySameMerchantUndo | null>(null);
   const [pendingConflict, setPendingConflict] = useState<PendingMerchantConflict | null>(null);
   const [notice, setNotice] = useState("");
@@ -79,14 +71,14 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("SIGNED_OUT");
 
   useEffect(() => {
-    const history = loadImportHistoryFromStorage(window.localStorage);
-    const merchants = loadMerchantRulesFromStorage(window.localStorage);
-    const manual = loadManualTransactionsFromStorage(window.localStorage);
-    setHistoryEntries(history.entries); setHistoryRecovered(history.recoveredFromCorruption); setStorageAvailable(history.storageAvailable);
-    setMerchantData(merchants.data); setMerchantRecovered(merchants.recoveredFromCorruption); setMerchantMigrated(merchants.migrated); setMerchantStaleReferenceCount(merchants.staleReferenceCount); setMerchantStorageAvailable(merchants.storageAvailable);
-    setBrowserTransactions(manual.transactions); setExistingTransactions(manual.transactions); setManualRecovered(manual.recoveredFromCorruption); setManualStorageAvailable(manual.storageAvailable);
-    if (merchants.migrated || merchants.staleReferenceCount > 0) saveMerchantRulesToStorage(window.localStorage, merchants.data);
-    setReviewRows((current) => current ? applyMerchantSuggestionsToRows(current, merchants.data) : current);
+    // Private-beta account screens never read or rewrite earlier browser-only
+    // prototype records. Account-backed catalogues load through their own APIs.
+    setMerchantData(emptyLocalMerchantData());
+    setMerchantRecovered(false);
+    setMerchantMigrated(false);
+    setMerchantStaleReferenceCount(0);
+    setMerchantStorageAvailable(true);
+    setExistingTransactions([]);
     setLocalReviewDataReady(true);
   }, []);
 
@@ -118,9 +110,9 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
       return;
     }
     if (!isSignedIn) {
-      setExistingTransactions(browserTransactions);
-      setDuplicateAnalysisStatus("SIGNED_OUT");
-      setDuplicateAnalysisError("");
+      setExistingTransactions([]);
+      setDuplicateAnalysisStatus("UNAVAILABLE");
+      setDuplicateAnalysisError("Your session ended. Sign in again before reviewing this import.");
       return;
     }
 
@@ -141,7 +133,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
       setDuplicateAnalysisStatus("READY");
     });
     return () => { cancelled = true; };
-  }, [browserTransactions, duplicateAnalysisAttempt, isLoaded, isSignedIn, localReviewDataReady, reviewStarted]);
+  }, [duplicateAnalysisAttempt, isLoaded, isSignedIn, localReviewDataReady, reviewStarted]);
 
   useEffect(() => {
     if (!reviewStarted) {
@@ -190,7 +182,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
   function setNeedsReviewFilter(enabled: boolean) { setOnlyNeedsReview(enabled); setReviewWorkingSet(enabled ? createImportReviewWorkingSet(rows, mergeSelections) : null); setReviewPage(1); }
   function refreshNeedsReviewFilter() { setReviewWorkingSet(createImportReviewWorkingSet(rows, mergeSelections)); setReviewPage(1); setNotice("Resolved items were hidden and the Needs review list was refreshed."); }
   function updateAction(rowId: string, action: ImportReviewAction) { if (!reviewRows) return; actionReviewedRowIds.current.add(rowId); setReviewRows(updateImportReviewAction(reviewRows, rowId, action)); if (action !== "MERGE") setMergeSelections((current) => { const next = { ...current }; delete next[rowId]; return next; }); setNotice(action === "MERGE" ? "Merge selected. Choose an eligible existing manual transaction in the duplicate check before final account save." : ""); }
-  function persistMerchantData(nextData: LocalMerchantData, successNotice: string, allowUndo = false) { if (allowUndo) setMerchantUndo(merchantData); const saved = saveMerchantRulesToStorage(window.localStorage, nextData); setMerchantStorageAvailable(saved); replaceMerchantData(nextData); setNotice(saved ? successNotice : "Browser storage is unavailable. The merchant choice will last only while this review is open."); }
+  function persistMerchantData(nextData: LocalMerchantData, successNotice: string, allowUndo = false) { if (allowUndo) setMerchantUndo(merchantData); setMerchantStorageAvailable(true); replaceMerchantData(nextData); setNotice(successNotice); }
   function saveRule(row: ImportReviewRow, resolution?: MerchantConflictResolution, automatic = false) { try { const nextData = learnMerchantCategory(merchantData, row, resolution); const categoryName = getReviewCategory(customCategoryCatalogue.categories, row.categoryId)?.name ?? "your category"; persistMerchantData(nextData, resolution === "KEEP_EXISTING" ? "The existing saved rule was kept." : automatic ? `Saved for next time: ${row.merchantName} → ${categoryName}` : "Merchant rule saved. Your review choices were kept.", automatic); setPendingConflict(null); } catch (error) { if (error instanceof MerchantConflictError) setPendingConflict({ kind: "RULE", rowId: row.id, conflict: error.conflict }); else setNotice(error instanceof Error ? error.message : "This merchant rule could not be saved."); } }
   function saveEditedMerchantName(row: ImportReviewRow, previousMerchantName: string, resolution?: MerchantConflictResolution) { try { const nextData = learnEditedMerchantName(merchantData, { previousMerchantName, merchantName: row.merchantName, categoryId: row.categoryId, resolution }); persistMerchantData(nextData, `Saved for next time: ${previousMerchantName} → ${row.merchantName}`, true); setPendingConflict(null); } catch (error) { if (error instanceof MerchantConflictError) setPendingConflict({ kind: "ALIAS", rowId: row.id, alias: previousMerchantName, conflict: error.conflict }); else setNotice(error instanceof Error ? error.message : "This merchant name could not be saved."); } }
   function updateDetails(rowId: string, details: { merchantName: string; categoryId: string; editType: ImportReviewEditType }) { if (!reviewRows) return; try { const nextRows = updateImportReviewDetails(reviewRows, rowId, details); setReviewRows(nextRows); setNotice(""); if (details.editType === "CATEGORY_EDIT" && details.categoryId !== categoryId("Needs review")) { const changedRow = nextRows.find((row) => row.id === rowId); if (changedRow) saveRule(changedRow, undefined, true); } } catch { setNotice("That merchant or category choice was not accepted because it was unsafe or unavailable."); } }
@@ -210,10 +202,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
     duplicateAnalysisStatus === "LOADING"
   );
   const analysisUnavailable = reviewStarted && duplicateAnalysisStatus === "UNAVAILABLE";
-  const reviewPrepared = reviewStarted && (
-    duplicateAnalysisStatus === "READY" ||
-    duplicateAnalysisStatus === "SIGNED_OUT"
-  );
+  const reviewPrepared = reviewStarted && duplicateAnalysisStatus === "READY";
 
   return <div className="space-y-5">
     {!reviewRows ? <section className="rounded-3xl border border-border bg-surface-mint p-5 sm:p-6"><div className="flex items-start gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><p className="font-bold text-brand-deepTeal">Ready to review</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check each transaction, choose a category and select Import, Skip or Merge. Nothing creates transactions until you explicitly confirm.</p></div></div><button type="button" onClick={startReview} disabled={!canStartReview} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:opacity-45">{canStartReview ? "Choose what to import" : "Finish matching columns first"}</button></section> : <>
@@ -230,7 +219,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
         {pendingConflict && <div className="mt-5"><MerchantConflictPrompt conflict={pendingConflict.conflict} onChoose={resolveConflict} /></div>}{notice && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{notice}</p>}
       </section>
       <section ref={reviewTopRef} className="scroll-mt-4" aria-labelledby="review-rows-heading">
-        <div><h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Transactions to review</h2><p className="mt-2 text-sm text-brand-deepTeal/65">Showing page {reviewPage} of {pageCount}, with up to 25 transactions at a time. Summary counts always cover all {rows.length} transactions.</p>{manualRecovered && <p className="mt-2 rounded-2xl bg-warning-amber/10 p-3 text-sm font-semibold text-brand-deepTeal">Unreadable manual transactions on this device were ignored for duplicate checks.</p>}{!manualStorageAvailable && <p className="mt-2 rounded-2xl bg-warning-amber/10 p-3 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. Signed-in account transactions will still be checked where available.</p>}</div>
+        <div><h2 id="review-rows-heading" className="text-xl font-bold text-brand-deepTeal">Transactions to review</h2><p className="mt-2 text-sm text-brand-deepTeal/65">Showing page {reviewPage} of {pageCount}, with up to 25 transactions at a time. Summary counts always cover all {rows.length} transactions.</p></div>
         {visibleRows.length === 0 ? <div className="mt-5 rounded-2xl bg-surface-mint p-5"><p className="font-bold text-brand-deepTeal">No items need review</p><p className="mt-1 text-sm text-brand-deepTeal/65">You can import when ready, or turn the filter off to see every transaction.</p></div> : <div className="mt-4 space-y-3">{visibleRows.map((row) => { const blockers = importReviewRowBlockers(row, mergeSelections); return <ImportReviewRowCard key={row.id} row={row} customCategories={customCategoryCatalogue.categories} matchingRowCount={countApplySameMerchantMatches(rows, row.id)} duplicateCandidates={duplicateCandidatesByRow[row.id] ?? []} selectedMergeTargetId={mergeSelections[row.id]?.targetTransactionId} isPotentiallyDeductible={isRowPotentiallyDeductible(taxMetadata, row.id)} needsAttention={importReviewRowNeedsAttention(row, mergeSelections)} blockerMessage={importReviewBlockerMessage(blockers)} ambiguousTransfer={isAmbiguousTransferText(row.merchantName, row.description)} sourceDetails={sourceDetailsByRow[row.rowNumber]} propertyOptions={propertyOptions} propertyOptionsStatus={propertyOptionsStatus} onAction={(action) => updateAction(row.id, action)} onDetails={(details) => updateDetails(row.id, details)} onCreateCategory={customCategoryCatalogue.create} onTaxChange={(value) => { setTaxMetadata((current) => updateTaxReviewMetadata(current, row.id, value)); setNotice(""); }} onPropertyLinkChange={(propertyId) => updatePropertyLink(row.id, propertyId)} onApplySameMerchant={() => applySameMerchant(row.id)} onChooseMergeTarget={(candidate) => chooseMergeTarget(row, candidate)} onMerchantNameCommit={(previous) => saveEditedMerchantName(row, previous)} />; })}</div>}
         {pageCount > 1 && <nav aria-label="Import review pages" className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5"><button type="button" disabled={reviewPage <= 1} onClick={() => changeReviewPage(reviewPage - 1)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal disabled:opacity-35"><ChevronLeft aria-hidden="true" className="h-4 w-4" /> Previous</button><div className="order-3 flex w-full items-center justify-center gap-1 sm:order-none sm:w-auto">{reviewPageNumbers.map((page, index) => <div key={page} className="flex items-center gap-1">{index > 0 && page - reviewPageNumbers[index - 1] > 1 && <span aria-hidden="true" className="px-1 text-brand-deepTeal/45">…</span>}<button type="button" onClick={() => changeReviewPage(page)} aria-current={page === reviewPage ? "page" : undefined} aria-label={`Go to review page ${page}`} className={`min-h-10 min-w-10 rounded-full border px-3 text-sm font-bold ${page === reviewPage ? "border-brand-green bg-surface-mint text-brand-deepTeal" : "border-border bg-white text-brand-teal"}`}>{page}</button></div>)}</div><button type="button" disabled={reviewPage >= pageCount} onClick={() => changeReviewPage(reviewPage + 1)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal disabled:opacity-35">Next <ChevronRight aria-hidden="true" className="h-4 w-4" /></button></nav>}
       </section>
@@ -240,9 +229,9 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
     {!reviewRows && <>
       <details className="rounded-2xl border border-border bg-surface-base"><summary className="min-h-11 cursor-pointer px-4 py-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Import settings</summary><div className="space-y-4 border-t border-border p-4">
       <CustomCategoryManager categories={customCategoryCatalogue.categories} storageAvailable={customCategoryCatalogue.storageAvailable} recoveredFromCorruption={customCategoryCatalogue.recoveredFromCorruption} unsupportedVersion={customCategoryCatalogue.unsupportedVersion} notice={customCategoryCatalogue.notice} onRename={customCategoryCatalogue.rename} onArchiveChange={customCategoryCatalogue.setArchived} />
-      <MerchantRuleManager data={merchantData} storageAvailable={merchantStorageAvailable} recoveredFromCorruption={merchantRecovered} migrated={merchantMigrated} staleReferenceCount={merchantStaleReferenceCount} onDataChange={replaceMerchantData} onRenameProfile={(id, name) => persistMerchantData(renameMerchantProfile(merchantData, id, name), "Merchant name updated.")} onRenameAlias={(id, name, resolution) => persistMerchantData(renameMerchantAlias(merchantData, id, name, resolution), resolution === "KEEP_EXISTING" ? "The existing matching name was kept." : "Matching merchant name updated.")} onAliasActiveChange={(id, active) => persistMerchantData(setMerchantAliasActive(merchantData, id, active), active ? "Matching merchant name restored." : "Matching merchant name disabled.")} onDeleteAlias={(id) => persistMerchantData(deleteMerchantAlias(merchantData, id), "Matching merchant name deleted.")} onRuleActiveChange={(id, active) => persistMerchantData(setMerchantRuleActive(merchantData, id, active), active ? "Merchant rule restored." : "Merchant rule disabled.")} onDeleteRule={(id) => persistMerchantData(deleteMerchantRule(merchantData, id), "Merchant rule deleted.")} onClear={() => persistMerchantData(emptyLocalMerchantData(), "Saved merchant suggestions cleared from this device.")} />
+      <MerchantRuleManager data={merchantData} storageAvailable={merchantStorageAvailable} recoveredFromCorruption={merchantRecovered} migrated={merchantMigrated} staleReferenceCount={merchantStaleReferenceCount} onDataChange={replaceMerchantData} onRenameProfile={(id, name) => persistMerchantData(renameMerchantProfile(merchantData, id, name), "Merchant name updated.")} onRenameAlias={(id, name, resolution) => persistMerchantData(renameMerchantAlias(merchantData, id, name, resolution), resolution === "KEEP_EXISTING" ? "The existing matching name was kept." : "Matching merchant name updated.")} onAliasActiveChange={(id, active) => persistMerchantData(setMerchantAliasActive(merchantData, id, active), active ? "Matching merchant name restored." : "Matching merchant name disabled.")} onDeleteAlias={(id) => persistMerchantData(deleteMerchantAlias(merchantData, id), "Matching merchant name deleted.")} onRuleActiveChange={(id, active) => persistMerchantData(setMerchantRuleActive(merchantData, id, active), active ? "Merchant rule restored." : "Merchant rule disabled.")} onDeleteRule={(id) => persistMerchantData(deleteMerchantRule(merchantData, id), "Merchant rule deleted.")} onClear={() => persistMerchantData(emptyLocalMerchantData(), "Saved merchant suggestions cleared from your account.")} />
       </div></details>
-      <section className="rounded-2xl border border-border bg-surface-base p-4" aria-labelledby="import-history-heading"><div className="flex items-start gap-3"><History aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-teal" /><div><h2 id="import-history-heading" className="text-xl font-bold text-brand-deepTeal">Review history</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Safe summary counts from this device.</p></div></div>{!storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. You can still finish this review while the page is open.</p>}{historyRecovered && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Unreadable saved summaries were ignored and safely reset.</p>}<div className="mt-4 space-y-3">{historyEntries.length === 0 ? <div className="rounded-2xl bg-surface-mint p-4"><p className="font-bold text-brand-deepTeal">No review summaries saved</p></div> : historyEntries.map((entry) => <article key={entry.id} className="rounded-2xl border border-border p-4"><p className="font-bold text-brand-deepTeal">Review summary</p><p className="mt-1 text-xs text-brand-deepTeal/60">{formatHistoryTimestamp(entry.createdAt)}</p><p className="mt-3 text-sm text-brand-deepTeal/70">{entry.totalRows} transactions · {entry.importCount} Import · {entry.skipCount} Skip · {entry.mergeCount} Merge · {entry.warningCount} warnings</p></article>)}</div></section>
+      
       <section className="rounded-3xl border border-border bg-surface-mint p-5"><p className="flex items-center gap-2 font-bold text-brand-deepTeal"><CheckCircle2 aria-hidden="true" className="h-5 w-5 text-brand-green" /> Your privacy</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Your CSV file stays in this browser. Only the cleaned transaction details you approve are saved.</p></section>
     </>}
   </div>;

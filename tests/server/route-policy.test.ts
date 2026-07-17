@@ -1,29 +1,53 @@
 import { describe, expect, it } from "vitest";
-import { isProtectedPath, isPublicPrototypePath } from "@/src/server/auth/route-policy";
+import {
+  isProtectedApiPath,
+  isProtectedPath,
+  isPublicAppPath,
+  sanitizeInternalReturnPath,
+} from "@/src/server/auth/route-policy";
 
-describe("Clerk route policy", () => {
-  it("keeps existing browser-local prototype routes public", () => {
-    expect(isPublicPrototypePath("/")).toBe(true);
-    expect(isPublicPrototypePath("/transactions")).toBe(true);
-    expect(isPublicPrototypePath("/import")).toBe(true);
-    expect(isPublicPrototypePath("/loans")).toBe(true);
-    expect(isPublicPrototypePath("/settings")).toBe(true);
-    expect(isPublicPrototypePath("/sign-in")).toBe(true);
-    expect(isPublicPrototypePath("/sign-up")).toBe(true);
+describe("private-beta route policy", () => {
+  it("keeps only onboarding and authentication surfaces public", () => {
+    expect(isPublicAppPath("/onboarding")).toBe(true);
+    expect(isPublicAppPath("/sign-in")).toBe(true);
+    expect(isPublicAppPath("/sign-in/verify")).toBe(true);
+    expect(isPublicAppPath("/sign-up")).toBe(true);
+
+    expect(isPublicAppPath("/")).toBe(false);
+    expect(isPublicAppPath("/transactions")).toBe(false);
+    expect(isPublicAppPath("/import")).toBe(false);
+    expect(isPublicAppPath("/loans")).toBe(false);
+    expect(isPublicAppPath("/settings")).toBe(false);
   });
 
-  it("protects future account/server-owned routes", () => {
-    expect(isProtectedPath("/account")).toBe(true);
-    expect(isProtectedPath("/account/profile")).toBe(true);
-    expect(isProtectedPath("/api/account/user")).toBe(true);
-    expect(isProtectedPath("/api/server/transactions")).toBe(true);
+  it("protects every operational finance route", () => {
+    for (const pathname of [
+      "/",
+      "/transactions",
+      "/import",
+      "/loans",
+      "/loans/import",
+      "/settings",
+      "/budgets",
+      "/regular-payments",
+      "/account",
+    ]) {
+      expect(isProtectedPath(pathname), pathname).toBe(true);
+    }
   });
 
-  it("does not protect existing browser-local routes yet", () => {
-    expect(isProtectedPath("/")).toBe(false);
-    expect(isProtectedPath("/transactions")).toBe(false);
-    expect(isProtectedPath("/import")).toBe(false);
-    expect(isProtectedPath("/loans")).toBe(false);
-    expect(isProtectedPath("/settings")).toBe(false);
+  it("protects durable account and server APIs", () => {
+    expect(isProtectedApiPath("/api/account/transactions")).toBe(true);
+    expect(isProtectedApiPath("/api/server/example")).toBe(true);
+    expect(isProtectedPath("/api/account/transactions")).toBe(true);
+    expect(isProtectedPath("/api/server/example")).toBe(true);
+  });
+
+  it("accepts only same-origin return paths", () => {
+    expect(sanitizeInternalReturnPath("/transactions?month=2026-07")).toBe("/transactions?month=2026-07");
+    expect(sanitizeInternalReturnPath("https://example.com")).toBe("/");
+    expect(sanitizeInternalReturnPath("//example.com/path")).toBe("/");
+    expect(sanitizeInternalReturnPath("\\example.com")).toBe("/");
+    expect(sanitizeInternalReturnPath("/sign-in?redirect_url=/loans")).toBe("/");
   });
 });

@@ -2,9 +2,20 @@ import Image from "next/image";
 import Link from "next/link";
 import { AuthControls } from "@/components/auth/auth-controls";
 import { BottomNav, DesktopNav } from "@/components/bottom-nav";
+import { requireAuthenticatedPage } from "@/src/server/auth/require-authenticated-page";
 import { getBuildSafeClerkEnvStatus } from "@/src/server/env";
 
-export function AppShell({ children }: Readonly<{ children: React.ReactNode }>) {
+export async function AppShell({
+  children,
+  publicAccess = false,
+}: Readonly<{
+  children: React.ReactNode;
+  publicAccess?: boolean;
+}>) {
+  if (!publicAccess) {
+    await requireAuthenticatedPage();
+  }
+
   const clerkStatus = getBuildSafeClerkEnvStatus();
 
   return (
