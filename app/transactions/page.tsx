@@ -1,8 +1,7 @@
 import { AppShell } from "@/components/app-shell";
+import { LocalPrototypeDataNotice } from "@/components/auth/local-prototype-data-notice";
 import { PageHeader } from "@/components/ui/app-primitives";
 import { DurableManualTransactions } from "@/components/durable-manual-transactions";
-import { ManualTransactionMigrationPanel } from "@/components/manual-transaction-migration-panel";
-import { ManualTransactions } from "@/components/manual-transactions";
 import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
 import { CheckCircle2 } from "lucide-react";
 
@@ -32,12 +31,17 @@ export default async function TransactionsPage({ searchParams }: { searchParams?
           </div>
         </section>
       )}
+      <LocalPrototypeDataNotice context="account" />
       {accountPersistenceAvailable ? (
-        <div className="space-y-5">
-          <ManualTransactionMigrationPanel />
-          <DurableManualTransactions />
-        </div>
-      ) : <ManualTransactions />}
+        <DurableManualTransactions />
+      ) : (
+        <section role="alert" className="rounded-2xl border border-warning-amber bg-warning-amber/10 p-5">
+          <h2 className="font-bold text-brand-deepTeal">Account records are unavailable</h2>
+          <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
+            SpendGrove could not connect to account storage. Your browser-only prototype data has not been changed.
+          </p>
+        </section>
+      )}
     </AppShell>
   );
 }
