@@ -1,3 +1,4 @@
+import { AccountDeletion } from "@/components/account-deletion";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
 import { AppShell } from "@/components/app-shell";
 import { DevelopmentTransactionResetPanel } from "@/components/development-transaction-reset-panel";
@@ -40,6 +41,8 @@ export default function SettingsPage() {
             </details>
           </section>
         )}
+
+        {accountHistoryAvailable && <AccountDeletion />}
       </div>
     </AppShell>
   );

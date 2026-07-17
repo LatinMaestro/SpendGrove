@@ -155,6 +155,27 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "auditEvent.write",
     ]),
   ],
+  [
+    "src/server/account-deletion.ts",
+    new Set([
+      "transaction.deleteMany",
+      "importBatch.write",
+      "importRow.write",
+      "auditEvent.write",
+      "loanRepayment.write",
+      "loanReconciliationLink.write",
+      "propertyTransactionLink.write",
+      "propertyReportReview.write",
+      "recurringItem.write",
+      "recurringSuggestionDismissal.write",
+      "categoryBudget.write",
+      "category.deleteMany",
+      "bankImportProfile.deleteMany",
+      "merchantProfile.write",
+      "merchantAlias.write",
+      "merchantRule.write",
+    ]),
+  ],
 ]);
 
 async function listFiles(directory: string): Promise<string[]> {
