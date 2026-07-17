@@ -3,15 +3,33 @@ import { ZodError } from "zod";
 import { loanRepaymentDuplicateCheckRequestSchema } from "@/lib/loan-repayment-commit";
 import { getCurrentUserContext } from "@/src/server/auth/current-user";
 import { assessReviewedLoanRepaymentDuplicates } from "@/src/server/loan-repayments";
+import {
+  LARGE_REVIEW_REQUEST_BYTES,
+  readBoundedJson,
+  SafeRequestBodyError,
+} from "@/src/server/request-body";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const payload = loanRepaymentDuplicateCheckRequestSchema.parse(await request.json());
+    const input = await readBoundedJson(request, LARGE_REVIEW_REQUEST_BYTES);
+    const payload = loanRepaymentDuplicateCheckRequestSchema.parse(input);
     const signals = await assessReviewedLoanRepaymentDuplicates(await getCurrentUserContext(), payload);
     return NextResponse.json({ ok: true, signals });
   } catch (error) {
+    if (error instanceof SafeRequestBodyError) {
+      return NextResponse.json(
+        {
+          ok: false,
+          signals: [],
+          error: error.status === 413
+            ? "This repayment review is too large to check in one request."
+            : "The repayment review request could not be read safely.",
+        },
+        { status: error.status },
+      );
+    }
     if (error instanceof ZodError) {
       return NextResponse.json({ ok: false, signals: [], error: error.issues[0]?.message ?? "Check the reviewed repayments." }, { status: 400 });
     }
