@@ -36,6 +36,18 @@ SpendGrove is conditionally ready only after mandatory Clerk Production, environ
 
 See `docs/PHASE_5_SUMMARY.md` and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
 
+## Complete-product planning
+
+The whole-product audit and revised release roadmap are discoverable here:
+
+- `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`
+- `docs/COMPLETE_PRODUCT_CURRENT_STATE_AUDIT.md`
+- `docs/COMPLETE_PRODUCT_FEATURE_REGISTER.md`
+- `docs/APP_STORE_END_TO_END_DELIVERY_PLAN.md`
+- `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`
+
+These records supersede the former limited Phase 6–7 ending once their planning pull request is merged and governance activation is recorded. They do not authorise public launch, App Store submission, provider purchases or Production data changes.
+
 ## Required repository files
 
 The repository should include:
