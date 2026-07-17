@@ -3,7 +3,6 @@ import {
   DESTRUCTIVE_CONFIRMATION_REQUEST_BYTES,
   LARGE_REVIEW_REQUEST_BYTES,
   readBoundedJson,
-  SafeRequestBodyError,
 } from "@/src/server/request-body";
 
 function streamingRequest(chunks: string[], contentLength?: number) {
@@ -34,7 +33,7 @@ describe("bounded JSON request handling", () => {
   it("rejects a declared oversized request before parsing", async () => {
     const request = streamingRequest(["{}"], LARGE_REVIEW_REQUEST_BYTES + 1);
     await expect(readBoundedJson(request, LARGE_REVIEW_REQUEST_BYTES))
-      .rejects.toMatchObject<Partial<SafeRequestBodyError>>({
+      .rejects.toMatchObject({
         code: "REQUEST_BODY_TOO_LARGE",
         status: 413,
       });
@@ -43,7 +42,7 @@ describe("bounded JSON request handling", () => {
   it("rejects a streamed oversized request when content length is absent", async () => {
     const request = streamingRequest(["12345", "67890"]);
     await expect(readBoundedJson(request, 8))
-      .rejects.toMatchObject<Partial<SafeRequestBodyError>>({
+      .rejects.toMatchObject({
         code: "REQUEST_BODY_TOO_LARGE",
         status: 413,
       });
