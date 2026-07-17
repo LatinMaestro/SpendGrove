@@ -2,25 +2,27 @@
 
 Last updated: 17 July 2026
 
-## Phase 5 controlling status
+## Complete-product controlling status
 
-- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
-- Phase 5 is not formally closed. Phase 6 is unapproved and not started.
-- Current release classification: conditionally ready for a controlled Australian account-based web private beta after mandatory provider, recovery and legal operator actions.
-- Planning baseline: PR #149, merge `bb715af100b65c8c5d9b74c701d1e135d50e332f`.
-- Latest application delivery: PR #161, merge `1c048abf363b2c9d97818e6724d549725509eeda`.
-- Latest platform-readiness documentation: PR #162, merge `f545828dcd84575a9a6b51de8f12adedf5564f10`.
-- Final consolidated handoff: PR #163, merge `668c09cae49ce1ff58021c95be1c199eb39c0127`.
-- Latest inspected Ready Production deployment: `dpl_8bfqT5DskyyaiLHAsgPwzNTLngMn`, commit `1c048abf363b2c9d97818e6724d549725509eeda`.
-- Latest completed online application gate before the final handoff: 110 test files / 677 tests, TypeScript, Next.js lint and optimized build passed.
-- Next.js `15.5.20`, React `19.1.8` and React DOM `19.1.8` are locked and no Next.js 14 package remains.
-- Account export, immediate account deletion, public Privacy and Help, authentication route protection, security headers, request limits, safe error surfaces, operational runbooks and the dependency gate are implemented.
-- Production still uses a Clerk development/test instance. This is a mandatory private-beta blocker.
-- Preview/Production Vercel–Clerk–Neon mapping, Production migration health and non-Production restore evidence remain operator gates.
-- No Phase 5 Prisma schema change, migration, backfill, manual SQL or Production financial-row access occurred.
-- Analytics and external monitoring remain off. No provider plan was purchased or upgraded.
-- No native package, Apple enrolment, App Store Connect record, build upload, TestFlight distribution, App Store submission, public launch or Phase 6 work occurred.
-- Controlling final documents: `docs/PHASE_5_SUMMARY.md` and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
+- Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
+- Final Phase 5 records remain PR #163 / `668c09cae49ce1ff58021c95be1c199eb39c0127` and PR #164 / `ac7eeb89c17b774720c7d447386dd4be67705276`.
+- Latest inspected Ready Production application deployment remains `dpl_8bfqT5DskyyaiLHAsgPwzNTLngMn`, application commit `1c048abf363b2c9d97818e6724d549725509eeda`, canonical domain `spendgrove.vercel.app`.
+- Framework baseline remains Next.js `15.5.20`, React/React DOM `19.1.8`, deterministic npm lockfile, 110 test files / 677 tests, TypeScript, lint and optimised build evidence.
+- Complete-product planning PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec`.
+- The former limited Phase 6–7 ending is superseded by `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`.
+- Phase 6 — Desktop Web Platform and Bulk Workflows is active.
+- Immediate next work is Phase 6 Milestone 6.0: desktop contract/interface inventory, bulk-action safety rules and schema assessment.
+- Continue autonomous repository delivery only within the merged roadmap and its financial, privacy, ownership, schema, provider, environment, commercial and operator gates.
+- Phase 5 and later phases remain unaccepted until explicit client acceptance; preserve all historical QA and deferred testing.
+- No Production migration/data access, provider purchase, secret exposure, browser-local migration/deletion, live Basiq/AI/payments, real-user invitation, public launch or App Store submission is authorised.
+
+Controlling complete-product records:
+
+- `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`
+- `docs/COMPLETE_PRODUCT_CURRENT_STATE_AUDIT.md`
+- `docs/COMPLETE_PRODUCT_FEATURE_REGISTER.md`
+- `docs/APP_STORE_END_TO_END_DELIVERY_PLAN.md`
+- `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`
 
 ## Historical phase status
 

@@ -28,13 +28,13 @@ The client acts as product owner, UX reviewer and acceptance tester.
 
 ## Active phase
 
-> **Phase 5 — Production Readiness, pending consolidated client acceptance**
+> **Phase 6 — Desktop Web Platform and Bulk Workflows**
 
-All currently authorised repository work through Phase 5 Milestones 1–6 is implemented. The immediate release target remains an account-based controlled Australian web private beta.
+Phase 5 repository delivery through Milestones 1–6 is technically complete but remains pending deferred client acceptance and is not formally closed.
 
-SpendGrove is conditionally ready only after mandatory Clerk Production, environment-separation, migration-health, recovery, Groveware contact and legal-review actions are completed. Phase 5 is not formally closed, Phase 6 is unapproved, and no Production migration, public launch, native package or App Store submission is authorised.
+Whole-product planning PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec`. The former limited Phase 6–7 ending is superseded by the complete Phase 6–15 roadmap. Phase 6 begins with the desktop contract and interface inventory, followed by no-schema shell and Import Centre work where the contract permits.
 
-See `docs/PHASE_5_SUMMARY.md` and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
+No public launch, App Store submission, provider purchase, Production migration/data access, browser-local migration/deletion, live Basiq/AI/payments or real-user invitation is authorised.
 
 ## Complete-product planning
 
