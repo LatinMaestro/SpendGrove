@@ -945,3 +945,27 @@ Current implemented support is structural rather than lender-branded:
 - duplicate review and existing repayment reconciliation.
 
 No named lender profile may be added without exact safe layout evidence and a synthetic fixture. Next safe PR: typed mode registry and Help guidance with no schema or financial-rule change. See `docs/PHASE_7_LOAN_CSV_FORMAT_MATRIX.md`.
+
+
+## Phase 7 Milestone 7.2 registry delivery — 17 July 2026
+
+- [x] Add typed structural-mode registry for repayment breakdown and loan ledger CSVs.
+- [x] Keep named lender profile claims empty until safe exact-layout evidence exists.
+- [x] Derive Help guidance from the registry.
+- [x] Pass 118 test files / 717 tests, TypeScript, lint and optimized build at exact head.
+- [x] Merge PR #181 as `e703f180de624c1b524913fead7f14be3587668d`.
+
+No parser, repayment, reconciliation, schema, migration, package, provider, secret, environment or Production data change occurred. Vercel did not create an exact-head Preview after one check; no redundant deployment was forced.
+
+## Phase 7 Milestones 7.3 and 7.4 schema gates — 17 July 2026
+
+- [x] Audit current transfer assistance, Transaction relations and calculation boundary.
+- [x] Define exact durable transfer-link rules and proposed additive model in `docs/PHASE_7_TRANSFER_LINK_CONTRACT.md`.
+- [x] Audit ImportBatch/ImportRow evidence, Import/Skip/Merge behaviour and downstream edit/link conflicts.
+- [x] Define future-only recoverable import undo and proposed additive operation journal in `docs/PHASE_7_IMPORT_UNDO_CONTRACT.md`.
+- [ ] Create schema and migration files only after the isolated Preview environment gate is resolved.
+- [ ] Run Preview migrations in order: pending Phase 6 bulk foundation, transfer link, then import undo.
+- [ ] Implement application workflows only after each exact Preview migration is verified.
+- [ ] Require a separate Production migration gate.
+
+No existing import is backfilled or made undoable. No durable transfer is auto-created. No schema/migration file, database, package, provider, secret or environment was changed.
