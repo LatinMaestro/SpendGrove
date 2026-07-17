@@ -6,7 +6,7 @@ import {
   primaryAndForeignKeyNames,
 } from "./preview-migration-integrity-core.mjs";
 
-const DEFAULT_MIGRATION = "20260708090000_phase_4_recurring_budgets_foundation";
+const DEFAULT_MIGRATION = "20260717090000_phase_6_bulk_operation_foundation";
 const EXISTING_COUNT_DELEGATES = [
   ["User", "user"],
   ["Category", "category"],
@@ -19,6 +19,9 @@ const EXISTING_COUNT_DELEGATES = [
   ["LoanReconciliationLink", "loanReconciliationLink"],
   ["PropertyTransactionLink", "propertyTransactionLink"],
   ["PropertyReportReview", "propertyReportReview"],
+  ["RecurringItem", "recurringItem"],
+  ["RecurringSuggestionDismissal", "recurringSuggestionDismissal"],
+  ["CategoryBudget", "categoryBudget"],
 ];
 const SAFE_FAILURE_CODES = new Set([
   "AUDIT_ENUM_VALUE_ALREADY_PRESENT",
