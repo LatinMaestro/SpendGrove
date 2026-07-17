@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3, FileUp, Home, Landmark, Settings, WalletCards } from "lucide-react";
+import { FileUp, Home, Landmark, Settings, WalletCards } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 export const navItems = [
-  { href: "/", label: "Home", icon: Home, activePaths: ["/budgets", "/regular-payments"], mobile: true },
-  { href: "/transactions", label: "Transactions", icon: WalletCards, activePaths: [], mobile: true },
-  { href: "/reports", label: "Reports", icon: BarChart3, activePaths: [], mobile: false },
-  { href: "/loans", label: "Loans", icon: Landmark, activePaths: [], mobile: true },
-  { href: "/import", label: "Import", icon: FileUp, activePaths: [], mobile: true },
-  { href: "/settings", label: "Settings", icon: Settings, activePaths: [], mobile: true },
+  { href: "/", label: "Home", icon: Home, activePaths: ["/budgets", "/regular-payments"] },
+  { href: "/transactions", label: "Transactions", icon: WalletCards, activePaths: [] },
+  { href: "/loans", label: "Loans", icon: Landmark, activePaths: [] },
+  { href: "/import", label: "Import", icon: FileUp, activePaths: [] },
+  { href: "/settings", label: "Settings", icon: Settings, activePaths: [] },
 ] as const;
 
 function isCurrentPath(pathname: string, item: (typeof navItems)[number]) {
@@ -20,7 +19,6 @@ function isCurrentPath(pathname: string, item: (typeof navItems)[number]) {
 
 export function BottomNav() {
   const pathname = usePathname();
-  const mobileNavItems = navItems.filter((item) => item.mobile);
 
   return (
     <nav
@@ -28,7 +26,7 @@ export function BottomNav() {
       className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface-base/96 px-2 pb-[env(safe-area-inset-bottom)] pt-1.5 backdrop-blur lg:hidden"
     >
       <div className="mx-auto grid max-w-lg grid-cols-5">
-        {mobileNavItems.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const active = isCurrentPath(pathname, item);
 
