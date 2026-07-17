@@ -9,10 +9,23 @@ import {
   commitReviewedLoanRepayments,
   listSafeLoanImportHistory,
 } from "@/src/server/loan-repayments";
+import {
+  LARGE_REVIEW_REQUEST_BYTES,
+  readBoundedJson,
+  SafeRequestBodyError,
+} from "@/src/server/request-body";
 
 export const dynamic = "force-dynamic";
 
 function safeError(error: unknown) {
+  if (error instanceof SafeRequestBodyError) {
+    return {
+      status: error.status,
+      message: error.status === 413
+        ? "This repayment review is too large to save in one request."
+        : "The repayment review request could not be read safely.",
+    };
+  }
   if (error instanceof ZodError) return { status: 400, message: error.issues[0]?.message ?? "Check the reviewed repayments and try again." };
   if (error instanceof LoanRepaymentCommitConflictError) return { status: 409, message: error.message };
   if (error instanceof LoanRepaymentDuplicateReviewRequiredError) return { status: 409, message: error.message };
@@ -41,7 +54,8 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const payload = loanRepaymentCommitRequestSchema.parse(await request.json());
+    const input = await readBoundedJson(request, LARGE_REVIEW_REQUEST_BYTES);
+    const payload = loanRepaymentCommitRequestSchema.parse(input);
     const summary = await commitReviewedLoanRepayments(await getCurrentUserContext(), payload);
     return NextResponse.json({ ok: true, summary }, { status: summary.alreadyCommitted ? 200 : 201 });
   } catch (error) {
