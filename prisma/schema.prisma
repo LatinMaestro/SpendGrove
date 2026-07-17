@@ -107,6 +107,7 @@ enum AuditEntityType {
   RECURRING_SUGGESTION_DISMISSAL
   CATEGORY_BUDGET
   BULK_OPERATION
+  TRANSFER_LINK
 }
 
 enum AuditAction {
@@ -274,6 +275,7 @@ model User {
   categoryBudgets              CategoryBudget[]
   bulkOperations               BulkOperation[]
   bulkOperationItems           BulkOperationItem[]
+  transferLinks                TransferLink[]
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -362,6 +364,8 @@ model Transaction {
   propertyLink            PropertyTransactionLink?
   propertyReportReview    PropertyReportReview?
   bulkOperationItems       BulkOperationItem[]
+  outgoingTransferLinks    TransferLink[]            @relation("OutgoingTransferTransaction")
+  incomingTransferLinks    TransferLink[]            @relation("IncomingTransferTransaction")
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -794,4 +798,24 @@ model BulkOperationItem {
   @@index([userId, status, createdAt])
   @@index([operationId, status])
   @@index([transactionId, createdAt])
+}
+
+
+model TransferLink {
+  id                    String    @id @default(cuid())
+  userId                String
+  outgoingTransactionId String
+  incomingTransactionId String
+  confirmedAt           DateTime  @default(now())
+  unlinkedAt            DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user                User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  outgoingTransaction Transaction @relation("OutgoingTransferTransaction", fields: [outgoingTransactionId], references: [id], onDelete: Restrict)
+  incomingTransaction Transaction @relation("IncomingTransferTransaction", fields: [incomingTransactionId], references: [id], onDelete: Restrict)
+
+  @@index([userId, unlinkedAt, createdAt])
+  @@index([userId, outgoingTransactionId, unlinkedAt])
+  @@index([userId, incomingTransactionId, unlinkedAt])
 }
