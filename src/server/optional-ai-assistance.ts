@@ -16,7 +16,7 @@ export class AiAssistanceUnavailableError extends Error {
 
 const safeLabelSchema = z.string().trim().min(1).max(80)
   .transform((value) => value.replace(/\s+/g, " "))
-  .refine((value) => !/@|\b(?:bsb|account|acct|card|customer|member|loan)\b/i.test(value))
+  .refine((value) => !/@/.test(value))
   .refine((value) => !/\d{4,}/.test(value));
 
 const categoriseRequest = z.object({
