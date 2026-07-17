@@ -183,6 +183,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/in-app-reminders.ts",
+    new Set([
+      "reminderPreference.write",
+      "reminder.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
     "src/server/bulk-operations.ts",
     new Set([
       "transaction.updateMany",
