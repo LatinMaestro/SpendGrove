@@ -210,3 +210,26 @@ Phase 4 is closed without application or data mutation. Historical QA and the co
 - **Data decision:** Phase 5 required no Prisma schema change, migration, backfill, data rewrite, manual SQL or Production financial-row access.
 - **Release decision:** SpendGrove is conditionally ready only after Clerk Production, environment separation, migration-health, recovery, contact and legal gates pass. It is not approved for beta invitations, public launch or App Store submission today.
 - **Status:** Phase 5 remains open pending consolidated client acceptance. Phase 6 is unapproved and not started.
+
+
+## 17 July 2026 — Adopt complete-product first-release direction and revised roadmap
+
+Decision:
+
+- Preserve the technically complete Phase 5 repository baseline while deferring client acceptance; Phase 5 is not formally closed.
+- Replace the former limited Phase 6–7 ending with the complete Phase 6–15 delivery roadmap merged in PR #165 as `8146c37040da98c9e08bac3123c8f78a3ef0caec`.
+- Target a complete, polished first public/App Store product containing all selected core and optional planned modules rather than a deliberately limited MVP.
+- Activate Phase 6 — Desktop Web Platform and Bulk Workflows, beginning with Milestone 6.0.
+- Permit autonomous continuation through the merged roadmap when scope is defined and every financial, privacy, ownership, schema, provider, environment, commercial and operator gate is satisfied.
+- Defer consolidated client review until the complete pre-release application is ready.
+
+Reason:
+
+The master specification and repository audit show that SpendGrove already has strong transaction, import, Loan, Property, budget, recurring, account-lifecycle and security foundations, while desktop bulk workflows, import coverage, advanced reporting, net worth, household roles, documents, optional enrichment, native delivery and final release operations remain distinct projects. A Phase 6–15 dependency sequence reduces migration and privacy risk and avoids rebuilding accepted work.
+
+Implementation impact:
+
+- Phase 6 Milestone 6.0 starts with documentation and interface rules.
+- Material schema changes still require exact model/SQL/privacy/ownership/export/deletion and Preview migration contracts.
+- Paid providers, secrets, Production migrations/data access, browser-local migration/deletion, live Basiq/AI/payments, real-user invitations, public launch and App Store submission remain hard stops.
+- The native framework, commercial model, provider choices and professional reviews remain explicit decisions in `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`.
