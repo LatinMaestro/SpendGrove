@@ -158,6 +158,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/savings-goals.ts",
+    new Set([
+      "savingsGoal.write",
+      "savingsGoalContribution.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
     "src/server/bulk-operations.ts",
     new Set([
       "transaction.updateMany",
