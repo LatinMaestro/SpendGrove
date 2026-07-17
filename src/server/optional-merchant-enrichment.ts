@@ -25,10 +25,24 @@ export class MerchantEnrichmentUnavailableError extends Error {
   }
 }
 
+const privateIdentifierPattern = /\b(?:bsb|account|acct|card|customer|member|loan)\s*(?:no|number|id|ref|#)\b/i;
+
 const cleanedMerchantSchema = z.string().trim().min(3).max(120)
   .transform((value) => value.replace(/\s+/g, " "))
-  .refine((value) => !/@|\b(?:bsb|account|acct|card|customer|member|loan)\b/i.test(value))
+  .refine((value) => !/@/.test(value))
+  .refine((value) => !privateIdentifierPattern.test(value))
   .refine((value) => !/\d{4,}/.test(value));
+
+const safeSuggestionLabelSchema = z.string().trim().min(1).max(80)
+  .transform((value) => value.replace(/\s+/g, " "))
+  .refine((value) => !/@/.test(value))
+  .refine((value) => !/\d{4,}/.test(value));
+
+const localSuggestionSchema = z.object({
+  merchantName: safeSuggestionLabelSchema,
+  categoryKey: z.string().trim().min(1).max(80),
+  source: z.enum(["USER_RULE", "USER_ALIAS", "LOCAL_HISTORY", "LOCAL_KEYWORD"]),
+}).strict();
 
 const requestSchema = z.object({
   cleanedMerchant: cleanedMerchantSchema,
@@ -38,7 +52,7 @@ const requestSchema = z.object({
 }).strict();
 
 const providerSuggestionSchema = z.object({
-  merchantName: z.string().trim().min(1).max(80),
+  merchantName: safeSuggestionLabelSchema,
   categoryKey: z.string().trim().min(1).max(80),
 }).strict();
 
@@ -57,11 +71,12 @@ export async function suggestMerchantWithOptionalEnrichment(
   requireAuthenticatedUserContext(context);
 
   if (localSuggestion) {
+    const parsedLocal = localSuggestionSchema.parse(localSuggestion);
     return {
       type: "SUGGESTION" as const,
-      source: localSuggestion.source,
-      merchantName: localSuggestion.merchantName,
-      categoryKey: localSuggestion.categoryKey,
+      source: parsedLocal.source,
+      merchantName: parsedLocal.merchantName,
+      categoryKey: parsedLocal.categoryKey,
       userConfirmationRequired: true,
     };
   }
