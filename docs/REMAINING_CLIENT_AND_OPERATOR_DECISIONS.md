@@ -1,5 +1,22 @@
 # Remaining Client and Operator Decisions
 
+## Phase 11 storage/operator decisions — 17 July 2026
+
+Repository preparation is complete for owner-scoped document metadata and explicit evidence links. The following remain external gates:
+
+- run the sixth Preview migration only after the preceding five ordered migrations pass;
+- select a private object-storage provider and region/data-location posture;
+- approve expected limits, costs and spend controls;
+- approve any provider SDK/package and OIDC/secret/environment treatment;
+- establish Preview/Production storage separation;
+- approve malware scanning/quarantine controls;
+- decide retention/recovery duration, backups and deletion propagation;
+- complete privacy/legal review;
+- approve focused runtime and real-upload activation.
+
+No provider, store, package, secret, environment variable, upload, cost or Production migration is implied by the prepared service.
+
+
 ## Phase 10 operator and activation decisions — 17 July 2026
 
 Repository preparation is complete for personal-by-default household sharing and separate read-only accountant access. The following remain external gates:

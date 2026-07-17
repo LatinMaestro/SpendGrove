@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 11 repository preparation status — 17 July 2026
+
+The storage/privacy contract, additive metadata schema, sixth unexecuted migration and guarded metadata/link service are prepared through PR #213. Runtime and provider gates remain off; no file storage, upload/download, OCR/AI or user-facing control is operational. Vercel Private Blob remains a later candidate only.
+
+
 ## Phase 11 contract status — 17 July 2026
 
 The storage/privacy contract is prepared in `docs/PHASE_11_DOCUMENT_STORAGE_PRIVACY_CONTRACT.md`. It recommends Vercel Private Blob only as a later candidate, keeps file bytes out of PostgreSQL, requires private owner-authorised objects and malware/quarantine controls, and leaves all provider, upload and migration runtime disabled.
