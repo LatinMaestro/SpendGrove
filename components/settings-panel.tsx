@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ChevronDown, ChevronRight, LockKeyhole, SlidersHorizontal } from "lucide-react";
+import { AccountDataExport } from "@/components/account-data-export";
 import { useUserSettings } from "@/components/settings-provider";
 
 function PreferenceSwitch({
@@ -117,6 +118,7 @@ export function SettingsPanel() {
             Review <ChevronRight aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>
+        <AccountDataExport />
       </SettingsGroup>
     </div>
   );
