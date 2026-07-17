@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 9 implementation status — 17 July 2026
+
+The financial contract, additive schema foundation and owner-scoped recurring-instance, savings-goal, manual-net-worth and in-app-reminder services are prepared through PR #204. All migration-dependent runtime remains disabled pending the four-migration isolated Preview operator gate. These foundations are not operational or client accepted. Existing budgets remain monthly/no-rollover and no forecasting, live valuation or push provider has been activated.
+
+
 Status: planning baseline for review and activation  
 Prepared: 17 July 2026  
 Repository baseline: Phase 5 delivery through PR #164  
