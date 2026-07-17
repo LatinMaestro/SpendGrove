@@ -32,7 +32,7 @@ import { manualCategories } from "@/lib/manual-categories";
 import { deleteMerchantAlias, deleteMerchantRule, emptyLocalMerchantData, MerchantConflictError, renameMerchantAlias, renameMerchantProfile, setMerchantAliasActive, setMerchantRuleActive, type LocalMerchantData, type MerchantConflict, type MerchantConflictResolution } from "@/lib/merchant-rules";
 
 type PendingMerchantConflict = { kind: "RULE" | "ALIAS"; rowId: string; alias?: string; conflict: MerchantConflict };
-type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "SIGNED_OUT" | "UNAVAILABLE";
+type DuplicateAnalysisStatus = "WAITING_FOR_AUTH" | "LOADING" | "READY" | "UNAVAILABLE";
 type PropertyOptionsStatus = "SIGNED_OUT" | "LOADING" | "READY" | "UNAVAILABLE";
 const categoryId = (name: string) => manualCategories.find((category) => category.name === name)!.id;
 
@@ -202,10 +202,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
     duplicateAnalysisStatus === "LOADING"
   );
   const analysisUnavailable = reviewStarted && duplicateAnalysisStatus === "UNAVAILABLE";
-  const reviewPrepared = reviewStarted && (
-    duplicateAnalysisStatus === "READY" ||
-    duplicateAnalysisStatus === "SIGNED_OUT"
-  );
+  const reviewPrepared = reviewStarted && duplicateAnalysisStatus === "READY";
 
   return <div className="space-y-5">
     {!reviewRows ? <section className="rounded-3xl border border-border bg-surface-mint p-5 sm:p-6"><div className="flex items-start gap-3"><ShieldCheck aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-brand-green" /><div><p className="font-bold text-brand-deepTeal">Ready to review</p><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Check each transaction, choose a category and select Import, Skip or Merge. Nothing creates transactions until you explicitly confirm.</p></div></div><button type="button" onClick={startReview} disabled={!canStartReview} className="mt-4 min-h-12 rounded-full bg-brand-deepTeal px-5 text-sm font-bold text-white disabled:opacity-45">{canStartReview ? "Choose what to import" : "Finish matching columns first"}</button></section> : <>
