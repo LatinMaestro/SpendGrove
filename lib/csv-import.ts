@@ -1,4 +1,5 @@
 import { parseMoneyToCents } from "@/lib/validation/money";
+import { confirmedEverydayCsvProfiles } from "@/lib/csv-bank-profiles";
 import {
   containsPrivateBankIdentifier,
   normalizeSafeText,
@@ -91,50 +92,6 @@ export type CsvScanResult = {
   detectedDateFormats: CsvDateFormat[];
   amountMode: CsvAmountMode;
 };
-
-type BankProfileDefinition = {
-  id: string;
-  bankName: string;
-  displayName: string;
-  requiredHeaders: string[];
-  optionalHeaders: string[];
-};
-
-type CsvHeaderDetection = {
-  hasHeader: boolean;
-  confidence: number;
-};
-
-const bankProfiles: BankProfileDefinition[] = [
-  {
-    id: "commbank-everyday-v1",
-    bankName: "Commonwealth Bank",
-    displayName: "CommBank transaction CSV",
-    requiredHeaders: ["date", "amount", "description", "account number"],
-    optionalHeaders: ["balance"],
-  },
-  {
-    id: "anz-everyday-v1",
-    bankName: "ANZ",
-    displayName: "ANZ transaction CSV",
-    requiredHeaders: ["date", "amount", "details"],
-    optionalHeaders: ["type", "balance"],
-  },
-  {
-    id: "nab-everyday-v1",
-    bankName: "NAB",
-    displayName: "NAB transaction CSV",
-    requiredHeaders: ["date", "amount", "transaction details"],
-    optionalHeaders: ["balance"],
-  },
-  {
-    id: "westpac-everyday-v1",
-    bankName: "Westpac",
-    displayName: "Westpac transaction CSV",
-    requiredHeaders: ["date", "narrative", "debit amount", "credit amount"],
-    optionalHeaders: ["balance"],
-  },
-];
 
 const privateHeaderRules: Array<{ pattern: RegExp; reason: string }> = [
   { pattern: /\bbsb\b/i, reason: "BSB" },
@@ -320,7 +277,7 @@ export function parseCsvDocument(csvText: string): TransientCsvDocument {
 
 export function detectCsvProfile(headers: string[]): CsvProfileDetection {
   const normalizedHeaders = headers.map(normalizeHeader);
-  const ranked = bankProfiles
+  const ranked = confirmedEverydayCsvProfiles
     .map((profile) => {
       const requiredMatches = profile.requiredHeaders.filter((required) => normalizedHeaders.includes(required)).length;
       const optionalMatches = profile.optionalHeaders.filter((optional) => normalizedHeaders.includes(optional)).length;
