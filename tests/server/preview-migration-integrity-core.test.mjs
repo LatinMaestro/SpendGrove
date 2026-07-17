@@ -429,3 +429,55 @@ describe("Phase 10 collaboration Preview migration profile", () => {
     ]);
   });
 });
+
+
+describe("Phase 11 document metadata Preview migration profile", () => {
+  const migrationName = "20260717140000_phase_11_document_metadata_foundation";
+
+  it("defines exact additive enums, tables and safe audit additions", () => {
+    const profile = migrationProfileFor(migrationName);
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toEqual(["Document", "DocumentLink"]);
+    expect(profile?.enums.DocumentStatus).toEqual([
+      "PENDING_UPLOAD", "QUARANTINED", "AVAILABLE", "FAILED", "DELETED",
+    ]);
+    expect(profile?.enums.DocumentCategory).toEqual([
+      "RECEIPT", "INVOICE", "LOAN_STATEMENT", "PROPERTY_RECORD",
+      "REPORT_EVIDENCE", "OTHER",
+    ]);
+    expect(profile?.auditEntityTypeAdditions).toEqual(["DOCUMENT", "DOCUMENT_LINK"]);
+  });
+
+  it("protects every earlier prepared foundation with safe aggregate counts", () => {
+    const delegates = migrationProfileFor(migrationName)?.existingCountDelegates ?? [];
+    expect(delegates).toContainEqual(["BulkOperation", "bulkOperation"]);
+    expect(delegates).toContainEqual(["TransferLink", "transferLink"]);
+    expect(delegates).toContainEqual(["ImportUndoOperation", "importUndoOperation"]);
+    expect(delegates).toContainEqual(["RecurringInstance", "recurringInstance"]);
+    expect(delegates).toContainEqual(["Household", "household"]);
+    expect(delegates).toContainEqual(["AccountantAccessGrant", "accountantAccessGrant"]);
+  });
+
+  it("requires exact owner, object-key and link indexes and foreign keys", () => {
+    const tables = migrationProfileFor(migrationName)?.tables;
+    expect(tables?.Document.indexes).toContain(
+      "Document_storageProvider_objectKey_key",
+    );
+    expect(tables?.Document.constraints).toEqual([
+      "Document_pkey",
+      "Document_userId_fkey",
+    ]);
+    expect(tables?.DocumentLink.indexes).toContain(
+      "DocumentLink_documentId_targetType_targetKey_key",
+    );
+    expect(tables?.DocumentLink.constraints).toEqual([
+      "DocumentLink_documentId_fkey",
+      "DocumentLink_pkey",
+      "DocumentLink_userId_fkey",
+    ]);
+    expect(exactNameSetMatches(
+      [...(tables?.DocumentLink.indexes ?? [])].reverse(),
+      tables?.DocumentLink.indexes ?? [],
+    )).toBe(true);
+  });
+});
