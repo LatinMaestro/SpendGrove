@@ -88,8 +88,8 @@ const recordReports: ReportDestination[] = [
   {
     title: "Property records",
     description: "Choose a linked Property and Australian financial year, then review or export its accepted record set.",
-    href: "/loans",
-    action: "Open Property reports",
+    href: "/reports/properties",
+    action: "Open Property report",
     icon: FileText,
   },
   {
