@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-17 — Keep Phase 11 file storage provider-neutral and disabled
+
+Decision: store only owner-scoped document metadata and links in PostgreSQL; keep file bytes in a later private object store; use opaque random object keys; require quarantine, content-signature validation, deletion/export reconciliation and explicit owner checks; and prohibit OCR/AI or automatic Phase 10 sharing.
+
+Vercel Private Blob is the preferred later candidate based on current official GA, signed-URL, OIDC and encryption capabilities, but no provider, store, package, credential, environment change, upload or cost is approved. Phase 11 schema preparation must be the sixth unexecuted migration behind a hard-false runtime gate.
+
+
 ## 2026-07-17 — Prepare Phase 10 collaboration behind the fifth migration gate
 
 Decision: implement application-owned household memberships, hashed invitations, explicit owner-selected record shares and separate read-only accountant grants/scopes without changing source-record ownership. Persist only invitation-token hashes; return raw tokens only in one-time repository service state; require active membership/grant and exact scope on every shared authorization; block last-administrator loss; and revoke access immediately on the next server read.
