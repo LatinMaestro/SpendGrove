@@ -658,3 +658,21 @@ The contract freezes:
 - additive schema and fail-closed runtime preparation behind the ordered Preview migration gate.
 
 No Phase 9 migration or runtime activation is authorised by the contract itself.
+
+
+## Phase 12 repository-preparation note — 17 July 2026
+
+Phase 12 contract and disabled adapter preparation is delivered through PR #216.
+
+Delivered repository boundaries:
+
+- deterministic local merchant suggestions always short-circuit optional enrichment;
+- optional enrichment receives only cleaned, bounded context and cannot determine transfers;
+- optional assistance accepts only typed, bounded, read-only requests and allowlisted search plans;
+- every categorisation result remains user-confirmed;
+- both runtime gates are hard false;
+- no provider, SDK, route, UI, persistence, package, secret, environment or financial mutation exists.
+
+Exact-head verification passed 141 test files / 864 tests, TypeScript, lint and optimized production build. Vercel was blocked by the account build-rate limit rather than an application failure; no redundant deployment was triggered.
+
+Phase 12 adds no schema or migration. Provider/model selection, commercial terms, privacy and retention review, secure configuration, sandbox/evaluation evidence and focused activation PRs remain later gates. Production activation is not authorised.
