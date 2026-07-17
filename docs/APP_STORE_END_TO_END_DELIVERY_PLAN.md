@@ -1,7 +1,7 @@
 # App Store End-to-End Delivery Plan
 
 Prepared: 17 July 2026  
-Status: planning only  
+Status: architecture selected; Apple enrolment, signing, TestFlight and submission remain unapproved  
 Authority: no Apple account purchase, App Store Connect record, TestFlight invitation, submission or public launch is authorised
 
 ## Objective
@@ -102,11 +102,13 @@ Before selection, prepare a time-boxed architecture proof plan covering:
 - build/signing and App Store review risk;
 - code reuse, maintenance and estimated delivery cost.
 
-## Current recommendation
+## Architecture decision — 17 July 2026
 
-Do not select a framework in this planning PR. The first proof should compare Capacitor, as the highest-reuse path, with Expo/React Native, as the strongest cross-platform native-component path. Advance SwiftUI if the proof shows that required Apple-native capabilities or quality cannot be achieved safely through those options.
+React Native with Expo and Expo Router is selected for the native client. The evidence and boundary are recorded in `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`.
 
-A final client decision is required before a native framework is committed.
+Capacitor remains a fallback if a focused Expo proof cannot meet a mandatory capability. SwiftUI remains suitable for discrete Apple-only surfaces or escalation where an Expo implementation cannot meet verified quality, security or platform requirements.
+
+The selection authorises repository planning and a later no-cost bootstrap proof. It does not authorise Apple enrolment/payment, signing, EAS/provider setup, TestFlight, App Store records, submission or public launch.
 
 # 3. End-to-end delivery stages
 
