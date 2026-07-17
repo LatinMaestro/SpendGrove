@@ -282,3 +282,26 @@ Existing verified models and accepted calculations support useful record prepara
 Implementation impact:
 
 PRs #194–#197 deliver the Report Centre, Loan reports, Property reports and accountant preparation pack. No schema, migration, data rewrite/backfill, package, provider, secret or environment change occurred. Phase 8 remains pending consolidated client acceptance and professional review.
+
+## 17 July 2026 — Freeze conservative Phase 9 financial foundations
+
+Decision:
+
+- Preserve actual Transactions as the sole cashflow ledger.
+- Keep confirmed transfer treatment, otherwise signed integer cents, ahead of categorisation.
+- Preserve exact recurring detector thresholds; amount ranges describe user-confirmed items only.
+- Represent recurring instances as links to existing Transactions, never duplicate predicted cashflow.
+- Retain monthly budgets and no rollover.
+- Use manual planning contributions for savings goals with no automatic Transaction linking.
+- Use manual net-worth valuations and explicit durable snapshots with no inferred or live-provider balances.
+- Limit forward-looking behaviour to confirmed expected dates, user targets and reminders; no general forecast.
+- Deliver in-app reminders only; push remains disabled.
+- Prepare additive schema behind false runtime gates and the ordered Preview migration queue.
+
+Reason:
+
+These rules add planned everyday value while keeping every amount traceable, avoiding silent financial mutation and allowing repository work to continue safely while Preview migration execution is deferred.
+
+Implementation impact:
+
+`docs/PHASE_9_FINANCIAL_CONTRACT.md` controls Phase 9. No migration, data rewrite, provider, package, secret, Production access or runtime activation is created by this decision.
