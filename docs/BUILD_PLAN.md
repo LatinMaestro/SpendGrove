@@ -877,3 +877,18 @@ Private-beta blockers:
 No Production migration is authorised. No provider/environment mutation, public launch, native packaging, App Store action or Phase 6 work is authorised.
 
 Phase 5 may be formally closed only after explicit client acceptance. Current recommendation: conditionally ready for a controlled private beta after the listed operator actions.
+
+
+## Phase 6 Preview migration gate — 17 July 2026
+
+- [x] Bulk-operation contract and schema plan merged in PR #170.
+- [x] Additive schema foundation merged in PR #171 as `796439f51a4f239adc9ec457feae87d66a14ab13`.
+- [x] Migration-aware Preview checker merged in PR #172 as `25b6a717bac5fae9481b7bee9ba6aaa72d72bdad`.
+- [x] Exact-head verification passed 113 test files / 697 tests, TypeScript, lint and optimized build.
+- [x] One Preview-only workflow request was dispatched: run `29555735427`.
+- [x] The run stopped at the secret-safe preflight with `DATABASE_CHECK_FAILED`; deploy and post-check steps were skipped.
+- [ ] Create or confirm an isolated Neon Preview destination and update the two GitHub Preview-only secrets through the operator dashboard.
+- [ ] Re-run the Preview workflow once only after the environment gate is proven.
+- [ ] Implement/merge bulk actions only after Preview schema verification and a separate safe Production migration gate.
+
+No Preview or Production migration, manual SQL, reset, migration resolution, data rewrite or backfill occurred. Independent no-schema Phase 6 work may continue. See `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md`.
