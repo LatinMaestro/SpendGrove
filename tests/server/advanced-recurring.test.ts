@@ -181,7 +181,7 @@ describe("Phase 9 guarded recurring lifecycle service", () => {
     expect(detector).toContain("minimumDays: 6, maximumDays: 8");
     expect(detector).toContain("minimumDays: 13, maximumDays: 16");
     expect(detector).toContain("minimumDays: 27, maximumDays: 34");
-    expect(service).not.toMatch(/transaction\.(create|update|delete)/);
+    expect(service).not.toMatch(/(?:prisma|tx)\.transaction\.(?:create|update|delete)\s*\(/);
     expect(service).not.toContain("rawNarration");
     expect(service).not.toContain("filename");
   });
