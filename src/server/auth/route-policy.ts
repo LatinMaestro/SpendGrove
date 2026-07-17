@@ -7,6 +7,7 @@ export const PROTECTED_FINANCE_ROUTES = [
   "/import",
   "/loans",
   "/regular-payments",
+  "/reports",
   "/settings",
   "/transactions",
 ] as const;
