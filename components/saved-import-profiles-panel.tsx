@@ -95,7 +95,7 @@ export function SavedImportProfilesPanel({
     return false;
   }
 
-  function useProfile(profile: SavedImportProfile) {
+  function applyProfile(profile: SavedImportProfile) {
     setError("");
     try {
       const appliedScan = applySavedImportProfile(document, profile);
@@ -244,7 +244,7 @@ export function SavedImportProfilesPanel({
           <p className="mt-1 text-sm text-brand-deepTeal/70">These mappings fit the selected file structure. Apply one, then check the preview below.</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {matches.map(({ profile, reason }) => (
-              <button key={profile.id} type="button" onClick={() => useProfile(profile)} className="min-h-12 rounded-2xl border border-brand-teal bg-white px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
+              <button key={profile.id} type="button" onClick={() => applyProfile(profile)} className="min-h-12 rounded-2xl border border-brand-teal bg-white px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-brand-green">
                 <span className="block font-bold text-brand-deepTeal">{profile.contract.displayName}</span>
                 <span className="mt-1 block text-xs leading-5 text-brand-deepTeal/65">{reason}</span>
               </button>
