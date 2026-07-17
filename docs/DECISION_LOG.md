@@ -1,5 +1,13 @@
 # Decision Log
 
+## 2026-07-17 — Prepare durable transfer linking behind a fail-closed gate
+
+Decision: merge the fully tested transfer-link server boundary while keeping runtime access disabled until ordered database migrations are proven.
+
+The prepared implementation uses only owned active confirmed transfers, exact opposite amounts, a maximum two Australian calendar-day difference, no splits, no existing active link and exactly one eligible candidate. It never auto-links, never creates cashflow and never uses narration as financial authority.
+
+Vercel rate limiting is recorded as deployment evidence unavailable, not an application failure. GitHub exact-head verification passed. Activation remains prohibited until Preview and Production schema gates complete.
+
 ## 2026-07-17 — Prepare ordered Phase 6–7 foundations without database execution
 
 Decision: keep complete-product delivery moving by merging exact, additive schema and guarded service preparation while the GitHub Preview-secret update remains blocked by fresh operator reauthentication.

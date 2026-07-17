@@ -1,5 +1,14 @@
 # Current Codex Handoff
 
+## Phase 7 guarded transfer-link preparation — 17 July 2026
+
+- PR #192 merged as `e49bac5b6e05b4fb863cab4294062caf3eecd961`.
+- The owner-scoped service enforces confirmed TRANSFER records, exact opposite signed integer cents, a maximum two-day Australian calendar difference, unsplit active records, no existing active link and exactly one eligible opposite candidate.
+- Durable creation still requires explicit confirmation; unlink is reversible. No transaction, amount, category, calculation or import record is changed by linking.
+- `TRANSFER_LINK_RUNTIME_ENABLED` remains false, no UI is connected and guarded routes fail before table access.
+- Exact-head verification passed 123 test files / 750 tests, TypeScript, lint and optimized build. Vercel was blocked only by its account build-rate limit; no redundant deployment was triggered.
+- The service cannot be activated until the ordered Preview migrations and a separate Production migration gate are complete.
+
 ## Phase 6–7 prepared runtime and schema state — 17 July 2026
 
 - PR #188 merged as `910608ee48c1a6f03eb109cd79b56af5f29e7276`. It prepares owner-scoped Phase 6 bulk-operation services and authenticated routes behind `BULK_OPERATIONS_RUNTIME_ENABLED = false`; no UI is connected and no operation-journal table is queried while the gate is off.
