@@ -20,6 +20,14 @@ Last updated: 17 July 2026
 - Next implementation scope is a no-schema typed profile registry and quality manifest. It may reorganize existing parser metadata but must not claim new bank support.
 - No transfer-link, import-undo or merchant-history schema work may begin without its exact contract and migration gate.
 
+## Phase 7 Milestone 7.2 — Loan CSV format matrix
+
+- Current loan import support is two generic structural modes: repayment component columns and row-event ledgers.
+- No named lender profile is claimed.
+- The accepted two-cent component tolerance, duplicate handling, repayment reconciliation and no-double-count rules remain unchanged.
+- Controlling matrix: `docs/PHASE_7_LOAN_CSV_FORMAT_MATRIX.md`.
+- Next safe implementation is a typed structural-mode registry and truthful Help guidance; named lender batches remain evidence-blocked.
+
 ## Complete-product controlling status
 
 - Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
