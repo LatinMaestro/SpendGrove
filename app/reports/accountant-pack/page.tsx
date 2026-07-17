@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Download, FileArchive, FileText } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/ui/app-primitives";
@@ -24,7 +25,7 @@ function financialYearOptions(selected: number) {
     .sort((left, right) => right - left);
 }
 
-function DownloadLink({ href, children }: Readonly<{ href: string; children: React.ReactNode }>) {
+function DownloadLink({ href, children }: Readonly<{ href: string; children: ReactNode }>) {
   return (
     <a href={href} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border bg-surface-base px-4 text-sm font-semibold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
       <Download aria-hidden="true" className="h-4 w-4" />
