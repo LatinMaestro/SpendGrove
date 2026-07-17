@@ -118,6 +118,19 @@ export function SettingsPanel() {
             Privacy <ChevronRight aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>
+        <div className="flex min-h-16 items-center justify-between gap-3 border-t border-border px-4 py-4">
+          <div>
+            <p className="text-sm font-semibold text-foreground">Help and safe CSV guidance</p>
+            <p className="mt-1 text-sm text-muted">Import limits, privacy tips and private-beta help.</p>
+          </div>
+          <Link
+            href="/help"
+            aria-label="Open SpendGrove help"
+            className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"
+          >
+            Help <ChevronRight aria-hidden="true" className="h-4 w-4" />
+          </Link>
+        </div>
         <AccountDataExport />
       </SettingsGroup>
     </div>
