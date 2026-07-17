@@ -40,7 +40,7 @@ describe("Phase 9 advanced personal-finance schema foundation", () => {
     expect(schema).toContain("period      BudgetPeriod @default(MONTHLY)");
     expect(migration).not.toMatch(/UPDATE\s+"(?:Transaction|CategoryBudget|RecurringItem)"/i);
     expect(migration).not.toMatch(/DELETE\s+FROM|DROP\s+(?:TABLE|COLUMN|TYPE)/i);
-    expect(migration).not.toContain("expectedAmountCents" =");
+    expect(migration).not.toContain('"expectedAmountCents" =');
   });
 
   it("adds nullable recurring compatibility fields and manual planning foundations", () => {
