@@ -11,7 +11,10 @@ Last updated: 17 July 2026
 - Complete-product planning PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec`.
 - The former limited Phase 6–7 ending is superseded by `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`.
 - Phase 6 — Desktop Web Platform and Bulk Workflows is active.
-- Immediate next work is Phase 6 Milestone 6.0: desktop contract/interface inventory, bulk-action safety rules and schema assessment.
+- Phase 6 no-schema delivery has progressed through the Import Centre and desktop transaction ledger. The bulk-operation contract, additive schema and Preview checker are merged.
+- Preview migration run `29555735427` stopped safely at `DATABASE_CHECK_FAILED` before deployment. No migration ran.
+- Connected Neon metadata still shows no separate Preview branch. The exact operator gate is recorded in `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md`.
+- Continue independent no-schema Phase 6 work. Do not merge Production-facing bulk-operation code or retry the migration until an isolated Preview destination and GitHub Preview-secret mapping are proven.
 - Continue autonomous repository delivery only within the merged roadmap and its financial, privacy, ownership, schema, provider, environment, commercial and operator gates.
 - Phase 5 and later phases remain unaccepted until explicit client acceptance; preserve all historical QA and deferred testing.
 - No Production migration/data access, provider purchase, secret exposure, browser-local migration/deletion, live Basiq/AI/payments, real-user invitation, public launch or App Store submission is authorised.
