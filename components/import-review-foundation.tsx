@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { SignInButton, useUser } from "@clerk/nextjs";
-import { CheckCircle2, ChevronLeft, ChevronRight, Cloud LockKeyhole, RefreshCw, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
+import { CheckCircle2, ChevronLeft, ChevronRight, Cloud, LockKeyhole, RefreshCw, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
 import { listAccountTransactionsForImportReview } from "@/lib/account-manual-transactions";
 import { CustomCategoryManager, useCustomCategoryCatalogue } from "@/components/custom-category-controls";
 import { ImportCommitPanel } from "@/components/import-commit-panel";
