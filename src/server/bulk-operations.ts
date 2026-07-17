@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { getManualCategory } from "@/lib/manual-categories";
 import { auditEventSchema } from "@/lib/validation/audit";
 import {
   isCategoryTypeCompatible,
@@ -8,6 +9,7 @@ import {
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { createPrismaManualTransactionStore } from "@/src/server/manual-transactions";
 
 export const BULK_OPERATIONS_RUNTIME_ENABLED = false;
 export const BULK_OPERATION_UNDO_WINDOW_MS = 30 * 60 * 1000;
@@ -232,9 +234,13 @@ export function createPrismaBulkOperationStore(
   return {
     async resolveTarget(userId, input) {
       if (input.type === "SET_CATEGORY" || input.type === "APPLY_MERCHANT_CATEGORY") {
+        const seededCategory = getManualCategory(input.targetCategoryId);
+        const resolvedCategoryId = seededCategory
+          ? await createPrismaManualTransactionStore(prisma).resolveSeededCategoryId(userId, seededCategory)
+          : input.targetCategoryId;
         const category = await prisma.category.findFirst({
           where: {
-            id: input.targetCategoryId,
+            id: resolvedCategoryId,
             userId,
             isArchived: false,
             deletedAt: null,
@@ -300,7 +306,10 @@ export function createPrismaBulkOperationStore(
             },
           });
           if (!transaction) {
-            return safeItemFailure(tx, userId, operationId, transactionId, "NOT_FOUND_OR_NOT_OWNED");
+            // Do not persist a missing or another user's opaque transaction ID. The
+            // operation aggregate records the failed request without creating a
+            // cross-owner foreign-key relationship.
+            return { status: "FAILED" as const, reason: "NOT_FOUND_OR_NOT_OWNED" as const };
           }
           if (transaction.status !== "ACTIVE" || transaction.deletedAt) {
             return safeItemFailure(tx, userId, operationId, transactionId, "NOT_ACTIVE");
@@ -478,11 +487,20 @@ export function createPrismaBulkOperationStore(
     },
 
     async finalizeOperation(userId, operationId, now) {
-      const [applied, skipped, failed] = await Promise.all([
+      const [current, applied, skipped, journaledFailed] = await Promise.all([
+        prisma.bulkOperation.findFirstOrThrow({
+          where: { id: operationId, userId },
+          select: { requestedCount: true },
+        }),
         prisma.bulkOperationItem.count({ where: { operationId, userId, status: "APPLIED" } }),
         prisma.bulkOperationItem.count({ where: { operationId, userId, status: "SKIPPED" } }),
         prisma.bulkOperationItem.count({ where: { operationId, userId, status: "FAILED" } }),
       ]);
+      const unjournaledFailed = Math.max(
+        0,
+        current.requestedCount - applied - skipped - journaledFailed,
+      );
+      const failed = journaledFailed + unjournaledFailed;
       const status = operationStatus({ applied, skipped, failed });
       const operation = await prisma.bulkOperation.update({
         where: { id: operationId },
@@ -513,16 +531,31 @@ export function createPrismaBulkOperationStore(
     },
 
     async listReasonCounts(userId, operationId) {
-      const groups = await prisma.bulkOperationItem.groupBy({
+      const [operation, groups] = await Promise.all([
+        prisma.bulkOperation.findFirstOrThrow({
+          where: { id: operationId, userId },
+          select: { failedCount: true },
+        }),
+        prisma.bulkOperationItem.groupBy({
         by: ["reason"],
         where: {
           operationId,
           userId,
           reason: { not: null },
         },
-        _count: { _all: true },
-      });
-      return Object.fromEntries(groups.map((group) => [group.reason, group._count._all])) as Partial<Record<BulkOperationReasonValue, number>>;
+          _count: { _all: true },
+        }),
+      ]);
+      const counts = Object.fromEntries(
+        groups.map((group) => [group.reason, group._count._all]),
+      ) as Partial<Record<BulkOperationReasonValue, number>>;
+      const journaledFailures = groups.reduce((total, group) => total + group._count._all, 0);
+      const ownerSafeGap = Math.max(0, operation.failedCount - journaledFailures);
+      if (ownerSafeGap > 0) {
+        counts.NOT_FOUND_OR_NOT_OWNED =
+          (counts.NOT_FOUND_OR_NOT_OWNED ?? 0) + ownerSafeGap;
+      }
+      return counts;
     },
 
     async listAppliedItemIds(userId, operationId) {
@@ -705,13 +738,20 @@ async function summary(
   };
 }
 
+type BulkOperationRuntimeOptions = { runtimeEnabled?: boolean };
+
+function isBulkRuntimeEnabled(options: BulkOperationRuntimeOptions) {
+  return options.runtimeEnabled ?? BULK_OPERATIONS_RUNTIME_ENABLED;
+}
+
 export async function createBulkOperation(
   context: AuthenticatedUserContext | null | undefined,
   input: unknown,
   store: BulkOperationStore = createPrismaBulkOperationStore(),
   now = new Date(),
+  options: BulkOperationRuntimeOptions = {},
 ) {
-  if (!BULK_OPERATIONS_RUNTIME_ENABLED) throw new BulkOperationsUnavailableError();
+  if (!isBulkRuntimeEnabled(options)) throw new BulkOperationsUnavailableError();
   const user = requireAuthenticatedUserContext(context);
   const request = bulkOperationRequestSchema.parse(input);
   const target = await store.resolveTarget(user.userId, request);
@@ -732,8 +772,9 @@ export async function getBulkOperation(
   context: AuthenticatedUserContext | null | undefined,
   operationId: string,
   store: BulkOperationStore = createPrismaBulkOperationStore(),
+  options: BulkOperationRuntimeOptions = {},
 ) {
-  if (!BULK_OPERATIONS_RUNTIME_ENABLED) throw new BulkOperationsUnavailableError();
+  if (!isBulkRuntimeEnabled(options)) throw new BulkOperationsUnavailableError();
   const user = requireAuthenticatedUserContext(context);
   const operation = await store.findOperation(user.userId, operationId);
   if (!operation) throw new BulkOperationNotFoundError();
@@ -745,8 +786,9 @@ export async function undoBulkOperation(
   operationId: string,
   store: BulkOperationStore = createPrismaBulkOperationStore(),
   now = new Date(),
+  options: BulkOperationRuntimeOptions = {},
 ) {
-  if (!BULK_OPERATIONS_RUNTIME_ENABLED) throw new BulkOperationsUnavailableError();
+  if (!isBulkRuntimeEnabled(options)) throw new BulkOperationsUnavailableError();
   const user = requireAuthenticatedUserContext(context);
   const operation = await store.findOperation(user.userId, operationId);
   if (!operation) throw new BulkOperationNotFoundError();
