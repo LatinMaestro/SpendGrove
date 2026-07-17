@@ -139,7 +139,12 @@ const itemFieldsSchema = z.object({
   category: categorySchema,
   propertyId: idSchema.nullable().default(null),
   loanAccountId: idSchema.nullable().default(null),
-}).strict().superRefine((input, context) => {
+}).strict();
+
+function validateItemFields(
+  input: z.infer<typeof itemFieldsSchema>,
+  context: z.RefinementCtx,
+) {
   const compatible = input.kind === "ASSET"
     ? assetCategories.has(input.category)
     : liabilityCategories.has(input.category);
@@ -170,10 +175,11 @@ const itemFieldsSchema = z.object({
       message: "Link either a Property or a Loan Account, not both.",
     });
   }
-});
+}
 
 export const netWorthMutationSchema = z.discriminatedUnion("action", [
-  itemFieldsSchema.extend({ action: z.literal("CREATE_ITEM") }).strict(),
+  itemFieldsSchema.extend({ action: z.literal("CREATE_ITEM") }).strict()
+    .superRefine(validateItemFields),
   z.object({
     action: z.literal("ADD_VALUATION"),
     itemId: idSchema,
