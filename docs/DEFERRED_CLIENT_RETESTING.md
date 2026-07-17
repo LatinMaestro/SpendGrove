@@ -749,3 +749,27 @@ Phase 6 is active and partially delivered. The checks below cover only merged, t
 - Generic/manual mapping remains usable on mobile and desktop.
 
 Transfer linking, import undo and additional merchant-history workflows will receive separate checklist sections only after their contracts and implementation gates are complete.
+
+
+## Phase 7 future transfer-link and import-undo checks
+
+These checks remain blocked until the proposed schemas are safely migrated and the workflows are implemented.
+
+### Transfer links
+
+- [ ] A unique exact-opposite confirmed transfer pair can be linked after user confirmation.
+- [ ] Zero or multiple candidates remain unlinked.
+- [ ] A transaction cannot have two active transfer links.
+- [ ] Split transactions are not offered for pairing.
+- [ ] Unlink remains available and changes no transaction value or calculation.
+- [ ] Linking creates no extra cashflow or spending.
+
+### Import undo and restore
+
+- [ ] Only eligible future completed everyday imports show Undo import.
+- [ ] Imported transactions leave active views after undo.
+- [ ] Skip and Merge outcomes do not alter another transaction.
+- [ ] Later edited, split, reconciled or relinked records are safely blocked.
+- [ ] Partial outcomes are explained without private values.
+- [ ] Restore import restores only exact unchanged records and creates no duplicate.
+- [ ] Existing historical imports are not backfilled or silently changed.

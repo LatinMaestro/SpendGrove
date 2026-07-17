@@ -26,7 +26,17 @@ Last updated: 17 July 2026
 - No named lender profile is claimed.
 - The accepted two-cent component tolerance, duplicate handling, repayment reconciliation and no-double-count rules remain unchanged.
 - Controlling matrix: `docs/PHASE_7_LOAN_CSV_FORMAT_MATRIX.md`.
-- Next safe implementation is a typed structural-mode registry and truthful Help guidance; named lender batches remain evidence-blocked.
+- Typed structural-mode registry and truthful Help guidance merged in PR #181 as `e703f180de624c1b524913fead7f14be3587668d`.
+- Exact-head verification passed 118 test files / 717 tests, TypeScript, lint and optimized build. No lender-branded profile was claimed; named lender batches remain evidence-blocked.
+
+## Phase 7 Milestones 7.3 and 7.4 — schema contracts only
+
+- Durable transfer-link and import-undo repository truth has been audited.
+- `docs/PHASE_7_TRANSFER_LINK_CONTRACT.md` proposes an owner-scoped, user-confirmed exact-opposite transfer link with a two-Australian-calendar-day window, no split allocation and no calculation change.
+- `docs/PHASE_7_IMPORT_UNDO_CONTRACT.md` proposes recoverable, per-row undo for future imports only. Skip and Merge remain no-change; later edits/links/reconciliation block affected rows; existing imports receive no backfill.
+- Both features require additive schema and ordered Preview migrations after the pending Phase 6 bulk-operation migration.
+- No schema or migration file was changed, no Preview or Production migration ran, and no existing record was rewritten.
+- Implementation remains blocked until the isolated Preview Neon destination and GitHub Preview-only secret mapping are proven.
 
 ## Complete-product controlling status
 
