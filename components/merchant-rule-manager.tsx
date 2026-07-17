@@ -4,13 +4,11 @@ import { useEffect, useRef, useState } from "react";
 import { Cloud, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import {
   listAccountMerchantData,
-  migrateAccountMerchantData,
   replaceAccountMerchantData,
 } from "@/lib/account-merchant-rules";
 import { getManualCategory } from "@/lib/manual-categories";
 import {
   MerchantConflictError,
-  saveMerchantRulesToStorage,
   type LocalMerchantData,
   type MerchantConflict,
   type MerchantConflictResolution,
@@ -85,57 +83,28 @@ export function MerchantRuleManager({
   useEffect(() => {
     let cancelled = false;
 
-    async function loadAccountData() {
-      try {
-        const result = await listAccountMerchantData();
-        if (cancelled || !result.ok) return;
-        const localSerialized = JSON.stringify(data);
-        const accountSerialized = JSON.stringify(result.data);
-
-        if (localSerialized === accountSerialized) {
-          accountReadyRef.current = true;
-          lastSyncedRef.current = accountSerialized;
-          setAccountBacked(true);
-          return;
-        }
-
-        if (merchantItemCount(data) > 0) {
-          const approved = window.confirm(
-            `Move ${merchantItemCount(data)} saved merchant item${merchantItemCount(data) === 1 ? "" : "s"} from this device to your SpendGrove account? Existing account choices will be kept when they conflict.`,
-          );
-          if (!approved) {
-            setMessage("Your device merchant choices were kept on this device and were not moved to your account.");
-            return;
-          }
-          const migration = await migrateAccountMerchantData(data);
-          if (cancelled) return;
-          if (!migration.ok) {
-            setMessage(`${migration.error} Your device copy was kept.`);
-            return;
-          }
-          saveMerchantRulesToStorage(window.localStorage, migration.data);
-          onDataChange(migration.data);
-          accountReadyRef.current = true;
-          lastSyncedRef.current = JSON.stringify(migration.data);
-          setAccountBacked(true);
-          setMessage(`Moved ${migration.importedCount ?? 0} merchant item${migration.importedCount === 1 ? "" : "s"} to your account${migration.skippedCount ? `; ${migration.skippedCount} already existed` : ""}. Your active import review was kept open.`);
-          return;
-        }
-
-        saveMerchantRulesToStorage(window.localStorage, result.data);
-        onDataChange(result.data);
-        accountReadyRef.current = true;
-        lastSyncedRef.current = accountSerialized;
-        setAccountBacked(true);
-        if (merchantItemCount(result.data) > 0) {
-          setMessage("Account merchant suggestions loaded. Your active import review was kept open.");
-        }
-      } catch {
-        if (!cancelled) setAccountBacked(false);
+    void listAccountMerchantData().then((result) => {
+      if (cancelled) return;
+      if (!result.ok) {
+        setAccountBacked(false);
+        setMessage("Account merchant suggestions are unavailable. Browser-only suggestions were not changed.");
+        return;
       }
-    }
 
-    void loadAccountData();
+      const serialized = JSON.stringify(result.data);
+      onDataChange(result.data);
+      accountReadyRef.current = true;
+      lastSyncedRef.current = serialized;
+      setAccountBacked(true);
+      if (merchantItemCount(result.data) > 0) {
+        setMessage("Account merchant suggestions loaded.");
+      }
+    }).catch(() => {
+      if (cancelled) return;
+      setAccountBacked(false);
+      setMessage("Account merchant suggestions are unavailable. Browser-only suggestions were not changed.");
+    });
+
     return () => { cancelled = true; };
   }, []);
 
@@ -155,7 +124,6 @@ export function MerchantRuleManager({
       }
       const accountSerialized = JSON.stringify(result.data);
       lastSyncedRef.current = accountSerialized;
-      saveMerchantRulesToStorage(window.localStorage, result.data);
       if (accountSerialized !== serialized) onDataChange(result.data);
       setAccountBacked(true);
       setMessage("Merchant suggestions saved to your account. Your active import review was kept open.");
