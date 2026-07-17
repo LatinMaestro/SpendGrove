@@ -15,6 +15,10 @@ const componentPath = new URL("../../components/account-deletion.tsx", import.me
 const settingsPath = new URL("../../app/settings/page.tsx", import.meta.url);
 const schemaPath = new URL("../../prisma/schema.prisma", import.meta.url);
 
+function context(userId: string, providerUserId: string) {
+  return { ...createTestUserContext(userId), providerUserId };
+}
+
 function stores(options: { dataFailure?: Error; identityFailure?: Error } = {}) {
   const calls: string[] = [];
   const dataStore: AccountDataDeletionStore = {
@@ -47,7 +51,7 @@ describe("Phase 5 immediate account deletion", () => {
   it("deletes owner data before the same Clerk identity and reports completion", async () => {
     const testStores = stores();
     const result = await deleteSpendGroveAccount(
-      createTestUserContext("user_1", "clerk_user_1"),
+      context("user_1", "clerk_user_1"),
       { confirmation: "DELETE" },
       testStores.dataStore,
       testStores.identityStore,
@@ -69,7 +73,7 @@ describe("Phase 5 immediate account deletion", () => {
   it("rolls back the workflow before Clerk deletion when app-data deletion fails", async () => {
     const testStores = stores({ dataFailure: new Error("synthetic transaction failure") });
     await expect(deleteSpendGroveAccount(
-      createTestUserContext("user_1", "clerk_user_1"),
+      context("user_1", "clerk_user_1"),
       { confirmation: "DELETE" },
       testStores.dataStore,
       testStores.identityStore,
@@ -80,7 +84,7 @@ describe("Phase 5 immediate account deletion", () => {
   it("truthfully reports a retryable partial result when Clerk deletion fails", async () => {
     const testStores = stores({ identityFailure: new Error("synthetic provider failure") });
     const result = await deleteSpendGroveAccount(
-      createTestUserContext("user_1", "clerk_user_1"),
+      context("user_1", "clerk_user_1"),
       { confirmation: "DELETE" },
       testStores.dataStore,
       testStores.identityStore,
