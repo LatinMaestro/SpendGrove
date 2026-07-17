@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-17 — Freeze Phase 9 advanced-finance rules and prepare services behind the deferred migration gate
+
+Decision: preserve Transactions as the sole cashflow ledger; keep recurring detector thresholds unchanged; use manual planning contributions for savings goals; use manual positive asset/liability values and explicit snapshots for net worth; retain monthly budgets with no rollover; and implement in-app reminder records without remote delivery.
+
+The additive Phase 9 migration is fourth in the existing ordered Preview gate. Runtime remains hard-disabled and no table is queried before activation. No Preview/Production migration, data rewrite/backfill, provider, package, secret or environment change is authorised by the preparation work.
+
+
 ## 2026-07-17 — Prepare durable transfer linking behind a fail-closed gate
 
 Decision: merge the fully tested transfer-link server boundary while keeping runtime access disabled until ordered database migrations are proven.
