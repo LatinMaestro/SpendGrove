@@ -1,17 +1,22 @@
 # Build Plan
 
-## Phase 11 storage and privacy contract — 17 July 2026
+## Phase 11 guarded repository preparation — 17 July 2026
 
 - [x] Compare current official private-object-storage capabilities and costs.
 - [x] Recommend Vercel Private Blob as the later preferred candidate without selecting, configuring or purchasing it.
 - [x] Freeze metadata-only PostgreSQL, private opaque object keys, owner-scoped links, quarantine, deletion/export and no-OCR rules.
 - [x] Define PDF/JPEG/PNG and 10 MiB conservative activation policy.
-- [ ] Prepare the exact additive sixth schema migration, verifier profile and hard-false runtime gate.
-- [ ] Prepare owner-scoped metadata/link services with a disabled provider adapter.
-- [ ] Keep active upload/download unavailable pending provider, malware, environment, migration and privacy gates.
-- [ ] Complete Phase 11 QA and handoff.
+- [x] Prepare the exact additive sixth schema migration, verifier profile and hard-false runtime gate.
+- [x] Prepare owner-scoped metadata/link services with a disabled provider adapter.
+- [x] Verify 140 test files / 854 tests, TypeScript, lint and optimized production build.
+- [x] Keep active upload/download unavailable pending provider, malware, environment, migration and privacy gates.
+- [ ] Run all six ordered Preview migrations through the deferred operator gate.
+- [ ] Select/configure a private provider and malware controls only through a later approved operator gate.
+- [ ] Activate document runtime and upload/download only through focused later PRs.
+- [ ] Complete real-provider, deletion/export and private-object QA before release.
 
-Controlling contract: `docs/PHASE_11_DOCUMENT_STORAGE_PRIVACY_CONTRACT.md`.
+Controlling contract: `docs/PHASE_11_DOCUMENT_STORAGE_PRIVACY_CONTRACT.md`.  
+Controlling handoff: `docs/PHASE_11_REPOSITORY_PREPARATION_SUMMARY.md`.
 
 
 ## Phase 10 guarded repository preparation — 17 July 2026
