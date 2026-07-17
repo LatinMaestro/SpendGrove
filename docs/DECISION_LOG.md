@@ -340,3 +340,23 @@ These rules add planned everyday value while keeping every amount traceable, avo
 Implementation impact:
 
 `docs/PHASE_9_FINANCIAL_CONTRACT.md` controls Phase 9. No migration, data rewrite, provider, package, secret, Production access or runtime activation is created by this decision.
+
+
+## 17 July 2026 — Keep optional enrichment local-first and provider-neutral
+
+Decision:
+
+- Deterministic local merchant rules, aliases, history and conservative keyword matches take precedence over any external enrichment.
+- Optional enrichment is fallback-only, cleaned-merchant-only, opt-in, user-reviewed and unable to decide transfer direction.
+- Optional assistance is provider-neutral, opt-in, typed, bounded and read-only.
+- No provider result may silently mutate financial data or bypass owner-scoped application services.
+- Provider/model selection, cost, region, retention, privacy disclosure, secure configuration and Production activation remain separate decisions.
+- Both repository runtime gates remain false.
+
+Reason:
+
+The complete-product roadmap includes optional enrichment and assistance, but local deterministic behaviour is already useful and safer. Preparing narrow disabled adapter boundaries preserves future flexibility without committing SpendGrove to a provider, cost or privacy posture.
+
+Implementation impact:
+
+PRs #215–#216 deliver the contract and disabled adapter boundaries. Verification passed 141 test files / 864 tests, TypeScript, lint and optimized production build. No provider, package, schema, migration, database access, route, UI, secret, environment change or Production use occurred.
