@@ -7,8 +7,8 @@ import {
 } from "@/src/server/auth/route-policy";
 
 describe("private-beta route policy", () => {
-  it("keeps only onboarding and authentication surfaces public", () => {
-    expect(isPublicAppPath("/onboarding")).toBe(true);
+  it("keeps only release information, onboarding and authentication surfaces public", () => {
+    expect(isPublicAppPath("/help")).toBe(true);\n    expect(isPublicAppPath("/onboarding")).toBe(true);\n    expect(isPublicAppPath("/privacy")).toBe(true);
     expect(isPublicAppPath("/sign-in")).toBe(true);
     expect(isPublicAppPath("/sign-in/verify")).toBe(true);
     expect(isPublicAppPath("/sign-up")).toBe(true);
