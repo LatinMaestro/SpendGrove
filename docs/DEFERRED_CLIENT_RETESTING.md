@@ -650,3 +650,31 @@ No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-
 Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
 
 The checklist above remains available for future regression review. Its preservation does not reopen Phase 4 or authorise Phase 5.
+
+
+## Phase 5 consolidated client review — pending
+
+All historical Phase 3 and Phase 4 acceptance/QA evidence above remains preserved.
+
+The current complete Phase 5 non-technical test sequence is maintained in:
+
+- `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`
+
+It covers:
+
+- provider/environment operator gates;
+- signed-out and signed-in routes;
+- sessions and two-user isolation;
+- browser-local prototype-data preservation;
+- complete JSON account export;
+- immediate account deletion and partial failures;
+- Privacy and Help;
+- security headers, safe errors and private logging;
+- request limits and abuse cases;
+- full financial/CSV regression;
+- desktop, real-device 390 px and accessibility review;
+- backup, recovery and provider-outage exercises;
+- deterministic dependency/release gates;
+- future App Store documentation review.
+
+Phase 5 remains open until the client completes that checklist and explicitly accepts closure. Phase 6 remains unapproved.
