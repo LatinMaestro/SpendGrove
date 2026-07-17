@@ -363,7 +363,7 @@ export function CustomCategoryManager({
   return (
     <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="saved-categories-heading">
       <div>
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked && <Cloud aria-hidden="true" className="h-4 w-4" />}{accountBacked ? "Saved to your account" : "Saved on this device"}</p>
+        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked && <Cloud aria-hidden="true" className="h-4 w-4" />}{accountBacked ? "Saved to your account" : "Account unavailable"}</p>
         <h2 id="saved-categories-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Your categories</h2>
         <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Categories you create appear in the normal category groups. SpendGrove’s included categories stay unchanged.</p>
       </div>
