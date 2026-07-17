@@ -28,11 +28,13 @@ The client acts as product owner, UX reviewer and acceptance tester.
 
 ## Active phase
 
-> **Phase 5 Milestone 1 — Readiness Contract, Critical Security and Environment Gate**
+> **Phase 5 — Production Readiness, pending consolidated client acceptance**
 
-The immediate release target is an account-based controlled Australian web private beta. Milestone 1 covers only the approved Next.js 15 security upgrade, authenticated finance-route posture and read-only environment/migration/recovery readiness contract.
+All currently authorised repository work through Phase 5 Milestones 1–6 is implemented. The immediate release target remains an account-based controlled Australian web private beta.
 
-Phase 5 Milestones 2–6 remain unapproved. No Production migration, schema/data change, provider-plan purchase, monitoring/analytics provider, native packaging, App Store preparation or public launch is authorised.
+SpendGrove is conditionally ready only after mandatory Clerk Production, environment-separation, migration-health, recovery, Groveware contact and legal-review actions are completed. Phase 5 is not formally closed, Phase 6 is unapproved, and no Production migration, public launch, native package or App Store submission is authorised.
+
+See `docs/PHASE_5_SUMMARY.md` and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
 
 ## Required repository files
 
