@@ -29,6 +29,8 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "recurringItem.write", pattern: /recurringItem\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "recurringSuggestionDismissal.write", pattern: /recurringSuggestionDismissal\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "categoryBudget.write", pattern: /categoryBudget\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "bulkOperation.write", pattern: /bulkOperation\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "bulkOperationItem.write", pattern: /bulkOperationItem\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "category.create", pattern: /category\.create\s*\(/ },
   { name: "category.createMany", pattern: /category\.createMany\s*\(/ },
   { name: "category.update", pattern: /category\.update\s*\(/ },
@@ -153,6 +155,16 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     new Set([
       "categoryBudget.write",
       "auditEvent.write",
+    ]),
+  ],
+  [
+    "src/server/bulk-operations.ts",
+    new Set([
+      "transaction.updateMany",
+      "propertyTransactionLink.write",
+      "auditEvent.write",
+      "bulkOperation.write",
+      "bulkOperationItem.write",
     ]),
   ],
   [
