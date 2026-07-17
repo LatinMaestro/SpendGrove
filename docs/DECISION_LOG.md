@@ -233,3 +233,13 @@ Implementation impact:
 - Material schema changes still require exact model/SQL/privacy/ownership/export/deletion and Preview migration contracts.
 - Paid providers, secrets, Production migrations/data access, browser-local migration/deletion, live Basiq/AI/payments, real-user invitations, public launch and App Store submission remain hard stops.
 - The native framework, commercial model, provider choices and professional reviews remain explicit decisions in `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`.
+
+## 2026-07-17 — Use a separate empty Neon project for Preview development
+
+- Decision: retain a separate Neon Free project for Preview migrations, synthetic testing and destructive non-Production verification rather than branching from the existing SpendGrove project.
+- Safe identity: project `cold-field-54187673`, branch `br-sweet-flower-aj2ng7ix`, database `neondb`.
+- Reason: Neon branches inherit parent data; Production must be presumed private. An independent empty project prevents copying Production users or financial records.
+- Vercel Preview-only database variables were updated; Production entries were not edited.
+- GitHub Actions Preview secrets remain an operator-authenticated gate because GitHub required fresh account confirmation. No migration may be dispatched until those secrets are replaced and proven.
+- No provider purchase, Production migration/data access, schema change, data rewrite/backfill or application behaviour change formed part of this decision.
+
