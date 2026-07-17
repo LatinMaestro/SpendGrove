@@ -611,3 +611,20 @@ The independently safe existing-schema portion of Phase 8 is delivered through P
 - versioned accountant preparation manifest/readme and individual existing exports.
 
 No schema or migration was required. Tax-sensitive conclusions remain excluded pending qualified professional review. The separate Phase 6/7 Preview migration gate remains deferred and all affected runtime features remain disabled. Phase 9 may proceed only after its financial contract is merged.
+
+## Phase 9 contract activation note — 17 July 2026
+
+Phase 9 repository work is governed by `docs/PHASE_9_FINANCIAL_CONTRACT.md`.
+
+The contract freezes:
+
+- actual Transaction direction and no-double-count rules;
+- existing recurring detector thresholds;
+- monthly budgets with no rollover;
+- manual-only savings contributions;
+- manual-only net-worth values and explicit snapshots;
+- deterministic non-advisory insights;
+- in-app reminders with remote push disabled;
+- additive schema and fail-closed runtime preparation behind the ordered Preview migration gate.
+
+No Phase 9 migration or runtime activation is authorised by the contract itself.
