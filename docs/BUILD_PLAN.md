@@ -6,12 +6,15 @@
 - [x] Define a cleaned-description-only Basiq fallback boundary.
 - [x] Define opt-in, provider-neutral AI assistance classes and safe request shapes.
 - [x] Record official Basiq sandbox/rate/commercial gates and AI retention-review needs.
-- [ ] Prepare independent hard-false Basiq and AI adapter boundaries without provider packages.
-- [ ] Verify local short-circuit, forbidden-field exclusion, no mutation and failure fallback.
-- [ ] Keep all provider calls, UI controls, secrets and Production use disabled.
-- [ ] Complete Phase 12 QA and handoff.
+- [x] Prepare independent hard-false Basiq and AI adapter boundaries without provider packages.
+- [x] Verify local short-circuit, forbidden-field exclusion, no mutation and failure fallback.
+- [x] Keep all provider calls, UI controls, secrets and Production use disabled.
+- [x] Complete Phase 12 QA and handoff: PR #216 / `b9bdcaab579922ea3c491d2c9ed067cc6b9caa86`; 141 test files / 864 tests, TypeScript, lint and optimized build passed.
 
-Controlling contract: `docs/PHASE_12_OPTIONAL_ENRICHMENT_AI_CONTRACT.md`.
+Controlling contract: `docs/PHASE_12_OPTIONAL_ENRICHMENT_AI_CONTRACT.md`.  
+Controlling handoff: `docs/PHASE_12_REPOSITORY_PREPARATION_SUMMARY.md`.
+
+Both optional runtime gates remain false. No provider, route, UI, schema, migration, package, secret, environment or Production use was added. Activation remains a later provider/commercial/privacy gate.
 
 
 ## Phase 11 guarded repository preparation — 17 July 2026

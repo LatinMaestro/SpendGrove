@@ -983,3 +983,34 @@ Status: repository foundations technically verified; runtime/provider disabled; 
 - [ ] Malware controls and incident response are verified.
 - [ ] Retention/recovery, backup and deletion propagation receive approval.
 - [ ] OCR/AI remains unavailable unless separately approved after privacy review.
+
+
+## Phase 12 Optional Enrichment and Assistance — guarded preparation
+
+Status: repository boundaries technically verified; both runtime gates disabled; no provider selected; client review deferred
+
+### Local-first merchant enrichment
+
+- [ ] A reliable user rule, alias, local history or keyword result prevents any provider call.
+- [ ] Transfers remain local review and are never classified by an optional provider.
+- [ ] Optional lookup is unavailable without explicit opt-in, configured provider and activated runtime gate.
+- [ ] An enriched suggestion remains reviewable and requires confirmation.
+- [ ] No full CSV, raw narration, amount, balance, filename or banking identifier is sent.
+
+### Optional assistance
+
+- [ ] Assistance is unavailable without explicit opt-in, configured provider and activated runtime gate.
+- [ ] Categorisation suggestions never mutate a transaction without user confirmation.
+- [ ] Natural-language search produces only an allowlisted, owner-scoped read-only query plan.
+- [ ] Budget and anomaly explanations use bounded approved aggregates and remain non-advisory.
+- [ ] Help output is bounded and cannot execute database, file or provider operations.
+- [ ] Malformed or unrecognised provider output fails safely without affecting existing workflows.
+
+### Activation and safety
+
+- [ ] Both compile-time runtime gates remain false until focused activation approval.
+- [ ] Provider/model, region, cost, retention, deletion/export and privacy disclosures receive approval.
+- [ ] Sandbox/evaluation evidence uses synthetic or minimum approved data.
+- [ ] No package, secret or environment change occurs outside an approved operator gate.
+- [ ] Local categorisation, transfer treatment, signed-money, split and no-double-count rules remain unchanged.
+- [ ] No optional provider is represented as operational before focused activation and client testing.

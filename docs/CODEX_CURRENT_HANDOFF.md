@@ -1,5 +1,18 @@
 # Current Codex Handoff
 
+## Phase 12 guarded optional-provider preparation — 17 July 2026
+
+- PR #215 / `131c9911a6e8d6d65e76a7ce9e7998d6fbec78ea`: local-first optional enrichment and provider-neutral assistance contract.
+- PR #216 / `b9bdcaab579922ea3c491d2c9ed067cc6b9caa86`: hard-disabled merchant-enrichment and read-only assistance adapter boundaries.
+- Exact verified PR #216 head: `c99b331bf7c25778df454952fa0835b3786d7e9b`; GitHub Actions run `29583926095`.
+- Verification passed: 141 test files / 864 tests, TypeScript, lint and optimized production build.
+- Both Phase 12 runtime gates remain false. No provider SDK, route, UI, database access, persistence, financial mutation, package, secret or environment change exists.
+- Local deterministic categorisation remains first; transfer review remains local; any future provider result remains reviewable and user-confirmed.
+- PR #216 Vercel status was blocked only by the account build-rate limit. No repeated deployment or no-op commit was triggered.
+- Controlling evidence: `docs/PHASE_12_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Client review remains deferred. Phase 12 repository preparation is technically complete but neither optional capability is operational or closed.
+
+
 ## Phase 11 guarded document preparation — 17 July 2026
 
 - PR #211 / `4342215ba952a6d5107218a2982c0e273b7e228e`: storage/privacy contract and official provider assessment.
