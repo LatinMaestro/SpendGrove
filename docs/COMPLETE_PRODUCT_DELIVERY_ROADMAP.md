@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 10 repository preparation status — 17 July 2026
+
+The contract, additive schema, fifth unexecuted migration, household service and separate read-only accountant service are prepared through PR #209. Personal ownership remains unchanged; sharing is explicit and revocable; accountant access is selected-scope and read-only. Runtime remains hard-disabled pending all five ordered Preview migrations and a later activation PR. Invitation delivery and real-user invitations remain externally gated. Phase 10 is not operational or client accepted.
+
+
 ## Phase 10 contract status — 17 July 2026
 
 The privacy and permissions contract is prepared in `docs/PHASE_10_PRIVACY_PERMISSIONS_CONTRACT.md`. It freezes personal-by-default ownership, explicit selected sharing, application-owned roles, separate read-only accountant grants, hashed invitations and fail-closed migration/runtime treatment. No household/accountant capability is operational.
