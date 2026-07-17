@@ -81,3 +81,14 @@ Do not request or accept real CSV files through public issues, support channels 
 ## Loan/account formats
 
 Loan CSV coverage is tracked separately because lender exports may be component-column reports or row-event ledgers and do not necessarily match everyday account formats. No everyday target entry implies loan-format support.
+
+
+## Official export-availability evidence
+
+Official documentation can establish that a provider offers CSV export, but it does not by itself establish exact headers or amount semantics.
+
+| Target | Official source | Provider | Accessed | Supported fact | Remaining blocker |
+|---|---|---|---|---|---|
+| Macquarie | [Exporting transactions as CSV or QIF files](https://www.macquarie.com.au/help/business/manage-your-accounts/statements-and-transactions/export-transactions-as-csv-or-qif-files.html) | Macquarie Bank | 17 July 2026 | Macquarie Business Online offers transaction CSV export and permits transaction ordering choices | Exact personal/everyday export headers, column order and signed/debit-credit semantics are not documented; remains generic-only |
+
+No format profile is created from this availability evidence alone.
