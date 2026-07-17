@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 8 reporting delivery update — 17 July 2026
+
+- [x] Deliver authenticated Report Centre without adding a sixth primary navigation destination.
+- [x] Deliver owner-scoped Australian financial-year Loan reporting and formula-safe CSV.
+- [x] Deliver existing-schema Property reporting with linked-record drilldown and separate Loan components.
+- [x] Deliver a versioned multi-download accountant preparation workflow without ZIP, storage or accountant access.
+- [x] Verify 130 test files / 776 tests, TypeScript, lint and optimized build.
+- [x] Preserve no-double-count, integer-cent, split, transfer, ownership and privacy rules.
+- [ ] Obtain qualified Australian tax/accounting review of final terminology, evidence expectations and any future tax-sensitive grouping.
+- [ ] Complete consolidated client review at the pre-release gate.
+
+Phase 8 required no schema or migration. The deferred Phase 6/7 Preview migration gate remains a separate operator action and all affected runtime features remain disabled. Phase 9 must begin with a merged financial contract before new calculations or schema.
+
+
 ## Phase 7 prepared transfer service update — 17 July 2026
 
 - [x] Prepare and merge deterministic durable transfer-link service/routes behind a disabled runtime gate (PR #192, `e49bac5b6e05b4fb863cab4294062caf3eecd961`).
