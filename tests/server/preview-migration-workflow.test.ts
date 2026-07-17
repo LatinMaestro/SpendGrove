@@ -39,14 +39,13 @@ describe("Preview Prisma migration workflow integrity", () => {
     for (const expected of [
       "FAILED_OR_UNRESOLVED_MIGRATION",
       "TARGET_MIGRATION_ALREADY_PRESENT",
-      "20260708090000_phase_4_recurring_budgets_foundation",
-      "RecurringItem",
-      "RecurringSuggestionDismissal",
-      "CategoryBudget",
-      "RecurringCadence",
-      "RecurringItemStatus",
-      "BudgetPeriod",
-      "BudgetStatus",
+      "20260717090000_phase_6_bulk_operation_foundation",
+      "BulkOperation",
+      "BulkOperationItem",
+      "BulkOperationType",
+      "BulkOperationStatus",
+      "BulkOperationItemStatus",
+      "BulkOperationReason",
       "EXPECTED_ENUM_MISMATCH",
       "EXPECTED_COLUMNS_MISMATCH",
       "EXPECTED_INDEXES_MISMATCH",
@@ -60,24 +59,11 @@ describe("Preview Prisma migration workflow integrity", () => {
     }
   });
 
-  it("uses the safe pre-migration aggregate baseline for verification-only mode", () => {
-    expect(workflow).toContain("--expected-counts-json");
-    const expectedBaseline = {
-      User: 1,
-      Category: 51,
-      Transaction: 1500,
-      ImportBatch: 15,
-      ImportRow: 1568,
-      Property: 2,
-      LoanAccount: 3,
-      LoanRepayment: 23,
-      LoanReconciliationLink: 22,
-      PropertyTransactionLink: 6,
-      PropertyReportReview: 11,
-    };
-    for (const [table, count] of Object.entries(expectedBaseline)) {
-      expect(workflow).toContain(`"${table}":${count}`);
-    }
+  it("requires an explicit safe aggregate baseline for verification-only mode", () => {
+    expect(workflow).toContain("expected_counts_json:");
+    expect(workflow).toContain("Verify-only requires the safe aggregate baseline");
+    expect(workflow).toContain('--expected-counts-json "$EXPECTED_COUNTS_JSON"');
+    expect(workflow).not.toContain('{"User":1,"Category":51');
   });
 
   it("counts only approved existing models and emits no row query", () => {
@@ -91,6 +77,9 @@ describe("Preview Prisma migration workflow integrity", () => {
       '["LoanReconciliationLink", "loanReconciliationLink"]',
       '["PropertyTransactionLink", "propertyTransactionLink"]',
       '["PropertyReportReview", "propertyReportReview"]',
+      '["RecurringItem", "recurringItem"]',
+      '["RecurringSuggestionDismissal", "recurringSuggestionDismissal"]',
+      '["CategoryBudget", "categoryBudget"]',
     ]) {
       expect(integrityScript).toContain(expected);
     }

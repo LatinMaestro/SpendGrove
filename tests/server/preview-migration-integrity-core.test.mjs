@@ -123,3 +123,80 @@ describe("Preview migration profiles", () => {
     ]);
   });
 });
+
+
+describe("Phase 6 Preview migration profile", () => {
+  const migrationName = "20260717090000_phase_6_bulk_operation_foundation";
+
+  it("defines the exact enums, tables and audit addition", () => {
+    const profile = migrationProfileFor(migrationName);
+
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toEqual(["BulkOperation", "BulkOperationItem"]);
+    expect(profile?.absentEnums).toEqual([
+      "BulkOperationType",
+      "BulkOperationStatus",
+      "BulkOperationItemStatus",
+      "BulkOperationReason",
+    ]);
+    expect(profile?.enums.BulkOperationType).toEqual([
+      "SET_CATEGORY",
+      "APPLY_MERCHANT_CATEGORY",
+      "LINK_PROPERTY",
+      "UNLINK_PROPERTY",
+    ]);
+    expect(profile?.enums.BulkOperationStatus).toEqual([
+      "RUNNING",
+      "COMPLETED",
+      "PARTIAL",
+      "FAILED",
+      "REVERTED",
+      "PARTIALLY_REVERTED",
+    ]);
+    expect(profile?.enums.BulkOperationItemStatus).toEqual([
+      "APPLIED",
+      "SKIPPED",
+      "FAILED",
+      "REVERTED",
+      "UNDO_BLOCKED",
+    ]);
+    expect(profile?.enums.BulkOperationReason).toContain("NOT_FOUND_OR_NOT_OWNED");
+    expect(profile?.auditEntityTypeAdditions).toEqual(["BULK_OPERATION"]);
+  });
+
+  it("requires the exact approved indexes and foreign keys", () => {
+    const profile = migrationProfileFor(migrationName);
+
+    expect(profile?.tables.BulkOperation.indexes).toEqual([
+      "BulkOperation_pkey",
+      "BulkOperation_targetCategoryId_idx",
+      "BulkOperation_targetPropertyId_idx",
+      "BulkOperation_userId_status_createdAt_idx",
+      "BulkOperation_userId_type_createdAt_idx",
+    ]);
+    expect(profile?.tables.BulkOperation.constraints).toEqual([
+      "BulkOperation_pkey",
+      "BulkOperation_targetCategoryId_fkey",
+      "BulkOperation_targetPropertyId_fkey",
+      "BulkOperation_userId_fkey",
+    ]);
+    expect(profile?.tables.BulkOperationItem.indexes).toContain(
+      "BulkOperationItem_operationId_transactionId_key",
+    );
+    expect(profile?.tables.BulkOperationItem.constraints).toEqual([
+      "BulkOperationItem_operationId_fkey",
+      "BulkOperationItem_pkey",
+      "BulkOperationItem_transactionId_fkey",
+      "BulkOperationItem_userId_fkey",
+    ]);
+  });
+
+  it("keeps Phase 6 index verification order-insensitive but exact", () => {
+    const expected = migrationProfileFor(migrationName)?.tables.BulkOperationItem.indexes ?? [];
+    const reversed = [...expected].reverse();
+
+    expect(exactNameSetMatches(reversed, expected)).toBe(true);
+    expect(exactNameSetMatches(expected.slice(1), expected)).toBe(false);
+    expect(exactNameSetMatches([...expected, "unexpected_idx"], expected)).toBe(false);
+  });
+});

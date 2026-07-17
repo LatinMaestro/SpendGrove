@@ -15,6 +15,10 @@ on:
         description: "Type RUN PREVIEW MIGRATION for migrate or VERIFY PREVIEW MIGRATION for verify-only"
         required: true
         type: string
+      expected_counts_json:
+        description: "Verify-only: safe aggregate baseline JSON captured by the original migrate run"
+        required: false
+        type: string
 
 permissions:
   contents: read
@@ -32,7 +36,8 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.NEON_PREVIEW_DATABASE_URL }}
       DIRECT_DATABASE_URL: ${{ secrets.NEON_PREVIEW_DIRECT_DATABASE_URL }}
-      PREVIEW_MIGRATION_NAME: 20260708090000_phase_4_recurring_budgets_foundation
+      PREVIEW_MIGRATION_NAME: 20260717090000_phase_6_bulk_operation_foundation
+      EXPECTED_COUNTS_JSON: ${{ inputs.expected_counts_json }}
 
     steps:
       - name: Confirm Preview-only migration request
@@ -43,6 +48,10 @@ jobs:
           fi
           if [ "${{ inputs.mode }}" = "verify-only" ] && [ "${{ inputs.confirmation }}" != "VERIFY PREVIEW MIGRATION" ]; then
             echo "Verification confirmation text did not match. No database action was run."
+            exit 1
+          fi
+          if [ "${{ inputs.mode }}" = "verify-only" ] && [ -z "$EXPECTED_COUNTS_JSON" ]; then
+            echo "Verify-only requires the safe aggregate baseline from the original migrate run. No database action was run."
             exit 1
           fi
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
@@ -96,7 +105,7 @@ jobs:
       - name: Run secret-safe post-migration integrity checks
         run: |
           if [ "${{ inputs.mode }}" = "verify-only" ]; then
-            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json '{"User":1,"Category":51,"Transaction":1500,"ImportBatch":15,"ImportRow":1568,"Property":2,"LoanAccount":3,"LoanRepayment":23,"LoanReconciliationLink":22,"PropertyTransactionLink":6,"PropertyReportReview":11}'
+            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json "$EXPECTED_COUNTS_JSON"
           else
             node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
           fi
