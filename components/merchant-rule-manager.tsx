@@ -119,7 +119,7 @@ export function MerchantRuleManager({
       if (!result.ok) {
         accountReadyRef.current = false;
         setAccountBacked(false);
-        setMessage(`${result.error} Your device copy and active review were kept.`);
+        setMessage(`${result.error} Your current review was kept; browser-only suggestions were not changed.`);
         return;
       }
       const accountSerialized = JSON.stringify(result.data);
@@ -130,7 +130,7 @@ export function MerchantRuleManager({
     }).catch(() => {
       accountReadyRef.current = false;
       setAccountBacked(false);
-      setMessage("Account storage is unavailable right now. Your device copy and active review were kept.");
+      setMessage("Account storage is unavailable right now. Your current review was kept; browser-only suggestions were not changed.");
     }).finally(() => {
       syncInFlightRef.current = false;
     });
@@ -141,7 +141,7 @@ export function MerchantRuleManager({
     try {
       onRenameProfile(profileEdit.id, profileEdit.name);
       setProfileEdit(null);
-      setMessage(accountBacked ? "Saving merchant name to your account…" : "Merchant name updated on this device.");
+      setMessage(accountBacked ? "Saving merchant name to your account…" : "Merchant name updated for this review only.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "The merchant name could not be updated.");
     }
@@ -159,7 +159,7 @@ export function MerchantRuleManager({
       setAliasEdit(null);
       setMessage(resolution === "KEEP_EXISTING"
         ? "The existing saved match was kept."
-        : accountBacked ? "Saving matching name to your account…" : "Matching name updated on this device.");
+        : accountBacked ? "Saving matching name to your account…" : "Matching name updated for this review only.");
     } catch (error) {
       if (error instanceof MerchantConflictError) setAliasConflict(error.conflict);
       else setMessage(error instanceof Error ? error.message : "The matching name could not be updated.");
@@ -172,7 +172,7 @@ export function MerchantRuleManager({
         <div>
           <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
             {accountBacked && <Cloud aria-hidden="true" className="h-4 w-4" />}
-            {accountBacked ? "Saved to your account" : "Saved on this device"}
+            {accountBacked ? "Saved to your account" : "Account unavailable"}
           </p>
           <h2 id="merchant-rules-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Merchant suggestions</h2>
           <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">
