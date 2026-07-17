@@ -41,6 +41,7 @@ import {
 } from "@/lib/transaction-direction";
 
 type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
+type LedgerDirectionFilter = "ALL" | ManualTransactionType;
 type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
 type PropertyOptionsStatus = "LOADING" | "READY" | "UNAVAILABLE";
 type PropertyLinkSnapshotResult =
@@ -296,6 +297,8 @@ function DurableManualTransactionsExperience() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [ledgerDirectionFilter, setLedgerDirectionFilter] = useState<LedgerDirectionFilter>("ALL");
+  const [ledgerCategoryFilter, setLedgerCategoryFilter] = useState("ALL");
   const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
   const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("LOADING");
 
@@ -330,21 +333,35 @@ function DurableManualTransactionsExperience() {
   useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
+  const availableLedgerCategories = useMemo(() => {
+    const categories = new Map<string, string>();
+    for (const transaction of activeTransactions) {
+      categories.set(transaction.categoryId, getManualCategory(transaction.categoryId)?.name ?? "Needs review");
+    }
+    return [...categories.entries()]
+      .map(([id, name]) => ({ id, name }))
+      .sort((left, right) => left.name.localeCompare(right.name, "en-AU"));
+  }, [activeTransactions]);
   const categoryFilteredTransactions = useMemo(() => {
     if (!categoryFilter) return activeTransactions;
     const eligibleTransactionIds = new Set(categoryFilter.transactionIds);
     return activeTransactions.filter((transaction) => eligibleTransactionIds.has(transaction.id));
   }, [activeTransactions, categoryFilter]);
+  const ledgerFilteredTransactions = useMemo(() => categoryFilteredTransactions.filter((transaction) => {
+    if (ledgerDirectionFilter !== "ALL" && transaction.type !== ledgerDirectionFilter) return false;
+    if (ledgerCategoryFilter !== "ALL" && transaction.categoryId !== ledgerCategoryFilter) return false;
+    return true;
+  }), [categoryFilteredTransactions, ledgerCategoryFilter, ledgerDirectionFilter]);
   const filteredTransactions = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("en-AU");
-    if (!query) return categoryFilteredTransactions;
-    return categoryFilteredTransactions.filter((transaction) => {
+    if (!query) return ledgerFilteredTransactions;
+    return ledgerFilteredTransactions.filter((transaction) => {
       const aggregateCategory = categorySpending?.categories.find((category) => category.categoryId === transaction.categoryId)?.name;
       const category = aggregateCategory ?? getManualCategory(transaction.categoryId)?.name ?? "";
       return transaction.description.toLocaleLowerCase("en-AU").includes(query)
         || category.toLocaleLowerCase("en-AU").includes(query);
     });
-  }, [categoryFilteredTransactions, categorySpending, searchQuery]);
+  }, [ledgerFilteredTransactions, categorySpending, searchQuery]);
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
   const detailNeedsCorrection = detailTransaction ? transactionNeedsDirectionCorrection(detailTransaction) : false;
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
@@ -417,6 +434,29 @@ function DurableManualTransactionsExperience() {
           {searchQuery && <button type="button" onClick={() => setSearchQuery("")} className="min-h-9 rounded-lg px-2 text-xs font-bold text-brand-evergreen">Clear</button>}
         </div>
       </label>
+      <div className="mt-3 hidden gap-3 border-t border-border pt-3 lg:grid lg:grid-cols-[1fr_1fr_auto] lg:items-end">
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-muted">Direction</span>
+          <select value={ledgerDirectionFilter} onChange={(event) => setLedgerDirectionFilter(event.target.value as LedgerDirectionFilter)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <option value="ALL">All directions</option>
+            <option value="EXPENSE">Money out</option>
+            <option value="INCOME">Money in</option>
+            <option value="TRANSFER">Transfers</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-semibold text-muted">Category</span>
+          <select value={ledgerCategoryFilter} onChange={(event) => setLedgerCategoryFilter(event.target.value)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <option value="ALL">All categories</option>
+            {availableLedgerCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+        </label>
+        {(ledgerDirectionFilter !== "ALL" || ledgerCategoryFilter !== "ALL") && (
+          <button type="button" onClick={() => { setLedgerDirectionFilter("ALL"); setLedgerCategoryFilter("ALL"); }} className="min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            Clear filters
+          </button>
+        )}
+      </div>
     </section>
 
     {isReady && showBreakdown && categorySpending ? (
@@ -460,23 +500,72 @@ function DurableManualTransactionsExperience() {
         {filteredTransactions.length === 0 ? (
           <div className="rounded-2xl border border-border bg-surface-base p-6 text-center"><p className="font-semibold text-foreground">No matching transactions</p><button type="button" onClick={() => setSearchQuery("")} className="mt-3 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen">Clear search</button></div>
         ) : (
-          <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base">
-            {filteredTransactions.map((transaction) => {
-              const category = getManualCategory(transaction.categoryId);
-              return (
-                <article key={transaction.id}>
-                  <button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="grid min-h-16 w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[7rem_minmax(0,1fr)_12rem_7rem_2rem]">
-                    <p className="order-2 text-xs text-muted sm:order-none sm:text-sm">{formatAustralianTransactionDate(transaction.date)}</p>
-                    <p className="min-w-0 truncate text-sm font-semibold text-foreground">{transaction.description}</p>
-                    <p className="order-3 min-w-0 truncate text-xs text-muted sm:order-none sm:text-sm">{category?.name ?? "Category unavailable"}</p>
-                    <p className={transaction.amountCents < 0 ? "money-value shrink-0 text-right text-sm font-bold text-foreground" : "money-value shrink-0 text-right text-sm font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</p>
-                    <ChevronRight aria-hidden="true" className="hidden h-4 w-4 text-muted sm:block" />
-                    {transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}
-                  </button>
-                </article>
-              );
-            })}
-          </div>
+          <>
+            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base lg:hidden">
+              {filteredTransactions.map((transaction) => {
+                const category = getManualCategory(transaction.categoryId);
+                return (
+                  <article key={transaction.id}>
+                    <button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="grid min-h-16 w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[7rem_minmax(0,1fr)_12rem_7rem_2rem]">
+                      <p className="order-2 text-xs text-muted sm:order-none sm:text-sm">{formatAustralianTransactionDate(transaction.date)}</p>
+                      <p className="min-w-0 truncate text-sm font-semibold text-foreground">{transaction.description}</p>
+                      <p className="order-3 min-w-0 truncate text-xs text-muted sm:order-none sm:text-sm">{category?.name ?? "Needs review"}</p>
+                      <p className={transaction.amountCents < 0 ? "money-value shrink-0 text-right text-sm font-bold text-foreground" : "money-value shrink-0 text-right text-sm font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</p>
+                      <ChevronRight aria-hidden="true" className="hidden h-4 w-4 text-muted sm:block" />
+                      {transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}
+                    </button>
+                  </article>
+                );
+              })}
+            </div>
+
+            <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface-base lg:block">
+              <table className="w-full table-fixed border-collapse text-left text-sm">
+                <caption className="sr-only">{selectedMonthLabel} transactions</caption>
+                <colgroup>
+                  <col className="w-28" />
+                  <col />
+                  <col className="w-36" />
+                  <col className="w-28" />
+                  <col className="w-32" />
+                  <col className="w-32" />
+                  <col className="w-20" />
+                </colgroup>
+                <thead className="border-b border-border bg-surface-subtle text-xs font-semibold uppercase tracking-wide text-muted">
+                  <tr>
+                    <th scope="col" className="px-4 py-3">Date</th>
+                    <th scope="col" className="px-4 py-3">Transaction</th>
+                    <th scope="col" className="px-4 py-3">Category</th>
+                    <th scope="col" className="px-4 py-3">Direction</th>
+                    <th scope="col" className="px-4 py-3 text-right">Amount</th>
+                    <th scope="col" className="px-4 py-3">Status</th>
+                    <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {filteredTransactions.map((transaction) => {
+                    const category = getManualCategory(transaction.categoryId);
+                    const needsCorrection = transactionNeedsDirectionCorrection(transaction);
+                    return (
+                      <tr key={transaction.id} className="transition-colors hover:bg-surface-subtle">
+                        <td className="px-4 py-3 text-muted">{formatAustralianTransactionDate(transaction.date)}</td>
+                        <td className="px-4 py-3"><span className="block truncate font-semibold text-foreground" title={transaction.description}>{transaction.description}</span></td>
+                        <td className="px-4 py-3"><span className="block truncate text-muted" title={category?.name ?? "Needs review"}>{category?.name ?? "Needs review"}</span></td>
+                        <td className="px-4 py-3 text-muted">{needsCorrection ? "Needs correction" : typeLabels[transaction.type]}</td>
+                        <td className={transaction.amountCents < 0 ? "money-value px-4 py-3 text-right font-bold text-foreground" : "money-value px-4 py-3 text-right font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</td>
+                        <td className="px-4 py-3">
+                          {needsCorrection ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span> : transaction.csvMatchHint ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> CSV match</span> : <span className="text-xs text-muted">—</span>}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="min-h-10 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">View</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </section>
     )}
