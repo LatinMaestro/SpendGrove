@@ -11,7 +11,8 @@ describe("records and reports consolidation", () => {
     expect(settingsPanel).toContain("Report Centre");
     expect(reportCentre).toContain('href: "/transactions"');
     expect(reportCentre).toContain("Monthly income and spending");
-    expect(reportCentre).toContain('href: "/loans"');
+    expect(reportCentre).toContain('href: "/reports/loans"');
+    expect(reportCentre).toContain('href: "/reports/properties"');
     expect(reportCentre).toContain("Property records");
   });
 
