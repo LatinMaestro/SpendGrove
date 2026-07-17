@@ -1,5 +1,10 @@
 # Complete Product Delivery Roadmap
 
+## Phase 12 contract status — 17 July 2026
+
+The optional enrichment/AI contract is prepared in `docs/PHASE_12_OPTIONAL_ENRICHMENT_AI_CONTRACT.md`. Local rules remain first; Basiq and AI are separate opt-in fallbacks; no provider, package, credential, call, UI or financial mutation is active.
+
+
 ## Phase 11 repository preparation status — 17 July 2026
 
 The storage/privacy contract, additive metadata schema, sixth unexecuted migration and guarded metadata/link service are prepared through PR #213. Runtime and provider gates remain off; no file storage, upload/download, OCR/AI or user-facing control is operational. Vercel Private Blob remains a later candidate only.
