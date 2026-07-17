@@ -2,6 +2,16 @@
 
 Last updated: 17 July 2026
 
+## Phase 6 delivery update — 17 July 2026
+
+- Phase 6 no-schema delivery now includes the Import Centre, desktop monthly transaction ledger, transient direction/category filters, consolidated category/merchant/saved-mapping administration, and concise access to existing monthly and Property report workflows.
+- Delivered scope is recorded in `docs/PHASE_6_DESKTOP_FOUNDATION_SUMMARY.md`.
+- Latest exact-head verification: 115 test files / 702 tests, TypeScript, Next.js lint and optimized production build passed.
+- Latest connected Ready Production application deployment is `dpl_4ymwWjiZdm5syDBiYwWXjgbsYcvy` for merge `c559d19d85b955dcb44e671374bd481f9c311f4c`. PR #175 was exact-head verified and merged; no redundant deployment was triggered.
+- Bulk-operation schema files remain unexecuted. Run `29555735427` stopped before deploy at `DATABASE_CHECK_FAILED`; no Preview or Production migration ran.
+- Phase 6 remains active and partially delivered. Bulk actions are blocked by the isolated-Preview operator gate; independent Phase 7 contract and parser work may continue.
+- Phase 5 remains technically complete but pending deferred client acceptance.
+
 ## Complete-product controlling status
 
 - Phase 5 repository implementation through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
