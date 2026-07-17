@@ -67,7 +67,7 @@ The agent should:
 
 The agent must pause for the client before:
 
-- Starting a new phase or closing a phase.
+- Starting work outside the merged complete-product roadmap or formally closing a phase.
 - Expanding scope beyond the approved phase.
 - Changing core navigation or major UX direction.
 - Making material database/schema changes not already approved.
@@ -77,7 +77,7 @@ The agent must pause for the client before:
 - Configuring real secrets, API keys, paid services or Vercel environment variables.
 - Implementing Basiq/enhanced lookup beyond approved planning.
 - Implementing payments, subscriptions or paywalls.
-- Implementing loans, property/tax reports, recurring, budgets, AI or later-phase modules without explicit approval.
+- Implementing a roadmap feature before its documented financial, privacy, schema, provider or client decision gate is satisfied.
 - Using real CSV samples beyond temporary private-local structural testing.
 - Proceeding when Vercel/test/build status, PR diff, privacy posture or scope is unclear.
 - Proceeding with production launch or App Store submission work.
@@ -87,22 +87,25 @@ The agent must pause for the client before:
 Current controlling status — 17 July 2026:
 
 - Phase 4 Milestones 1–4 are client accepted and closed.
-- Phase 5 repository implementation through Milestones 1–6 is complete and pending consolidated client acceptance.
-- Phase 5 is not formally closed. Phase 6 is unapproved and must not start.
-- The target remains a controlled Australian account-based web private beta.
-- Current release recommendation is conditional: complete the Clerk Production, Vercel/Clerk/Neon separation, migration-health, recovery, contact and legal operator gates first.
-- No Production migration, schema/data rewrite, provider-plan purchase, secret/environment mutation, public launch, native package or App Store action is authorised.
-- Analytics and external monitoring remain off.
-- Browser-local prototype data must remain preserved and separate.
-- No beta invitation may be issued until the operator gates and `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md` pass.
-- Do not mark Phase 5 accepted or closed without explicit client confirmation.
+- Phase 5 repository delivery through Milestones 1–6 is technically complete, pending deferred client acceptance and not formally closed.
+- PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec` and establishes the complete-product audit, feature register and revised Phase 6–15 roadmap.
+- The former limited Phase 6–7 ending is superseded.
+- Phase 6 — Desktop Web Platform and Bulk Workflows is active. Begin with Milestone 6.0, then continue through the merged roadmap while its financial, privacy, schema, provider and operator gates are satisfied.
+- Phase 6 must extend the accepted web/mobile foundations; it must not rebuild completed Phase 1–5 modules.
+- Provider purchase/upgrade, secrets, Production migration/data access, browser-local migration/deletion, live Basiq/AI/payments, real-user invitations, public launch and App Store submission remain hard stops.
+- Phase 5 must not be marked client accepted or closed without explicit client confirmation.
+- No later phase may be marked client accepted or formally closed on the client's behalf.
+- Maintain one consolidated deferred client-review checklist until the complete pre-release product is ready.
 
 Controlling documents:
 
+- `docs/COMPLETE_PRODUCT_DELIVERY_ROADMAP.md`
+- `docs/COMPLETE_PRODUCT_CURRENT_STATE_AUDIT.md`
+- `docs/COMPLETE_PRODUCT_FEATURE_REGISTER.md`
+- `docs/APP_STORE_END_TO_END_DELIVERY_PLAN.md`
+- `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`
 - `docs/PHASE_5_SUMMARY.md`
 - `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`
-- `docs/PHASE_5_MILESTONE_1_ENVIRONMENT_READINESS.md`
-- `docs/PHASE_5_DEPENDENCY_SECURITY_REVIEW.md`
 - `docs/BUILD_PLAN.md`
 - `docs/CODEX_CURRENT_HANDOFF.md`
 
