@@ -56,9 +56,9 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 |---|---|---|---|---|---|---|---|---|
 | PLAT-01 | Responsive web product | MS, HD | C; Web/Mobile web complete, Desktop polish | Backend C; schema N; broad tests | F; preserve all rules | N | R; maintained through 6–15 | A11Y, FIN, OPS |
 | PLAT-02 | Desktop shell and wide-screen efficiency | MS, CD | P; responsive shell exists, desktop workflows incomplete | Shared backend; N initially | F | N | R; 6.0–6.1 | A11Y; no mobile regression |
-| PLAT-03 | Desktop Import Centre | MS, CD | M | Existing import services; N | H/F | N | R; 6.1 | PRIV, FIN, performance |
-| PLAT-04 | Desktop transaction ledger | MS, CD | P; compact list only | Existing queries; N | F | N | R; 6.2 | OWN, A11Y |
-| PLAT-05 | Safe desktop bulk workflows | MS, CD | M outside import review | New operation layer; A/G | F/H | bulk/undo contract | R; 6.3 | FIN, OWN, partial failure, undo |
+| PLAT-03 | Desktop Import Centre | MS, CD | C/W; PR #168 | Existing import services reused; N; tests C | H/F | N | R; 6.1 delivered | PRIV, FIN, performance; client review deferred |
+| PLAT-04 | Desktop transaction ledger | MS, CD | C/W foundation; PR #169, mobile list preserved | Existing owned month queries; N; tests C | F | N | R; 6.2 delivered | OWN, A11Y; client review deferred |
+| PLAT-05 | Safe desktop bulk workflows | MS, CD | P/B; contract and unexecuted schema merged, app workflow absent | Additive operation layer files; migration not run | F/H | isolated Preview/operator gate | R; 6.3 blocked | FIN, OWN, partial failure, undo; run 29555735427 stopped before deploy |
 | PLAT-06 | Native iPhone application | MS, CD | O | Shared API available; native schema N initially | H/F/I | framework/client decision; P | R; 13.0–13.3 | DEV, PRIV, OWN |
 | PLAT-07 | iPad-compatible application | MS, CD | O | Shared API available | H/F/I | native choice | R; 13.4 | DEV, adaptive layout |
 | AUTH-01 | Clerk sign-in/sign-up/session | MS, HD | C/W | C; current User schema; tests C | I | Production operator verification | R; 15.0 | OWN, session expiry |
@@ -109,14 +109,14 @@ The “Source” column uses MS for the v2.0.1 master specification, HD for hist
 |---|---|---|---|---|---|---|---|---|
 | MER-01 | Clean merchant names | MS, HD | C/W | deterministic normalization | F | N | R | no raw narration persistence expansion |
 | MER-02 | Merchant aliases | MS, HD | C/W | MerchantAlias; tests C | F | N | R; 6.4 polish | OWN |
-| MER-03 | Merchant profiles | MS, HD | P | core model and actions; limited admin UI | F | A for richer defaults | R; 6.4/7.5 | OWN |
+| MER-03 | Merchant profiles | MS, HD | P; existing rules/admin consolidated in Settings PR #174 | core model/actions; no richer profile expansion | F | A for richer defaults | R; 6.4 foundation/7.5 | OWN; profile completion remains |
 | MER-04 | User-confirmed category rules | MS, HD | C/W | MerchantRule; tests C | F | N | R | direction compatibility |
 | MER-05 | Local keyword/brand suggestions | HD | C/W | deterministic client/server helpers | F | N | R | false-positive tests |
 | MER-06 | Apply to same merchant | MS, CD | P in review/rules, incomplete durable bulk | existing rules + new bulk action | F | A/G if undo journal | R; 6.3/7.5 | explicit scope/preview |
 | MER-07 | Merchant merge/history | MS, CD | P/D | server structures exist; complete workflow absent | F/H | A/G likely | R; 7.5 | reversible, no unrelated merge |
 | MER-08 | Default Property/tax profile fields | MS | M | schema absent | F/H | Phase 8 contract; A/G | R; 8.1–8.2 | no automatic tax conclusion |
 | CAT-01 | Seeded/custom categories | MS, HD | C/W | Category model/actions; tests C | F | N | R | direction compatibility |
-| CAT-02 | Category management workspace | MS, CD | P | settings/components limited | F | N | R; 6.4 | safe archive/restore |
+| CAT-02 | Category management workspace | MS, CD | C/W foundation; Settings consolidation PR #174 | existing owned actions/components; tests C | F | N | R; 6.4 foundation delivered | safe archive/restore; client review deferred |
 
 ## Loans, Properties and reports
 

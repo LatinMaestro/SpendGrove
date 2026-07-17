@@ -892,3 +892,27 @@ Phase 5 may be formally closed only after explicit client acceptance. Current re
 - [ ] Implement/merge bulk actions only after Preview schema verification and a separate safe Production migration gate.
 
 No Preview or Production migration, manual SQL, reset, migration resolution, data rewrite or backfill occurred. Independent no-schema Phase 6 work may continue. See `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md`.
+
+
+## Phase 6 current delivery status — 17 July 2026
+
+Phase 6 remains active and partially delivered.
+
+Completed and verified:
+
+- contract/audit and desktop information architecture;
+- Import Centre with New import and Past imports views;
+- desktop monthly transaction ledger and transient direction/category filters;
+- consolidated Settings administration for categories, merchant rules and saved mappings;
+- concise access to existing monthly spending and Property report/export workflows;
+- additive bulk-operation schema and migration checker files, unexecuted.
+
+Latest exact-head evidence is 115 test files / 702 tests with TypeScript, lint and optimized build passing. The latest connected Ready Production application deployment is `dpl_4ymwWjiZdm5syDBiYwWXjgbsYcvy` for `c559d19d85b955dcb44e671374bd481f9c311f4c`.
+
+Blocked:
+
+- Preview migration run `29555735427` stopped safely at `DATABASE_CHECK_FAILED` before deploy;
+- an isolated Preview Neon destination and corrected GitHub Preview-secret mapping must be proven;
+- bulk operation implementation, Preview verification and any later Production migration remain gated.
+
+No Preview or Production migration, data rewrite, backfill, provider purchase, secret change or Production private-data access occurred. See `docs/PHASE_6_PREVIEW_MIGRATION_GATE.md` and `docs/PHASE_6_DESKTOP_FOUNDATION_SUMMARY.md`.
