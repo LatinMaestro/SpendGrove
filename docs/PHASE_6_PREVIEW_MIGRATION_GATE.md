@@ -1,5 +1,24 @@
 # Phase 6 Preview Migration Gate
 
+## Ordered prepared migration inventory — 17 July 2026
+
+The repository now contains three additive migrations, all unexecuted against the retained isolated Preview project:
+
+1. `20260717090000_phase_6_bulk_operation_foundation`
+2. `20260717100000_phase_7_transfer_link_foundation`
+3. `20260717110000_phase_7_import_undo_foundation`
+
+The migration-aware integrity checker contains a separate exact profile for each migration. Later profiles protect aggregate counts for earlier foundation tables and the import-undo profile verifies the nullable `ImportRow.committedTransactionUpdatedAt` column without reading row content.
+
+The workflow remains intentionally set to the first pending migration. Do not change it to a later profile until the preceding migration has run once and passed post-migration verification.
+
+Repository preparation evidence:
+
+- PR #188 bulk services: exact-head GitHub verification green, runtime disabled.
+- PR #189 transfer schema: exact-head GitHub verification green; Vercel was blocked only by account build-rate limiting.
+- PR #190 import-undo schema: 122 test files / 744 tests, TypeScript, lint, optimized build and Vercel Preview green.
+- no migration was dispatched from any of these PRs.
+
 Status: isolated database established; GitHub credential gate remains before migration  
 Date: 17 July 2026  
 Target migration: `20260717090000_phase_6_bulk_operation_foundation`
