@@ -1,5 +1,20 @@
 # Current Codex Handoff
 
+## Phase 10 guarded collaboration preparation — 17 July 2026
+
+- PR #206 / `2a07c62cb8ef5884bf57a309a106777028e1a5dd`: personal-by-default privacy and permissions contract.
+- PR #207 / `6b7035ab06b4a6daebbe962a3b3d1ad267929239`: additive schema, exact unexecuted fifth migration, verifier profile and hard-false runtime gate.
+- PR #208 / `7b69b06a49688cade76ddcc7aedfeb7b3f83dcec`: owner-scoped household membership, invitation and explicit record-sharing service.
+- PR #209 / `977a1e6eeea06766daa603aa8601227c1c04b218`: separate read-only accountant grants, selected scopes and revocation service.
+- Latest exact-head evidence: 138 test files / 837 tests, TypeScript, lint and optimized production build passed.
+- `PHASE_10_COLLABORATION_RUNTIME_ENABLED` remains false. There is no route, page, invitation delivery or missing-table query while disabled.
+- The fifth migration `20260717130000_phase_10_household_accountant_foundation` remains unexecuted after the four existing pending migrations.
+- No Preview/Production migration, database access, data rewrite/backfill, browser-local sharing, package/provider/secret/environment change or real-user invitation occurred.
+- Email delivery, migration execution, Production activation and real invitations remain later operator/client gates.
+- Controlling evidence: `docs/PHASE_10_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Client review remains deferred. Phase 10 repository foundations are prepared, not operational or closed.
+
+
 ## Phase 9 guarded repository preparation — 17 July 2026
 
 - Phase 9 financial contract and independently safe repository foundations are merged through PR #204 / `eff2ad0e95bd2ced0c647113f830ab2705186b88`.
