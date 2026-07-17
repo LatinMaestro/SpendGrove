@@ -115,7 +115,7 @@ export function SettingsPanel() {
             aria-label="Review privacy introduction"
             className="inline-flex min-h-11 shrink-0 items-center gap-1 rounded-xl px-2 text-sm font-semibold text-brand-teal focus:outline-none focus:ring-2 focus:ring-brand-green"
           >
-            Review <ChevronRight aria-hidden="true" className="h-4 w-4" />
+            Privacy <ChevronRight aria-hidden="true" className="h-4 w-4" />
           </Link>
         </div>
         <AccountDataExport />
