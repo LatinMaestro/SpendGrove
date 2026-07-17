@@ -241,3 +241,58 @@ describe("Phase 7 transfer-link Preview migration profile", () => {
     )).toBe(true);
   });
 });
+
+
+describe("Phase 7 import-undo Preview migration profile", () => {
+  const migrationName = "20260717110000_phase_7_import_undo_foundation";
+
+  it("defines exact enums, tables, audit and altered-column checks", () => {
+    const profile = migrationProfileFor(migrationName);
+
+    expect(profile).toBe(migrationProfiles[migrationName]);
+    expect(profile?.absentTables).toEqual(["ImportUndoOperation", "ImportUndoItem"]);
+    expect(profile?.absentEnums).toEqual([
+      "ImportUndoOperationStatus",
+      "ImportUndoItemStatus",
+      "ImportUndoReason",
+    ]);
+    expect(profile?.auditEntityTypeAdditions).toEqual(["IMPORT_UNDO_OPERATION"]);
+    expect(profile?.absentColumns).toEqual({
+      ImportRow: ["committedTransactionUpdatedAt"],
+    });
+    expect(profile?.requiredColumns).toEqual({
+      ImportRow: ["committedTransactionUpdatedAt"],
+    });
+  });
+
+  it("protects all earlier migration tables with safe counts", () => {
+    expect(migrationProfileFor(migrationName)?.existingCountDelegates).toEqual([
+      ["BulkOperation", "bulkOperation"],
+      ["BulkOperationItem", "bulkOperationItem"],
+      ["TransferLink", "transferLink"],
+    ]);
+  });
+
+  it("requires exact operation and item indexes and foreign keys", () => {
+    const tables = migrationProfileFor(migrationName)?.tables;
+
+    expect(tables?.ImportUndoOperation.indexes).toContain(
+      "ImportUndoOperation_importBatchId_key",
+    );
+    expect(tables?.ImportUndoOperation.constraints).toEqual([
+      "ImportUndoOperation_importBatchId_fkey",
+      "ImportUndoOperation_pkey",
+      "ImportUndoOperation_userId_fkey",
+    ]);
+    expect(tables?.ImportUndoItem.indexes).toContain(
+      "ImportUndoItem_operationId_importRowId_key",
+    );
+    expect(tables?.ImportUndoItem.constraints).toEqual([
+      "ImportUndoItem_importRowId_fkey",
+      "ImportUndoItem_operationId_fkey",
+      "ImportUndoItem_pkey",
+      "ImportUndoItem_transactionId_fkey",
+      "ImportUndoItem_userId_fkey",
+    ]);
+  });
+});

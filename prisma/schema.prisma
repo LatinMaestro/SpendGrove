@@ -108,6 +108,7 @@ enum AuditEntityType {
   CATEGORY_BUDGET
   BULK_OPERATION
   TRANSFER_LINK
+  IMPORT_UNDO_OPERATION
 }
 
 enum AuditAction {
@@ -203,6 +204,43 @@ enum BudgetStatus {
   ARCHIVED
 }
 
+enum ImportUndoOperationStatus {
+  RUNNING
+  UNDONE
+  PARTIAL
+  FAILED
+  RESTORING
+  RESTORED
+  PARTIALLY_RESTORED
+}
+
+enum ImportUndoItemStatus {
+  PENDING
+  UNDONE
+  NO_CHANGE
+  BLOCKED
+  FAILED
+  RESTORED
+  RESTORE_BLOCKED
+}
+
+enum ImportUndoReason {
+  SKIPPED_ROW
+  MERGED_ROW_NO_CHANGE
+  EXISTING_BATCH_UNSUPPORTED
+  TRANSACTION_NOT_ACTIVE
+  TRANSACTION_CHANGED
+  SPLIT_CHANGED
+  ACTIVE_LOAN_RECONCILIATION
+  ACTIVE_TRANSFER_LINK
+  PROPERTY_STATE_CHANGED
+  PROPERTY_REVIEW_EXISTS
+  BULK_OPERATION_DEPENDENCY
+  OWNERSHIP_OR_LINK_MISMATCH
+  RESTORE_STATE_CHANGED
+  UNEXPECTED_SAFE_FAILURE
+}
+
 enum BulkOperationType {
   SET_CATEGORY
   APPLY_MERCHANT_CATEGORY
@@ -276,6 +314,8 @@ model User {
   bulkOperations               BulkOperation[]
   bulkOperationItems           BulkOperationItem[]
   transferLinks                TransferLink[]
+  importUndoOperations         ImportUndoOperation[]
+  importUndoItems              ImportUndoItem[]
   auditEvents                  AuditEvent[]
 
   @@unique([authProvider, authProviderUserId])
@@ -366,6 +406,7 @@ model Transaction {
   bulkOperationItems       BulkOperationItem[]
   outgoingTransferLinks    TransferLink[]            @relation("OutgoingTransferTransaction")
   incomingTransferLinks    TransferLink[]            @relation("IncomingTransferTransaction")
+  importUndoItems          ImportUndoItem[]
 
   @@index([userId, date])
   @@index([userId, categoryId])
@@ -408,6 +449,7 @@ model ImportBatch {
   transactions      Transaction[]      @relation("ImportBatchTransactions")
   importRows        ImportRow[]
   loanRepayments    LoanRepayment[]
+  undoOperation     ImportUndoOperation?
 
   @@index([userId, status])
   @@index([userId, createdAt])
@@ -428,7 +470,8 @@ model ImportRow {
   merchantName           String?
   categoryId             String?
   matchedTransactionId   String?
-  committedTransactionId String?
+  committedTransactionId        String?
+  committedTransactionUpdatedAt DateTime?
   warningCodes           String[]        @default([])
   metadata               Json?
   createdAt              DateTime        @default(now())
@@ -439,6 +482,7 @@ model ImportRow {
   category             Category?    @relation("ImportRowCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   matchedTransaction   Transaction? @relation("ImportRowMatchedTransaction", fields: [matchedTransactionId], references: [id], onDelete: SetNull)
   committedTransaction Transaction? @relation("ImportRowCommittedTransaction", fields: [committedTransactionId], references: [id], onDelete: SetNull)
+  undoItems            ImportUndoItem[]
 
   @@unique([importBatchId, rowNumber])
   @@index([userId, importBatchId])
@@ -818,4 +862,56 @@ model TransferLink {
   @@index([userId, unlinkedAt, createdAt])
   @@index([userId, outgoingTransactionId, unlinkedAt])
   @@index([userId, incomingTransactionId, unlinkedAt])
+}
+
+
+model ImportUndoOperation {
+  id                   String                    @id @default(cuid())
+  userId               String
+  importBatchId        String                    @unique
+  status               ImportUndoOperationStatus @default(RUNNING)
+  requestedCount       Int                       @default(0)
+  undoneCount          Int                       @default(0)
+  noChangeCount        Int                       @default(0)
+  blockedCount         Int                       @default(0)
+  failedCount          Int                       @default(0)
+  restoredCount        Int                       @default(0)
+  restoreBlockedCount  Int                       @default(0)
+  createdAt            DateTime                  @default(now())
+  completedAt          DateTime?
+  restoredAt           DateTime?
+  updatedAt            DateTime                  @updatedAt
+
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  importBatch ImportBatch      @relation(fields: [importBatchId], references: [id], onDelete: Restrict)
+  items       ImportUndoItem[]
+
+  @@index([userId, status, createdAt])
+  @@index([userId, createdAt])
+}
+
+model ImportUndoItem {
+  id                         String               @id @default(cuid())
+  userId                     String
+  operationId                String
+  importRowId                String
+  transactionId              String?
+  status                     ImportUndoItemStatus @default(PENDING)
+  reason                     ImportUndoReason?
+  beforeTransactionUpdatedAt DateTime?
+  appliedTransactionUpdatedAt DateTime?
+  undoneAt                   DateTime?
+  restoredAt                 DateTime?
+  createdAt                  DateTime             @default(now())
+  updatedAt                  DateTime             @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operation   ImportUndoOperation @relation(fields: [operationId], references: [id], onDelete: Cascade)
+  importRow   ImportRow           @relation(fields: [importRowId], references: [id], onDelete: Restrict)
+  transaction Transaction?        @relation(fields: [transactionId], references: [id], onDelete: Restrict)
+
+  @@unique([operationId, importRowId])
+  @@index([userId, status, createdAt])
+  @@index([operationId, status])
+  @@index([transactionId])
 }
