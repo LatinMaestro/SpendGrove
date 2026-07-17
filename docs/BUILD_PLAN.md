@@ -843,3 +843,34 @@ No unresolved blocker remains for Phase 4 Milestones 1-4. The complete deferred-
 Phase 5 remains unapproved and not started. Progression requires a separate client approval and documentation-first planning gate covering objective, user value, PR sequence, data and financial rules, privacy/security boundaries, schema and migration assessment, deployment/client review points, exclusions and mandatory stop conditions.
 
 No application, schema, migration, data, package, provider, secret, environment or financial-calculation change is part of this closure.
+
+
+## Phase 5 repository delivery status — 17 July 2026
+
+Phase 5 Milestones 1–6 have completed all currently authorised and implementable repository work. They are technically verified where connected tools permit and remain open pending consolidated client acceptance.
+
+Completed scope:
+
+- planning/audit and governance activation;
+- patched Next.js 15 / React 19 upgrade;
+- private-beta authenticated route posture and browser-local data separation;
+- environment, migration and recovery readiness contract;
+- complete account export and immediate account deletion;
+- Privacy, Help and safe support surfaces;
+- CSP/security headers, request limits, safe errors and operational runbooks;
+- deterministic lockfile and production dependency gate;
+- web-first native/App Store decision preparation;
+- consolidated private-beta QA and client checklist.
+
+Private-beta blockers:
+
+1. replace Clerk development/test credentials in Production with a verified Clerk Production instance;
+2. prove Vercel Preview/Production authentication and Neon database separation;
+3. prove migration health without private-row inspection;
+4. complete a non-Production restore rehearsal and accept current recovery/protection limits;
+5. provide final Groveware support/contact facts and complete privacy/legal review;
+6. pass `docs/PHASE_5_CLIENT_REVIEW_CHECKLIST.md`.
+
+No Production migration is authorised. No provider/environment mutation, public launch, native packaging, App Store action or Phase 6 work is authorised.
+
+Phase 5 may be formally closed only after explicit client acceptance. Current recommendation: conditionally ready for a controlled private beta after the listed operator actions.
