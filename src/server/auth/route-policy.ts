@@ -1,4 +1,4 @@
-export const PUBLIC_APP_ROUTES = ["/onboarding", "/sign-in", "/sign-up"] as const;
+export const PUBLIC_APP_ROUTES = ["/help", "/onboarding", "/privacy", "/sign-in", "/sign-up"] as const;
 
 export const PROTECTED_FINANCE_ROUTES = [
   "/",
