@@ -175,6 +175,14 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/advanced-recurring.ts",
+    new Set([
+      "recurringItem.write",
+      "recurringInstance.write",
+      "auditEvent.write",
+    ]),
+  ],
+  [
     "src/server/bulk-operations.ts",
     new Set([
       "transaction.updateMany",
