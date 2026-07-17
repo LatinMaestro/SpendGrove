@@ -28,11 +28,11 @@ The client acts as product owner, UX reviewer and acceptance tester.
 
 ## Active phase
 
-> **Phase 6 — Desktop Web Platform and Bulk Workflows**
+> **Complete-product roadmap — Phase 13 native architecture**
 
-Phase 5 repository delivery through Milestones 1–6 is technically complete but remains pending deferred client acceptance and is not formally closed.
+Phase 5 repository delivery is technically complete but remains pending deferred client acceptance and is not formally closed. Repository-safe Phase 6–12 work has progressed under the complete-product roadmap; migration-dependent and provider-dependent capabilities remain disabled.
 
-Whole-product planning PR #165 merged as `8146c37040da98c9e08bac3123c8f78a3ef0caec`. The former limited Phase 6–7 ending is superseded by the complete Phase 6–15 roadmap. Phase 6 begins with the desktop contract and interface inventory, followed by no-schema shell and Import Centre work where the contract permits.
+React Native with Expo and Expo Router is selected for the future iPhone/iPad client in `docs/PHASE_13_NATIVE_ARCHITECTURE_DECISION.md`. The accepted Next.js web application remains independently deployed. Native bootstrap, Apple identity/payment, signing, EAS/provider setup, TestFlight, App Store submission and public launch remain gated.
 
 No public launch, App Store submission, provider purchase, Production migration/data access, browser-local migration/deletion, live Basiq/AI/payments or real-user invitation is authorised.
 
