@@ -338,7 +338,9 @@ The models store operation intent/outcome only. They do not change calculation q
 
 ## Account export
 
-Add a safe top-level bulkOperations summary containing:
+Activate this export integration only after the operation-journal migration is verified in every environment where account export can run. Until then, export must not query `BulkOperation`.
+
+After that gate, add a safe top-level bulkOperations summary containing:
 
 - operation ID;
 - type/status;
