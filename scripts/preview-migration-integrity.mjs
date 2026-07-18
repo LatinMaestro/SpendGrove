@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import {
@@ -6,6 +7,7 @@ import {
   primaryAndForeignKeyNames,
 } from "./preview-migration-integrity-core.mjs";
 import {
+  CONTROLLED_MIGRATION_BLOB_SHAS,
   CONTROLLED_PREVIEW_MIGRATIONS,
   classifyPreMigrationBaseline,
   exactStringSetMatches,
@@ -31,6 +33,7 @@ const EXISTING_COUNT_DELEGATES = [
 ];
 const SAFE_FAILURE_CODES = new Set([
   "CONTROLLED_MIGRATION_INVENTORY_MISMATCH",
+  "CONTROLLED_MIGRATION_FILE_MISMATCH",
   "FAILED_OR_UNRESOLVED_MIGRATION",
   "UNEXPECTED_MIGRATION_HISTORY",
   "UNEXPECTED_EMPTY_DATABASE_OBJECTS",
@@ -85,6 +88,19 @@ async function repositoryMigrationNames() {
     .filter((entry) => entry.isDirectory() && /^\d{14}_[a-z0-9_]+$/.test(entry.name))
     .map((entry) => entry.name)
     .sort();
+}
+
+async function verifyControlledMigrationFiles() {
+  for (const migrationName of CONTROLLED_PREVIEW_MIGRATIONS) {
+    const content = await readFile(new URL(`${migrationName}/migration.sql`, MIGRATIONS_DIRECTORY));
+    const actual = createHash("sha1")
+      .update(`blob ${content.length}\\0`)
+      .update(content)
+      .digest("hex");
+    if (actual !== CONTROLLED_MIGRATION_BLOB_SHAS[migrationName]) {
+      fail("CONTROLLED_MIGRATION_FILE_MISMATCH");
+    }
+  }
 }
 
 async function migrationTableExists(prisma) {
@@ -277,6 +293,7 @@ async function runPreAll(prisma, stateFile) {
   const migrationNames = await repositoryMigrationNames();
   const plan = repositoryMigrationPlan(migrationNames);
   if (!plan) fail("CONTROLLED_MIGRATION_INVENTORY_MISMATCH");
+  await verifyControlledMigrationFiles();
 
   const hasMigrationTable = await migrationTableExists(prisma);
   const rows = hasMigrationTable ? await migrationRows(prisma) : [];
@@ -376,6 +393,7 @@ async function runPostAll(prisma, stateFile, expectedStateJson) {
   const migrationNames = await repositoryMigrationNames();
   const plan = repositoryMigrationPlan(migrationNames);
   if (!plan) fail("CONTROLLED_MIGRATION_INVENTORY_MISMATCH");
+  await verifyControlledMigrationFiles();
 
   if (!(await migrationTableExists(prisma))) fail("UNEXPECTED_MIGRATION_HISTORY");
   const rows = await migrationRows(prisma);
