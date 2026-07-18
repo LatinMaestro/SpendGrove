@@ -1,5 +1,12 @@
 # Decision Log
 
+## 2026-07-18 — Activate repository-safe Phase 15 readiness work without release authority
+
+Decision: complete the current-state audit, provider-free security safeguards, operations/legal-input/App Store runbooks and consolidated pre-release package. Keep pre-release web surfaces out of search indexes until explicit public-launch approval.
+
+The six ordered Preview migrations remain deferred behind operator reauthentication and every dependent runtime gate remains false. No provider activation, Production database action, Apple enrolment/signing/TestFlight, real-user invitation or public launch is authorised.
+
+
 ## 2026-07-17 — Keep Basiq and AI optional, local-first and provider-neutral
 
 Decision: reliable local merchant rules prevent external calls; any later Basiq request is limited to cleaned merchant text and minimum safe AU context; AI assistance is opt-in, typed, bounded and incapable of direct financial mutation. Every durable change remains user-confirmed through existing owner-scoped services.
