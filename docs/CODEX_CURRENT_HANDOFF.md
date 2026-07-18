@@ -1,5 +1,16 @@
 # Current Codex Handoff
 
+## Phase 15 pre-release readiness — 18 July 2026
+
+- Current-state audit: `docs/PHASE_15_PRE_RELEASE_CURRENT_STATE_AUDIT.md`.
+- Controlling contract: `docs/PHASE_15_PRE_RELEASE_READINESS_CONTRACT.md`.
+- Current conclusion: strong repository baseline, not release ready.
+- Independently safe work: provider-free response-header hardening; incident/recovery/monitoring-design/privacy/App Store/rollback runbooks; exact-head QA; consolidated pre-release package.
+- External gates: six ordered Preview migrations, Production mapping/recovery proof, native implementation and devices, provider/operator decisions, professional review, Apple credentials/TestFlight and final client approval.
+- All six migration-dependent runtime gates remain false.
+- No Preview/Production migration, Production data access, provider activation, Apple action, real-user invitation or public launch is authorised.
+
+
 ## Phase 14 guarded commercial preparation — 18 July 2026
 
 - PR #219 / `c3208a921dc8df0156fea2aa7c71d1253f3d85c5`: inactive commercial readiness contract.
