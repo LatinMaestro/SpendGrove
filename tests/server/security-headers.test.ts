@@ -16,6 +16,16 @@ describe("Phase 5 browser security baseline", () => {
     expect(source).toContain('"strict-origin-when-cross-origin"');
     expect(source).toContain('"Permissions-Policy"');
     expect(source).toContain('"Cross-Origin-Opener-Policy"');
+    expect(source).toContain('"X-Permitted-Cross-Domain-Policies"');
+  });
+
+  it("keeps every pre-release route out of search indexes until launch approval", async () => {
+    const source = await readFile("next.config.mjs", "utf8");
+
+    expect(source).toContain('source: "/:path*"');
+    expect(source).toContain('"X-Robots-Tag"');
+    expect(source).toContain('"noindex, nofollow, noarchive"');
+    expect(source).toContain("client-approved public-launch");
   });
 
   it("uses Clerk strict CSP with the required restrictive directives", async () => {
