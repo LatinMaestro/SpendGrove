@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "Choose migrate for a new approved migration or verify-only to check an already-applied migration"
+        description: "Use migrate-all for the controlled isolated Preview migration or verify-all for a separately approved post-check"
         required: true
-        default: migrate
+        default: migrate-all
         type: choice
         options:
-          - migrate
-          - verify-only
+          - migrate-all
+          - verify-all
       confirmation:
-        description: "Type RUN PREVIEW MIGRATION for migrate or VERIFY PREVIEW MIGRATION for verify-only"
+        description: "Type RUN ISOLATED PREVIEW MIGRATIONS or VERIFY ISOLATED PREVIEW MIGRATIONS"
         required: true
         type: string
-      expected_counts_json:
-        description: "Verify-only: safe aggregate baseline JSON captured by the original migrate run"
+      expected_state_json:
+        description: "Verify-all only: secret-safe pre-migration state captured by the approved migrate-all run"
         required: false
         type: string
 
@@ -29,41 +29,45 @@ concurrency:
 
 jobs:
   migrate-preview:
-    name: Apply Prisma migrations to Preview
+    name: Apply controlled migrations to isolated Preview
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     env:
       DATABASE_URL: ${{ secrets.NEON_PREVIEW_DATABASE_URL }}
       DIRECT_DATABASE_URL: ${{ secrets.NEON_PREVIEW_DIRECT_DATABASE_URL }}
-      PREVIEW_MIGRATION_NAME: 20260717090000_phase_6_bulk_operation_foundation
-      EXPECTED_COUNTS_JSON: ${{ inputs.expected_counts_json }}
+      EXPECTED_STATE_JSON: ${{ inputs.expected_state_json }}
+      EXPECTED_PREVIEW_PROJECT_ID: cold-field-54187673
+      EXPECTED_PREVIEW_BRANCH_ID: br-sweet-flower-aj2ng7ix
+      EXPECTED_PREVIEW_DATABASE: neondb
+      EXPECTED_PREVIEW_DIRECT_HOST: ep-shy-mud-aj7fpz5c.c-3.us-east-2.aws.neon.tech
+      EXPECTED_PREVIEW_POOLED_HOST: ep-shy-mud-aj7fpz5c-pooler.c-3.us-east-2.aws.neon.tech
 
     steps:
-      - name: Confirm Preview-only migration request
+      - name: Confirm isolated Preview migration request
         run: |
-          if [ "${{ inputs.mode }}" = "migrate" ] && [ "${{ inputs.confirmation }}" != "RUN PREVIEW MIGRATION" ]; then
+          if [ "${{ inputs.mode }}" = "migrate-all" ] && [ "${{ inputs.confirmation }}" != "RUN ISOLATED PREVIEW MIGRATIONS" ]; then
             echo "Confirmation text did not match. No migration was run."
             exit 1
           fi
-          if [ "${{ inputs.mode }}" = "verify-only" ] && [ "${{ inputs.confirmation }}" != "VERIFY PREVIEW MIGRATION" ]; then
+          if [ "${{ inputs.mode }}" = "verify-all" ] && [ "${{ inputs.confirmation }}" != "VERIFY ISOLATED PREVIEW MIGRATIONS" ]; then
             echo "Verification confirmation text did not match. No database action was run."
             exit 1
           fi
-          if [ "${{ inputs.mode }}" = "verify-only" ] && [ -z "$EXPECTED_COUNTS_JSON" ]; then
-            echo "Verify-only requires the safe aggregate baseline from the original migrate run. No database action was run."
+          if [ "${{ inputs.mode }}" = "verify-all" ] && [ -z "$EXPECTED_STATE_JSON" ]; then
+            echo "Verify-all requires the secret-safe state from the original approved run. No database action was run."
             exit 1
           fi
           if [ "$GITHUB_REF" != "refs/heads/main" ]; then
             echo "Preview migrations may run only from main. No migration was run."
             exit 1
           fi
-          echo "Preview ${{ inputs.mode }} request confirmed for $PREVIEW_MIGRATION_NAME. Secret values will not be printed."
+          echo "Isolated Preview ${{ inputs.mode }} request confirmed. Connection values will not be printed."
 
       - name: Check required Preview secrets are present
         run: |
           if [ -z "$DATABASE_URL" ] || [ -z "$DIRECT_DATABASE_URL" ]; then
-            echo "Missing required Preview database secret(s). Check repository secrets."
+            echo "Missing required Preview database secret(s). No migration was run."
             exit 1
           fi
           if [ -n "${PRODUCTION_DATABASE_URL:-}" ] || [ -n "${NEON_PRODUCTION_DATABASE_URL:-}" ] || [ -n "${NEON_PRODUCTION_DIRECT_DATABASE_URL:-}" ]; then
@@ -81,6 +85,9 @@ jobs:
           node-version: 20
           package-manager-cache: false
 
+      - name: Confirm pinned isolated Preview identity
+        run: node scripts/preview-database-identity.mjs
+
       - name: Install dependencies
         run: npm install
 
@@ -90,12 +97,12 @@ jobs:
       - name: Validate Prisma schema
         run: npx prisma validate --schema prisma/schema.prisma
 
-      - name: Run secret-safe pre-migration integrity checks
-        if: ${{ inputs.mode == 'migrate' }}
-        run: node scripts/preview-migration-integrity.mjs pre --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+      - name: Run secret-safe all-migration preflight
+        if: ${{ inputs.mode == 'migrate-all' }}
+        run: node scripts/preview-migration-integrity.mjs pre-all --state-file "$RUNNER_TEMP/preview-migration-state.json"
 
-      - name: Apply Preview migrations
-        if: ${{ inputs.mode == 'migrate' }}
+      - name: Apply repository migrations once
+        if: ${{ inputs.mode == 'migrate-all' }}
         run: |
           if ! npx prisma migrate deploy --schema prisma/schema.prisma > "$RUNNER_TEMP/prisma-migrate-deploy.log" 2>&1; then
             echo "Preview migration failed. Prisma output is withheld to protect connection details. Do not retry automatically."
@@ -103,13 +110,15 @@ jobs:
           fi
           rm -f "$RUNNER_TEMP/prisma-migrate-deploy.log"
 
-      - name: Run secret-safe post-migration integrity checks
+      - name: Run secret-safe all-migration postflight
         run: |
-          if [ "${{ inputs.mode }}" = "verify-only" ]; then
-            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --expected-counts-json "$EXPECTED_COUNTS_JSON"
+          if [ "${{ inputs.mode }}" = "verify-all" ]; then
+            node scripts/preview-migration-integrity.mjs post-all --expected-state-json "$EXPECTED_STATE_JSON"
           else
-            node scripts/preview-migration-integrity.mjs post --migration "$PREVIEW_MIGRATION_NAME" --state-file "$RUNNER_TEMP/preview-migration-counts.json"
+            node scripts/preview-migration-integrity.mjs post-all --state-file "$RUNNER_TEMP/preview-migration-state.json"
           fi
 
-      - name: Confirm Preview migration completed
-        run: echo "Preview Prisma ${{ inputs.mode }} request and secret-safe integrity checks completed successfully for $PREVIEW_MIGRATION_NAME."
+      - name: Confirm isolated Preview migration completed
+        run: |
+          echo "Isolated Preview Prisma ${{ inputs.mode }} request completed successfully."
+          echo "Pinned safe identity: project=$EXPECTED_PREVIEW_PROJECT_ID branch=$EXPECTED_PREVIEW_BRANCH_ID database=$EXPECTED_PREVIEW_DATABASE."
