@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import {
@@ -11,6 +10,7 @@ import {
   CONTROLLED_PREVIEW_MIGRATIONS,
   classifyPreMigrationBaseline,
   exactStringSetMatches,
+  gitBlobSha,
   repositoryMigrationPlan,
 } from "./preview-migration-batch-core.mjs";
 
@@ -93,10 +93,7 @@ async function repositoryMigrationNames() {
 async function verifyControlledMigrationFiles() {
   for (const migrationName of CONTROLLED_PREVIEW_MIGRATIONS) {
     const content = await readFile(new URL(`${migrationName}/migration.sql`, MIGRATIONS_DIRECTORY));
-    const actual = createHash("sha1")
-      .update(`blob ${content.length}\\0`)
-      .update(content)
-      .digest("hex");
+    const actual = gitBlobSha(content);
     if (actual !== CONTROLLED_MIGRATION_BLOB_SHAS[migrationName]) {
       fail("CONTROLLED_MIGRATION_FILE_MISMATCH");
     }
