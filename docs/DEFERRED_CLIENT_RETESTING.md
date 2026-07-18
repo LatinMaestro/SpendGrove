@@ -1052,3 +1052,34 @@ Status: Expo/React Native architecture selected; no native project, signed build
 - [ ] EAS/build-provider and environment separation are approved before configuration.
 - [ ] Device capabilities receive separate privacy/product approval.
 - [ ] TestFlight upload, tester invitation, App Store submission and public launch each receive explicit approval.
+
+
+## Phase 14 Commercial Readiness — guarded preparation
+
+Status: repository boundary technically verified; no commercial product or payment active; client review deferred
+
+### Current baseline
+
+- [ ] All currently accepted SpendGrove capabilities remain available without a paywall.
+- [ ] No plan is assigned to the account.
+- [ ] No upgrade prompt, trial countdown, checkout, purchase or restore action appears.
+- [ ] Account export, deletion, corrections, privacy and security controls are never commercially restricted.
+- [ ] Migration/provider-dependent future features appear unavailable, not purchasable.
+
+### Entitlement safety
+
+- [ ] Commercial runtime remains disabled.
+- [ ] Free, Plus, Pro and Household are only planning names.
+- [ ] Numeric limits remain undecided and are not treated as zero or unlimited.
+- [ ] Client input/local storage cannot assign a commercial plan.
+- [ ] Entitlement state contains no transaction, merchant, amount, balance, banking, Loan, Property or document information.
+- [ ] No provider, billing record, schema or migration exists.
+
+### Future activation gates
+
+- [ ] Exact plan contents, numeric limits, prices, trials and grandfathering receive approval.
+- [ ] Apple/web purchase equivalence and duplicate-purchase prevention receive approval.
+- [ ] StoreKit and any web billing provider receive commercial, privacy, security and cost approval.
+- [ ] Cancellation, refund, support, GST, consumer-law and downgrade treatment receive professional review.
+- [ ] Provider packages, secrets, environments, durable schema and Production activation receive focused approval.
+- [ ] No payment or price is published before the final commercial gate.
