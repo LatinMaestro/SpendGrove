@@ -1,5 +1,18 @@
 # Current Codex Handoff
 
+## Phase 14 guarded commercial preparation — 18 July 2026
+
+- PR #219 / `c3208a921dc8df0156fea2aa7c71d1253f3d85c5`: inactive commercial readiness contract.
+- PR #220 / `749084f082032e52b031b712150afdc36ee0cb24`: authenticated immutable baseline entitlement resolver and hard-false runtime gate.
+- Exact verified PR #220 head: `33346504cd428b987ec917831337aefc62cf8505`; GitHub Actions run `29643389015`.
+- Verification passed: 142 test files / 873 tests, TypeScript, lint and optimized production build.
+- Exact-head Vercel Preview passed: `https://vercel.com/latinmaestros-projects/spendgrove/3LPkoGEeUgdz852t7f1zjuyVRkf3`.
+- Every currently accepted capability remains available. Future guarded capabilities are runtime unavailable, never commercially restricted.
+- `PHASE_14_COMMERCIAL_ENTITLEMENTS_RUNTIME_ENABLED` remains false. No plan, price, limit, paywall, checkout, provider, billing record, schema, package, secret or environment exists.
+- Controlling evidence: `docs/PHASE_14_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Client review remains deferred. Phase 14 repository preparation is technically complete, but commercial functionality is not operational, accepted or closed.
+
+
 ## Phase 13 native architecture decision — 17 July 2026
 
 - React Native with Expo and Expo Router is selected for the future iPhone/iPad client.
