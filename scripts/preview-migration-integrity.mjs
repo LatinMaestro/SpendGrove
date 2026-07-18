@@ -85,7 +85,7 @@ function parseArguments() {
 async function repositoryMigrationNames() {
   const entries = await readdir(MIGRATIONS_DIRECTORY, { withFileTypes: true });
   return entries
-    .filter((entry) => entry.isDirectory() && /^\d{14}_[a-z0-9_]+$/.test(entry.name))
+    .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
 }
