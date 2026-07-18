@@ -67,7 +67,8 @@ describe("Preview Prisma migration workflow integrity", () => {
       expect(integrityCore).toContain(migration);
     }
     expect(batchCore).toContain("CONTROLLED_MIGRATION_BLOB_SHAS");
-    expect(integrityScript).toContain('createHash("sha1")');
+    expect(batchCore).toContain('createHash("sha1")');
+    expect(integrityScript).toContain("gitBlobSha(content)");
     expect(batchCore).toContain("repositoryMigrationPlan");
     expect(batchCore).toContain("sorted.slice(-CONTROLLED_PREVIEW_MIGRATIONS.length)");
   });
