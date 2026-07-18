@@ -694,3 +694,12 @@ The provider-neutral commercial boundary is defined in `docs/PHASE_14_COMMERCIAL
 Free, Plus, Pro and Household are planning names only. No price, numeric limit, provider, checkout, paywall, billing schema, App Store product or Production activation exists. Every currently accepted capability remains available under the current baseline.
 
 The next independently safe work is a hard-disabled entitlement resolver with no provider implementation and tests proving that existing product behaviour is unchanged. Commercial activation still requires exact pricing, plan contents, Apple/web treatment, provider selection, legal/GST/refund/support review and separate schema/environment/Production gates.
+
+
+## Phase 14 repository-preparation completion — 18 July 2026
+
+Phase 14 contract and hard-disabled entitlement preparation is delivered through PR #220.
+
+The authenticated immutable baseline preserves every accepted capability, keeps all limits undecided and describes guarded future capabilities as runtime unavailable rather than paywalled. Exact-head verification passed 142 test files / 873 tests, TypeScript, lint and optimized production build; the Vercel Preview was successful.
+
+No user-facing commercial behaviour, provider, price, checkout, billing record, schema, migration, package, secret, environment or Production access exists. Commercial activation remains dependent on the unresolved decisions and external reviews in `docs/REMAINING_CLIENT_AND_OPERATOR_DECISIONS.md`.

@@ -6,11 +6,14 @@
 - [x] Freeze current accepted product availability: no paywall or entitlement denial.
 - [x] Define provider-neutral entitlement, lifecycle, Apple/web, household, privacy and support boundaries.
 - [x] Keep prices, limits, providers, billing records, checkout and App Store products unapproved.
-- [ ] Prepare a hard-false entitlement resolver that always preserves the current baseline.
-- [ ] Verify no provider call, price, schema, package, UI or financial/private payload exists.
-- [ ] Complete Phase 14 QA and operator-decision handoff.
+- [x] Prepare a hard-false entitlement resolver that always preserves the current baseline.
+- [x] Verify no provider call, price, schema, package, UI or financial/private payload exists.
+- [x] Complete Phase 14 QA and operator-decision handoff: PR #220 / `749084f082032e52b031b712150afdc36ee0cb24`; 142 test files / 873 tests, TypeScript, lint and optimized build passed.
 
-Controlling contract: `docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md`.
+Controlling contract: `docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md`.  
+Controlling handoff: `docs/PHASE_14_REPOSITORY_PREPARATION_SUMMARY.md`.
+
+Commercial runtime remains false. No plan, price, limit, provider, checkout, paywall, schema, package, secret, environment or Production use is active.
 
 
 ## Phase 13 native architecture gate — 17 July 2026
