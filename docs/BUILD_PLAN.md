@@ -1,5 +1,19 @@
 # Build Plan
 
+## Phase 15 operations and release runbooks — 18 July 2026
+
+- [x] Prepare privacy-safe incident response.
+- [x] Prepare synthetic non-Production backup/restore rehearsal.
+- [x] Define minimum monitoring signals and prohibited private fields.
+- [x] Prepare factual privacy disclosure inputs for professional review.
+- [x] Prepare App Store metadata/privacy worksheet without creating Apple records.
+- [x] Prepare TestFlight, launch and rollback gates.
+- [x] Consolidate the Production release checklist.
+- [ ] Complete provider/operator/professional actions before release.
+
+No provider, secret, environment, database or Apple state changed.
+
+
 ## Phase 15 pre-release readiness — 18 July 2026
 
 - [x] Audit the current security, privacy, environment, recovery, native and release posture.
