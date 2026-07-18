@@ -1,5 +1,64 @@
 # Deferred Client Retesting
 
+## Complete pre-release acceptance gate — added 18 July 2026
+
+Run this section only after the operator, migration, native and professional-review gates are complete.
+
+### Web security and access
+
+- [ ] Signed-out users can access only approved public/authentication surfaces.
+- [ ] Finance routes redirect to sign-in and protected APIs return safe unauthenticated responses.
+- [ ] Two separate accounts cannot access each other's records.
+- [ ] Protected responses are private/no-store.
+- [ ] CSP and browser security headers are present.
+- [ ] Pre-release no-index remains until the explicit public-launch change.
+
+### Account lifecycle and privacy
+
+- [ ] Complete account export downloads only the signed-in user's supported records.
+- [ ] Account deletion requires clear confirmation and completes safely.
+- [ ] Browser-local prototype data is not silently uploaded, shared, merged or deleted.
+- [ ] Raw CSV, filenames and bank identifiers are not retained.
+- [ ] Support guidance warns against sharing real financial files/screenshots.
+- [ ] Final Privacy Policy, Terms and provider disclosures match the release.
+
+### Environment and recovery
+
+- [ ] Preview and Production Vercel, Clerk and Neon mappings are proven separate.
+- [ ] Six ordered Preview migrations and synthetic regression are green.
+- [ ] Production migration history is healthy after separately approved migrations.
+- [ ] Every runtime gate matches the deployed schema.
+- [ ] Backup/history capability and synthetic restore rehearsal are proven.
+- [ ] Incident and rollback owners can follow the runbooks.
+
+### Complete product
+
+- [ ] Repeat all preserved Phase 1–15 milestone checks.
+- [ ] All supported everyday-bank synthetic fixtures pass.
+- [ ] Loan/Property/report totals reconcile.
+- [ ] Guarded features are either operational with evidence or clearly unavailable.
+- [ ] No placeholder core screen remains.
+- [ ] Desktop/mobile web accessibility and failure recovery pass.
+
+### Native and App Store
+
+- [ ] iPhone and iPad application behaviour matches approved web/domain rules.
+- [ ] Native authentication and two-user isolation pass.
+- [ ] CSV selection, temporary-file cleanup, export/share and deletion pass.
+- [ ] VoiceOver, Dynamic Type, reduced motion and layout checks pass.
+- [ ] Privacy manifest and App Privacy answers match the final binary.
+- [ ] Screenshots, metadata, support/privacy URLs and review account are complete.
+- [ ] TestFlight acceptance is complete before App Store submission.
+
+### Release authority
+
+- [ ] Client explicitly approves TestFlight.
+- [ ] Client explicitly approves App Store submission.
+- [ ] Client explicitly approves real-user invitation.
+- [ ] Client explicitly approves public launch.
+- [ ] Launch and rollback plan is signed off.
+
+
 Status: preserved historical acceptance and QA checklist
 
 Last updated: 15 July 2026
