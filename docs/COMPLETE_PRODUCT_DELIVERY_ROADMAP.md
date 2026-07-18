@@ -1,5 +1,17 @@
 # Complete Product Delivery Roadmap
 
+## Phase 15 active readiness sequence — 18 July 2026
+
+The repository-safe Phase 15 sequence is active under `docs/PHASE_15_PRE_RELEASE_READINESS_CONTRACT.md`:
+
+1. current-state audit and readiness contract;
+2. provider-free security and pre-release indexing safeguards;
+3. incident, recovery, monitoring-design, privacy-input, App Store and rollback runbooks;
+4. exact-head QA and consolidated pre-release package.
+
+This sequence does not authorise Preview or Production migrations, provider activation, native signing, TestFlight, App Store submission, real-user invitation or public launch. The six ordered migrations and every dependent runtime gate remain deferred and fail closed.
+
+
 ## Phase 12 contract status — 17 July 2026
 
 The optional enrichment/AI contract is prepared in `docs/PHASE_12_OPTIONAL_ENRICHMENT_AI_CONTRACT.md`. Local rules remain first; Basiq and AI are separate opt-in fallbacks; no provider, package, credential, call, UI or financial mutation is active.
