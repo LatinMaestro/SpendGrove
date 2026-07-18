@@ -436,6 +436,7 @@ export const migrationProfiles = {
       "ReminderFamily",
       "ReminderStatus",
     ],
+    orderInsensitiveEnums: ["RecurringItemStatus"],
     enums: {
       RecurringItemStatus: ["ACTIVE", "PAUSED", "CANCELLED", "UNKNOWN", "NEEDS_REVIEW", "ARCHIVED"],
       RecurringItemSource: ["MANUAL", "CONFIRMED_SUGGESTION"],
@@ -731,6 +732,12 @@ export function exactNameSetMatches(actual, expected) {
   const sortedExpected = [...expected].sort();
   return sortedActual.length === sortedExpected.length
     && sortedActual.every((value, index) => value === sortedExpected[index]);
+}
+
+export function exactEnumValuesMatch(actual, expected, { orderInsensitive = false } = {}) {
+  if (orderInsensitive) return exactNameSetMatches(actual, expected);
+  return actual.length === expected.length
+    && actual.every((value, index) => value === expected[index]);
 }
 
 export function primaryAndForeignKeyNames(rows) {
