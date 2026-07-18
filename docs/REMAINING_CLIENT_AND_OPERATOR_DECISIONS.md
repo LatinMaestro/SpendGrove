@@ -1,5 +1,34 @@
 # Remaining Client and Operator Decisions
 
+## Phase 15 release and operations gates — 18 July 2026
+
+Open client/operator decisions:
+
+- complete GitHub Preview-secret reauthentication and preserve the retained isolated Neon Preview mapping;
+- run the six ordered Preview migrations individually with synthetic-only evidence;
+- prove Production Vercel, Clerk and Neon mapping without exposing values;
+- confirm Neon Production plan, history retention, branch protection, RPO/RTO and restore authority;
+- select incident owner, support contact, security contact and alert channel;
+- decide whether existing Vercel/provider-native controls are sufficient for rate limiting and monitoring;
+- provide Groveware legal/business and contact facts;
+- obtain privacy/legal, tax/accounting and external security review;
+- approve native dependency/bootstrap tooling, Apple Developer enrolment, signing and TestFlight only through later gates;
+- decide free versus paid release, prices, limits, providers and Apple/web billing before commercial activation;
+- explicitly approve any real-user invitation, TestFlight upload, App Store submission and public launch.
+
+Prepared runbooks:
+
+- `docs/SECURITY_INCIDENT_RESPONSE_RUNBOOK.md`;
+- `docs/BACKUP_RESTORE_REHEARSAL_RUNBOOK.md`;
+- `docs/MONITORING_AND_ALERTING_DESIGN.md`;
+- `docs/PRIVACY_FACTUAL_DISCLOSURE_PACK.md`;
+- `docs/APP_STORE_METADATA_AND_PRIVACY_WORKSHEET.md`;
+- `docs/TESTFLIGHT_LAUNCH_ROLLBACK_RUNBOOK.md`;
+- `docs/PRODUCTION_RELEASE_CHECKLIST.md`.
+
+No provider, plan, secret, environment, migration, Apple action or release is activated by these documents.
+
+
 ## Phase 11 storage/operator decisions — 17 July 2026
 
 Repository preparation is complete for owner-scoped document metadata and explicit evidence links. The following remain external gates:
