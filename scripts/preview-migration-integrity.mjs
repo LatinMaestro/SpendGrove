@@ -1,12 +1,18 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, readdir, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import {
   exactNameSetMatches,
   migrationProfileFor,
   primaryAndForeignKeyNames,
 } from "./preview-migration-integrity-core.mjs";
+import {
+  CONTROLLED_PREVIEW_MIGRATIONS,
+  classifyPreMigrationBaseline,
+  exactStringSetMatches,
+  repositoryMigrationPlan,
+} from "./preview-migration-batch-core.mjs";
 
-const DEFAULT_MIGRATION = "20260717090000_phase_6_bulk_operation_foundation";
+const MIGRATIONS_DIRECTORY = new URL("../prisma/migrations/", import.meta.url);
 const EXISTING_COUNT_DELEGATES = [
   ["User", "user"],
   ["Category", "category"],
@@ -24,17 +30,20 @@ const EXISTING_COUNT_DELEGATES = [
   ["CategoryBudget", "categoryBudget"],
 ];
 const SAFE_FAILURE_CODES = new Set([
-  "AUDIT_ENUM_VALUE_ALREADY_PRESENT",
-  "AUDIT_ENUM_VALUE_MISSING",
+  "CONTROLLED_MIGRATION_INVENTORY_MISMATCH",
   "FAILED_OR_UNRESOLVED_MIGRATION",
-  "TARGET_MIGRATION_ALREADY_PRESENT",
-  "TARGET_MIGRATION_NOT_APPLIED_ONCE",
+  "UNEXPECTED_MIGRATION_HISTORY",
+  "UNEXPECTED_EMPTY_DATABASE_OBJECTS",
+  "CONTROLLED_MIGRATION_ALREADY_PRESENT",
+  "CONTROLLED_MIGRATION_NOT_APPLIED_ONCE",
   "EXPECTED_TABLE_ALREADY_PRESENT",
   "EXPECTED_ENUM_ALREADY_PRESENT",
-  "EXPECTED_ENUM_MISMATCH",
-  "EXPECTED_COLUMNS_MISMATCH",
   "EXPECTED_COLUMN_ALREADY_PRESENT",
   "EXPECTED_INDEX_ALREADY_PRESENT",
+  "AUDIT_ENUM_VALUE_ALREADY_PRESENT",
+  "AUDIT_ENUM_VALUE_MISSING",
+  "EXPECTED_ENUM_MISMATCH",
+  "EXPECTED_COLUMNS_MISMATCH",
   "EXPECTED_INDEXES_MISMATCH",
   "EXPECTED_CONSTRAINTS_MISMATCH",
   "EXPECTED_TABLE_NOT_EMPTY",
@@ -49,42 +58,47 @@ function fail(code) {
 }
 
 function equalValues(actual, expected) {
-  return actual.length === expected.length && actual.every((value, index) => value === expected[index]);
+  return actual.length === expected.length
+    && actual.every((value, index) => value === expected[index]);
 }
 
 function parseArguments() {
   const mode = process.argv[2];
   const stateFlag = process.argv.indexOf("--state-file");
   const stateFile = stateFlag >= 0 ? process.argv[stateFlag + 1] : undefined;
-  const expectedCountsFlag = process.argv.indexOf("--expected-counts-json");
-  const expectedCountsJson = expectedCountsFlag >= 0 ? process.argv[expectedCountsFlag + 1] : undefined;
-  const migrationFlag = process.argv.indexOf("--migration");
-  const migrationName = migrationFlag >= 0
-    ? process.argv[migrationFlag + 1]
-    : process.env.PREVIEW_MIGRATION_NAME || DEFAULT_MIGRATION;
-  if ((mode !== "pre" && mode !== "post") || (mode === "pre" && !stateFile) || (mode === "post" && !stateFile && !expectedCountsJson)) {
+  const expectedStateFlag = process.argv.indexOf("--expected-state-json");
+  const expectedStateJson = expectedStateFlag >= 0 ? process.argv[expectedStateFlag + 1] : undefined;
+
+  if (
+    (mode !== "pre-all" && mode !== "post-all")
+    || (mode === "pre-all" && !stateFile)
+    || (mode === "post-all" && !stateFile && !expectedStateJson)
+  ) {
     fail("INVALID_MODE");
   }
-  const profile = migrationProfileFor(migrationName);
-  if (!profile) fail("UNKNOWN_MIGRATION_PROFILE");
-  return { mode, stateFile, expectedCountsJson, profile };
+  return { mode, stateFile, expectedStateJson };
 }
 
-async function existingCounts(prisma, profile) {
-  const delegates = [
-    ...EXISTING_COUNT_DELEGATES,
-    ...(profile.existingCountDelegates ?? []),
-  ];
-  const entries = await Promise.all(delegates.map(async ([name, delegate]) => [
-    name,
-    await prisma[delegate].count(),
-  ]));
-  return Object.fromEntries(entries);
+async function repositoryMigrationNames() {
+  const entries = await readdir(MIGRATIONS_DIRECTORY, { withFileTypes: true });
+  return entries
+    .filter((entry) => entry.isDirectory() && /^\d{14}_[a-z0-9_]+$/.test(entry.name))
+    .map((entry) => entry.name)
+    .sort();
 }
 
-function reportCounts(label, counts) {
-  const safeSummary = Object.entries(counts).map(([name, count]) => `${name}=${count}`).join(", ");
-  console.log(`${label} aggregate row counts: ${safeSummary}`);
+async function migrationTableExists(prisma) {
+  const rows = await prisma.$queryRaw`
+    SELECT EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = current_schema()
+        AND c.relname = '_prisma_migrations'
+        AND c.relkind = 'r'
+    ) AS "exists"
+  `;
+  return rows[0]?.exists === true;
 }
 
 async function migrationRows(prisma) {
@@ -94,10 +108,35 @@ async function migrationRows(prisma) {
   `;
 }
 
-function assertNoFailedMigration(rows) {
-  if (rows.some((row) => row.finished_at === null && row.rolled_back_at === null)) {
+function assertHealthyMigrationRows(rows) {
+  if (rows.some((row) => row.finished_at === null || row.rolled_back_at !== null)) {
     fail("FAILED_OR_UNRESOLVED_MIGRATION");
   }
+  if (new Set(rows.map((row) => row.migration_name)).size !== rows.length) {
+    fail("UNEXPECTED_MIGRATION_HISTORY");
+  }
+}
+
+async function publicObjectCounts(prisma) {
+  const [tableRows, enumRows] = await Promise.all([
+    prisma.$queryRaw`
+      SELECT COUNT(*)::integer AS "count"
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = current_schema() AND c.relkind IN ('r', 'p')
+    `,
+    prisma.$queryRaw`
+      SELECT COUNT(DISTINCT t.oid)::integer AS "count"
+      FROM pg_catalog.pg_type t
+      JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+      JOIN pg_catalog.pg_enum e ON e.enumtypid = t.oid
+      WHERE n.nspname = current_schema()
+    `,
+  ]);
+  return {
+    publicTableCount: tableRows[0]?.count ?? -1,
+    publicEnumCount: enumRows[0]?.count ?? -1,
+  };
 }
 
 async function objectExists(prisma, objectName, kind) {
@@ -135,41 +174,6 @@ async function enumValues(prisma, enumName) {
   return rows.map((row) => row.value);
 }
 
-async function runPre(prisma, stateFile, profile) {
-  const migrations = await migrationRows(prisma);
-  assertNoFailedMigration(migrations);
-  if (migrations.some((row) => row.migration_name === profile.migrationName)) fail("TARGET_MIGRATION_ALREADY_PRESENT");
-  for (const tableName of profile.absentTables) {
-    if (await objectExists(prisma, tableName, "table")) fail("EXPECTED_TABLE_ALREADY_PRESENT");
-  }
-  for (const enumName of profile.absentEnums) {
-    if (await objectExists(prisma, enumName, "type")) fail("EXPECTED_ENUM_ALREADY_PRESENT");
-  }
-  for (const [tableName, columnNames] of Object.entries(profile.absentColumns ?? {})) {
-    const columns = await tableColumns(prisma, tableName);
-    if (columnNames.some((columnName) => columns.includes(columnName))) {
-      fail("EXPECTED_COLUMN_ALREADY_PRESENT");
-    }
-  }
-  for (const [tableName, indexNames] of Object.entries(profile.absentIndexes ?? {})) {
-    const indexes = await tableIndexes(prisma, tableName);
-    if (indexNames.some((indexName) => indexes.includes(indexName))) {
-      fail("EXPECTED_INDEX_ALREADY_PRESENT");
-    }
-  }
-  if (profile.auditEntityTypeAdditions.length > 0) {
-    const auditValues = await enumValues(prisma, "AuditEntityType");
-    if (profile.auditEntityTypeAdditions.some((value) => auditValues.includes(value))) {
-      fail("AUDIT_ENUM_VALUE_ALREADY_PRESENT");
-    }
-  }
-
-  const counts = await existingCounts(prisma, profile);
-  await writeFile(stateFile, JSON.stringify(counts), { encoding: "utf8", mode: 0o600 });
-  reportCounts("Pre-migration", counts);
-  console.log(`Pre-migration integrity checks passed for ${profile.migrationName}: migration state is clear and expected objects are absent.`);
-}
-
 async function tableColumns(prisma, tableName) {
   const rows = await prisma.$queryRaw`
     SELECT column_name AS "name"
@@ -204,10 +208,119 @@ async function tableConstraints(prisma, tableName) {
   return primaryAndForeignKeyNames(rows);
 }
 
-async function beforeCounts(stateFile, expectedCountsJson) {
-  if (expectedCountsJson) {
+function controlledProfiles() {
+  return CONTROLLED_PREVIEW_MIGRATIONS.map((migrationName) => {
+    const profile = migrationProfileFor(migrationName);
+    if (!profile) fail("UNKNOWN_MIGRATION_PROFILE");
+    return profile;
+  });
+}
+
+function countDelegates(includeControlledTables) {
+  const entries = [...EXISTING_COUNT_DELEGATES];
+  if (includeControlledTables) {
+    for (const profile of controlledProfiles()) {
+      for (const [name, table] of Object.entries(profile.tables)) {
+        entries.push([name, table.delegate]);
+      }
+    }
+  }
+  const unique = new Map(entries.map(([name, delegate]) => [name, delegate]));
+  return [...unique.entries()];
+}
+
+async function aggregateCounts(prisma, includeControlledTables) {
+  const entries = await Promise.all(countDelegates(includeControlledTables).map(async ([name, delegate]) => [
+    name,
+    await prisma[delegate].count(),
+  ]));
+  return Object.fromEntries(entries);
+}
+
+function reportCounts(label, counts) {
+  const safeSummary = Object.entries(counts)
+    .map(([name, count]) => `${name}=${count}`)
+    .join(", ");
+  console.log(`${label} aggregate row counts: ${safeSummary || "none"}`);
+}
+
+async function assertControlledObjectsAbsent(prisma, profiles) {
+  for (const profile of profiles) {
+    for (const tableName of profile.absentTables) {
+      if (await objectExists(prisma, tableName, "table")) fail("EXPECTED_TABLE_ALREADY_PRESENT");
+    }
+    for (const enumName of profile.absentEnums) {
+      if (await objectExists(prisma, enumName, "type")) fail("EXPECTED_ENUM_ALREADY_PRESENT");
+    }
+    for (const [tableName, columnNames] of Object.entries(profile.absentColumns ?? {})) {
+      const columns = await tableColumns(prisma, tableName);
+      if (columnNames.some((columnName) => columns.includes(columnName))) {
+        fail("EXPECTED_COLUMN_ALREADY_PRESENT");
+      }
+    }
+    for (const [tableName, indexNames] of Object.entries(profile.absentIndexes ?? {})) {
+      const indexes = await tableIndexes(prisma, tableName);
+      if (indexNames.some((indexName) => indexes.includes(indexName))) {
+        fail("EXPECTED_INDEX_ALREADY_PRESENT");
+      }
+    }
+    if (profile.auditEntityTypeAdditions.length > 0) {
+      const auditValues = await enumValues(prisma, "AuditEntityType");
+      if (profile.auditEntityTypeAdditions.some((value) => auditValues.includes(value))) {
+        fail("AUDIT_ENUM_VALUE_ALREADY_PRESENT");
+      }
+    }
+  }
+}
+
+async function runPreAll(prisma, stateFile) {
+  const migrationNames = await repositoryMigrationNames();
+  const plan = repositoryMigrationPlan(migrationNames);
+  if (!plan) fail("CONTROLLED_MIGRATION_INVENTORY_MISMATCH");
+
+  const hasMigrationTable = await migrationTableExists(prisma);
+  const rows = hasMigrationTable ? await migrationRows(prisma) : [];
+  if (hasMigrationTable) assertHealthyMigrationRows(rows);
+  const objectCounts = await publicObjectCounts(prisma);
+  const baseline = classifyPreMigrationBaseline({
+    migrationTableExists: hasMigrationTable,
+    ...objectCounts,
+    appliedMigrationNames: rows.map((row) => row.migration_name),
+    earlierMigrationNames: plan.earlierMigrations,
+  });
+  if (!baseline.ok) fail(baseline.code);
+
+  if (rows.some((row) => CONTROLLED_PREVIEW_MIGRATIONS.includes(row.migration_name))) {
+    fail("CONTROLLED_MIGRATION_ALREADY_PRESENT");
+  }
+
+  const profiles = controlledProfiles();
+  if (baseline.mode === "existing") {
+    await assertControlledObjectsAbsent(prisma, profiles);
+  }
+
+  const counts = baseline.mode === "existing"
+    ? await aggregateCounts(prisma, false)
+    : {};
+  const state = {
+    baseline: baseline.mode,
+    counts,
+    repositoryMigrations: plan.repositoryMigrations,
+    earlierMigrationCount: baseline.earlierMigrationCount,
+  };
+  await writeFile(stateFile, JSON.stringify(state), { encoding: "utf8", mode: 0o600 });
+
+  reportCounts("Pre-migration", counts);
+  console.log(
+    `Pre-migration integrity checks passed: ${baseline.earlierMigrationCount} earlier repository migrations are applied; `
+    + `${CONTROLLED_PREVIEW_MIGRATIONS.length} controlled migrations are pending; baseline=${baseline.mode}.`,
+  );
+}
+
+async function readState(stateFile, expectedStateJson) {
+  if (expectedStateJson) {
     try {
-      return JSON.parse(expectedCountsJson);
+      return JSON.parse(expectedStateJson);
     } catch {
       fail("MISSING_PRE_MIGRATION_STATE");
     }
@@ -219,22 +332,11 @@ async function beforeCounts(stateFile, expectedCountsJson) {
   }
 }
 
-function assertCountsUnchanged(baselineCounts, afterCounts) {
-  const comparedNames = Object.keys(baselineCounts);
-  if (comparedNames.length === 0) fail("MISSING_PRE_MIGRATION_STATE");
-  const changed = comparedNames.some((name) => baselineCounts[name] !== afterCounts[name]);
-  if (changed) fail("EXISTING_ROW_COUNTS_CHANGED");
-}
-
-async function runPost(prisma, stateFile, expectedCountsJson, profile) {
-  const migrations = await migrationRows(prisma);
-  assertNoFailedMigration(migrations);
-  const applied = migrations.filter(
-    (row) => row.migration_name === profile.migrationName && row.finished_at !== null && row.rolled_back_at === null,
-  );
-  if (applied.length !== 1) fail("TARGET_MIGRATION_NOT_APPLIED_ONCE");
+async function validateProfilePost(prisma, profile) {
   for (const [enumName, expectedValues] of Object.entries(profile.enums)) {
-    if (!equalValues(await enumValues(prisma, enumName), expectedValues)) fail("EXPECTED_ENUM_MISMATCH");
+    if (!equalValues(await enumValues(prisma, enumName), expectedValues)) {
+      fail("EXPECTED_ENUM_MISMATCH");
+    }
   }
   if (profile.auditEntityTypeAdditions.length > 0) {
     const auditValues = await enumValues(prisma, "AuditEntityType");
@@ -255,28 +357,84 @@ async function runPost(prisma, stateFile, expectedCountsJson, profile) {
     }
   }
   for (const [tableName, expected] of Object.entries(profile.tables)) {
-    if (!equalValues(await tableColumns(prisma, tableName), expected.columns)) fail("EXPECTED_COLUMNS_MISMATCH");
-    if (!exactNameSetMatches(await tableIndexes(prisma, tableName), expected.indexes)) fail("EXPECTED_INDEXES_MISMATCH");
-    if (!equalValues(await tableConstraints(prisma, tableName), expected.constraints)) fail("EXPECTED_CONSTRAINTS_MISMATCH");
-    if (await prisma[expected.delegate].count() !== 0) fail("EXPECTED_TABLE_NOT_EMPTY");
+    if (!equalValues(await tableColumns(prisma, tableName), expected.columns)) {
+      fail("EXPECTED_COLUMNS_MISMATCH");
+    }
+    if (!exactNameSetMatches(await tableIndexes(prisma, tableName), expected.indexes)) {
+      fail("EXPECTED_INDEXES_MISMATCH");
+    }
+    if (!equalValues(await tableConstraints(prisma, tableName), expected.constraints)) {
+      fail("EXPECTED_CONSTRAINTS_MISMATCH");
+    }
+    if (await prisma[expected.delegate].count() !== 0) {
+      fail("EXPECTED_TABLE_NOT_EMPTY");
+    }
+  }
+}
+
+async function runPostAll(prisma, stateFile, expectedStateJson) {
+  const migrationNames = await repositoryMigrationNames();
+  const plan = repositoryMigrationPlan(migrationNames);
+  if (!plan) fail("CONTROLLED_MIGRATION_INVENTORY_MISMATCH");
+
+  if (!(await migrationTableExists(prisma))) fail("UNEXPECTED_MIGRATION_HISTORY");
+  const rows = await migrationRows(prisma);
+  assertHealthyMigrationRows(rows);
+  const appliedNames = rows.map((row) => row.migration_name);
+  if (!exactStringSetMatches(appliedNames, plan.repositoryMigrations)) {
+    fail("UNEXPECTED_MIGRATION_HISTORY");
+  }
+  for (const migrationName of CONTROLLED_PREVIEW_MIGRATIONS) {
+    if (appliedNames.filter((name) => name === migrationName).length !== 1) {
+      fail("CONTROLLED_MIGRATION_NOT_APPLIED_ONCE");
+    }
   }
 
-  const baselineCounts = await beforeCounts(stateFile, expectedCountsJson);
-  const afterCounts = await existingCounts(prisma, profile);
-  assertCountsUnchanged(baselineCounts, afterCounts);
+  for (const profile of controlledProfiles()) {
+    await validateProfilePost(prisma, profile);
+  }
+
+  const state = await readState(stateFile, expectedStateJson);
+  if (
+    !state
+    || !["empty", "existing"].includes(state.baseline)
+    || !exactStringSetMatches(state.repositoryMigrations ?? [], plan.repositoryMigrations)
+  ) {
+    fail("MISSING_PRE_MIGRATION_STATE");
+  }
+
+  const afterCounts = await aggregateCounts(prisma, true);
+  if (state.baseline === "empty") {
+    if (Object.values(afterCounts).some((count) => count !== 0)) {
+      fail("EXISTING_ROW_COUNTS_CHANGED");
+    }
+  } else {
+    const baselineCounts = state.counts ?? {};
+    if (
+      Object.keys(baselineCounts).length === 0
+      || Object.entries(baselineCounts).some(([name, count]) => afterCounts[name] !== count)
+    ) {
+      fail("EXISTING_ROW_COUNTS_CHANGED");
+    }
+  }
 
   reportCounts("Post-migration", afterCounts);
-  console.log(`Post-migration integrity checks passed for ${profile.migrationName}: approved schema is exact, new tables are empty, and existing counts are unchanged.`);
+  console.log(
+    `Post-migration integrity checks passed: all ${plan.repositoryMigrations.length} repository migrations are healthy, `
+    + "all six controlled migration profiles are exact, new tables are empty, and aggregate counts are unchanged.",
+  );
 }
 
 const prisma = new PrismaClient({ log: [] });
 
 try {
-  const { mode, stateFile, expectedCountsJson, profile } = parseArguments();
-  if (mode === "pre") await runPre(prisma, stateFile, profile);
-  else await runPost(prisma, stateFile, expectedCountsJson, profile);
+  const { mode, stateFile, expectedStateJson } = parseArguments();
+  if (mode === "pre-all") await runPreAll(prisma, stateFile);
+  else await runPostAll(prisma, stateFile, expectedStateJson);
 } catch (error) {
-  const code = error instanceof Error && SAFE_FAILURE_CODES.has(error.message) ? error.message : "DATABASE_CHECK_FAILED";
+  const code = error instanceof Error && SAFE_FAILURE_CODES.has(error.message)
+    ? error.message
+    : "DATABASE_CHECK_FAILED";
   console.error(`Preview migration integrity check failed: ${code}. No private database details are printed.`);
   process.exitCode = 1;
 } finally {
