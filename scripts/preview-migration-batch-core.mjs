@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 export const CONTROLLED_PREVIEW_MIGRATIONS = [
   "20260717090000_phase_6_bulk_operation_foundation",
   "20260717100000_phase_7_transfer_link_foundation",
@@ -15,6 +17,14 @@ export const CONTROLLED_MIGRATION_BLOB_SHAS = {
   "20260717130000_phase_10_household_accountant_foundation": "8ab54a9e468e3265856fa7dbbdbd06248d263dec",
   "20260717140000_phase_11_document_metadata_foundation": "4c67c8e965fc1c953f788c3563797c2bfbee9998",
 };
+
+export function gitBlobSha(content) {
+  const bytes = Buffer.isBuffer(content) ? content : Buffer.from(content);
+  return createHash("sha1")
+    .update(`blob ${bytes.length}\0`)
+    .update(bytes)
+    .digest("hex");
+}
 
 export function exactStringSetMatches(actual, expected) {
   const sortedActual = [...actual].sort();
