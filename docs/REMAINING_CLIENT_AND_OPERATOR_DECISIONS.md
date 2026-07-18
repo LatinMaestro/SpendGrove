@@ -710,3 +710,22 @@ Before optional AI assistance can be activated, the client/operator must separat
 - secure environment configuration and focused runtime-activation PR.
 
 The current runtime constants remain false. No provider credential should be entered and no service should be activated from this documentation state. These open decisions do not block unrelated repository preparation.
+
+
+## Phase 14 contract status — 18 July 2026
+
+Free, Plus, Pro and Household are now reserved as planning names only. This does not resolve D-070 through D-073.
+
+Still required before any commercial activation:
+
+- whether the first release is free or paid;
+- exact feature matrix and numeric limits;
+- AUD monthly/annual pricing, trials and grandfathering;
+- App Store and web purchase equivalence;
+- web billing provider, if any;
+- StoreKit products and server reconciliation;
+- cancellation, refunds, support and downgrade treatment;
+- GST, consumer-law and subscription-disclosure review;
+- secure provider/package/secret/environment and durable-schema approvals.
+
+Until those decisions are complete, the accepted product remains unpaywalled and no price, checkout, provider call or billing record may exist.
