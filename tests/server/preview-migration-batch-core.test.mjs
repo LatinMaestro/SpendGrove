@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  CONTROLLED_MIGRATION_BLOB_SHAS,
   CONTROLLED_PREVIEW_MIGRATIONS,
   classifyPreMigrationBaseline,
   exactStringSetMatches,
@@ -22,6 +23,13 @@ describe("controlled Preview migration inventory", () => {
       "20260717130000_phase_10_household_accountant_foundation",
       "20260717140000_phase_11_document_metadata_foundation",
     ]);
+  });
+
+  it("pins an approved blob identity for every controlled migration", () => {
+    expect(Object.keys(CONTROLLED_MIGRATION_BLOB_SHAS)).toEqual(CONTROLLED_PREVIEW_MIGRATIONS);
+    for (const sha of Object.values(CONTROLLED_MIGRATION_BLOB_SHAS)) {
+      expect(sha).toMatch(/^[a-f0-9]{40}$/);
+    }
   });
 
   it("accepts only a repository whose tail is exactly the controlled batch", () => {
