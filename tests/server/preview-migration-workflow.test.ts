@@ -66,6 +66,8 @@ describe("Preview Prisma migration workflow integrity", () => {
       previousPosition = position;
       expect(integrityCore).toContain(migration);
     }
+    expect(batchCore).toContain("CONTROLLED_MIGRATION_BLOB_SHAS");
+    expect(integrityScript).toContain('createHash("sha1")');
     expect(batchCore).toContain("repositoryMigrationPlan");
     expect(batchCore).toContain("sorted.slice(-CONTROLLED_PREVIEW_MIGRATIONS.length)");
   });
@@ -77,6 +79,7 @@ describe("Preview Prisma migration workflow integrity", () => {
       "FAILED_OR_UNRESOLVED_MIGRATION",
       "CONTROLLED_MIGRATION_ALREADY_PRESENT",
       "CONTROLLED_MIGRATION_NOT_APPLIED_ONCE",
+      "CONTROLLED_MIGRATION_FILE_MISMATCH",
       "classifyPreMigrationBaseline",
       "publicTableCount",
       "publicEnumCount",
