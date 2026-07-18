@@ -1,5 +1,17 @@
 # Current Codex Handoff
 
+## Consolidated pre-release handoff — 18 July 2026
+
+- Phase 15 delivery: PRs #222–#225 through `f87bdc89b3ad4605f9f21cf22ed63c49a996a63c`.
+- Latest exact-head verification: 142 test files / 874 tests, TypeScript, lint, optimized build and Production dependency audit passed.
+- Exact-head security Preview: `dpl_9RR2Z2PEMY4We8hECk2dwYUJVHDB`, Ready.
+- Latest safely inspected canonical Production remains `dpl_5gkDyxoBKjZcGQSj6QAty4H2aA3h` at `e2479189c8b309bd41b501fddaf060205a1a9ee0`; current-main Production/header verification remains open.
+- Consolidated package: `docs/CONSOLIDATED_PRE_RELEASE_REVIEW_PACKAGE.md`.
+- Phase 15 summary: `docs/PHASE_15_REPOSITORY_PREPARATION_SUMMARY.md`.
+- Repository-safe work is exhausted at current gates. Next actions require operator migrations/environment proof, native tooling, provider/client decisions or professional review.
+- No Preview/Production migration, Production data access, provider activation, Apple action, TestFlight, real-user invitation or public launch occurred.
+
+
 ## Phase 15 release runbooks — 18 July 2026
 
 Prepared repository-only:
