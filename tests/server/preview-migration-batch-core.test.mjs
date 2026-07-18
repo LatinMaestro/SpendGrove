@@ -1,11 +1,15 @@
+import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import {
   CONTROLLED_MIGRATION_BLOB_SHAS,
   CONTROLLED_PREVIEW_MIGRATIONS,
   classifyPreMigrationBaseline,
   exactStringSetMatches,
+  gitBlobSha,
   repositoryMigrationPlan,
 } from "../../scripts/preview-migration-batch-core.mjs";
+
+const MIGRATIONS_DIRECTORY = new URL("../../prisma/migrations/", import.meta.url);
 
 const earlier = [
   "20260701000000_initial",
@@ -29,6 +33,16 @@ describe("controlled Preview migration inventory", () => {
     expect(Object.keys(CONTROLLED_MIGRATION_BLOB_SHAS)).toEqual(CONTROLLED_PREVIEW_MIGRATIONS);
     for (const sha of Object.values(CONTROLLED_MIGRATION_BLOB_SHAS)) {
       expect(sha).toMatch(/^[a-f0-9]{40}$/);
+    }
+  });
+
+  it("matches every approved migration file and rejects tampered content", async () => {
+    for (const migrationName of CONTROLLED_PREVIEW_MIGRATIONS) {
+      const content = await readFile(new URL(`${migrationName}/migration.sql`, MIGRATIONS_DIRECTORY));
+      expect(gitBlobSha(content)).toBe(CONTROLLED_MIGRATION_BLOB_SHAS[migrationName]);
+      expect(gitBlobSha(Buffer.concat([content, Buffer.from("\n-- tampered")]))).not.toBe(
+        CONTROLLED_MIGRATION_BLOB_SHAS[migrationName],
+      );
     }
   });
 
