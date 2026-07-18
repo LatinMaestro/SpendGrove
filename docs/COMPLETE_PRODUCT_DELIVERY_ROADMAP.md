@@ -685,3 +685,12 @@ React Native with Expo and Expo Router is selected for SpendGrove's native iPhon
 The Next.js web product remains independently deployed. Native work will consume authenticated versioned server endpoints and share only platform-neutral TypeScript contracts, calculations and synthetic parity fixtures. It will not import Prisma/server modules or silently migrate browser-local data.
 
 The next Phase 13 milestone is a focused bootstrap proof. Apple enrolment/payment, bundle identifiers, signing, EAS/provider configuration, TestFlight, App Store records, real-user distribution and public launch remain hard gates. Capacitor remains a fallback and SwiftUI remains an escalation path if a mandatory Expo capability fails objective proof.
+
+
+## Phase 14 commercial contract note — 17 July 2026
+
+The provider-neutral commercial boundary is defined in `docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md`.
+
+Free, Plus, Pro and Household are planning names only. No price, numeric limit, provider, checkout, paywall, billing schema, App Store product or Production activation exists. Every currently accepted capability remains available under the current baseline.
+
+The next independently safe work is a hard-disabled entitlement resolver with no provider implementation and tests proving that existing product behaviour is unchanged. Commercial activation still requires exact pricing, plan contents, Apple/web treatment, provider selection, legal/GST/refund/support review and separate schema/environment/Production gates.
