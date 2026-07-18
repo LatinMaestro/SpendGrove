@@ -1,5 +1,23 @@
 # Build Plan
 
+## Phase 15 pre-release readiness — 18 July 2026
+
+- [x] Audit the current security, privacy, environment, recovery, native and release posture.
+- [x] Freeze the provider-free Phase 15 contract and hard stops.
+- [ ] Complete provider-free response-header and pre-release indexing safeguards.
+- [ ] Complete incident, recovery, monitoring-design, privacy-input, App Store and rollback runbooks.
+- [ ] Verify exact-head tests, TypeScript, lint, optimized build, public headers and responsive routes.
+- [ ] Produce the consolidated pre-release package and truthful release recommendation.
+- [ ] Complete the six ordered Preview migrations through the deferred operator gate.
+- [ ] Prove Production mapping, backups, migration history and recovery before any Production migration.
+- [ ] Complete native bootstrap, device QA, professional review, TestFlight and final client gates.
+
+Controlling audit: `docs/PHASE_15_PRE_RELEASE_CURRENT_STATE_AUDIT.md`.  
+Controlling contract: `docs/PHASE_15_PRE_RELEASE_READINESS_CONTRACT.md`.
+
+Phase 15 repository-safe preparation is active. No Preview/Production migration, provider activation, Apple action, real-user invitation or public launch is authorised.
+
+
 ## Phase 14 commercial readiness contract — 17 July 2026
 
 - [x] Define planning-only Free, Plus, Pro and Household plan names.
