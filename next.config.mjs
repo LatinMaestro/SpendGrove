@@ -27,6 +27,16 @@ const browserSecurityHeaders = [
     key: "X-DNS-Prefetch-Control",
     value: "off",
   },
+  {
+    key: "X-Permitted-Cross-Domain-Policies",
+    value: "none",
+  },
+  {
+    // Keep every pre-release surface out of search results until a separate
+    // client-approved public-launch change deliberately removes this header.
+    key: "X-Robots-Tag",
+    value: "noindex, nofollow, noarchive",
+  },
 ];
 
 /** @type {import('next').NextConfig} */
