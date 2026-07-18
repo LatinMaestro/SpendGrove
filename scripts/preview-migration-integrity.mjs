@@ -1,6 +1,7 @@
 import { readFile, readdir, writeFile } from "node:fs/promises";
 import { PrismaClient } from "@prisma/client";
 import {
+  exactEnumValuesMatch,
   exactNameSetMatches,
   migrationProfileFor,
   primaryAndForeignKeyNames,
@@ -348,7 +349,12 @@ async function readState(stateFile, expectedStateJson) {
 
 async function validateProfilePost(prisma, profile) {
   for (const [enumName, expectedValues] of Object.entries(profile.enums)) {
-    if (!equalValues(await enumValues(prisma, enumName), expectedValues)) {
+    const orderInsensitive = profile.orderInsensitiveEnums?.includes(enumName) ?? false;
+    if (!exactEnumValuesMatch(
+      await enumValues(prisma, enumName),
+      expectedValues,
+      { orderInsensitive },
+    )) {
       fail("EXPECTED_ENUM_MISMATCH");
     }
   }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  exactEnumValuesMatch,
   exactNameSetMatches,
   migrationProfileFor,
   migrationProfiles,
@@ -47,6 +48,26 @@ describe("Preview migration exact name-set matching", () => {
   it("still rejects missing or extra index names", () => {
     expect(exactNameSetMatches(expectedIndexes.slice(0, -1), expectedIndexes)).toBe(false);
     expect(exactNameSetMatches([...expectedIndexes, "unexpected_idx"], expectedIndexes)).toBe(false);
+  });
+});
+
+describe("Preview migration enum matching", () => {
+  const expected = ["ACTIVE", "PAUSED", "CANCELLED", "UNKNOWN", "NEEDS_REVIEW", "ARCHIVED"];
+  const postgresOrder = ["ACTIVE", "ARCHIVED", "PAUSED", "CANCELLED", "UNKNOWN", "NEEDS_REVIEW"];
+
+  it("accepts the exact altered-enum value set regardless of PostgreSQL append order", () => {
+    expect(exactEnumValuesMatch(postgresOrder, expected, { orderInsensitive: true })).toBe(true);
+  });
+
+  it("rejects missing, extra and duplicate altered-enum values", () => {
+    expect(exactEnumValuesMatch(postgresOrder.slice(1), expected, { orderInsensitive: true })).toBe(false);
+    expect(exactEnumValuesMatch([...postgresOrder, "UNEXPECTED"], expected, { orderInsensitive: true })).toBe(false);
+    expect(exactEnumValuesMatch([...postgresOrder.slice(0, -1), "ACTIVE"], expected, { orderInsensitive: true })).toBe(false);
+  });
+
+  it("keeps newly created enum verification order-sensitive by default", () => {
+    expect(exactEnumValuesMatch(["MONTHLY", "WEEKLY"], ["WEEKLY", "MONTHLY"])).toBe(false);
+    expect(exactEnumValuesMatch(["WEEKLY", "MONTHLY"], ["WEEKLY", "MONTHLY"])).toBe(true);
   });
 });
 
@@ -317,6 +338,7 @@ describe("Phase 9 advanced personal-finance Preview migration profile", () => {
       "NEEDS_REVIEW",
       "ARCHIVED",
     ]);
+    expect(profile?.orderInsensitiveEnums).toEqual(["RecurringItemStatus"]);
     expect(profile?.auditEntityTypeAdditions).toEqual([
       "RECURRING_INSTANCE",
       "SAVINGS_GOAL",
