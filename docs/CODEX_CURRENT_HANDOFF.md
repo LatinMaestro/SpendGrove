@@ -1,5 +1,20 @@
 # Current Codex Handoff
 
+## Phase 15 release runbooks — 18 July 2026
+
+Prepared repository-only:
+
+- security incident response;
+- synthetic backup/restore rehearsal;
+- privacy-safe monitoring/alert design;
+- factual privacy inputs;
+- App Store metadata/privacy worksheet;
+- TestFlight/launch/rollback runbook;
+- consolidated Production release checklist.
+
+All remain preparation only. No monitoring/support provider, Apple record, credential, migration, Production access, TestFlight, real-user invitation or launch occurred.
+
+
 ## Phase 15 pre-release readiness — 18 July 2026
 
 - Current-state audit: `docs/PHASE_15_PRE_RELEASE_CURRENT_STATE_AUDIT.md`.
