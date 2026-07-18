@@ -381,3 +381,23 @@ Expo/React Native provides native controls and a credible iPhone/iPad experience
 Implementation impact:
 
 The decision is documentation-only. A later focused bootstrap must generate a deterministic lockfile and prove authentication, owner isolation, synthetic CSV lifecycle, export sharing, deep links, offline recovery, accessibility and adaptive layouts. No Apple payment, signing, EAS/provider configuration, TestFlight, App Store record, submission or public launch is authorised.
+
+
+## 18 July 2026 — Keep commercial architecture provider-neutral and inactive
+
+Decision:
+
+- Reserve Free, Plus, Pro and Household as planning names only.
+- Preserve access to every currently accepted capability; no paywall, entitlement denial or trial countdown is active.
+- Prepare only a hard-disabled server-authoritative entitlement boundary before pricing/provider approval.
+- Leave exact plan features, numeric limits, prices, GST, trials, Apple/web equivalence, refunds and support as explicit client/professional decisions.
+- Require StoreKit/In-App Purchase treatment for native digital feature purchases unless then-current official rules establish an approved exception.
+- Keep account export, deletion, correction, privacy and security controls outside any commercial restriction.
+
+Reason:
+
+SpendGrove needs a coherent future commercial model without creating accidental purchase, privacy, customer-support or App Store obligations before decisions and provider access exist. A disabled stable catalogue allows later implementation to be reviewed without changing today's product.
+
+Implementation impact:
+
+`docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md` governs Phase 14. No price, provider, package, schema, migration, checkout, App Store product, secret, environment change or money collection is authorised.

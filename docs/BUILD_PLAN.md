@@ -1,5 +1,18 @@
 # Build Plan
 
+## Phase 14 commercial readiness contract — 17 July 2026
+
+- [x] Define planning-only Free, Plus, Pro and Household plan names.
+- [x] Freeze current accepted product availability: no paywall or entitlement denial.
+- [x] Define provider-neutral entitlement, lifecycle, Apple/web, household, privacy and support boundaries.
+- [x] Keep prices, limits, providers, billing records, checkout and App Store products unapproved.
+- [ ] Prepare a hard-false entitlement resolver that always preserves the current baseline.
+- [ ] Verify no provider call, price, schema, package, UI or financial/private payload exists.
+- [ ] Complete Phase 14 QA and operator-decision handoff.
+
+Controlling contract: `docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md`.
+
+
 ## Phase 13 native architecture gate — 17 July 2026
 
 - [x] Review current official Apple, Expo/React Native, Capacitor and Clerk capabilities.
