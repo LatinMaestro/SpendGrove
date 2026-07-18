@@ -1,5 +1,37 @@
 # Phase 6 Preview Migration Gate
 
+## Controlled all-pending workflow correction — 18 July 2026
+
+The retained isolated target is pinned before database access by its safe Neon metadata:
+
+- project: `cold-field-54187673`;
+- branch: `br-sweet-flower-aj2ng7ix`;
+- database: `neondb`;
+- direct compute: `ep-shy-mud-aj7fpz5c`;
+- pooled and direct host forms must match that compute exactly.
+
+The corrected workflow does **not** claim to apply the six migrations individually. Prisma `migrate deploy` applies every pending repository migration.
+
+The approved deterministic design is one controlled all-pending run:
+
+1. require `main`, explicit `migrate-all` mode and `RUN ISOLATED PREVIEW MIGRATIONS`;
+2. require only the two Preview secrets and reject any mapped Production database variable;
+3. parse both secret URLs without printing them and require the pinned pooled host, direct host, database, matching role/credential and TLS;
+4. inventory every repository migration and require the six controlled migrations to be the exact final ordered tail;
+5. connect only after identity passes;
+6. accept either:
+   - a genuinely empty public schema with no `_prisma_migrations` table, tables or enums; or
+   - the exact complete set of repository migrations preceding the six controlled migrations;
+7. reject partial, extra, duplicated, failed, unresolved or rolled-back history and reject pre-existing controlled objects;
+8. run one suppressed `prisma migrate deploy`;
+9. require the complete repository migration set exactly once with no failed/unresolved state;
+10. validate the exact enums, columns, indexes, primary/foreign keys and empty new tables for all six controlled profiles;
+11. compare safe aggregate counts only and print no row content or connection value.
+
+For the retained empty project, preflight is expected to report that zero earlier migrations are applied. The single deploy will therefore build the complete repository schema in timestamp order, including the six controlled migrations as the final six. If the database is not actually empty, only the exact earlier repository baseline is accepted.
+
+Any failure stops the run. There is no automatic retry, reset, manual SQL, history resolution or Production fallback. Runtime activation remains a later focused gate.
+
 ## Ordered prepared migration inventory — 17 July 2026
 
 The repository now contains six additive migrations, all unexecuted against the retained isolated Preview project:
