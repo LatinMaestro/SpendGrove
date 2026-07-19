@@ -20,8 +20,9 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
-    const goal = await mutateSavingsGoal(await getCurrentUserContext(), await request.json());
-    const goals = await listSavingsGoals(await getCurrentUserContext());
+    const context = await getCurrentUserContext();
+    const goal = await mutateSavingsGoal(context, await request.json());
+    const goals = await listSavingsGoals(context);
     return NextResponse.json({ ok: true, goal, goals });
   } catch (error) {
     return errorResponse(error);
