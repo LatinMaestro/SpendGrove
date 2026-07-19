@@ -42,6 +42,10 @@ const defaultDataStore: AccountDataDeletionStore = {
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
       if (isVerifiedPreviewRuntime()) {
+        await transaction.netWorthSnapshotEntry.deleteMany({ where: { userId } });
+        await transaction.netWorthSnapshot.deleteMany({ where: { userId } });
+        await transaction.netWorthValuation.deleteMany({ where: { userId } });
+        await transaction.netWorthItem.deleteMany({ where: { userId } });
         await transaction.savingsGoalContribution.deleteMany({ where: { userId } });
         await transaction.savingsGoal.deleteMany({ where: { userId } });
         await transaction.importUndoItem.deleteMany({ where: { userId } });
