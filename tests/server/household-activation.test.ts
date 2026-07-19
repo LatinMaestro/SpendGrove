@@ -12,6 +12,8 @@ const householdPath = new URL("../../src/server/households.ts", import.meta.url)
 const componentPath = new URL("../../components/household-access.tsx", import.meta.url);
 const settingsPath = new URL("../../app/settings/page.tsx", import.meta.url);
 const routePath = new URL("../../app/api/account/household-records/route.ts", import.meta.url);
+const exportPath = new URL("../../src/server/account-export.ts", import.meta.url);
+const deletionPath = new URL("../../src/server/account-deletion.ts", import.meta.url);
 
 function store(overrides: Partial<HouseholdRecordStore> = {}) {
   const userIds: string[] = [];
@@ -111,5 +113,21 @@ describe("Preview household record access", () => {
     expect(route).toContain("getCurrentUserContext()");
     expect(households).toContain("randomBytes(32)");
     expect(households).toContain("hashToken(request.token)");
+  });
+
+  it("exports safe household lifecycle and handles account deletion without orphaning access", async () => {
+    const [accountExport, deletion] = await Promise.all([
+      readFile(exportPath, "utf8"),
+      readFile(deletionPath, "utf8"),
+    ]);
+    expect(accountExport).toContain("householdMemberships: ExportRecord[]");
+    expect(accountExport).toContain("householdInvitations: ExportRecord[]");
+    expect(accountExport).toContain("householdShares: ExportRecord[]");
+    const invitationSelect = accountExport.match(/db\.householdInvitation\.findMany\([\s\S]*?\n        \}\)/)?.[0] ?? "";
+    expect(invitationSelect).not.toMatch(/tokenHash|intendedIdentityHash/);
+    expect(deletion).toContain("HouseholdAccountDeletionBlockedError");
+    expect(deletion).toContain("creatorUserId: replacement.userId");
+    expect(deletion).toContain("householdRecordShare.deleteMany");
+    expect(deletion).toContain("householdMembership.deleteMany");
   });
 });
