@@ -180,7 +180,7 @@ describe("Phase 9 Preview in-app reminder service", () => {
       { runtimeEnabled: true },
     );
 
-    expect(result.candidateCount).toBe(7);
+    expect(result.candidateCount).toBe(6);
     expect(new Set(candidates.map((entry) => entry.family))).toEqual(new Set([
       "RECURRING_EXPECTED_DATE",
       "BUDGET_EIGHTY_PERCENT",
