@@ -62,3 +62,10 @@ Storage activation separately requires provider/region/cost approval, Preview/Pr
 - no financial-calculation or source-record ownership change;
 - no OCR/AI, public launch, TestFlight or App Store action;
 - consolidated client review remains deferred.
+
+
+## Preview activation implementation — 19 July 2026
+
+PR #240 prepares owner-scoped document metadata and explicit links only. Secure upload is visibly disabled; no file input, bytes, object-storage call, OCR or extraction is exposed. Account export excludes object keys and provider internals.
+
+The exact head passed 156 test files / 961 tests, TypeScript, lint and optimized build. Vercel Preview, synthetic QA and merge remain pending because of the account build-rate limit. Storage/provider activation remains a separate decision.
