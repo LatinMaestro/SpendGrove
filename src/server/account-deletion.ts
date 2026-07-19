@@ -49,6 +49,27 @@ const defaultDataStore: AccountDataDeletionStore = {
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
       if (isVerifiedPreviewRuntime()) {
+        const acceptedAccountantGrants = await transaction.accountantAccessGrant.findMany({
+          where: { accountantUserId: userId },
+          select: { id: true },
+        });
+        const acceptedGrantIds = acceptedAccountantGrants.map((entry) => entry.id);
+        if (acceptedGrantIds.length) {
+          await transaction.accountantAccessScope.updateMany({
+            where: { grantId: { in: acceptedGrantIds }, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+          await transaction.accountantAccessGrant.updateMany({
+            where: { id: { in: acceptedGrantIds }, accountantUserId: userId },
+            data: {
+              accountantUserId: null,
+              status: "REVOKED",
+              revokedAt: new Date(),
+            },
+          });
+        }
+        await transaction.accountantAccessScope.deleteMany({ where: { ownerUserId: userId } });
+        await transaction.accountantAccessGrant.deleteMany({ where: { ownerUserId: userId } });
         const createdHouseholds = await transaction.household.findMany({
           where: { creatorUserId: userId },
           select: { id: true },
