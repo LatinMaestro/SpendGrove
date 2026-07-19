@@ -64,6 +64,10 @@ function emptyData(): AccountExportData {
     householdMemberships: [],
     householdInvitations: [],
     householdShares: [],
+    accountantGrantsOwned: [],
+    accountantGrantsAccepted: [],
+    accountantScopesOwned: [],
+    accountantScopesAccepted: [],
     auditEvents: [],
   };
 }
@@ -165,6 +169,10 @@ describe("Phase 5 account export", () => {
       "householdMemberships",
       "householdInvitations",
       "householdShares",
+      "accountantGrantsOwned",
+      "accountantGrantsAccepted",
+      "accountantScopesOwned",
+      "accountantScopesAccepted",
       "auditEvents",
     ]);
 
