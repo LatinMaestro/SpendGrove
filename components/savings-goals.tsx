@@ -40,6 +40,14 @@ function centsInput(cents: number) {
   return (cents / 100).toFixed(2);
 }
 
+function todayInBrisbane() {
+  const parts = new Intl.DateTimeFormat("en-AU", {
+    timeZone: "Australia/Brisbane", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${value.year}-${value.month}-${value.day}`;
+}
+
 async function readResponse(response: Response): Promise<GoalResponse> {
   try {
     const payload = await response.json() as GoalResponse;
@@ -111,7 +119,7 @@ function ContributionForm({ goal, busy, onCancel, onSave }: {
   onSave: (amountCents: number, contributionDate: string, note: string | null) => void;
 }) {
   const [amount, setAmount] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(todayInBrisbane());
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
 
