@@ -197,6 +197,31 @@ describe("Phase 9 guarded manual net worth service", () => {
     ]);
   });
 
+  it("supports item creation, valuation, archive, restore and immutable snapshot creation", async () => {
+    const { store, calls } = memoryStore();
+    const context = createTestUserContext("user_1");
+    await mutateNetWorth(context, {
+      action: "CREATE_ITEM", name: "Manual asset", kind: "ASSET", category: "OTHER_ASSET",
+      propertyId: null, loanAccountId: null,
+    }, store, new Date(), { runtimeEnabled: true });
+    await mutateNetWorth(context, {
+      action: "ADD_VALUATION", itemId: "item_1", valueCents: 250000,
+      valuationDate: "2026-07-19", note: "Manual value",
+    }, store, new Date(), { runtimeEnabled: true });
+    for (const status of ["ARCHIVED", "ACTIVE"] as const) {
+      await mutateNetWorth(context, {
+        action: "SET_ITEM_STATUS", itemId: "item_1",
+        updatedAt: "2026-07-17T00:00:00.000Z", status,
+      }, store, new Date(), { runtimeEnabled: true });
+    }
+    await mutateNetWorth(context, {
+      action: "CREATE_SNAPSHOT", snapshotDate: "2026-07-19",
+    }, store, new Date(), { runtimeEnabled: true });
+    expect(calls.map((call) => call.action)).toEqual([
+      "create-item", "valuation", "status", "status", "snapshot",
+    ]);
+  });
+
   it("fails safely for missing or another-user linked records", async () => {
     const { store } = memoryStore({
       async createItem() {
