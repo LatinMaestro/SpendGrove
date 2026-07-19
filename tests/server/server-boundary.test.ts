@@ -282,6 +282,10 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "merchantProfile.write",
       "merchantAlias.write",
       "merchantRule.write",
+      "household.write",
+      "householdMembership.write",
+      "householdInvitation.write",
+      "householdRecordShare.write",
     ]),
   ],
 ]);
