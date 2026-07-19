@@ -52,6 +52,10 @@ function emptyData(): AccountExportData {
     importUndoOperations: [],
     savingsGoals: [],
     savingsGoalContributions: [],
+    netWorthItems: [],
+    netWorthValuations: [],
+    netWorthSnapshots: [],
+    netWorthSnapshotEntries: [],
     auditEvents: [],
   };
 }
@@ -141,6 +145,10 @@ describe("Phase 5 account export", () => {
       "importUndoOperations",
       "savingsGoals",
       "savingsGoalContributions",
+      "netWorthItems",
+      "netWorthValuations",
+      "netWorthSnapshots",
+      "netWorthSnapshotEntries",
       "auditEvents",
     ]);
 
@@ -241,6 +249,19 @@ describe("Phase 5 account export", () => {
     const goalSelect = service.match(/db\.savingsGoal\.findMany\([\s\S]*?\n        \}\)/)?.[0] ?? "";
     expect(goalSelect).toContain("targetAmountCents: true");
     expect(goalSelect).not.toMatch(/transactionId|bank|account|merchant|rawCsv/i);
+  });
+
+  it("includes manual net worth records, valuations and frozen snapshot entries", async () => {
+    const data = emptyData();
+    data.netWorthItems.push({ id: "item_1", userId: "user_1", kind: "ASSET", category: "CASH", name: "Manual cash" });
+    data.netWorthValuations.push({ id: "value_1", userId: "user_1", netWorthItemId: "item_1", valueCents: 100000, valuationDate: "2026-07-19" });
+    data.netWorthSnapshots.push({ id: "snapshot_1", userId: "user_1", snapshotDate: "2026-07-19", netWorthCents: 100000 });
+    data.netWorthSnapshotEntries.push({ id: "entry_1", userId: "user_1", snapshotId: "snapshot_1", netWorthItemId: "item_1", valueCents: 100000 });
+    const result = await createAccountExport(createTestUserContext("user_1"), memoryStore(data).store);
+    expect(result.data.netWorthItems).toEqual(data.netWorthItems);
+    expect(result.data.netWorthValuations).toEqual(data.netWorthValuations);
+    expect(result.data.netWorthSnapshots).toEqual(data.netWorthSnapshots);
+    expect(result.data.netWorthSnapshotEntries).toEqual(data.netWorthSnapshotEntries);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
