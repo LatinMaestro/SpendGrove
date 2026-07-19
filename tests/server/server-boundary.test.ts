@@ -31,6 +31,8 @@ const PRODUCT_WRITE_PATTERNS = [
   { name: "categoryBudget.write", pattern: /categoryBudget\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "bulkOperation.write", pattern: /bulkOperation\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "bulkOperationItem.write", pattern: /bulkOperationItem\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "importUndoOperation.write", pattern: /importUndoOperation\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
+  { name: "importUndoItem.write", pattern: /importUndoItem\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "household.write", pattern: /household\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "householdMembership.write", pattern: /householdMembership\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
   { name: "householdInvitation.write", pattern: /householdInvitation\.(?:create|createMany|update|updateMany|upsert|delete|deleteMany)\s*\(/ },
@@ -242,6 +244,15 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
     ]),
   ],
   [
+    "src/server/import-undo.ts",
+    new Set([
+      "transaction.updateMany",
+      "auditEvent.write",
+      "importUndoOperation.write",
+      "importUndoItem.write",
+    ]),
+  ],
+  [
     "src/server/account-deletion.ts",
     new Set([
       "transaction.deleteMany",
@@ -250,6 +261,8 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "auditEvent.write",
       "bulkOperation.write",
       "bulkOperationItem.write",
+      "importUndoOperation.write",
+      "importUndoItem.write",
       "loanRepayment.write",
       "loanReconciliationLink.write",
       "propertyTransactionLink.write",
