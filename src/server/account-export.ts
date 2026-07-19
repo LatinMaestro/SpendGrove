@@ -47,6 +47,10 @@ export type AccountExportData = {
   householdMemberships: ExportRecord[];
   householdInvitations: ExportRecord[];
   householdShares: ExportRecord[];
+  accountantGrantsOwned: ExportRecord[];
+  accountantGrantsAccepted: ExportRecord[];
+  accountantScopesOwned: ExportRecord[];
+  accountantScopesAccepted: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -503,6 +507,48 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], [], [], []];
 
+    const [
+      accountantGrantsOwned,
+      accountantGrantsAccepted,
+      accountantScopesOwned,
+      accountantScopesAccepted,
+    ] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.accountantAccessGrant.findMany({
+          where: { ownerUserId: userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, status: true, expiresAt: true, acceptedAt: true,
+            revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.accountantAccessGrant.findMany({
+          where: { accountantUserId: userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, status: true, expiresAt: true, acceptedAt: true,
+            revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.accountantAccessScope.findMany({
+          where: { ownerUserId: userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, grantId: true, scopeType: true, scopeKey: true,
+            entityId: true, sharedAt: true, revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.accountantAccessScope.findMany({
+          where: { grant: { accountantUserId: userId } },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, grantId: true, scopeType: true, scopeKey: true,
+            entityId: true, sharedAt: true, revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], [], [], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -540,6 +586,10 @@ const defaultAccountExportStore: AccountExportStore = {
       householdMemberships: serializeRows(householdMemberships),
       householdInvitations: serializeRows(householdInvitations),
       householdShares: serializeRows(householdShares),
+      accountantGrantsOwned: serializeRows(accountantGrantsOwned),
+      accountantGrantsAccepted: serializeRows(accountantGrantsAccepted),
+      accountantScopesOwned: serializeRows(accountantScopesOwned),
+      accountantScopesAccepted: serializeRows(accountantScopesAccepted),
       auditEvents: serializeRows(auditEvents),
     };
   },
