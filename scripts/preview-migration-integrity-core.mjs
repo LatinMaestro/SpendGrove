@@ -534,7 +534,7 @@ export const migrationProfiles = {
         indexes: [
           "SavingsGoalContribution_pkey",
           "SavingsGoalContribution_userId_deletedAt_idx",
-          "SavingsGoalContribution_userId_savingsGoalId_contributionDate_idx",
+          "SavingsGoalContribution_userId_savingsGoalId_contributionDate_i",
         ],
         constraints: [
           "SavingsGoalContribution_pkey",
@@ -667,7 +667,7 @@ export const migrationProfiles = {
       },
       HouseholdRecordShare: {
         columns: ["createdAt", "entityId", "entityType", "householdId", "id", "ownerUserId", "revokedAt", "sharedAt", "updatedAt"],
-        indexes: ["HouseholdRecordShare_householdId_ownerUserId_entityType_entityId_key", "HouseholdRecordShare_householdId_revokedAt_entityType_idx", "HouseholdRecordShare_ownerUserId_revokedAt_entityType_idx", "HouseholdRecordShare_pkey"],
+        indexes: ["HouseholdRecordShare_householdId_ownerUserId_entityType_entityI", "HouseholdRecordShare_householdId_revokedAt_entityType_idx", "HouseholdRecordShare_ownerUserId_revokedAt_entityType_idx", "HouseholdRecordShare_pkey"],
         constraints: ["HouseholdRecordShare_householdId_fkey", "HouseholdRecordShare_ownerUserId_fkey", "HouseholdRecordShare_pkey"],
         delegate: "householdRecordShare",
       },
