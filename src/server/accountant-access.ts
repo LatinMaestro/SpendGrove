@@ -5,8 +5,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED } from "@/src/server/phase-9-runtime";
-import { PHASE_10_COLLABORATION_RUNTIME_ENABLED } from "@/src/server/phase-10-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export type AccountantScopeType =
   | "REPORT" | "TRANSACTION" | "PROPERTY" | "LOAN_ACCOUNT"
@@ -195,38 +194,37 @@ async function validateOwnedSource(
 ) {
   if (scopeType === "TRANSACTION") {
     return Boolean(await tx.transaction.findFirst({
-      where: { id: entityId, userId: ownerUserId, deletedAt: null },
+      where: { id: entityId, userId: ownerUserId, status: "ACTIVE", deletedAt: null },
       select: { id: true },
     }));
   }
   if (scopeType === "PROPERTY") {
     return Boolean(await tx.property.findFirst({
-      where: { id: entityId, userId: ownerUserId, deletedAt: null },
+      where: { id: entityId, userId: ownerUserId, isArchived: false, deletedAt: null },
       select: { id: true },
     }));
   }
   if (scopeType === "LOAN_ACCOUNT") {
     return Boolean(await tx.loanAccount.findFirst({
-      where: { id: entityId, userId: ownerUserId, deletedAt: null },
+      where: { id: entityId, userId: ownerUserId, isArchived: false, deletedAt: null },
       select: { id: true },
     }));
   }
   if (scopeType === "CATEGORY_BUDGET") {
     return Boolean(await tx.categoryBudget.findFirst({
-      where: { id: entityId, userId: ownerUserId },
+      where: { id: entityId, userId: ownerUserId, status: "ACTIVE" },
       select: { id: true },
     }));
   }
   if (scopeType === "RECURRING_ITEM") {
     return Boolean(await tx.recurringItem.findFirst({
-      where: { id: entityId, userId: ownerUserId },
+      where: { id: entityId, userId: ownerUserId, status: { not: "ARCHIVED" } },
       select: { id: true },
     }));
   }
-  if (!PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED) return false;
   if (scopeType === "SAVINGS_GOAL") {
     return Boolean(await tx.savingsGoal.findFirst({
-      where: { id: entityId, userId: ownerUserId },
+      where: { id: entityId, userId: ownerUserId, status: { not: "ARCHIVED" } },
       select: { id: true },
     }));
   }
@@ -433,7 +431,7 @@ export function createPrismaAccountantAccessStore(
 type RuntimeOptions = { runtimeEnabled?: boolean };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_10_COLLABORATION_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new AccountantAccessUnavailableError();
   }
 }
