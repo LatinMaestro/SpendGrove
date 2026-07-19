@@ -85,7 +85,7 @@ describe("Preview household record access", () => {
 
   it("returns purpose-limited summaries and never raw private source fields", async () => {
     const records = await readFile(recordsPath, "utf8");
-    expect(records).toContain('memberships');
+    expect(records).toContain('householdMembership.findFirst');
     expect(records).toContain('status: "ACTIVE"');
     expect(records).toContain("ownerUserId");
     expect(records).not.toMatch(/description:\s*true|merchantName:\s*true|notes:\s*true|importedDescriptionSanitized:\s*true/);
