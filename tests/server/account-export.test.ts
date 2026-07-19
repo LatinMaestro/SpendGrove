@@ -58,6 +58,8 @@ function emptyData(): AccountExportData {
     netWorthSnapshotEntries: [],
     recurringLifecycle: [],
     recurringInstances: [],
+    reminderPreferences: [],
+    reminders: [],
     auditEvents: [],
   };
 }
@@ -153,6 +155,8 @@ describe("Phase 5 account export", () => {
       "netWorthSnapshotEntries",
       "recurringLifecycle",
       "recurringInstances",
+      "reminderPreferences",
+      "reminders",
       "auditEvents",
     ]);
 
