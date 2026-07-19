@@ -31,6 +31,7 @@ export type AccountExportData = {
   recurringSuggestionDismissals: ExportRecord[];
   categoryBudgets: ExportRecord[];
   bulkOperations: ExportRecord[];
+  transferLinks: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -310,6 +311,23 @@ const defaultAccountExportStore: AccountExportStore = {
       })
       : [];
 
+    const transferLinks = isVerifiedPreviewRuntime()
+      ? await db.transferLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          outgoingTransactionId: true,
+          incomingTransactionId: true,
+          confirmedAt: true,
+          unlinkedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -331,6 +349,7 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
       categoryBudgets: serializeRows(categoryBudgets),
       bulkOperations: serializeRows(bulkOperations),
+      transferLinks: serializeRows(transferLinks),
       auditEvents: serializeRows(auditEvents),
     };
   },
