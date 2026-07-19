@@ -51,7 +51,7 @@ function reportSummary(entityId: string): HouseholdRecordSummary | null {
     : null;
 }
 
-async function resolveSummary(
+export async function resolvePurposeLimitedRecordSummary(
   tx: Prisma.TransactionClient,
   ownerUserId: string,
   entityType: HouseholdShareType,
@@ -219,7 +219,7 @@ export function createPrismaHouseholdRecordStore(
           })),
         ];
         const summaries = await Promise.all(
-          refs.map((entry) => resolveSummary(tx, userId, entry.entityType, entry.entityId)),
+          refs.map((entry) => resolvePurposeLimitedRecordSummary(tx, userId, entry.entityType, entry.entityId)),
         );
         return summaries.filter((entry): entry is HouseholdRecordSummary => Boolean(entry));
       });
@@ -243,7 +243,7 @@ export function createPrismaHouseholdRecordStore(
           },
         });
         const summaries = await Promise.all(shares.map(async (share) => {
-          const summary = await resolveSummary(
+          const summary = await resolvePurposeLimitedRecordSummary(
             tx,
             share.ownerUserId,
             share.entityType as HouseholdShareType,
