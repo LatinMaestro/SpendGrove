@@ -5,8 +5,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED } from "@/src/server/phase-9-runtime";
-import { PHASE_10_COLLABORATION_RUNTIME_ENABLED } from "@/src/server/phase-10-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export type HouseholdRoleCode = "ADMIN" | "MEMBER";
 export type HouseholdShareType =
@@ -238,7 +237,6 @@ async function validateOwnedSource(
       where: { id: entityId, userId }, select: { id: true },
     }));
   }
-  if (!PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED) return false;
   if (entityType === "SAVINGS_GOAL") {
     return Boolean(await tx.savingsGoal.findFirst({
       where: { id: entityId, userId }, select: { id: true },
@@ -453,18 +451,27 @@ export function createPrismaHouseholdStore(
 type RuntimeOptions = { runtimeEnabled?: boolean };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_10_COLLABORATION_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new HouseholdUnavailableError();
   }
 }
 
-function toView(record: HouseholdViewRecord) {
+function toView(record: HouseholdViewRecord, currentUserId: string) {
   return {
     id: record.id,
     name: record.name,
     status: record.status,
-    members: record.memberships.map(({ id, role }) => ({ id, role })),
-    sharedRecords: record.shares.map(({ id, entityType }) => ({ id, entityType })),
+    currentRole: record.memberships.find((entry) => entry.userId === currentUserId)?.role ?? null,
+    members: record.memberships.map(({ id, userId, role }) => ({
+      id,
+      role,
+      isYou: userId === currentUserId,
+    })),
+    sharedRecords: record.shares.map(({ id, ownerUserId, entityType }) => ({
+      id,
+      entityType,
+      isOwnedByYou: ownerUserId === currentUserId,
+    })),
   };
 }
 
@@ -475,7 +482,7 @@ export async function listHouseholds(
 ) {
   requireRuntime(options);
   const user = requireAuthenticatedUserContext(context);
-  return (await (store ?? createPrismaHouseholdStore()).listForMember(user.userId)).map(toView);
+  return (await (store ?? createPrismaHouseholdStore()).listForMember(user.userId)).map((record) => toView(record, user.userId));
 }
 
 export async function mutateHousehold(
@@ -529,5 +536,5 @@ export async function mutateHousehold(
   }
 
   if (!household) throw new HouseholdConflictError();
-  return { type: "HOUSEHOLD" as const, household: toView(household) };
+  return { type: "HOUSEHOLD" as const, household: toView(household, user.userId) };
 }
