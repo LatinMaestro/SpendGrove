@@ -48,6 +48,7 @@ function emptyData(): AccountExportData {
     recurringSuggestionDismissals: [],
     categoryBudgets: [],
     bulkOperations: [],
+    transferLinks: [],
     auditEvents: [],
   };
 }
@@ -133,6 +134,7 @@ describe("Phase 5 account export", () => {
       "recurringSuggestionDismissals",
       "categoryBudgets",
       "bulkOperations",
+      "transferLinks",
       "auditEvents",
     ]);
 
@@ -166,6 +168,27 @@ describe("Phase 5 account export", () => {
     expect(service).toContain("isVerifiedPreviewRuntime()");
     expect(bulkSelect).toContain("requestedCount: true");
     expect(bulkSelect).not.toMatch(/items|transactionId|beforeCategoryId|afterCategoryId|beforePropertyId|afterPropertyId/);
+  });
+
+  it("includes owned transfer-link lifecycle without private matching evidence", async () => {
+    const data = emptyData();
+    data.transferLinks.push({
+      id: "link_1",
+      userId: "user_1",
+      outgoingTransactionId: "transaction_out",
+      incomingTransactionId: "transaction_in",
+      confirmedAt: "2026-07-17T00:00:00.000Z",
+      unlinkedAt: null,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+
+    expect(result.data.transferLinks).toEqual(data.transferLinks);
+    const service = await readFile(servicePath, "utf8");
+    const transferSelect = service.match(/db\.transferLink\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(transferSelect).toContain("outgoingTransactionId: true");
+    expect(transferSelect).toContain("incomingTransactionId: true");
+    expect(transferSelect).not.toMatch(/description|merchant|amount|account|bsb|filename/i);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
