@@ -35,7 +35,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams?
       )}
       <LocalPrototypeDataNotice context="account" />
       {accountPersistenceAvailable ? (
-        <DurableManualTransactions bulkOperationsAvailable={bulkOperationsAvailable} />
+        <DurableManualTransactions bulkOperationsAvailable={bulkOperationsAvailable} transferLinksAvailable={bulkOperationsAvailable} />
       ) : (
         <section role="alert" className="rounded-2xl border border-warning-amber bg-warning-amber/10 p-5">
           <h2 className="font-bold text-brand-deepTeal">Account records are unavailable</h2>
