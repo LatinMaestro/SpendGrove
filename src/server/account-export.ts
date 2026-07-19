@@ -41,6 +41,8 @@ export type AccountExportData = {
   netWorthSnapshotEntries: ExportRecord[];
   recurringLifecycle: ExportRecord[];
   recurringInstances: ExportRecord[];
+  reminderPreferences: ExportRecord[];
+  reminders: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -437,6 +439,28 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], []];
 
+    const [reminderPreferences, reminders] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.reminderPreference.findMany({
+          where: { userId },
+          orderBy: { family: "asc" },
+          select: {
+            id: true, userId: true, family: true, isEnabled: true,
+            leadDays: true, thresholdPercent: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.reminder.findMany({
+          where: { userId },
+          orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, family: true, sourceEntityId: true,
+            dueDate: true, status: true, acknowledgedAt: true, dismissedAt: true,
+            archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -468,6 +492,8 @@ const defaultAccountExportStore: AccountExportStore = {
       netWorthSnapshotEntries: serializeRows(netWorthSnapshotEntries, ["valuationDate"]),
       recurringLifecycle: serializeRows(recurringLifecycle, ["nextExpectedDate"]),
       recurringInstances: serializeRows(recurringInstances),
+      reminderPreferences: serializeRows(reminderPreferences),
+      reminders: serializeRows(reminders, ["dueDate"]),
       auditEvents: serializeRows(auditEvents),
     };
   },
