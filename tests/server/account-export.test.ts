@@ -47,6 +47,7 @@ function emptyData(): AccountExportData {
     recurringItems: [],
     recurringSuggestionDismissals: [],
     categoryBudgets: [],
+    bulkOperations: [],
     auditEvents: [],
   };
 }
@@ -131,6 +132,7 @@ describe("Phase 5 account export", () => {
       "recurringItems",
       "recurringSuggestionDismissals",
       "categoryBudgets",
+      "bulkOperations",
       "auditEvents",
     ]);
 
@@ -140,6 +142,30 @@ describe("Phase 5 account export", () => {
     const result = await createAccountExport(createTestUserContext("user_1"), store);
     expect(result.data.categories[0]).toMatchObject({ isArchived: true });
     expect(result.data.transactions[0]).toMatchObject({ status: "DELETED" });
+  });
+
+  it("includes only safe operation-level bulk summaries in verified Preview", async () => {
+    const data = emptyData();
+    data.bulkOperations.push({
+      id: "bulk_1",
+      userId: "user_1",
+      type: "SET_CATEGORY",
+      status: "COMPLETED",
+      requestedCount: 2,
+      appliedCount: 2,
+      skippedCount: 0,
+      failedCount: 0,
+      undoBlockedCount: 0,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+
+    expect(result.data.bulkOperations).toEqual(data.bulkOperations);
+    const service = await readFile(servicePath, "utf8");
+    const bulkSelect = service.match(/db\.bulkOperation\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(service).toContain("isVerifiedPreviewRuntime()");
+    expect(bulkSelect).toContain("requestedCount: true");
+    expect(bulkSelect).not.toMatch(/items|transactionId|beforeCategoryId|afterCategoryId|beforePropertyId|afterPropertyId/);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
