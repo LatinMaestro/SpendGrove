@@ -32,6 +32,7 @@ export type AccountExportData = {
   categoryBudgets: ExportRecord[];
   bulkOperations: ExportRecord[];
   transferLinks: ExportRecord[];
+  importUndoOperations: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -328,6 +329,30 @@ const defaultAccountExportStore: AccountExportStore = {
       })
       : [];
 
+    const importUndoOperations = isVerifiedPreviewRuntime()
+      ? await db.importUndoOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          importBatchId: true,
+          status: true,
+          requestedCount: true,
+          undoneCount: true,
+          noChangeCount: true,
+          blockedCount: true,
+          failedCount: true,
+          restoredCount: true,
+          restoreBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          restoredAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -350,6 +375,7 @@ const defaultAccountExportStore: AccountExportStore = {
       categoryBudgets: serializeRows(categoryBudgets),
       bulkOperations: serializeRows(bulkOperations),
       transferLinks: serializeRows(transferLinks),
+      importUndoOperations: serializeRows(importUndoOperations),
       auditEvents: serializeRows(auditEvents),
     };
   },
