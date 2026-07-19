@@ -39,6 +39,8 @@ export type AccountExportData = {
   netWorthValuations: ExportRecord[];
   netWorthSnapshots: ExportRecord[];
   netWorthSnapshotEntries: ExportRecord[];
+  recurringLifecycle: ExportRecord[];
+  recurringInstances: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -414,6 +416,27 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], [], [], []];
 
+    const [recurringLifecycle, recurringInstances] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.recurringItem.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, categoryId: true, label: true, transactionType: true,
+            expectedAmountCents: true, expectedAmountMinCents: true, expectedAmountMaxCents: true,
+            cadence: true, nextExpectedDate: true, source: true, detectionConfidence: true,
+            status: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.recurringInstance.findMany({
+          where: { userId }, orderBy: { linkedAt: "asc" },
+          select: {
+            id: true, userId: true, recurringItemId: true, transactionId: true,
+            linkedAt: true, unlinkedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -443,6 +466,8 @@ const defaultAccountExportStore: AccountExportStore = {
       netWorthValuations: serializeRows(netWorthValuations, ["valuationDate"]),
       netWorthSnapshots: serializeRows(netWorthSnapshots, ["snapshotDate"]),
       netWorthSnapshotEntries: serializeRows(netWorthSnapshotEntries, ["valuationDate"]),
+      recurringLifecycle: serializeRows(recurringLifecycle, ["nextExpectedDate"]),
+      recurringInstances: serializeRows(recurringInstances),
       auditEvents: serializeRows(auditEvents),
     };
   },
