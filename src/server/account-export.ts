@@ -33,6 +33,8 @@ export type AccountExportData = {
   bulkOperations: ExportRecord[];
   transferLinks: ExportRecord[];
   importUndoOperations: ExportRecord[];
+  savingsGoals: ExportRecord[];
+  savingsGoalContributions: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -353,6 +355,28 @@ const defaultAccountExportStore: AccountExportStore = {
       })
       : [];
 
+    const [savingsGoals, savingsGoalContributions] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.savingsGoal.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, name: true, targetAmountCents: true, targetDate: true,
+            openingProgressCents: true, status: true, completedAt: true, archivedAt: true,
+            createdAt: true, updatedAt: true,
+          },
+        }),
+        db.savingsGoalContribution.findMany({
+          where: { userId },
+          orderBy: [{ contributionDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, savingsGoalId: true, amountCents: true,
+            contributionDate: true, note: true, deletedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -376,6 +400,8 @@ const defaultAccountExportStore: AccountExportStore = {
       bulkOperations: serializeRows(bulkOperations),
       transferLinks: serializeRows(transferLinks),
       importUndoOperations: serializeRows(importUndoOperations),
+      savingsGoals: serializeRows(savingsGoals, ["targetDate"]),
+      savingsGoalContributions: serializeRows(savingsGoalContributions, ["contributionDate"]),
       auditEvents: serializeRows(auditEvents),
     };
   },
