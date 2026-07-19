@@ -1142,3 +1142,10 @@ Status: repository boundary technically verified; no commercial product or payme
 - [ ] Cancellation, refund, support, GST, consumer-law and downgrade treatment receive professional review.
 - [ ] Provider packages, secrets, environments, durable schema and Production activation receive focused approval.
 - [ ] No payment or price is published before the final commercial gate.
+
+
+## Preview foundation activation — deferred consolidated review
+
+The complete non-technical checklist for PRs #231–#240 is maintained in `docs/PREVIEW_FOUNDATION_ACTIVATION_QA.md`. Preserve all earlier Phase 1–5 evidence and run this new checklist with synthetic Preview data only after an exact-head Vercel Preview is Ready.
+
+Client review remains deferred. None of the ten activations is formally accepted or available in Production.
