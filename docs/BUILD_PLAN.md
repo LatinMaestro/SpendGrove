@@ -1189,3 +1189,18 @@ Controlling contract: `docs/PHASE_7_MERCHANT_PROFILE_COMPLETION_CONTRACT.md`.
 - [ ] Complete Phase 9 QA and migration/activation handoff.
 
 The three deferred Phase 6/7 Preview migrations remain first in order. No Phase 9 missing-table query or Production migration is permitted.
+
+
+## Preview activation gate — 19 July 2026
+
+Repository implementation for activation sequence A–J is prepared in PRs #231–#240. GitHub verification is green through 156 files / 961 tests. Merge order remains A through J, followed by the consolidated QA/handoff PR.
+
+Exit conditions:
+
+- one meaningful exact-head Vercel Preview is Ready;
+- synthetic Preview QA in `docs/PREVIEW_FOUNDATION_ACTIVATION_QA.md` passes;
+- all stacked diffs remain free of schema, migration, package, provider, secret and environment changes;
+- PRs merge in order;
+- permanent records are updated with final merge/deployment evidence.
+
+Production migration and runtime activation remain outside this gate and require separate approval.
