@@ -1,4 +1,5 @@
 import { Prisma, type ImportRowAction, type ImportUndoItemStatus, type ImportUndoReason, type PrismaClient } from "@prisma/client";
+import type { SafeImportUndoStatus } from "@/lib/import-undo";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
@@ -20,22 +21,6 @@ export class ImportUndoConflictError extends Error {
     this.name = "ImportUndoConflictError";
   }
 }
-
-export type SafeImportUndoStatus = {
-  available: boolean;
-  eligible: boolean;
-  operationId: string | null;
-  status: string | null;
-  requestedCount: number;
-  undoneCount: number;
-  noChangeCount: number;
-  blockedCount: number;
-  failedCount: number;
-  restoredCount: number;
-  restoreBlockedCount: number;
-  canRestore: boolean;
-  message: string;
-};
 
 type PreparedRow = {
   id: string;
