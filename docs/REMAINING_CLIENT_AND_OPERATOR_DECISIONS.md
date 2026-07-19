@@ -758,3 +758,24 @@ Still required before any commercial activation:
 - secure provider/package/secret/environment and durable-schema approvals.
 
 Until those decisions are complete, the accepted product remains unpaywalled and no price, checkout, provider call or billing record may exist.
+
+
+## Preview activation operator gates — 19 July 2026
+
+Current external blocker:
+
+1. wait for Vercel account build capacity;
+2. obtain one meaningful exact-head Preview deployment for the final stacked code;
+3. run the synthetic QA matrix in `docs/PREVIEW_FOUNDATION_ACTIVATION_QA.md`;
+4. merge PRs #231–#240 in order only when deployed evidence is green.
+
+Do not rerun the migration workflow. The isolated Preview migration is already verified.
+
+Still separate and unapproved:
+
+- any Production migration or runtime activation;
+- real household/accountant invitations or an email provider;
+- remote push notifications or credentials;
+- private object storage, malware scanning, OCR or extraction;
+- provider-plan purchase;
+- real-user invitation, TestFlight, App Store submission or public launch.
