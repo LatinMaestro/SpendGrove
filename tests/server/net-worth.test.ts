@@ -55,6 +55,10 @@ function snapshot(overrides: Partial<NetWorthSnapshotRecord> = {}): NetWorthSnap
 function memoryStore(overrides: Partial<NetWorthStore> = {}) {
   const calls: Array<{ action: string; userId: string }> = [];
   const store: NetWorthStore = {
+    async listLinkOptions(userId) {
+      calls.push({ action: "links", userId });
+      return { properties: [], loanAccounts: [] };
+    },
     async listItems(userId) {
       calls.push({ action: "items", userId });
       return [item({ userId })];
@@ -188,6 +192,7 @@ describe("Phase 9 guarded manual net worth service", () => {
     expect(calls).toEqual([
       { action: "items", userId: "user_8" },
       { action: "snapshots", userId: "user_8" },
+      { action: "links", userId: "user_8" },
       { action: "valuation", userId: "user_8" },
     ]);
   });
@@ -216,7 +221,7 @@ describe("Phase 9 guarded manual net worth service", () => {
 
   it("does not infer balances from transactions, loans, Properties or providers", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
     expect(service).not.toMatch(/transaction\.(find|create|update|delete)/);
     expect(service).not.toContain("rawCsv");
     expect(service).not.toContain("accountNumber");
