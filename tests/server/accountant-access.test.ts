@@ -275,8 +275,9 @@ describe("Phase 10 guarded accountant access service", () => {
 
   it("contains no financial mutation, invitation delivery or private-source logging", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_10_COLLABORATION_RUNTIME_ENABLED");
-    expect(service).toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
+    expect(service).not.toContain("PHASE_10_COLLABORATION_RUNTIME_ENABLED");
+    expect(service).not.toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
     expect(service).not.toMatch(/console\.(?:log|info|warn|error)/);
     expect(service).not.toContain("localStorage");
     expect(service).not.toContain("rawCsv");
