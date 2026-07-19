@@ -35,6 +35,10 @@ export type AccountExportData = {
   importUndoOperations: ExportRecord[];
   savingsGoals: ExportRecord[];
   savingsGoalContributions: ExportRecord[];
+  netWorthItems: ExportRecord[];
+  netWorthValuations: ExportRecord[];
+  netWorthSnapshots: ExportRecord[];
+  netWorthSnapshotEntries: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -377,6 +381,39 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], []];
 
+    const [netWorthItems, netWorthValuations, netWorthSnapshots, netWorthSnapshotEntries] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.netWorthItem.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, propertyId: true, loanAccountId: true, name: true,
+            kind: true, category: true, status: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthValuation.findMany({
+          where: { userId }, orderBy: [{ valuationDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, netWorthItemId: true, valueCents: true, valuationDate: true,
+            note: true, deletedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthSnapshot.findMany({
+          where: { userId }, orderBy: { snapshotDate: "asc" },
+          select: {
+            id: true, userId: true, snapshotDate: true, totalAssetCents: true,
+            totalLiabilityCents: true, netWorthCents: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthSnapshotEntry.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, snapshotId: true, netWorthItemId: true, itemName: true,
+            kind: true, category: true, valueCents: true, valuationDate: true, createdAt: true,
+          },
+        }),
+      ])
+      : [[], [], [], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -402,6 +439,10 @@ const defaultAccountExportStore: AccountExportStore = {
       importUndoOperations: serializeRows(importUndoOperations),
       savingsGoals: serializeRows(savingsGoals, ["targetDate"]),
       savingsGoalContributions: serializeRows(savingsGoalContributions, ["contributionDate"]),
+      netWorthItems: serializeRows(netWorthItems),
+      netWorthValuations: serializeRows(netWorthValuations, ["valuationDate"]),
+      netWorthSnapshots: serializeRows(netWorthSnapshots, ["snapshotDate"]),
+      netWorthSnapshotEntries: serializeRows(netWorthSnapshotEntries, ["valuationDate"]),
       auditEvents: serializeRows(auditEvents),
     };
   },
