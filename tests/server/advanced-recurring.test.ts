@@ -4,6 +4,7 @@ import {
   AdvancedRecurringConflictError,
   AdvancedRecurringUnavailableError,
   listAdvancedRecurringItems,
+  listRecurringInstanceCandidates,
   mutateAdvancedRecurringItem,
   recurringInstanceCompatibility,
   type AdvancedRecurringItemRecord,
@@ -136,6 +137,34 @@ describe("Phase 9 guarded recurring lifecycle service", () => {
       date: "2026-07-17",
       amountCents: -2_500,
     }]);
+  });
+
+  it("lists only the signed-in owner's safe transaction candidates", async () => {
+    const { store, calls } = memoryStore();
+    const result = await listRecurringInstanceCandidates(
+      createTestUserContext("user_4"), store, { runtimeEnabled: true },
+    );
+    expect(calls).toEqual([{ action: "candidates", userId: "user_4" }]);
+    expect(result).toEqual([{
+      id: "transaction_1", date: "2026-07-17", amountCents: -2_500, type: "EXPENSE",
+    }]);
+  });
+
+  it("supports every approved user-confirmed lifecycle state and unlink", async () => {
+    const { store, calls } = memoryStore();
+    const context = createTestUserContext("user_1");
+    for (const status of ["ACTIVE", "PAUSED", "CANCELLED", "UNKNOWN", "NEEDS_REVIEW", "ARCHIVED"] as const) {
+      await mutateAdvancedRecurringItem(context, {
+        action: "SET_STATUS", itemId: "recurring_1",
+        updatedAt: "2026-07-17T00:00:00.000Z", status,
+      }, store, new Date(), { runtimeEnabled: true });
+    }
+    await mutateAdvancedRecurringItem(context, {
+      action: "UNLINK_INSTANCE", itemId: "recurring_1", instanceId: "instance_1",
+    }, store, new Date(), { runtimeEnabled: true });
+    expect(calls.map((call) => call.action)).toEqual([
+      "status", "status", "status", "status", "status", "status", "unlink",
+    ]);
   });
 
   it("enforces status, direction, split and signed amount compatibility", () => {
