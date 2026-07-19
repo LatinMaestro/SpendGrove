@@ -50,6 +50,8 @@ function emptyData(): AccountExportData {
     bulkOperations: [],
     transferLinks: [],
     importUndoOperations: [],
+    savingsGoals: [],
+    savingsGoalContributions: [],
     auditEvents: [],
   };
 }
@@ -137,6 +139,8 @@ describe("Phase 5 account export", () => {
       "bulkOperations",
       "transferLinks",
       "importUndoOperations",
+      "savingsGoals",
+      "savingsGoalContributions",
       "auditEvents",
     ]);
 
@@ -217,6 +221,26 @@ describe("Phase 5 account export", () => {
     expect(undoSelect).toContain("importBatchId: true");
     expect(undoSelect).toContain("undoneCount: true");
     expect(undoSelect).not.toMatch(/items|transactionId|importRowId|description|merchant|amount/i);
+  });
+
+  it("includes savings goals and manual contribution history without transaction linkage", async () => {
+    const data = emptyData();
+    data.savingsGoals.push({
+      id: "goal_1", userId: "user_1", name: "Synthetic goal",
+      targetAmountCents: 500000, openingProgressCents: 10000, status: "ACTIVE",
+    });
+    data.savingsGoalContributions.push({
+      id: "contribution_1", userId: "user_1", savingsGoalId: "goal_1",
+      amountCents: 2500, contributionDate: "2026-07-19", note: null,
+    });
+    const result = await createAccountExport(createTestUserContext("user_1"), memoryStore(data).store);
+    expect(result.data.savingsGoals).toEqual(data.savingsGoals);
+    expect(result.data.savingsGoalContributions).toEqual(data.savingsGoalContributions);
+
+    const service = await readFile(servicePath, "utf8");
+    const goalSelect = service.match(/db\.savingsGoal\.findMany\([\s\S]*?\n        \}\)/)?.[0] ?? "";
+    expect(goalSelect).toContain("targetAmountCents: true");
+    expect(goalSelect).not.toMatch(/transactionId|bank|account|merchant|rawCsv/i);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
