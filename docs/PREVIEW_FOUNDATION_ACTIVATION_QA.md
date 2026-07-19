@@ -1,7 +1,7 @@
 # Preview Foundation Activation QA
 
 Date: 19 July 2026  
-Status: repository implementation complete; merge and runtime acceptance pending Vercel Preview capacity and synthetic-data QA
+Status: repository implementation complete; merge and runtime acceptance pending one corrected exact-head Vercel Preview and synthetic-data QA
 
 ## Verified starting point
 
@@ -32,16 +32,20 @@ The migration workflow must not be rerun for this activation sequence.
 
 All activation diffs were compared with their immediate parent. None changes Prisma schema, migration SQL, packages, lockfile, providers, secrets, environment configuration or Production runtime configuration.
 
-## Current verification blocker
+## Vercel verification chronology
 
-Every activation head received the same Vercel status:
+Vercel Git integration did start builds for intermediate activation-stack commits. The most recent historical QA deployment, `dpl_GVnScR3ZrsekciV3WDL1get6j3Q5` at intermediate commit `15eb5c7145a37aa33cccdf57dd4dcb65e6d6d79b`, failed during the application test step. Its safe logs identified focused fail-closed test defects, including savings-goal and transfer-link guards reaching unavailable runtime state before returning their expected typed unavailable errors.
 
-- failed before an application build because of the Vercel account build-rate limit;
-- target reported `upgradeToPro=build-rate-limit`;
-- no exact-head Vercel Preview deployment exists for A–J;
-- this is not an application, schema, migration, privacy or financial-rule failure.
+Those defects were corrected before the final implementation and QA heads. The final GitHub runs in the register above are green. Subsequent corrected heads did not receive an exact-head deployment because Vercel returned `upgradeToPro=build-rate-limit`.
 
-The PRs remain open and unmerged. Do not merge them until one meaningful exact-head Vercel Preview is green and the stacked sequence is reviewed against that deployed code. Do not create no-op commits or repeatedly retrigger deployment.
+Accordingly:
+
+- the rate limit was an external capacity issue on the corrected heads;
+- the earlier intermediate failures were genuine focused test failures and are not hidden behind that explanation;
+- no exact-head Vercel Preview deployment yet verifies final implementation head `e5519769ea7fd07720144067104f3c897eb73d23` or the final stacked QA head;
+- no schema, migration, Production, privacy or financial-rule failure was identified.
+
+The PRs remain open and unmerged. Do not merge them until one meaningful corrected exact-head Vercel Preview is green and the stacked sequence is reviewed against that deployed code. Do not create no-op commits or repeatedly retrigger deployment.
 
 ## Production guard
 
