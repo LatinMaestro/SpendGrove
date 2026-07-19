@@ -51,6 +51,8 @@ export type AccountExportData = {
   accountantGrantsAccepted: ExportRecord[];
   accountantScopesOwned: ExportRecord[];
   accountantScopesAccepted: ExportRecord[];
+  documents: ExportRecord[];
+  documentLinks: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -549,6 +551,31 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], [], [], []];
 
+    const [documents, documentLinks] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.document.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, displayName: true, category: true,
+            status: true, contentType: true, sizeBytes: true, documentDate: true,
+            financialYear: true, availableAt: true, quarantinedAt: true,
+            failedAt: true, deletedAt: true, providerDeletedAt: true,
+            createdAt: true, updatedAt: true,
+          },
+        }),
+        db.documentLink.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, documentId: true, targetType: true,
+            targetKey: true, targetEntityId: true, linkedAt: true,
+            revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -590,6 +617,8 @@ const defaultAccountExportStore: AccountExportStore = {
       accountantGrantsAccepted: serializeRows(accountantGrantsAccepted),
       accountantScopesOwned: serializeRows(accountantScopesOwned),
       accountantScopesAccepted: serializeRows(accountantScopesAccepted),
+      documents: serializeRows(documents, ["documentDate"]),
+      documentLinks: serializeRows(documentLinks),
       auditEvents: serializeRows(auditEvents),
     };
   },
