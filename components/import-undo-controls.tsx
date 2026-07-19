@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { RotateCcw, Undo2 } from "lucide-react";
-import type { SafeImportUndoStatus } from "@/src/server/import-undo";
+import type { SafeImportUndoStatus } from "@/lib/import-undo";
 
 type ApiResponse = { ok: boolean; result?: SafeImportUndoStatus; error?: string };
 
