@@ -286,6 +286,8 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "householdMembership.write",
       "householdInvitation.write",
       "householdRecordShare.write",
+      "accountantAccessGrant.write",
+      "accountantAccessScope.write",
     ]),
   ],
 ]);
