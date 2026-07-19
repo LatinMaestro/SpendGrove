@@ -107,10 +107,9 @@ describe("Phase 11 guarded document metadata service", () => {
       userId: "user_4",
       input: {
         displayName: "Synthetic receipt",
-        storageProvider: undefined,
-        objectKey: undefined,
       },
     });
+    expect(JSON.stringify(calls[0])).not.toMatch(/storageProvider|objectKey|fileBytes/);
     expect(result.type).toBe("DOCUMENT");
     if (result.type !== "DOCUMENT") throw new Error("Expected document metadata.");
     expect(result.document.sizeBytes).toBe(0);
