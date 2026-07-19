@@ -29,6 +29,13 @@ export type AccountDeletionResult = {
   message: string;
 };
 
+export class HouseholdAccountDeletionBlockedError extends Error {
+  constructor() {
+    super("Choose another household administrator before deleting your account.");
+    this.name = "HouseholdAccountDeletionBlockedError";
+  }
+}
+
 export class AccountDeletionOwnershipError extends Error {
   constructor() {
     super("The signed-in account could not be matched safely.");
@@ -42,6 +49,34 @@ const defaultDataStore: AccountDataDeletionStore = {
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
       if (isVerifiedPreviewRuntime()) {
+        const createdHouseholds = await transaction.household.findMany({
+          where: { creatorUserId: userId },
+          select: { id: true },
+        });
+        for (const household of createdHouseholds) {
+          const replacement = await transaction.householdMembership.findFirst({
+            where: {
+              householdId: household.id,
+              userId: { not: userId },
+              status: "ACTIVE",
+              role: "ADMIN",
+            },
+            orderBy: { joinedAt: "asc" },
+            select: { userId: true },
+          });
+          if (!replacement) throw new HouseholdAccountDeletionBlockedError();
+          await transaction.household.update({
+            where: { id: household.id },
+            data: { creatorUserId: replacement.userId },
+          });
+        }
+        await transaction.householdRecordShare.deleteMany({ where: { ownerUserId: userId } });
+        await transaction.householdInvitation.deleteMany({ where: { inviterUserId: userId } });
+        await transaction.householdInvitation.updateMany({
+          where: { acceptedUserId: userId },
+          data: { acceptedUserId: null },
+        });
+        await transaction.householdMembership.deleteMany({ where: { userId } });
         await transaction.reminder.deleteMany({ where: { userId } });
         await transaction.reminderPreference.deleteMany({ where: { userId } });
         await transaction.recurringInstance.deleteMany({ where: { userId } });
