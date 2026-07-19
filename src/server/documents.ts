@@ -85,7 +85,7 @@ export type DocumentStore = {
     userId: string,
     documentId: string,
     now: Date,
-  ): Promise<boolean>;
+  ): Promise<"METADATA_ONLY" | "PROVIDER_CLEANUP" | null>;
 };
 
 export type DocumentStorageAdapter = {
@@ -380,11 +380,16 @@ export function createPrismaDocumentStore(
 
     async softDelete(userId, documentId, now) {
       return prisma.$transaction(async (tx) => {
+        const existing = await tx.document.findFirst({
+          where: { id: documentId, userId, deletedAt: null },
+          select: { storageProvider: true, objectKey: true },
+        });
+        if (!existing) return null;
         const changed = await tx.document.updateMany({
           where: { id: documentId, userId, deletedAt: null },
           data: { status: "DELETED", deletedAt: now },
         });
-        if (changed.count !== 1) return false;
+        if (changed.count !== 1) return null;
         await tx.documentLink.updateMany({
           where: { documentId, userId, revokedAt: null },
           data: { revokedAt: now },
@@ -398,7 +403,9 @@ export function createPrismaDocumentStore(
             "DOCUMENT_ACCESS_REVOKED",
           ),
         });
-        return true;
+        return existing.storageProvider && existing.objectKey
+          ? "PROVIDER_CLEANUP" as const
+          : "METADATA_ONLY" as const;
       });
     },
   };
@@ -552,6 +559,6 @@ export async function mutateDocumentMetadata(
   if (!deleted) throw new DocumentConflictError();
   return {
     type: "DELETED" as const,
-    providerCleanupRequired: true,
+    providerCleanupRequired: deleted === "PROVIDER_CLEANUP",
   };
 }
