@@ -49,6 +49,7 @@ function emptyData(): AccountExportData {
     categoryBudgets: [],
     bulkOperations: [],
     transferLinks: [],
+    importUndoOperations: [],
     auditEvents: [],
   };
 }
@@ -135,6 +136,7 @@ describe("Phase 5 account export", () => {
       "categoryBudgets",
       "bulkOperations",
       "transferLinks",
+      "importUndoOperations",
       "auditEvents",
     ]);
 
@@ -189,6 +191,32 @@ describe("Phase 5 account export", () => {
     expect(transferSelect).toContain("outgoingTransactionId: true");
     expect(transferSelect).toContain("incomingTransactionId: true");
     expect(transferSelect).not.toMatch(/description|merchant|amount|account|bsb|filename/i);
+  });
+
+  it("includes safe operation-level import undo lifecycle without row details", async () => {
+    const data = emptyData();
+    data.importUndoOperations.push({
+      id: "undo_1",
+      userId: "user_1",
+      importBatchId: "batch_1",
+      status: "PARTIAL",
+      requestedCount: 3,
+      undoneCount: 1,
+      noChangeCount: 1,
+      blockedCount: 1,
+      failedCount: 0,
+      restoredCount: 0,
+      restoreBlockedCount: 0,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+    expect(result.data.importUndoOperations).toEqual(data.importUndoOperations);
+
+    const service = await readFile(servicePath, "utf8");
+    const undoSelect = service.match(/db\.importUndoOperation\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(undoSelect).toContain("importBatchId: true");
+    expect(undoSelect).toContain("undoneCount: true");
+    expect(undoSelect).not.toMatch(/items|transactionId|importRowId|description|merchant|amount/i);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
