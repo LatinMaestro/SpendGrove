@@ -60,6 +60,10 @@ function emptyData(): AccountExportData {
     recurringInstances: [],
     reminderPreferences: [],
     reminders: [],
+    households: [],
+    householdMemberships: [],
+    householdInvitations: [],
+    householdShares: [],
     auditEvents: [],
   };
 }
@@ -157,6 +161,10 @@ describe("Phase 5 account export", () => {
       "recurringInstances",
       "reminderPreferences",
       "reminders",
+      "households",
+      "householdMemberships",
+      "householdInvitations",
+      "householdShares",
       "auditEvents",
     ]);
 
