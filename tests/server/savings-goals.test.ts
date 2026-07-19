@@ -195,7 +195,7 @@ describe("Phase 9 guarded savings goal service", () => {
 
   it("contains no transaction linking, provider calls or private-source fields", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
     expect(service).not.toMatch(/\.transaction\.(create|update|delete)/);
     expect(service).not.toContain("rawCsv");
     expect(service).not.toContain("accountNumber");
