@@ -56,6 +56,8 @@ function emptyData(): AccountExportData {
     netWorthValuations: [],
     netWorthSnapshots: [],
     netWorthSnapshotEntries: [],
+    recurringLifecycle: [],
+    recurringInstances: [],
     auditEvents: [],
   };
 }
@@ -149,6 +151,8 @@ describe("Phase 5 account export", () => {
       "netWorthValuations",
       "netWorthSnapshots",
       "netWorthSnapshotEntries",
+      "recurringLifecycle",
+      "recurringInstances",
       "auditEvents",
     ]);
 
@@ -262,6 +266,21 @@ describe("Phase 5 account export", () => {
     expect(result.data.netWorthValuations).toEqual(data.netWorthValuations);
     expect(result.data.netWorthSnapshots).toEqual(data.netWorthSnapshots);
     expect(result.data.netWorthSnapshotEntries).toEqual(data.netWorthSnapshotEntries);
+  });
+
+  it("includes advanced recurring lifecycle and linked-instance history", async () => {
+    const data = emptyData();
+    data.recurringLifecycle.push({
+      id: "recurring_1", userId: "user_1", label: "Synthetic service",
+      status: "PAUSED", expectedAmountMinCents: -2600, expectedAmountMaxCents: -2400,
+    });
+    data.recurringInstances.push({
+      id: "instance_1", userId: "user_1", recurringItemId: "recurring_1",
+      transactionId: "transaction_1", linkedAt: "2026-07-19T00:00:00.000Z", unlinkedAt: null,
+    });
+    const result = await createAccountExport(createTestUserContext("user_1"), memoryStore(data).store);
+    expect(result.data.recurringLifecycle).toEqual(data.recurringLifecycle);
+    expect(result.data.recurringInstances).toEqual(data.recurringInstances);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {
