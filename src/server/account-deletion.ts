@@ -49,6 +49,8 @@ const defaultDataStore: AccountDataDeletionStore = {
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
       if (isVerifiedPreviewRuntime()) {
+        await transaction.documentLink.deleteMany({ where: { userId } });
+        await transaction.document.deleteMany({ where: { userId } });
         const acceptedAccountantGrants = await transaction.accountantAccessGrant.findMany({
           where: { accountantUserId: userId },
           select: { id: true },
