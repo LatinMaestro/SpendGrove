@@ -42,6 +42,8 @@ const defaultDataStore: AccountDataDeletionStore = {
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
       if (isVerifiedPreviewRuntime()) {
+        await transaction.reminder.deleteMany({ where: { userId } });
+        await transaction.reminderPreference.deleteMany({ where: { userId } });
         await transaction.recurringInstance.deleteMany({ where: { userId } });
         await transaction.netWorthSnapshotEntry.deleteMany({ where: { userId } });
         await transaction.netWorthSnapshot.deleteMany({ where: { userId } });
