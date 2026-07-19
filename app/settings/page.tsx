@@ -4,6 +4,7 @@ import { AccountDataManagement } from "@/components/account-data-management";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
 import { AppShell } from "@/components/app-shell";
 import { DevelopmentTransactionResetPanel } from "@/components/development-transaction-reset-panel";
+import { DocumentMetadata } from "@/components/document-metadata";
 import { HouseholdAccess } from "@/components/household-access";
 import { SettingsPanel } from "@/components/settings-panel";
 import { PageHeader } from "@/components/ui/app-primitives";
@@ -50,6 +51,7 @@ export default function SettingsPage() {
 
         <HouseholdAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
         <AccountantAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
+        <DocumentMetadata available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
 
         {accountHistoryAvailable && <AccountDeletion />}
       </div>
