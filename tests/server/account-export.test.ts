@@ -68,6 +68,8 @@ function emptyData(): AccountExportData {
     accountantGrantsAccepted: [],
     accountantScopesOwned: [],
     accountantScopesAccepted: [],
+    documents: [],
+    documentLinks: [],
     auditEvents: [],
   };
 }
@@ -173,6 +175,8 @@ describe("Phase 5 account export", () => {
       "accountantGrantsAccepted",
       "accountantScopesOwned",
       "accountantScopesAccepted",
+      "documents",
+      "documentLinks",
       "auditEvents",
     ]);
 
