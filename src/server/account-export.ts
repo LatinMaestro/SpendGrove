@@ -43,6 +43,10 @@ export type AccountExportData = {
   recurringInstances: ExportRecord[];
   reminderPreferences: ExportRecord[];
   reminders: ExportRecord[];
+  households: ExportRecord[];
+  householdMemberships: ExportRecord[];
+  householdInvitations: ExportRecord[];
+  householdShares: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -461,6 +465,44 @@ const defaultAccountExportStore: AccountExportStore = {
       ])
       : [[], []];
 
+    const [households, householdMemberships, householdInvitations, householdShares] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.household.findMany({
+          where: { creatorUserId: userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, creatorUserId: true, name: true, status: true,
+            archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.householdMembership.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, householdId: true, userId: true, role: true, status: true,
+            joinedAt: true, endedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.householdInvitation.findMany({
+          where: { OR: [{ inviterUserId: userId }, { acceptedUserId: userId }] },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, householdId: true, inviterUserId: true, acceptedUserId: true,
+            role: true, status: true, expiresAt: true, acceptedAt: true,
+            revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.householdRecordShare.findMany({
+          where: { ownerUserId: userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, householdId: true, ownerUserId: true, entityType: true,
+            entityId: true, sharedAt: true, revokedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], [], [], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -494,6 +536,10 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringInstances: serializeRows(recurringInstances),
       reminderPreferences: serializeRows(reminderPreferences),
       reminders: serializeRows(reminders, ["dueDate"]),
+      households: serializeRows(households),
+      householdMemberships: serializeRows(householdMemberships),
+      householdInvitations: serializeRows(householdInvitations),
+      householdShares: serializeRows(householdShares),
       auditEvents: serializeRows(auditEvents),
     };
   },
