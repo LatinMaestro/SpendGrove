@@ -1,4 +1,5 @@
 import { AccountDeletion } from "@/components/account-deletion";
+import { AccountantAccess } from "@/components/accountant-access";
 import { AccountDataManagement } from "@/components/account-data-management";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
 import { AppShell } from "@/components/app-shell";
@@ -48,6 +49,7 @@ export default function SettingsPage() {
         )}
 
         <HouseholdAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
+        <AccountantAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
 
         {accountHistoryAvailable && <AccountDeletion />}
       </div>
