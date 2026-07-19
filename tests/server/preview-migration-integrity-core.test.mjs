@@ -439,7 +439,7 @@ describe("Phase 10 collaboration Preview migration profile", () => {
       "HouseholdInvitation_tokenHash_key",
     );
     expect(tables?.HouseholdRecordShare.indexes).toContain(
-      "HouseholdRecordShare_householdId_ownerUserId_entityType_entityId_key",
+      "HouseholdRecordShare_householdId_ownerUserId_entityType_entityI",
     );
     expect(tables?.AccountantAccessScope.indexes).toContain(
       "AccountantAccessScope_grantId_scopeType_scopeKey_key",
@@ -503,3 +503,34 @@ describe("Phase 11 document metadata Preview migration profile", () => {
     )).toBe(true);
   });
 });
+
+describe("PostgreSQL-catalogued Preview index names", () => {
+  const phase9Migration = "20260717120000_phase_9_advanced_personal_finance_foundation";
+  const phase10Migration = "20260717130000_phase_10_household_accountant_foundation";
+  const phase9CatalogName = "SavingsGoalContribution_userId_savingsGoalId_contributionDate_i";
+  const phase10CatalogName = "HouseholdRecordShare_householdId_ownerUserId_entityType_entityI";
+
+  it("expects the exact 63-character names PostgreSQL stores for long approved indexes", () => {
+    expect(phase9CatalogName).toHaveLength(63);
+    expect(phase10CatalogName).toHaveLength(63);
+    expect(
+      migrationProfileFor(phase9Migration)?.tables.SavingsGoalContribution.indexes,
+    ).toContain(phase9CatalogName);
+    expect(
+      migrationProfileFor(phase10Migration)?.tables.HouseholdRecordShare.indexes,
+    ).toContain(phase10CatalogName);
+  });
+
+  it("still rejects the longer migration spelling when comparing the exact catalog set", () => {
+    const expected = migrationProfileFor(phase9Migration)?.tables.SavingsGoalContribution.indexes ?? [];
+    const migrationSpelling = expected.map((name) => (
+      name === phase9CatalogName
+        ? "SavingsGoalContribution_userId_savingsGoalId_contributionDate_idx"
+        : name
+    ));
+
+    expect(exactNameSetMatches(expected, expected)).toBe(true);
+    expect(exactNameSetMatches(migrationSpelling, expected)).toBe(false);
+  });
+});
+
