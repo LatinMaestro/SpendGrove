@@ -52,6 +52,10 @@ function item(overrides: Partial<AdvancedRecurringItemRecord> = {}): AdvancedRec
 function memoryStore(overrides: Partial<AdvancedRecurringStore> = {}) {
   const calls: Array<{ action: string; userId: string }> = [];
   const store: AdvancedRecurringStore = {
+    async listCandidates(userId) {
+      calls.push({ action: "candidates", userId });
+      return [transaction({ userId })] as never;
+    },
     async list(userId) {
       calls.push({ action: "list", userId });
       return [item({ userId })];
