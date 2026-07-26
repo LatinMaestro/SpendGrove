@@ -290,7 +290,7 @@ describe("Phase C4 everyday financial-year formula contract", () => {
     expect(contract).toContain("A Category row is keyed by");
     expect(contract).toContain("positive refund or rebate");
     expect(contract).toContain("LoanRepayment values");
-    expect(contract).toContain("protect user-controlled text");
+    expect(contract).toContain("For every user-controlled text cell");
     expect(contract).toContain('currency: "AUD"');
     expect(contract).toContain('moneyRepresentation: "integer cents"');
     expect(contract).toContain("Do not add a `profit`");
