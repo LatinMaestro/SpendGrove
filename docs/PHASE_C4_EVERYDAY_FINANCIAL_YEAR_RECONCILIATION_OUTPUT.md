@@ -40,6 +40,7 @@ Rejects:
 - transfer and counted-record mismatches;
 - Category count/total mismatches;
 - duplicate direction/Category identities;
+- null Category identities carrying any label other than canonical `Uncategorised`;
 - fabricated uncategorised counts;
 - incomplete owner-scoped diagnostics;
 - fabricated eligible-only exclusions;
@@ -62,7 +63,7 @@ Seven tests cover:
 4. contract, timestamp and bounded-FY rejection;
 5. count, Category and diagnostic mismatch rejection;
 6. fabricated eligible diagnostics and analytical Loan cashflow rejection;
-7. fabricated uncategorised and duplicate Category evidence rejection.
+7. fabricated uncategorised count/label and duplicate Category evidence rejection.
 
 Expected baseline: **158 test files / 994 tests**.
 
