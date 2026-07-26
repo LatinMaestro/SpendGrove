@@ -99,14 +99,14 @@ export default function HelpPage() {
       <HelpSection id="safe-format-example" title="Describe an unsupported CSV safely">
         <div className="rounded-xl border border-warning-amber/30 bg-warning-amber/5 p-4 text-foreground">
           <p className="font-semibold">Never use a real CSV or statement for a format example.</p>
-          <p className="mt-1">Keep the real export on your own device. Copy only its column structure into a fresh synthetic file containing invented headers and invented rows.</p>
+          <p className="mt-1">Keep the real export on your own device. Recreate only its structural headers in a fresh synthetic file and use invented rows.</p>
         </div>
         <ol className="list-decimal space-y-2 pl-5">
           <li>Inspect the real file privately and note only the exact header names, date format and whether money uses one signed amount column or separate debit and credit columns.</li>
           <li>Download the closest blank-style synthetic template below. Delete placeholder columns that do not exist in the format you are describing.</li>
           <li>Rename the remaining placeholder headers to mirror the structure, then keep three to five invented rows covering money in and out, empty fields and any commas or quotation marks.</li>
           <li>Use invented dates, descriptions, amounts and balances only. Remove names, BSBs, account or card numbers, customer IDs, references, Loan identifiers and every other private field.</li>
-          <li>Re-open the synthetic file and confirm that no value, filename or row came from the real account before it is ever shared.</li>
+          <li>Re-open the synthetic file and confirm that no real filename, transaction row or private value appears before it is ever shared.</li>
         </ol>
         <div className="grid gap-3 sm:grid-cols-3" aria-label="Synthetic CSV format templates">
           <a href="/synthetic-everyday-bank-format-template.csv" download className="flex min-h-12 items-center justify-center rounded-xl border border-brand-teal px-3 text-center font-semibold text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
