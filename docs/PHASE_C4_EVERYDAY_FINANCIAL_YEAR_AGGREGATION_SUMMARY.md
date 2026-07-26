@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Aggregation Summary
 
 Date: 26 July 2026  
-Status: pure server aggregation helper and fixture-driven tests implemented; hardened exact-head verification pending  
+Status: pure server aggregation helper and consolidated fixture-driven tests implemented; hardened exact-head verification pending  
 Master-plan alignment: C4.2 — pure no-schema financial-year aggregation  
 Stacked dependency: PR #262 → PR #260 → PR #259 and all earlier activation/master-plan dependencies
 
@@ -17,7 +17,6 @@ The caller must already possess an authenticated user identity and supply a boun
 
 - `src/server/everyday-financial-year-report.ts`;
 - `tests/server/everyday-financial-year-report.test.ts`;
-- `tests/server/everyday-financial-year-report-hardening.test.ts`;
 - this summary.
 
 ## Report contract
@@ -46,8 +45,8 @@ Every supplied record must match the authenticated user ID.
 
 - a cross-user candidate throws `OWNER_SCOPE_VIOLATION` before aggregation;
 - the response contains no `crossUserCount` field;
-- production code must not query another user's records to populate diagnostics;
-- the fixture's fictional cross-user row proves the source boundary rejects it before the safe owner subset is aggregated.
+- Production code must not query another user's records to populate diagnostics;
+- the fixture's fictional cross-user row proves rejection before the safe owner subset is aggregated.
 
 The closed parallel PR #264 was not retained because its full-diagnostic mode could count cross-user records and its everyday helper accepted analytical Loan records directly. This implementation accepts only a bounded analytical record count, so Loan component amounts cannot enter the everyday cashflow input.
 
@@ -145,7 +144,7 @@ Messages contain no source values, IDs, amounts, Category labels, filenames or b
 
 ## Automated coverage
 
-Fifteen new tests across two files prove:
+Eleven new tests in one consolidated file prove:
 
 1. exact fixture totals and Category rows from the owner-scoped subset;
 2. cross-user rejection and absence of `crossUserCount`;
@@ -153,15 +152,11 @@ Fifteen new tests across two files prove:
 4. fail-closed eligible-only source validation;
 5. positive-refund and transfer treatment;
 6. split and Loan no-double-count treatment;
-7. direction-specific and uncategorised Category handling;
-8. bounded authentication, financial-year, generation-time and analytical-count failures;
+7. direction-specific, uncategorised and inconsistent-label Category handling;
+8. bounded authentication, financial-year, source-mode, generation-time and analytical-count failures;
 9. invalid date, amount, type/sign and split-role handling;
 10. safe-integer overflow protection;
-11. neutral bounded response with no private-source or tax-metric expansion;
-12. unsupported source-mode rejection;
-13. inconsistent Category-label rejection;
-14. explicit shared type/sign and transfer-context behaviour;
-15. immediate cross-user failure at the final hardened boundary.
+11. neutral bounded response with no private-source or tax-metric expansion.
 
 The original eight PR #262 contract tests remain independent and continue to verify the complete fictional fixture and frozen formulas.
 
@@ -173,11 +168,11 @@ The response contains no source Transaction IDs. Authenticated drilldown remains
 
 ## Repository impact
 
-Relative to PR #262, the branch contains four changed files:
+Relative to PR #262, the branch contains three new files:
 
-- one new pure server helper;
-- two new server test files;
-- one new permanent summary.
+- one pure server helper;
+- one consolidated server test file;
+- one permanent summary.
 
 No change to:
 
@@ -205,15 +200,15 @@ Vercel deployment `dpl_F6hWvUS6UBqqn8ujBktJ4TtDEtjL` is READY and passed:
 - TypeScript and lint validation;
 - route generation and serverless deployment.
 
-The current hardened head adds runtime source-mode validation, shared direction validation, Category-label consistency and five net additional consolidated/hardening checks. Its expected exact-head baseline is:
+The hardened code/test head `8c5f7f8e7ddbb1c60e56cfad051852b40f804634` adds runtime source-mode validation, shared direction validation, Category-label consistency and one net additional consolidated test. Its expected exact-head baseline is:
 
-- **156 test files / 978 tests**;
+- **155 test files / 974 tests**;
 - framework dependency verification;
 - TypeScript and lint;
 - optimized Next.js build;
 - route generation and serverless deployment.
 
-The current exact head has not yet received a build slot after the account reported the free daily deployment quota. No no-op retry or blind commit was created.
+The current documentation-only head records this corrected evidence. No exact hardened-head build slot became available after the account reported the free daily deployment quota. No no-op retry or blind commit was created.
 
 Only the previously documented Import Review memoisation warnings are expected.
 
