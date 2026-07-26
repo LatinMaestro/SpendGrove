@@ -149,6 +149,11 @@ function importUndoSummary(action: AuditAction, metadata: Record<string, unknown
 
 function bulkOperationSummary(action: AuditAction, metadata: Record<string, unknown> | null) {
   if (action === "CREATED") return "Bulk operation started.";
+  const reverted = safeCount(metadata, "revertedCount");
+  const undoBlocked = safeCount(metadata, "undoBlockedCount");
+  if (reverted !== null || undoBlocked !== null) {
+    return `Bulk operation undo completed${reverted !== null ? ` for ${reverted} transaction${reverted === 1 ? "" : "s"}` : ""}${undoBlocked ? `; ${undoBlocked} transaction${undoBlocked === 1 ? " was" : "s were"} left unchanged` : ""}.`;
+  }
   const applied = safeCount(metadata, "appliedCount");
   const skipped = safeCount(metadata, "skippedCount");
   const failed = safeCount(metadata, "failedCount");
