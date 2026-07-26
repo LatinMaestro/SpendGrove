@@ -96,7 +96,7 @@ describe("Phase 8 Property financial-year reporting", () => {
     expect(report.records.find((record) => record.transactionId === "expense")?.classification).toBe("EXCLUDED");
   });
 
-  it("separates matched, needs-review and unmatched Loan components and never adds them to cashflow", () => {
+  it("separates matched, needs-review and unmatched Loan components without adding them to cashflow", () => {
     const report = buildPropertyFinancialYearReport(review, loans, [
       repayment({ id: "linked", loanAccountId: "loan-1", repaymentDate: "2026-01-01", totalPaymentCents: 100000, principalCents: 60000, interestCents: 35000, feeCents: 5000, reconciliationStatus: "LINKED" }),
       repayment({ id: "review", loanAccountId: "loan-1", repaymentDate: "2026-02-01", totalPaymentCents: 110000, principalCents: 65000, interestCents: 40000, feeCents: 5000, reconciliationStatus: "NEEDS_REVIEW" }),
