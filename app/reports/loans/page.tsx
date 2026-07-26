@@ -83,7 +83,7 @@ export default async function LoanReportsPage({ searchParams }: Readonly<LoanRep
       <form method="get" className="mb-5 flex flex-col gap-3 rounded-2xl border border-border bg-surface-base p-4 sm:flex-row sm:items-end">
         <label className="min-w-0 flex-1 text-sm font-semibold text-foreground">
           Financial year
-          <select name="financialYear" defaultValue={endingYear} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal">
+          <select name="financialYear" defaultValue={endingYear} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
             {financialYearOptions(endingYear).map((year) => (
               <option key={year} value={year}>{year - 1}-{String(year).slice(-2)}</option>
             ))}
@@ -113,7 +113,7 @@ export default async function LoanReportsPage({ searchParams }: Readonly<LoanRep
           icon={<Landmark aria-hidden="true" className="h-6 w-6" />}
           title="No active Loan Accounts"
           description="Add a Loan Account or restore one to include it in this report."
-          action={<Link href="/loans" className="inline-flex min-h-11 items-center rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white">Open Loans</Link>}
+          action={<Link href="/loans" className="inline-flex min-h-11 items-center rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Open Loans</Link>}
         />
       ) : null}
 
@@ -133,7 +133,7 @@ export default async function LoanReportsPage({ searchParams }: Readonly<LoanRep
                   <Link href="/loans" className="inline-flex min-h-10 items-center text-sm font-semibold text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Open source records</Link>
                 </div>
 
-                <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                <dl className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-3">
                   {[
                     ["Repayments", String(loan.repaymentCount)],
                     ["Total", aud(loan.totalRepaymentCents)],
@@ -141,7 +141,8 @@ export default async function LoanReportsPage({ searchParams }: Readonly<LoanRep
                     ["Interest", aud(loan.interestCents)],
                     ["Fees", aud(loan.feeCents)],
                     ["Matched", String(loan.matchedCount)],
-                    ["Needs review", String(loan.needsReviewCount + loan.unmatchedCount)],
+                    ["Needs review", String(loan.needsReviewCount)],
+                    ["Unmatched", String(loan.unmatchedCount)],
                     ["Latest balance", loan.latestBalanceCents === null ? "Not recorded" : aud(loan.latestBalanceCents)],
                   ].map(([label, value]) => (
                     <div key={label} className="rounded-xl bg-surface-subtle p-3">
@@ -151,6 +152,9 @@ export default async function LoanReportsPage({ searchParams }: Readonly<LoanRep
                   ))}
                 </dl>
 
+                <p className="mt-4 text-xs leading-5 text-muted">
+                  Unmatched means no accepted everyday cashflow link is recorded. It does not change recorded component totals or create another cashflow record.
+                </p>
                 {loan.incompleteComponentCount > 0 ? (
                   <p className="mt-4 rounded-xl bg-warning-amber/10 p-3 text-sm text-foreground">
                     {loan.incompleteComponentCount} repayment{loan.incompleteComponentCount === 1 ? "" : "s"} has incomplete component information.
