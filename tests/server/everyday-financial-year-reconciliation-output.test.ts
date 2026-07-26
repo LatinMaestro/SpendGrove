@@ -192,7 +192,7 @@ describe("everyday financial-year reconciliation JSON serializer", () => {
       ...report,
       reconciliation: {
         ...report.reconciliation,
-        analyticalLoanAmountAddedToCashflowCents: 1 as 0,
+        analyticalLoanAmountAddedToCashflowCents: 1 as unknown as 0,
       },
     }), "REPORT_RECONCILIATION_INVALID");
   });
