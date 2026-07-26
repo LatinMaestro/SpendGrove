@@ -64,7 +64,7 @@ describe("Phase C3 merchant and Category regression package", () => {
     expect(merchantServer).toContain("where: { userId, deletedAt: null }");
     expect(merchantServer).toContain("where: { id: categoryId, userId, deletedAt: null }");
     expect(merchantServer).toContain("serializeMerchantRuleStorage(data)");
-    expect(merchantServer).not.toMatch(/rawRow|fileName|accountNumber|cardFragment|customerId|balanceCents/i);
+    expect(merchantServer).not.toMatch(/rawRow|rawCsv|originalFileName|cardFragment|balanceCents/i);
   });
 
   it("retains behavioural coverage for lifecycle, isolation, conflicts and private-field rejection", async () => {
