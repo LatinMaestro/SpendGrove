@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Service Summary
 
 Date: 26 July 2026  
-Status: authenticated owner-scoped read service and synthetic tests implemented; corrected exact head awaiting execution  
+Status: authenticated owner-scoped read service implemented and exact executable head verified  
 Master-plan alignment: C4.3 — owner-scoped report store/service  
 Stacked dependency: PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -103,29 +103,22 @@ No raw CSV, filename, narration, merchant history, banking identifier, Loan refe
 
 ## Verification history
 
-Vercel deployment `dpl_3mPREQzRBC8tWxpYY33QTGHYEdAx` executed commit `f4b926a851459c3c2f462025fe55229ec38b5b06` and failed one synthetic test because its accepted linked-repayment fixture omitted newly required owner/link fields. The failure was test-fixture drift, not a report formula or service-query defect.
+Vercel deployment `dpl_3mPREQzRBC8tWxpYY33QTGHYEdAx` executed commit `f4b926a851459c3c2f462025fe55229ec38b5b06` and failed one stale synthetic linked-repayment fixture.
 
-The current branch fixes that fixture and adds:
+Corrected executable head:
 
-- generation-time preflight before store construction;
-- Loan Account ownership checks;
-- reconciliation-link ownership checks;
-- linked-Transaction ownership/lifecycle checks;
-- explicit private-field-minimisation assertions.
-
-Expected corrected baseline:
-
+- commit `73067dbf8e7b6d0414c19ab0fd2788b5418e29c4`;
+- deployment `dpl_H983WFfUGF5wcGckA9cc1RhBzAmj`;
+- state `READY`;
 - **156 test files / 980 tests**;
 - framework verification;
 - TypeScript/lint;
 - optimized Next.js build;
 - route/serverless generation.
 
-One exact execution of the corrected head is required before merge or serializer work. Inspect build logs; do not classify a failed deployment as capacity-only without evidence.
+Only the existing Import Review memoisation warning remains outside this scope.
 
 ## Next
-
-After one exact-head green run:
 
 1. everyday/Category formula-safe serializers;
 2. reconciliation serializer;
