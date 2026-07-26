@@ -13,7 +13,7 @@ describe("Phase 7 merchant profile completion", () => {
     for (const copy of [
       "Edit merchant",
       "Merchant name",
-      "Suggested category",
+      "Suggested Category",
       "Save changes",
       "Remove merchant",
       "Removed merchants",
