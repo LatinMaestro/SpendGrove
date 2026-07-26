@@ -164,6 +164,7 @@ export function createPrismaEverydayFinancialYearReportStore(
       const repayments = await prisma.loanRepayment.findMany({
         where: {
           userId,
+          reconciliationStatus: "LINKED",
           isArchived: false,
           deletedAt: null,
           repaymentDate: { gte: start, lt: end },
