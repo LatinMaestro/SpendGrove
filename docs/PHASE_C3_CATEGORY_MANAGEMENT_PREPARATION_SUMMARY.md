@@ -1,119 +1,149 @@
-# Phase C3 Category Management Preparation Summary
+# Phase C3 Category Management Delivery Summary
 
 Date: 26 July 2026  
-Status: current-state audit and no-schema implementation contract complete  
+Status: existing-schema Category-management quality slice implemented and technically verified; stacked merge and authenticated browser review remain outstanding  
 Master-plan alignment: Phase C3 — merchant and category completion  
 Feature register: CAT-01, CAT-02  
-Stacked dependency: PR #254 and earlier Phase C/master-plan dependencies
+Pull request: #256  
+Stacked dependency: PR #255 and earlier Phase C/master-plan dependencies
 
 ## Objective
 
-Prepare the next existing-schema Category administration quality slice without changing Category meaning, financial calculations, persistence models, APIs, providers or environments.
+Complete the next existing-schema Category administration quality slice without changing Category meaning, financial calculations, persistence models, APIs, providers or environments.
 
-## Documents delivered
+## Delivered implementation
 
-- `PHASE_C3_CATEGORY_MANAGEMENT_ACCESSIBILITY_AUDIT.md`;
-- `PHASE_C3_CATEGORY_MANAGEMENT_IMPLEMENTATION_CONTRACT.md`;
-- this summary.
+### One authoritative Category catalogue
 
-## Current capability confirmed
+`useCustomCategoryCatalogue()` is now the single client source for:
 
-The repository already provides:
+- owned custom Category data;
+- account loading/ready/unavailable state;
+- current pending Category operation;
+- polite status messages;
+- actionable persistence errors;
+- create, rename, archive and restore actions.
 
-- authenticated owner-scoped custom Categories;
-- seeded Category immutability;
-- duplicate-name protection across seeded and custom Categories;
-- private bank identifier rejection;
-- create, rename, archive and restore;
-- account-backed Category reuse in Settings and Import Review;
-- existing export/deletion treatment through the Category model;
-- durable service regression coverage.
+`CustomCategoryManager` no longer performs a second Category request merely to infer account availability. Settings and Import Review continue to reuse the same catalogue and existing authenticated Category APIs.
 
-No schema change is required for the planned quality improvements.
+### Overlapping-write protection and rollback
 
-## Audit findings
+A synchronous operation reference and typed pending state now cover:
 
-The bounded gaps are:
+- create;
+- rename;
+- archive;
+- restore.
 
-1. `CustomCategoryManager` performs a second Category request only to infer account state, despite the parent catalogue already holding the authoritative result.
-2. Account-backed Settings still carries inactive browser-storage corruption/version messages from the earlier prototype model.
-3. optimistic create, rename and archive/restore actions do not have a bounded operation lock, permitting overlapping requests.
-4. rename has no explicit Cancel or focus return.
-5. rename input labeling is generic rather than Category-specific.
-6. archive does not explain that existing Transactions and totals remain unchanged.
-7. available and archived Category counts are combined into one total.
-8. normal status and persistence failures share one polite status channel.
-9. loading can appear as an empty Category state.
-10. focus-visible and 390 px behavior require consistent treatment and focused tests.
+A second Category write is refused while the first is unresolved. Each operation keeps its existing optimistic presentation but restores the exact previous in-memory catalogue when persistence fails. No retry, batch write, hard deletion or silent historical recategorisation was added.
 
-## Approved implementation
+### Clear loading, status and error states
 
-The next focused PR may:
+The account-backed workspace now:
 
-- pass authoritative `storageMode` into the manager;
-- remove the duplicate Category request;
-- remove inactive browser-storage messages from the account workspace;
-- add one transient pending Category operation;
-- prevent overlapping writes;
-- separate status and alert messages;
-- add rename Cancel and focus return;
-- use Category-specific rename labels;
-- explain archive/restore impact accurately;
-- show available and archived counts;
-- add loading, `aria-busy`, focus-visible and mobile wrapping treatment;
-- add synthetic tests and permanent QA evidence.
+- shows a dedicated loading state rather than an empty Category state;
+- uses `aria-busy` while loading or saving;
+- prevents writes when account Categories are unavailable;
+- removes obsolete browser-storage corruption/version warnings from the account manager;
+- uses a polite live status for successful or pending operations;
+- uses alerts for actionable failures.
 
-## Explicit exclusions
+Browser-local prototype data remains separate and unchanged.
 
-No approval is given for:
+### Rename workflow
 
-- hard deletion or Category merge;
-- changing Category group/type after creation;
-- automatic historical recategorisation;
-- Property/tax defaults;
-- new Category fields or hierarchy;
-- Prisma schema or migration;
-- new API route;
-- package/provider/secret/environment change;
-- Production, Expo, Apple, TestFlight or real-user action.
+Rename now includes:
+
+- a Category-specific accessible input label;
+- explicit Save and Cancel actions;
+- disabled controls while the rename is persisting;
+- inline validation/persistence errors;
+- retention of the editor on failure;
+- focus return to the initiating Rename control after accepted save or cancellation.
+
+Cancel performs no Category write.
+
+### Archive and restore workflow
+
+Archive now requires inline confirmation and states that:
+
+- the Category will no longer appear in new choices;
+- existing Transactions retain their Category;
+- existing totals do not change;
+- the Category can be restored later.
+
+Restore remains direct and reversible. No hard-delete control exists.
+
+### Counts and responsive accessibility
+
+The manager now reports separate available and archived custom Category counts. Controls use:
+
+- minimum 44-pixel-equivalent touch targets;
+- visible focus treatment;
+- wrapped Category names and metadata;
+- stacked actions at narrow widths and wrapping from the 390 px target upward;
+- labelled controls without colour-only meaning.
+
+## Automated evidence
+
+Implementation head: `3b13b8a1b6b2d05307e4e10d892a8057cefc73ac`  
+Vercel deployment: `dpl_4g6TisG1xxWJH9UTeoAjKGYf5THm` — READY
+
+The exact implementation head passed:
+
+- 150 test files / 934 tests;
+- all eight new Category reliability and accessibility tests;
+- existing durable Category service tests;
+- existing custom Category core/storage tests;
+- Import Review Category and merchant-learning regressions;
+- account administration, ownership, export and deletion regressions;
+- framework dependency verification;
+- optimized Next.js compilation;
+- TypeScript and lint validation;
+- static-page generation, route tracing and serverless deployment.
+
+The only lint output remains the previously identified behaviour-neutral `reviewRows ?? []` memoization warning in `components/import-review-foundation.tsx`. No Category or merchant hook warning remains.
+
+An earlier exact-head run failed one source assertion because the loading message was initialized through `useState` rather than assigned later through `setNotice`. The assertion was corrected without weakening its loading/status/error checks, and the final exact head passed completely.
 
 ## Financial and privacy boundary
 
-The preparation preserves:
+No change was made to:
 
-- integer cents;
-- Australian dates and financial years;
-- transaction direction and Category compatibility;
-- transfer and split treatment;
+- integer-cent storage or calculation;
+- Australian dates or financial-year treatment;
+- transaction direction or Category compatibility;
+- transfer or split treatment;
+- duplicate thresholds;
 - review-before-commit;
-- Loan repayment no-double-count;
-- existing budgets/reports;
-- no automatic tax meaning;
-- authenticated ownership;
-- no raw CSV, filename, narration, amount, balance or banking identifier;
-- no browser-local migration/deletion;
-- existing account export and deletion.
+- Loan repayment no-double-count treatment;
+- budgets, reports or tax boundaries;
+- existing Category IDs on Transactions;
+- account export or deletion;
+- authenticated ownership.
 
-Rename, archive and restore must not change Category IDs on existing Transactions.
+No raw CSV, filename, narration, merchant history, amount, balance, banking identifier, analytics event or provider payload was introduced.
 
-## Repository impact
+## Schema, API and environment impact
 
-Documentation only.
+No change to:
 
-No application, test, server, API, Prisma, migration, package, lockfile, workflow, provider, secret or environment file is changed.
+- Prisma schema or migrations;
+- Category API routes or server contracts;
+- packages or lockfile;
+- providers, secrets or environment variables;
+- Vercel, Clerk or Neon configuration;
+- Production database or runtime activation;
+- Expo, Apple Developer, signing, TestFlight, pricing or public release.
 
-No database, Production, Apple, TestFlight or real-user action occurred.
+## Known limitations and remaining gates
+
+- PR #256 is stacked on PR #255 and cannot merge before its dependencies.
+- PRs #231–#241 still require authenticated synthetic Preview QA and executable GitHub Actions before ordered merge.
+- Authenticated visual/browser review of the Category workspace remains part of the consolidated Preview and pre-release gate.
+- The future merchant merge and any future material Category model change remain behind separate explicit schema/migration approval.
+- No Production migration or runtime activation is authorised.
 
 ## Next safe action
 
-Implement the focused Category manager quality slice exactly within `PHASE_C3_CATEGORY_MANAGEMENT_IMPLEMENTATION_CONTRACT.md`, add synthetic tests, then run the complete exact-head application verification and Vercel review.
-
-The separate Import Review memoization warning cleanup remains behavior-neutral and may be included only if it stays a clearly isolated source/test change and does not obscure the Category diff.
-
-## Remaining gates
-
-- PR #254 and all earlier stacked dependencies must merge first;
-- activation PRs #231–#241 still require authenticated synthetic QA and executable GitHub Actions;
-- no Production migration or runtime activation is authorised;
-- no material Category or merchant-merge schema is approved;
-- client visual review remains part of the consolidated pre-release gate.
+Proceed with the isolated, behaviour-neutral Import Review memoization cleanup that removes the remaining `reviewRows ?? []` hook warnings, or continue another existing-schema Phase C3 quality slice whose dependencies and privacy/financial boundaries are already satisfied.
