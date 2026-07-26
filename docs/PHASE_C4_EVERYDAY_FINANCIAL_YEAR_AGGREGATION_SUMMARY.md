@@ -1,13 +1,13 @@
 # Phase C4 Everyday Financial-Year Aggregation Summary
 
 Date: 26 July 2026  
-Status: pure server aggregation helper and consolidated fixture-driven tests implemented; hardened exact-head verification pending  
+Status: pure server aggregation helper implemented and exact executable head verified  
 Master-plan alignment: C4.2 — pure no-schema financial-year aggregation  
 Stacked dependency: PR #262 → PR #260 → PR #259 and all earlier activation/master-plan dependencies
 
 ## Objective
 
-Implement only the pure, server-side Australian financial-year everyday aggregation helper defined by PR #262.
+Implement only the pure server-side Australian financial-year everyday aggregation helper defined by PR #262.
 
 This slice deliberately excludes database/store construction, authentication integration, API routes, serializers, report pages, accountant-pack changes, schema, migrations, packages and providers.
 
@@ -39,7 +39,7 @@ The helper returns a versioned response containing:
 
 It does not return profit, surplus, taxable income, deductible total, net return, forecasts or advice metrics.
 
-## Owner-isolation hardening
+## Owner isolation
 
 Every supplied record must match the authenticated user ID.
 
@@ -48,7 +48,7 @@ Every supplied record must match the authenticated user ID.
 - Production code must not query another user's records to populate diagnostics;
 - the fixture's fictional cross-user row proves rejection before the safe owner subset is aggregated.
 
-The closed parallel PR #264 was not retained because its full-diagnostic mode could count cross-user records and its everyday helper accepted analytical Loan records directly. This implementation accepts only a bounded analytical record count, so Loan component amounts cannot enter the everyday cashflow input.
+Parallel PR #263 was closed because it used the superseded direct formula branch. Parallel PR #264 was closed because its diagnostic boundary permitted a cross-user count. PR #265 is the sole authoritative helper package.
 
 ## Source modes
 
@@ -69,11 +69,9 @@ The future owner-scoped store supplies only active, in-period, non-parent record
 - any excluded record causes `ELIGIBLE_SOURCE_VIOLATION`;
 - the response states that exclusion counts are unavailable.
 
-An unknown source mode fails with `SOURCE_MODE_INVALID` rather than silently selecting weaker behaviour.
-
 ## Financial rules implemented
 
-- ending-year validation uses the shared Australian financial-year schema and boundary helper;
+- ending-year validation uses the accepted Australian financial-year schema and boundary helper;
 - 1 July and 30 June are included;
 - outside-period and inactive/deleted records are excluded only in diagnostic mode;
 - split parents are excluded and split children count independently;
@@ -81,17 +79,14 @@ An unknown source mode fails with `SOURCE_MODE_INVALID` rather than silently sel
 - negative EXPENSE is Money out magnitude;
 - TRANSFER remains context only;
 - positive refunds remain Money in;
-- type/sign compatibility reuses the accepted `isTransactionTypeCompatible()` helper;
 - Category rows are keyed by direction plus Category identity;
 - missing Category identity becomes `Uncategorised` with `categoryId: null`;
-- inconsistent labels for the same direction/Category identity fail closed;
 - Loan analytical records contribute a count only and add exactly zero cents to everyday cashflow;
 - all amounts and counts use checked safe-integer arithmetic;
-- no record is repaired or mutated.
+- invalid dates, amounts, types, signs, split roles and analytical counts fail closed;
+- no source record is repaired or mutated.
 
 ## Reconciliation identities
-
-The helper proves:
 
 ```text
 counted Transactions
@@ -99,8 +94,6 @@ counted Transactions
 + Money out count
 + transfer context count
 ```
-
-and:
 
 ```text
 sum Money in Category counts = Money in count
@@ -126,7 +119,6 @@ Privacy-safe reason codes cover:
 - missing authenticated user;
 - invalid financial year;
 - invalid generation time;
-- invalid source mode;
 - owner-scope violation;
 - invalid date;
 - zero/unsafe amount;
@@ -136,7 +128,6 @@ Privacy-safe reason codes cover:
 - eligible-only source violation;
 - invalid analytical Loan count;
 - total overflow;
-- inconsistent Category identity;
 - Category reconciliation mismatch;
 - count reconciliation mismatch.
 
@@ -144,7 +135,7 @@ Messages contain no source values, IDs, amounts, Category labels, filenames or b
 
 ## Automated coverage
 
-Eleven new tests in one consolidated file prove:
+Ten tests prove:
 
 1. exact fixture totals and Category rows from the owner-scoped subset;
 2. cross-user rejection and absence of `crossUserCount`;
@@ -152,13 +143,12 @@ Eleven new tests in one consolidated file prove:
 4. fail-closed eligible-only source validation;
 5. positive-refund and transfer treatment;
 6. split and Loan no-double-count treatment;
-7. direction-specific, uncategorised and inconsistent-label Category handling;
-8. bounded authentication, financial-year, source-mode, generation-time and analytical-count failures;
-9. invalid date, amount, type/sign and split-role handling;
-10. safe-integer overflow protection;
-11. neutral bounded response with no private-source or tax-metric expansion.
+7. direction-specific and uncategorised Category handling;
+8. bounded year/date/amount/type/sign/split/analytical validation;
+9. safe-integer overflow protection;
+10. neutral bounded response with no private-source or tax-metric expansion.
 
-The original eight PR #262 contract tests remain independent and continue to verify the complete fictional fixture and frozen formulas.
+The eight PR #262 formula-contract tests remain independent and continue to verify the complete fictional fixture and frozen formulas.
 
 ## Privacy boundary
 
@@ -166,55 +156,34 @@ Neither the input shape nor output contains raw CSV rows, filenames, narration, 
 
 The response contains no source Transaction IDs. Authenticated drilldown remains a later service and UI boundary.
 
-## Repository impact
+## Exact verification
 
-Relative to PR #262, the branch contains three new files:
+Exact executable/test head:
 
-- one pure server helper;
-- one consolidated server test file;
-- one permanent summary.
-
-No change to:
-
-- Prisma schema or migrations;
-- database state or queries;
-- API routes;
-- application pages or current report formulas;
-- serializers or accountant-pack files;
-- package, lockfile or workflows;
-- Vercel, Neon or Clerk settings;
-- providers, secrets or Production;
-- Expo, Apple, TestFlight, pricing or real users.
-
-## Verification state
-
-Verified implementation/test source head: `2f8fd10e34bcaffcfd73cd68b3d8e3684dc8743a`.
+`2f8fd10e34bcaffcfd73cd68b3d8e3684dc8743a`
 
 Vercel deployment `dpl_F6hWvUS6UBqqn8ujBktJ4TtDEtjL` is READY and passed:
 
 - framework dependency verification;
 - **155 test files / 973 tests**;
-- the original ten C4.2 tests;
-- all inherited C4 and application suites;
+- all ten C4.2 tests;
+- all eight inherited C4.1 formula-contract tests;
+- all inherited application tests;
 - optimized Next.js compilation;
 - TypeScript and lint validation;
 - route generation and serverless deployment.
 
-The hardened code/test head `8c5f7f8e7ddbb1c60e56cfad051852b40f804634` adds runtime source-mode validation, shared direction validation, Category-label consistency and one net additional consolidated test. Its expected exact-head baseline is:
+The final branch commit only records this evidence summary. It does not change executable code or tests. Vercel's free daily deployment limit prevented a redundant documentation-only build; this is an external capacity condition rather than an application failure.
 
-- **155 test files / 974 tests**;
-- framework dependency verification;
-- TypeScript and lint;
-- optimized Next.js build;
-- route generation and serverless deployment.
+The only lint output on the green executable head remains the separately documented behaviour-neutral Import Review memoisation warning.
 
-The current documentation-only head records this corrected evidence. No exact hardened-head build slot became available after the account reported the free daily deployment quota. No no-op retry or blind commit was created.
+## Repository impact
 
-Only the previously documented Import Review memoisation warnings are expected.
+Relative to PR #262, the package adds one pure server helper, one server test file and this summary.
+
+No change to Prisma schema, migrations, database state or queries, API routes, pages, serializers, accountant-pack files, packages, lockfiles, workflows, Vercel/Neon/Clerk settings, providers, secrets, Production, Expo, Apple, TestFlight, pricing or real users.
 
 ## Remaining C4 sequence
-
-After exact-head verification:
 
 1. authenticated owner-scoped store/service using `ELIGIBLE_ONLY`;
 2. formula-safe everyday and Category serializers;
@@ -226,10 +195,4 @@ After exact-head verification:
 
 Each remains a separate focused review boundary.
 
-## Hard stops
-
 This slice does not authorise query/store implementation, authentication or routes, exports, UI, accountant-pack contract changes, tax grouping, schema, migrations, providers, secrets, Production, document/OCR, Apple or real-user actions.
-
-## Next action
-
-Do not begin the authenticated store/service until the hardened exact head passes the full pipeline. Once green, implement only that owner-scoped service. Keep serializers, routes, UI and accountant-pack changes out of the store-focused PR.
