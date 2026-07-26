@@ -91,6 +91,21 @@ describe("privacy-safe activity history", () => {
       family: "Transactions",
       summary: "Bulk operation completed for 4 transactions; 1 transaction was left unchanged.",
     });
+
+    expect(mapActivityHistoryItem(audit({
+      entityType: "BULK_OPERATION",
+      entityId: "bulk_2",
+      action: "UPDATED",
+      metadata: {
+        revertedCount: 3,
+        undoBlockedCount: 1,
+        operationType: "SET_CATEGORY",
+        privateReason: "do not expose",
+      },
+    }))).toMatchObject({
+      family: "Transactions",
+      summary: "Bulk operation undo completed for 3 transactions; 1 transaction was left unchanged.",
+    });
   });
 
   it("falls back to a generic summary for unknown metadata shapes", () => {
