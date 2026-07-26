@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Serializer Summary
 
 Date: 26 July 2026  
-Status: pure everyday and Category CSV serializers implemented and exact final head verified  
+Status: pure everyday and Category CSV serializers implemented and exact executable head verified  
 Master-plan alignment: C4.4 — formula-safe everyday/Category exports  
 Stacked dependency: PR #266 → PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -49,8 +49,8 @@ Seven tests cover exact summary/Category outputs, ID exclusion, formula protecti
 
 ## Exact verification
 
-Final head: `900b854fea19ede9a447fcb04c150af77ccecc26`  
-Vercel: `dpl_CwEwrtLWmTRenDJ7SkjL7a9czWHN`  
+Executable/test head: `aa9e76cb6de8297b68412259d842fab2f4cd61ca`  
+Vercel: `dpl_C6iCH1yHzVBWEKnG9LxZzqDPFDxZ`  
 State: READY
 
 Passed:
@@ -60,6 +60,8 @@ Passed:
 - TypeScript and lint;
 - optimized Next.js build;
 - route generation and serverless deployment.
+
+Final documentation-only head `a8e3c3772095b6548587b6ba64a822aca6b2bfe8` also passed the same **157 files / 987 tests** baseline in READY deployment `dpl_BJ7hMfphVRmR2apDiG2oYa6GQYvj`.
 
 Only the existing Import Review memoisation warnings remain.
 
