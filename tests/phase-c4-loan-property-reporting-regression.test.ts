@@ -74,7 +74,7 @@ describe("Phase C4 Loan, Property and reporting foundation", () => {
     expect(propertyReporting).toContain("loanComponents.feeCents");
     expect(propertyReporting).toContain("loanComponents.principalCents");
     expect(propertyReporting).not.toContain("loanComponents.totalPaymentCents");
-    expect(propertyTests).toContain("never adds them to cashflow");
+    expect(propertyTests).toContain("without adding them to cashflow");
     expect(propertyTests).toContain("independent of dormant classification");
   });
 
