@@ -55,7 +55,7 @@ describe("Phase 6 desktop transaction ledger", () => {
     expect(component).toContain("const ledgerFilteredTransactions = useMemo");
     expect(component).toContain("if (!query) return ledgerFilteredTransactions");
     expect(component).toContain("ledgerFilteredTransactions.filter");
-    expect(component).toContain("Search is limited to {selectedMonthLabel}");
+    expect(component).toContain("Search and filters apply only to {selectedMonthLabel}.");
   });
 
   it("keeps details and correction guidance reachable without bulk controls", async () => {
