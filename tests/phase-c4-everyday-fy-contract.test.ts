@@ -179,7 +179,8 @@ describe("Phase C4 everyday financial-year formula contract", () => {
     expect(fixture.contract).toBe("spendgrove.synthetic-everyday-financial-year-reconciliation");
     expect(fixture.version).toBe(1);
     expect(fixture.transactions).toHaveLength(16);
-    expect(fixtureText).not.toMatch(/BSB|accountNumber|cardNumber|customerId|filename|rawNarration|CommBank|ANZ|NAB|Westpac|Macquarie|ING/i);
+    expect(fixtureText).not.toMatch(/BSB|accountNumber|cardNumber|customerId|filename|rawNarration/i);
+    expect(fixtureText).not.toMatch(/\b(?:CommBank|ANZ|NAB|Westpac|Macquarie|ING)\b/i);
     expect(fixtureText).not.toMatch(/@[a-z0-9.-]+\.[a-z]{2,}/i);
   });
 
@@ -285,7 +286,7 @@ describe("Phase C4 everyday financial-year formula contract", () => {
   it("freezes neutral wording, formula safety and prohibited metrics before implementation", async () => {
     const contract = await readFile(contractPath, "utf8");
 
-    expect(contract).toContain("active owned everyday Transactions as cashflow");
+    expect(contract).toContain("query only records owned by that user");
     expect(contract).toContain("A Category row is keyed by");
     expect(contract).toContain("positive refund or rebate");
     expect(contract).toContain("LoanRepayment values");
