@@ -8,9 +8,9 @@ export const EVERYDAY_FINANCIAL_YEAR_REPORT_CONTRACT =
 export const EVERYDAY_FINANCIAL_YEAR_REPORT_VERSION = 1 as const;
 
 export type EverydayFinancialYearDirection = "MONEY_IN" | "MONEY_OUT";
-export type EverydayFinancialYearDiagnosticsMode =
-  | "FULL_CANDIDATE_SET"
-  | "OWNER_FILTERED";
+export type EverydayFinancialYearCandidateSource =
+  | "FULL_DIAGNOSTIC"
+  | "ELIGIBLE_ONLY";
 
 export type EverydayFinancialYearTransactionInput = {
   id: string;
@@ -64,6 +64,7 @@ export type EverydayFinancialYearReport = {
   };
   categories: EverydayFinancialYearCategoryRow[];
   reconciliation: {
+    candidateSource: EverydayFinancialYearCandidateSource;
     diagnosticsComplete: boolean;
     inputCandidateCount: number | null;
     countedTransactionCount: number;
@@ -83,7 +84,10 @@ export type EverydayFinancialYearReportErrorCode =
   | "UNSUPPORTED_TRANSACTION_TYPE"
   | "TRANSACTION_TYPE_SIGN_MISMATCH"
   | "UNSUPPORTED_SPLIT_ROLE"
+  | "ELIGIBLE_SOURCE_VIOLATION"
   | "REPORT_TOTAL_OVERFLOW"
+  | "CATEGORY_RECONCILIATION_MISMATCH"
+  | "COUNT_RECONCILIATION_MISMATCH"
   | "ANALYTICAL_LOAN_CASHFLOW_CONFLICT";
 
 export class EverydayFinancialYearReportError extends Error {
@@ -101,8 +105,13 @@ export type BuildEverydayFinancialYearReportInput = {
   endingYear: unknown;
   transactions: readonly EverydayFinancialYearTransactionInput[];
   analyticalLoanRepayments?: readonly EverydayFinancialYearAnalyticalLoanInput[];
-  diagnosticsMode?: EverydayFinancialYearDiagnosticsMode;
+  candidateSource?: EverydayFinancialYearCandidateSource;
 };
+
+type CompleteExclusionCounts = Record<
+  keyof EverydayFinancialYearExclusionCounts,
+  number
+>;
 
 function addChecked(current: number, value: number) {
   const next = current + value;
@@ -113,6 +122,10 @@ function addChecked(current: number, value: number) {
     );
   }
   return next;
+}
+
+function incrementChecked(current: number) {
+  return addChecked(current, 1);
 }
 
 function dateOnly(value: Date | string) {
@@ -193,20 +206,58 @@ function directionFor(type: string, amountCents: number) {
 }
 
 function safeCategory(transaction: EverydayFinancialYearTransactionInput) {
-  const name = transaction.categoryName?.trim();
-  if (!transaction.categoryId || !name) {
+  const categoryId = transaction.categoryId?.trim();
+  const categoryName = transaction.categoryName?.trim();
+  if (!categoryId || !categoryName) {
     return { categoryId: null, categoryName: "Uncategorised" } as const;
   }
-  return { categoryId: transaction.categoryId, categoryName: name };
+  return { categoryId, categoryName };
 }
 
-function emptyExclusions(): Record<keyof EverydayFinancialYearExclusionCounts, number> {
+function emptyExclusions(): CompleteExclusionCounts {
   return {
     outsidePeriodCount: 0,
     deletedOrInactiveCount: 0,
     splitParentCount: 0,
     crossUserCount: 0,
   };
+}
+
+function eligibleSourceViolation(message: string): never {
+  throw new EverydayFinancialYearReportError(
+    "ELIGIBLE_SOURCE_VIOLATION",
+    message,
+  );
+}
+
+function assertCategoryReconciliation(
+  categoryRows: readonly EverydayFinancialYearCategoryRow[],
+  moneyIn: EverydayFinancialYearReport["moneyIn"],
+  moneyOut: EverydayFinancialYearReport["moneyOut"],
+) {
+  let categoryCount = 0;
+  let moneyInCents = 0;
+  let moneyOutCents = 0;
+
+  for (const row of categoryRows) {
+    categoryCount = addChecked(categoryCount, row.count);
+    if (row.direction === "MONEY_IN") {
+      moneyInCents = addChecked(moneyInCents, row.totalCents);
+    } else {
+      moneyOutCents = addChecked(moneyOutCents, row.totalCents);
+    }
+  }
+
+  if (
+    categoryCount !== moneyIn.count + moneyOut.count
+    || moneyInCents !== moneyIn.totalCents
+    || moneyOutCents !== moneyOut.totalCents
+  ) {
+    throw new EverydayFinancialYearReportError(
+      "CATEGORY_RECONCILIATION_MISMATCH",
+      "The report Categories did not reconcile safely.",
+    );
+  }
 }
 
 export function buildEverydayFinancialYearReport(
@@ -222,7 +273,8 @@ export function buildEverydayFinancialYearReport(
 
   const endingYear = propertyFinancialYearSchema.parse(input.endingYear);
   const year = australianFinancialYear(endingYear);
-  const diagnosticsComplete = (input.diagnosticsMode ?? "OWNER_FILTERED") === "FULL_CANDIDATE_SET";
+  const candidateSource = input.candidateSource ?? "ELIGIBLE_ONLY";
+  const diagnosticsComplete = candidateSource === "FULL_DIAGNOSTIC";
   const exclusions = emptyExclusions();
   const moneyIn = { count: 0, totalCents: 0 };
   const moneyOut = { count: 0, totalCents: 0 };
@@ -234,45 +286,64 @@ export function buildEverydayFinancialYearReport(
 
   for (const transaction of input.transactions) {
     if (transaction.userId !== userId) {
-      exclusions.crossUserCount += 1;
+      if (!diagnosticsComplete) {
+        eligibleSourceViolation("An owner-scoped source returned an unavailable record.");
+      }
+      exclusions.crossUserCount = incrementChecked(exclusions.crossUserCount);
       continue;
     }
 
     const transactionDate = dateOnly(transaction.date);
     if (transactionDate < year.startDate || transactionDate > year.endDate) {
-      exclusions.outsidePeriodCount += 1;
+      if (!diagnosticsComplete) {
+        eligibleSourceViolation("An eligible-only source returned an out-of-period record.");
+      }
+      exclusions.outsidePeriodCount = incrementChecked(exclusions.outsidePeriodCount);
       continue;
     }
     if (transaction.status !== "ACTIVE" || transaction.deletedAt !== null) {
-      exclusions.deletedOrInactiveCount += 1;
+      if (!diagnosticsComplete) {
+        eligibleSourceViolation("An eligible-only source returned an inactive record.");
+      }
+      exclusions.deletedOrInactiveCount = incrementChecked(exclusions.deletedOrInactiveCount);
       continue;
     }
 
     assertSupportedSplitRole(transaction.splitRole);
     if (transaction.splitRole === "PARENT") {
-      exclusions.splitParentCount += 1;
+      if (!diagnosticsComplete) {
+        eligibleSourceViolation("An eligible-only source returned a split parent.");
+      }
+      exclusions.splitParentCount = incrementChecked(exclusions.splitParentCount);
       continue;
     }
 
     assertSafeAmount(transaction.amountCents);
     const direction = directionFor(transaction.type, transaction.amountCents);
-    countedTransactionCount += 1;
-    if (transaction.splitRole === "CHILD") countedSplitChildCount += 1;
+    countedTransactionCount = incrementChecked(countedTransactionCount);
+    if (transaction.splitRole === "CHILD") {
+      countedSplitChildCount = incrementChecked(countedSplitChildCount);
+    }
 
     if (direction === null) {
-      transfers.count += 1;
-      if (transaction.amountCents > 0) transfers.incomingCount += 1;
-      else transfers.outgoingCount += 1;
+      transfers.count = incrementChecked(transfers.count);
+      if (transaction.amountCents > 0) {
+        transfers.incomingCount = incrementChecked(transfers.incomingCount);
+      } else {
+        transfers.outgoingCount = incrementChecked(transfers.outgoingCount);
+      }
       continue;
     }
 
     const magnitude = Math.abs(transaction.amountCents);
     const directionSummary = direction === "MONEY_IN" ? moneyIn : moneyOut;
-    directionSummary.count += 1;
+    directionSummary.count = incrementChecked(directionSummary.count);
     directionSummary.totalCents = addChecked(directionSummary.totalCents, magnitude);
 
     const category = safeCategory(transaction);
-    if (category.categoryId === null) uncategorisedCount += 1;
+    if (category.categoryId === null) {
+      uncategorisedCount = incrementChecked(uncategorisedCount);
+    }
     const key = JSON.stringify([direction, category.categoryId]);
     const row = categories.get(key) ?? {
       direction,
@@ -281,7 +352,7 @@ export function buildEverydayFinancialYearReport(
       count: 0,
       totalCents: 0,
     };
-    row.count += 1;
+    row.count = incrementChecked(row.count);
     row.totalCents = addChecked(row.totalCents, magnitude);
     categories.set(key, row);
   }
@@ -294,6 +365,30 @@ export function buildEverydayFinancialYearReport(
     );
   }
 
+  const expectedCount = addChecked(
+    addChecked(moneyIn.count, moneyOut.count),
+    transfers.count,
+  );
+  if (countedTransactionCount !== expectedCount) {
+    throw new EverydayFinancialYearReportError(
+      "COUNT_RECONCILIATION_MISMATCH",
+      "The report source counts did not reconcile safely.",
+    );
+  }
+
+  if (diagnosticsComplete) {
+    const excludedCount = addChecked(
+      addChecked(exclusions.outsidePeriodCount, exclusions.deletedOrInactiveCount),
+      addChecked(exclusions.splitParentCount, exclusions.crossUserCount),
+    );
+    if (input.transactions.length !== countedTransactionCount + excludedCount) {
+      throw new EverydayFinancialYearReportError(
+        "COUNT_RECONCILIATION_MISMATCH",
+        "The report candidate counts did not reconcile safely.",
+      );
+    }
+  }
+
   const directionOrder: Record<EverydayFinancialYearDirection, number> = {
     MONEY_IN: 0,
     MONEY_OUT: 1,
@@ -304,6 +399,7 @@ export function buildEverydayFinancialYearReport(
     || left.categoryName.localeCompare(right.categoryName, "en-AU")
     || (left.categoryId ?? "").localeCompare(right.categoryId ?? "", "en-AU")
   ));
+  assertCategoryReconciliation(categoryRows, moneyIn, moneyOut);
 
   const reportedExclusions: EverydayFinancialYearExclusionCounts = diagnosticsComplete
     ? exclusions
@@ -330,6 +426,7 @@ export function buildEverydayFinancialYearReport(
     transfers,
     categories: categoryRows,
     reconciliation: {
+      candidateSource,
       diagnosticsComplete,
       inputCandidateCount: diagnosticsComplete ? input.transactions.length : null,
       countedTransactionCount,
