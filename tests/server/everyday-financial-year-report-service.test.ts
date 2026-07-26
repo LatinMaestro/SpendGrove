@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it } from "vitest";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
@@ -11,6 +12,8 @@ import {
   type EverydayFinancialYearReportStore,
   type EverydayFinancialYearStoredTransaction,
 } from "@/src/server/everyday-financial-year-report-service";
+
+const servicePath = new URL("../../src/server/everyday-financial-year-report-service.ts", import.meta.url);
 
 const context: AuthenticatedUserContext = {
   userId: "synthetic-user-1",
@@ -78,6 +81,21 @@ describe("authenticated everyday financial-year report service", () => {
     await expect(getEverydayFinancialYearReport(null, 2026, guardedStore, generatedAt))
       .rejects.toBeInstanceOf(AuthenticationRequiredError);
     expect(calls).toBe(0);
+  });
+
+  it("constructs the default store only after authentication and FY validation", async () => {
+    const source = await readFile(servicePath, "utf8");
+    const serviceStart = source.indexOf("export async function getEverydayFinancialYearReport");
+    const serviceSource = source.slice(serviceStart);
+
+    expect(serviceSource).toContain("store?: EverydayFinancialYearReportStore");
+    expect(serviceSource).not.toContain("store: EverydayFinancialYearReportStore = createPrismaEverydayFinancialYearReportStore()");
+    expect(serviceSource.indexOf("requireAuthenticatedUserContext(context)")).toBeLessThan(
+      serviceSource.indexOf("store ?? createPrismaEverydayFinancialYearReportStore()"),
+    );
+    expect(serviceSource.indexOf("parseFinancialYearBeforeStoreAccess(endingYear)")).toBeLessThan(
+      serviceSource.indexOf("store ?? createPrismaEverydayFinancialYearReportStore()"),
+    );
   });
 
   it("validates the bounded Australian financial year before store access", async () => {
@@ -152,18 +170,32 @@ describe("authenticated everyday financial-year report service", () => {
     }
   });
 
-  it("treats unavailable or cross-owner Category relations as uncategorised", async () => {
+  it("treats unavailable, deleted or cross-owner Category relations as uncategorised", async () => {
     const report = await getEverydayFinancialYearReport(context, 2026, store({
       async listEligibleTransactions() {
-        return [transaction({
-          categoryId: "synthetic-category",
-          category: {
-            id: "synthetic-category",
-            userId: "synthetic-user-2",
-            name: "Unavailable Category",
-            deletedAt: null,
-          },
-        })];
+        return [
+          transaction({
+            id: "cross-owner-category",
+            categoryId: "synthetic-category",
+            category: {
+              id: "synthetic-category",
+              userId: "synthetic-user-2",
+              name: "Unavailable Category",
+              deletedAt: null,
+            },
+          }),
+          transaction({
+            id: "deleted-category",
+            amountCents: -250,
+            categoryId: "synthetic-category-2",
+            category: {
+              id: "synthetic-category-2",
+              userId: context.userId,
+              name: "Deleted Category",
+              deletedAt: new Date("2026-01-01T00:00:00.000Z"),
+            },
+          }),
+        ];
       },
     }), generatedAt);
 
@@ -172,14 +204,15 @@ describe("authenticated everyday financial-year report service", () => {
         direction: "MONEY_OUT",
         categoryId: null,
         categoryName: "Uncategorised",
-        count: 1,
-        totalCents: 1000,
+        count: 2,
+        totalCents: 1250,
       },
     ]);
-    expect(report.reconciliation.uncategorisedCount).toBe(1);
+    expect(report.reconciliation.uncategorisedCount).toBe(2);
+    expect(JSON.stringify(report)).not.toMatch(/Unavailable Category|Deleted Category/);
   });
 
-  it("builds Prisma queries with owner, lifecycle, split and half-open date guards", async () => {
+  it("builds private-field-minimised owner, lifecycle, linked-status and date queries", async () => {
     let transactionArgs: Record<string, unknown> | undefined;
     let repaymentArgs: Record<string, unknown> | undefined;
     const linkedTransaction = {
@@ -234,11 +267,14 @@ describe("authenticated everyday financial-year report service", () => {
     expect(repaymentArgs).toMatchObject({
       where: {
         userId: context.userId,
+        reconciliationStatus: "LINKED",
         isArchived: false,
         deletedAt: null,
         repaymentDate: { gte: start, lt: end },
       },
     });
+    expect(JSON.stringify(transactionArgs)).not.toMatch(/description|merchantName|notes|csvMatchHint|importBatch|accountNumber|\bbsb\b/i);
+    expect(JSON.stringify(repaymentArgs)).not.toMatch(/totalPaymentCents|principalCents|interestCents|feeCents|balanceAfterCents/i);
     expect(analyticalCount).toBe(1);
   });
 });
