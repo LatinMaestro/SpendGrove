@@ -51,7 +51,8 @@ describe("Phase C4 report reconciliation transparency", () => {
 
     expect(propertyReporting).toContain("cashflow: summarizePropertyRecords(review)");
     expect(propertyReporting).not.toContain("totalPaymentCents");
-    expect(loanReporting).toContain("LoanRepayment provides analytical");
+    expect(loanReporting).toContain("listSafeLoanRepayments(context)");
+    expect(loanReporting).not.toContain("amountCents");
     expect(loanPage).toContain("not added to everyday cashflow or spending totals");
     expect(propertyPage).toContain("excluded from Property income and expense totals");
   });
