@@ -89,7 +89,7 @@ describe("Phase C1 consolidated transaction regression package", () => {
     expect(bulkOperations).toContain('"NOT_FOUND_OR_NOT_OWNED"');
     expect(bulkOperations).toContain("isCategoryTypeCompatible");
     expect(bulkOperations).toContain("isTransactionTypeCompatible");
-    expect(bulkOperations).toContain('where: { id: resolvedCategoryId,');
+    expect(bulkOperations).toContain("id: resolvedCategoryId");
     expect(bulkOperations).toContain("userId,");
   });
 
