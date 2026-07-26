@@ -49,11 +49,8 @@ describe("privacy-safe activity history", () => {
       accountNumber: "123456789",
       providerResponse: "internal",
     };
-    const { store, listRecent } = createStore({
-      async listRecent() {
-        return [audit({ metadata: privateMetadata })];
-      },
-    });
+    const listRecent = vi.fn(async () => [audit({ metadata: privateMetadata })]);
+    const { store } = createStore({ listRecent });
 
     const result = await listRecentActivityHistory(createTestUserContext("user_1"), store);
     expect(listRecent).toHaveBeenCalledWith("user_1", 100);
