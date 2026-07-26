@@ -4,14 +4,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SignInButton, useUser } from "@clerk/nextjs";
 import {
   AlertTriangle,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Cloud,
   Copy,
   FileSearch,
   Home,
-  LockKeyhole,
   Pencil,
   Plus,
   ReceiptText,
@@ -33,19 +31,35 @@ import {
 import { ManualTransactions } from "@/components/manual-transactions";
 import { TransactionPropertyLinkPanel } from "@/components/transaction-property-link-panel";
 import { CategoryBreakdownView, MonthlyCategoryChart } from "@/components/monthly-category-spending";
-import type { MonthlyCategorySpending, MonthlyCategorySpendingCategory } from "@/lib/monthly-category-spending";
+import type {
+  MonthlyCategorySpending,
+  MonthlyCategorySpendingCategory,
+} from "@/lib/monthly-category-spending";
 import {
   deriveTransactionType,
   directionCompatibleFallbackCategoryName,
   transactionNeedsDirectionCorrection,
 } from "@/lib/transaction-direction";
 
-type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
+type AccountTransaction = Omit<ManualTransaction, "source"> & {
+  source: "MANUAL" | "IMPORTED";
+};
 type LedgerDirectionFilter = "ALL" | ManualTransactionType;
-type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
+type PropertyOption = {
+  id: string;
+  nickname: string;
+  usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER";
+  isArchived?: boolean;
+};
 type PropertyOptionsStatus = "LOADING" | "READY" | "UNAVAILABLE";
 type PropertyLinkSnapshotResult =
-  | { ok: true; snapshot: { link: { property: PropertyOption } | null; properties: PropertyOption[] } }
+  | {
+      ok: true;
+      snapshot: {
+        link: { property: PropertyOption } | null;
+        properties: PropertyOption[];
+      };
+    }
   | { ok: false; error: string };
 
 const typeLabels: Record<ManualTransactionType, string> = {
@@ -228,7 +242,7 @@ async function setTransactionPropertyLink(transactionId: string, propertyId: str
 }
 
 function ModalFrame({ title, description, onClose, children }: Readonly<{ title: string; description: string; onClose: () => void; children: React.ReactNode }>) {
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/45 p-0 backdrop-blur-sm sm:items-center sm:p-6"><section role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-surface-base p-5 shadow-2xl sm:rounded-3xl sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 id="transaction-modal-title" className="text-2xl font-bold text-brand-deepTeal">{title}</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{description}</p></div><button type="button" onClick={onClose} aria-label="Close" className="rounded-full border border-border p-3 text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green"><X aria-hidden="true" className="h-5 w-5" /></button></div>{children}</section></div>;
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/45 p-0 backdrop-blur-sm sm:items-center sm:p-6"><section role="dialog" aria-modal="true" aria-labelledby="transaction-modal-title" className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-t-3xl bg-surface-base p-5 shadow-2xl sm:rounded-3xl sm:p-6"><div className="flex items-start justify-between gap-4"><div><h2 id="transaction-modal-title" className="text-2xl font-bold text-brand-deepTeal">{title}</h2><p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">{description}</p></div><button type="button" onClick={onClose} aria-label="Close" className="rounded-full border border-border p-3 text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><X aria-hidden="true" className="h-5 w-5" /></button></div>{children}</section></div>;
 }
 
 function TransactionEditor({ editor, duplicateCount, error, isSaving, propertyOptions, onChange, onPropertyEnabledChange, onPropertyLinkChange, onCancel, onSubmit }: Readonly<{ editor: EditorState; duplicateCount: number; error: string; isSaving: boolean; propertyOptions: PropertyOption[]; onChange: (draft: ManualTransactionDraft) => void; onPropertyEnabledChange: (enabled: boolean) => void; onPropertyLinkChange: (propertyId: string | null) => void; onCancel: () => void; onSubmit: () => void }>) {
@@ -243,7 +257,7 @@ function TransactionEditor({ editor, duplicateCount, error, isSaving, propertyOp
 
   return <ModalFrame title={heading} description={description} onClose={onCancel}>
     <form className="mt-6 space-y-5" onSubmit={(event) => { event.preventDefault(); onSubmit(); }}>
-      <fieldset disabled={isSaving}><legend className="text-sm font-bold text-brand-deepTeal">Transaction type</legend><div className="mt-2 grid grid-cols-3 gap-2">{(Object.keys(typeLabels) as ManualTransactionType[]).map((type) => <button key={type} type="button" aria-pressed={editor.draft.type === type} onClick={() => changeType(type)} className={`min-h-12 rounded-2xl px-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-brand-green ${editor.draft.type === type ? "bg-brand-deepTeal text-white" : "border border-border bg-surface-mint text-brand-deepTeal"}`}>{typeLabels[type]}</button>)}</div></fieldset>
+      <fieldset disabled={isSaving}><legend className="text-sm font-bold text-brand-deepTeal">Transaction type</legend><div className="mt-2 grid grid-cols-3 gap-2">{(Object.keys(typeLabels) as ManualTransactionType[]).map((type) => <button key={type} type="button" aria-pressed={editor.draft.type === type} onClick={() => changeType(type)} className={`min-h-12 rounded-2xl px-3 text-sm font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-focus ${editor.draft.type === type ? "bg-brand-deepTeal text-white" : "border border-border bg-surface-mint text-brand-deepTeal"}`}>{typeLabels[type]}</button>)}</div></fieldset>
       <div className="grid gap-4 sm:grid-cols-2"><label className="text-sm font-bold text-brand-deepTeal">Amount (AUD)<input disabled={isSaving} value={editor.draft.amountInput} onChange={(event) => onChange({ ...editor.draft, amountInput: event.target.value })} inputMode="decimal" placeholder="0.00" required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /><span className="mt-2 block text-xs font-normal leading-5 text-brand-deepTeal/65">{editor.draft.type === "TRANSFER" ? "Use a minus sign for an outgoing transfer." : "Enter a positive amount; the type controls its direction."}</span></label><label className="text-sm font-bold text-brand-deepTeal">Date<input disabled={isSaving} type="date" value={editor.draft.date} onChange={(event) => onChange({ ...editor.draft, date: event.target.value })} required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label></div>
       <label className="block text-sm font-bold text-brand-deepTeal">Description<input disabled={isSaving} value={editor.draft.description} onChange={(event) => onChange({ ...editor.draft, description: event.target.value })} maxLength={300} placeholder="What was this transaction for?" required className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20" /></label>
       <label className="block text-sm font-bold text-brand-deepTeal">Category<select disabled={isSaving} value={editor.draft.categoryId} onChange={(event) => onChange({ ...editor.draft, categoryId: event.target.value })} className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 font-normal outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20">{categoryGroups.map((group) => <optgroup key={group.name} label={group.name}>{group.categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</optgroup>)}</select></label>
@@ -270,13 +284,13 @@ function TransactionEditor({ editor, duplicateCount, error, isSaving, propertyOp
       <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface-mint p-4 text-sm text-brand-deepTeal"><input disabled={isSaving} type="checkbox" checked={editor.draft.csvMatchHint} onChange={(event) => onChange({ ...editor.draft, csvMatchHint: event.target.checked })} className="mt-1 h-5 w-5 accent-brand-green" /><span><strong className="block">May match a future CSV row</strong><span className="mt-1 block leading-5 text-brand-deepTeal/70">A review hint only. It does not upload or inspect a CSV.</span></span></label>
       {duplicateCount > 0 && <div role="status" className="flex gap-3 rounded-2xl border border-warning-amber bg-warning-amber/10 p-4 text-sm text-brand-deepTeal"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p><strong>Possible duplicate.</strong> {duplicateCount} active transaction{duplicateCount === 1 ? " has" : "s have"} the same date, amount and description. You can still save.</p></div>}
       {error && <p role="alert" className="rounded-2xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{error}</p>}
-      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button disabled={isSaving} type="button" onClick={onCancel} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus:ring-2 focus:ring-brand-green">Cancel</button><button disabled={isSaving} type="submit" className="min-h-12 rounded-full bg-brand-green px-6 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal">{isSaving ? "Saving…" : "Save transaction"}</button></div>
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button disabled={isSaving} type="button" onClick={onCancel} className="min-h-12 rounded-full border border-border px-5 text-sm font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Cancel</button><button disabled={isSaving} type="submit" className="min-h-12 rounded-full bg-brand-green px-6 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">{isSaving ? "Saving…" : "Save transaction"}</button></div>
     </form>
   </ModalFrame>;
 }
 
 function SignedOutFallback() {
-  return <div className="space-y-5"><section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6"><div className="flex items-start gap-4"><div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Cloud aria-hidden="true" className="h-6 w-6" /></div><div><p className="text-sm font-semibold text-brand-teal">Saved to your account</p><h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to view account transactions</h2><p className="mt-2 max-w-xl text-sm leading-6 text-brand-deepTeal/70">You can still use the browser-local manual prototype below. Signed-in manual and imported transactions are saved server-side and scoped to your SpendGrove user.</p><SignInButton mode="modal"><button className="mt-4 min-h-12 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal" type="button">Sign in for account storage</button></SignInButton></div></div></section><ManualTransactions /></div>;
+  return <div className="space-y-5"><section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6"><div className="flex items-start gap-4"><div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Cloud aria-hidden="true" className="h-6 w-6" /></div><div><p className="text-sm font-semibold text-brand-teal">Saved to your account</p><h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to view account transactions</h2><p className="mt-2 max-w-xl text-sm leading-6 text-brand-deepTeal/70">You can still use the browser-local manual prototype below. Signed-in manual and imported transactions are saved server-side and scoped to your SpendGrove user.</p><SignInButton mode="modal"><button className="mt-4 min-h-12 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus" type="button">Sign in for account storage</button></SignInButton></div></div></section><ManualTransactions /></div>;
 }
 
 function DurableManualTransactionsExperience() {
@@ -330,7 +344,24 @@ function DurableManualTransactionsExperience() {
     void loadTransactions();
     return () => { cancelled = true; };
   }, [selectedMonth, refreshKey]);
-  useEffect(() => { let cancelled = false; async function loadProperties() { setPropertyOptionsStatus("LOADING"); const result = await listActiveProperties(); if (cancelled) return; if (result.ok) { setPropertyOptions(result.properties); setPropertyOptionsStatus("READY"); } else { setPropertyOptions([]); setPropertyOptionsStatus("UNAVAILABLE"); } } void loadProperties(); return () => { cancelled = true; }; }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadProperties() {
+      setPropertyOptionsStatus("LOADING");
+      const result = await listActiveProperties();
+      if (cancelled) return;
+      if (result.ok) {
+        setPropertyOptions(result.properties);
+        setPropertyOptionsStatus("READY");
+      } else {
+        setPropertyOptions([]);
+        setPropertyOptionsStatus("UNAVAILABLE");
+      }
+    }
+    void loadProperties();
+    return () => { cancelled = true; };
+  }, []);
 
   const activeTransactions = useMemo(() => listActiveManualTransactions(transactions as ManualTransaction[]) as AccountTransaction[], [transactions]);
   const availableLedgerCategories = useMemo(() => {
@@ -342,16 +373,26 @@ function DurableManualTransactionsExperience() {
       .map(([id, name]) => ({ id, name }))
       .sort((left, right) => left.name.localeCompare(right.name, "en-AU"));
   }, [activeTransactions]);
+
+  useEffect(() => {
+    if (!isReady || ledgerCategoryFilter === "ALL") return;
+    if (!availableLedgerCategories.some((category) => category.id === ledgerCategoryFilter)) {
+      setLedgerCategoryFilter("ALL");
+    }
+  }, [availableLedgerCategories, isReady, ledgerCategoryFilter]);
+
   const categoryFilteredTransactions = useMemo(() => {
     if (!categoryFilter) return activeTransactions;
     const eligibleTransactionIds = new Set(categoryFilter.transactionIds);
     return activeTransactions.filter((transaction) => eligibleTransactionIds.has(transaction.id));
   }, [activeTransactions, categoryFilter]);
+
   const ledgerFilteredTransactions = useMemo(() => categoryFilteredTransactions.filter((transaction) => {
     if (ledgerDirectionFilter !== "ALL" && transaction.type !== ledgerDirectionFilter) return false;
     if (ledgerCategoryFilter !== "ALL" && transaction.categoryId !== ledgerCategoryFilter) return false;
     return true;
   }), [categoryFilteredTransactions, ledgerCategoryFilter, ledgerDirectionFilter]);
+
   const filteredTransactions = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase("en-AU");
     if (!query) return ledgerFilteredTransactions;
@@ -362,12 +403,63 @@ function DurableManualTransactionsExperience() {
         || category.toLocaleLowerCase("en-AU").includes(query);
     });
   }, [ledgerFilteredTransactions, categorySpending, searchQuery]);
+
+  const activeNonSearchFilterCount = Number(ledgerDirectionFilter !== "ALL") + Number(ledgerCategoryFilter !== "ALL") + Number(categoryFilter !== null);
+  const activeCriterionCount = activeNonSearchFilterCount + Number(searchQuery.trim().length > 0);
+  const resultSummaryId = "transaction-result-summary";
+  const resultSummary = isReady
+    ? `${filteredTransactions.length} transaction${filteredTransactions.length === 1 ? "" : "s"} in ${selectedMonthLabel}${activeCriterionCount > 0 ? ` with ${activeCriterionCount} active ${activeCriterionCount === 1 ? "criterion" : "criteria"}` : ""}.`
+    : `Loading transactions for ${selectedMonthLabel}.`;
+
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
   const detailNeedsCorrection = detailTransaction ? transactionNeedsDirectionCorrection(detailTransaction) : false;
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
-  const duplicateCount = useMemo(() => { if (!editor) return 0; try { const candidate = validateManualTransactionDraft(editor.draft); return findManualTransactionDuplicates(transactions as ManualTransaction[], candidate, editor.transactionId).length; } catch { return 0; } }, [editor, transactions]);
+  const duplicateCount = useMemo(() => {
+    if (!editor) return 0;
+    try {
+      const candidate = validateManualTransactionDraft(editor.draft);
+      return findManualTransactionDuplicates(transactions as ManualTransaction[], candidate, editor.transactionId).length;
+    } catch {
+      return 0;
+    }
+  }, [editor, transactions]);
 
-  function openCreate() { setEditorError(""); setEditor({ mode: "create", draft: createEmptyDraft(), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
+  function clearAllCriteria() {
+    setSearchQuery("");
+    setLedgerDirectionFilter("ALL");
+    setLedgerCategoryFilter("ALL");
+    setCategoryFilter(null);
+    setShowBreakdown(false);
+  }
+
+  function clearNonSearchFilters() {
+    setLedgerDirectionFilter("ALL");
+    setLedgerCategoryFilter("ALL");
+    setCategoryFilter(null);
+    setShowBreakdown(false);
+  }
+
+  function changeDirectionFilter(value: LedgerDirectionFilter) {
+    setShowBreakdown(false);
+    setLedgerDirectionFilter(value);
+  }
+
+  function changeCategoryFilter(value: string) {
+    setShowBreakdown(false);
+    setLedgerCategoryFilter(value);
+  }
+
+  function changeMonth(offset: number) {
+    setShowBreakdown(false);
+    setCategoryFilter(null);
+    setSelectedMonth((month) => shiftMonthKey(month, offset));
+  }
+
+  function openCreate() {
+    setEditorError("");
+    setEditor({ mode: "create", draft: createEmptyDraft(), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus });
+  }
+
   function openEdit(transaction: AccountTransaction) {
     setDetailId(null);
     setEditorError("");
@@ -380,13 +472,25 @@ function DurableManualTransactionsExperience() {
       });
     });
   }
-  function openDuplicate(transaction: AccountTransaction) { setDetailId(null); setEditorError(""); setEditor({ mode: "duplicate", draft: draftForDirectionCorrection(transaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus }); }
+
+  function openDuplicate(transaction: AccountTransaction) {
+    setDetailId(null);
+    setEditorError("");
+    setEditor({ mode: "duplicate", draft: draftForDirectionCorrection(transaction), propertyLinkEnabled: false, propertyLinkPropertyId: null, initialPropertyLinkPropertyId: null, propertyLinkStatus: propertyOptionsStatus });
+  }
 
   async function saveEditor() {
     if (!editor || isSaving) return;
-    setIsSaving(true); setEditorError("");
-    const result = editor.mode === "edit" && editor.transactionId ? await updateAccountTransaction(editor.transactionId, editor.draft) : await createAccountManualTransaction(editor.draft);
-    if (!result.ok) { setIsSaving(false); setEditorError(result.error); return; }
+    setIsSaving(true);
+    setEditorError("");
+    const result = editor.mode === "edit" && editor.transactionId
+      ? await updateAccountTransaction(editor.transactionId, editor.draft)
+      : await createAccountManualTransaction(editor.draft);
+    if (!result.ok) {
+      setIsSaving(false);
+      setEditorError(result.error);
+      return;
+    }
     const savedMonth = result.savedTransaction?.date.slice(0, 7) ?? selectedMonth;
     if (savedMonth !== selectedMonth) setSelectedMonth(savedMonth);
     else setRefreshKey((current) => current + 1);
@@ -402,186 +506,149 @@ function DurableManualTransactionsExperience() {
       }
     }
     setIsSaving(false);
-    setEditor(null); setEditorError(""); setAccountWarning("");
+    setEditor(null);
+    setEditorError("");
+    setAccountWarning("");
   }
 
   async function confirmDelete() {
     if (!deleteId || isSaving) return;
-    setIsSaving(true); const result = await deleteAccountTransaction(deleteId); setIsSaving(false);
-    if (result.ok) { setRefreshKey((current) => current + 1); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
+    setIsSaving(true);
+    const result = await deleteAccountTransaction(deleteId);
+    setIsSaving(false);
+    if (result.ok) {
+      setRefreshKey((current) => current + 1);
+      setDeleteId(null);
+      setDetailId(null);
+      setAccountWarning("");
+    } else {
+      setAccountWarning(result.error);
+      setDeleteId(null);
+    }
   }
+
+  const filterControls = <>
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold text-muted">Direction</span>
+      <select value={ledgerDirectionFilter} onChange={(event) => changeDirectionFilter(event.target.value as LedgerDirectionFilter)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+        <option value="ALL">All directions</option>
+        <option value="EXPENSE">Money out</option>
+        <option value="INCOME">Money in</option>
+        <option value="TRANSFER">Transfers</option>
+      </select>
+    </label>
+    <label className="block">
+      <span className="mb-1 block text-xs font-semibold text-muted">Category</span>
+      <select value={ledgerCategoryFilter} onChange={(event) => changeCategoryFilter(event.target.value)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+        <option value="ALL">All categories</option>
+        {availableLedgerCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+      </select>
+    </label>
+  </>;
 
   return <div className="space-y-6">
     <div className="flex justify-end">
-      <button type="button" onClick={openCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-        <Plus aria-hidden="true" className="h-4 w-4" /> Add transaction
-      </button>
+      <button type="button" onClick={openCreate} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Plus aria-hidden="true" className="h-4 w-4" /> Add transaction</button>
     </div>
 
     {accountWarning && <div role="status" className="flex gap-3 rounded-xl border border-warning-amber/30 bg-warning-amber/5 p-4 text-sm leading-6 text-foreground"><AlertTriangle aria-hidden="true" className="mt-0.5 h-5 w-5 shrink-0 text-warning-amber" /><p>{accountWarning}</p></div>}
 
     <section className="rounded-2xl border border-border bg-surface-base p-3 sm:p-4" aria-label="Transaction month and search">
       <nav aria-label="Transaction month" className="flex items-center justify-between">
-        <button type="button" aria-label="Previous month" onClick={() => { setShowBreakdown(false); setCategoryFilter(null); setSelectedMonth((month) => shiftMonthKey(month, -1)); }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
+        <button type="button" aria-label="Previous month" onClick={() => changeMonth(-1)} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><ChevronLeft aria-hidden="true" className="h-5 w-5" /></button>
         <h2 aria-live="polite" className="text-center text-base font-bold text-foreground sm:text-lg">{selectedMonthLabel}</h2>
-        <button type="button" aria-label="Next month" disabled={!hasLaterTransactions} onClick={() => { setShowBreakdown(false); setCategoryFilter(null); setSelectedMonth((month) => shiftMonthKey(month, 1)); }} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
+        <button type="button" aria-label="Next month" disabled={!hasLaterTransactions} onClick={() => changeMonth(1)} className="flex min-h-11 min-w-11 items-center justify-center rounded-xl text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-30"><ChevronRight aria-hidden="true" className="h-5 w-5" /></button>
       </nav>
       <label className="mt-3 block">
         <span className="sr-only">Search this month</span>
         <div className="flex min-h-11 items-center gap-2 rounded-xl border border-border bg-surface-subtle px-3 focus-within:ring-2 focus-within:ring-focus">
           <FileSearch aria-hidden="true" className="h-4 w-4 shrink-0 text-muted" />
-          <input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search this month" className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted" />
-          {searchQuery && <button type="button" onClick={() => setSearchQuery("")} className="min-h-9 rounded-lg px-2 text-xs font-bold text-brand-evergreen">Clear</button>}
+          <input type="search" value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder="Search this month" aria-describedby={resultSummaryId} className="min-w-0 flex-1 bg-transparent text-sm text-foreground outline-none placeholder:text-muted" />
+          {searchQuery && <button type="button" onClick={() => setSearchQuery("")} className="min-h-9 rounded-lg px-2 text-xs font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear</button>}
         </div>
       </label>
+      <details className="mt-3 rounded-xl border border-border lg:hidden">
+        <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-3 py-2 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+          <span>Filter transactions</span>
+          {activeNonSearchFilterCount > 0 && <span className="rounded-full bg-surface-mint px-2 py-0.5 text-xs font-bold text-brand-evergreen">{activeNonSearchFilterCount} active</span>}
+        </summary>
+        <div className="space-y-3 border-t border-border p-3">
+          {filterControls}
+          <p className="text-xs leading-5 text-muted">Filters apply only to {selectedMonthLabel} and are not saved.</p>
+          {activeNonSearchFilterCount > 0 && <button type="button" onClick={clearNonSearchFilters} className="min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filters</button>}
+        </div>
+      </details>
       <div className="mt-3 hidden gap-3 border-t border-border pt-3 lg:grid lg:grid-cols-[1fr_1fr_auto] lg:items-end">
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-muted">Direction</span>
-          <select value={ledgerDirectionFilter} onChange={(event) => setLedgerDirectionFilter(event.target.value as LedgerDirectionFilter)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            <option value="ALL">All directions</option>
-            <option value="EXPENSE">Money out</option>
-            <option value="INCOME">Money in</option>
-            <option value="TRANSFER">Transfers</option>
-          </select>
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-xs font-semibold text-muted">Category</span>
-          <select value={ledgerCategoryFilter} onChange={(event) => setLedgerCategoryFilter(event.target.value)} className="min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 text-sm font-semibold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            <option value="ALL">All categories</option>
-            {availableLedgerCategories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
-          </select>
-        </label>
-        {(ledgerDirectionFilter !== "ALL" || ledgerCategoryFilter !== "ALL") && (
-          <button type="button" onClick={() => { setLedgerDirectionFilter("ALL"); setLedgerCategoryFilter("ALL"); }} className="min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
-            Clear filters
-          </button>
-        )}
+        {filterControls}
+        {activeNonSearchFilterCount > 0 && <button type="button" onClick={clearNonSearchFilters} className="min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filters</button>}
       </div>
     </section>
 
     {isReady && showBreakdown && categorySpending ? (
-      <CategoryBreakdownView
-        monthLabel={selectedMonthLabel}
-        spending={categorySpending}
-        onBack={() => setShowBreakdown(false)}
-        onSelectCategory={(category) => { setCategoryFilter(category); setShowBreakdown(false); }}
-      />
+      <CategoryBreakdownView monthLabel={selectedMonthLabel} spending={categorySpending} onBack={() => setShowBreakdown(false)} onSelectCategory={(category) => { setCategoryFilter(category); setShowBreakdown(false); }} />
     ) : (
       <>
         {isReady && categorySpending ? (
           <MonthlyCategoryChart monthLabel={selectedMonthLabel} spending={categorySpending} onViewBreakdown={() => setShowBreakdown(true)} />
         ) : isReady ? (
-          <section className="rounded-2xl border border-border bg-surface-base p-4" role="status">
-            <p className="text-sm font-semibold text-foreground">Spending summary unavailable</p>
-            <button type="button" onClick={() => setRefreshKey((current) => current + 1)} className="mt-2 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Try again</button>
-          </section>
+          <section className="rounded-2xl border border-border bg-surface-base p-4" role="status"><p className="text-sm font-semibold text-foreground">Spending summary unavailable</p><button type="button" onClick={() => setRefreshKey((current) => current + 1)} className="mt-2 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Try again</button></section>
         ) : null}
-    {!isReady ? (
-      <section className="rounded-2xl border border-border bg-surface-base p-5" aria-busy="true"><p className="text-sm font-semibold text-muted">Checking {selectedMonthLabel} transactions…</p></section>
-    ) : activeTransactions.length === 0 ? (
-      <section className="rounded-2xl border border-border bg-surface-base p-6 text-center">
-        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-surface-mint text-brand-evergreen"><ReceiptText aria-hidden="true" className="h-5 w-5" /></div>
-        <h2 className="mt-4 text-lg font-bold text-foreground">No transactions in {selectedMonthLabel}.</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Move to another month, add a transaction or import a reviewed CSV.</p>
-        <button type="button" onClick={openCreate} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Plus aria-hidden="true" className="h-4 w-4" /> Add transaction</button>
-      </section>
-    ) : (
-      <section aria-labelledby="transaction-list-heading">
-        {categoryFilter && (
-          <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-evergreen/20 bg-surface-mint px-3 py-2 text-sm">
-            <span className="font-semibold text-foreground">{categoryFilter.name}</span>
-            <button type="button" onClick={() => setCategoryFilter(null)} aria-label={`Remove ${categoryFilter.name} category filter`} className="min-h-9 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filter</button>
-          </div>
-        )}
-        <div className="mb-2 flex items-center justify-between gap-3 px-1">
-          <h2 id="transaction-list-heading" className="text-sm font-semibold text-muted">{filteredTransactions.length} transaction{filteredTransactions.length === 1 ? "" : "s"}</h2>
-          {searchQuery && <p className="text-xs text-muted">Search is limited to {selectedMonthLabel}</p>}
-        </div>
-        {filteredTransactions.length === 0 ? (
-          <div className="rounded-2xl border border-border bg-surface-base p-6 text-center"><p className="font-semibold text-foreground">No matching transactions</p><button type="button" onClick={() => setSearchQuery("")} className="mt-3 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen">Clear search</button></div>
-        ) : (
-          <>
-            <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base lg:hidden">
-              {filteredTransactions.map((transaction) => {
-                const category = getManualCategory(transaction.categoryId);
-                return (
-                  <article key={transaction.id}>
-                    <button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="grid min-h-16 w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[7rem_minmax(0,1fr)_12rem_7rem_2rem]">
-                      <p className="order-2 text-xs text-muted sm:order-none sm:text-sm">{formatAustralianTransactionDate(transaction.date)}</p>
-                      <p className="min-w-0 truncate text-sm font-semibold text-foreground">{transaction.description}</p>
-                      <p className="order-3 min-w-0 truncate text-xs text-muted sm:order-none sm:text-sm">{category?.name ?? "Needs review"}</p>
-                      <p className={transaction.amountCents < 0 ? "money-value shrink-0 text-right text-sm font-bold text-foreground" : "money-value shrink-0 text-right text-sm font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</p>
-                      <ChevronRight aria-hidden="true" className="hidden h-4 w-4 text-muted sm:block" />
-                      {transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
 
-            <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface-base lg:block">
-              <table className="w-full table-fixed border-collapse text-left text-sm">
-                <caption className="sr-only">{selectedMonthLabel} transactions</caption>
-                <colgroup>
-                  <col className="w-28" />
-                  <col />
-                  <col className="w-36" />
-                  <col className="w-28" />
-                  <col className="w-32" />
-                  <col className="w-32" />
-                  <col className="w-20" />
-                </colgroup>
-                <thead className="border-b border-border bg-surface-subtle text-xs font-semibold uppercase tracking-wide text-muted">
-                  <tr>
-                    <th scope="col" className="px-4 py-3">Date</th>
-                    <th scope="col" className="px-4 py-3">Transaction</th>
-                    <th scope="col" className="px-4 py-3">Category</th>
-                    <th scope="col" className="px-4 py-3">Direction</th>
-                    <th scope="col" className="px-4 py-3 text-right">Amount</th>
-                    <th scope="col" className="px-4 py-3">Status</th>
-                    <th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {filteredTransactions.map((transaction) => {
-                    const category = getManualCategory(transaction.categoryId);
-                    const needsCorrection = transactionNeedsDirectionCorrection(transaction);
-                    return (
-                      <tr key={transaction.id} className="transition-colors hover:bg-surface-subtle">
-                        <td className="px-4 py-3 text-muted">{formatAustralianTransactionDate(transaction.date)}</td>
-                        <td className="px-4 py-3"><span className="block truncate font-semibold text-foreground" title={transaction.description}>{transaction.description}</span></td>
-                        <td className="px-4 py-3"><span className="block truncate text-muted" title={category?.name ?? "Needs review"}>{category?.name ?? "Needs review"}</span></td>
-                        <td className="px-4 py-3 text-muted">{needsCorrection ? "Needs correction" : typeLabels[transaction.type]}</td>
-                        <td className={transaction.amountCents < 0 ? "money-value px-4 py-3 text-right font-bold text-foreground" : "money-value px-4 py-3 text-right font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</td>
-                        <td className="px-4 py-3">
-                          {needsCorrection ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span> : transaction.csvMatchHint ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> CSV match</span> : <span className="text-xs text-muted">—</span>}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="min-h-10 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">View</button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+        <section aria-labelledby="transaction-list-heading" aria-describedby={resultSummaryId} aria-busy={!isReady}>
+          <p id={resultSummaryId} role="status" aria-live="polite" aria-atomic="true" className="mb-2 px-1 text-sm font-semibold text-muted">{resultSummary}</p>
+          {!isReady ? (
+            <div className="rounded-2xl border border-border bg-surface-base p-5"><p className="text-sm font-semibold text-muted">Checking {selectedMonthLabel} transactions…</p></div>
+          ) : activeTransactions.length === 0 ? (
+            <div className="rounded-2xl border border-border bg-surface-base p-6 text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-surface-mint text-brand-evergreen"><ReceiptText aria-hidden="true" className="h-5 w-5" /></div>
+              <h2 id="transaction-list-heading" className="mt-4 text-lg font-bold text-foreground">No transactions in {selectedMonthLabel}.</h2>
+              <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Move to another month, add a transaction or import a reviewed CSV.</p>
+              <button type="button" onClick={openCreate} className="mt-4 inline-flex min-h-11 items-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Plus aria-hidden="true" className="h-4 w-4" /> Add transaction</button>
             </div>
-          </>
-        )}
-      </section>
-    )}
+          ) : (
+            <>
+              <h2 id="transaction-list-heading" className="sr-only">{selectedMonthLabel} transaction results</h2>
+              {categoryFilter && <div className="mb-3 flex flex-wrap items-center gap-2 rounded-xl border border-brand-evergreen/20 bg-surface-mint px-3 py-2 text-sm"><span className="font-semibold text-foreground">{categoryFilter.name}</span><button type="button" onClick={() => setCategoryFilter(null)} aria-label={`Remove ${categoryFilter.name} category filter`} className="min-h-9 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filter</button></div>}
+              {filteredTransactions.length === 0 ? (
+                <div className="rounded-2xl border border-border bg-surface-base p-6 text-center"><p className="font-semibold text-foreground">No matching transactions</p><p className="mx-auto mt-2 max-w-md text-sm leading-6 text-muted">Search and filters apply only to {selectedMonthLabel}.</p><button type="button" onClick={clearAllCriteria} className="mt-3 min-h-11 rounded-xl px-3 text-sm font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear search and filters</button></div>
+              ) : (
+                <>
+                  <div className="divide-y divide-border overflow-hidden rounded-2xl border border-border bg-surface-base lg:hidden">
+                    {filteredTransactions.map((transaction) => {
+                      const category = getManualCategory(transaction.categoryId);
+                      return <article key={transaction.id}><button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="grid min-h-16 w-full grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 px-4 py-3 text-left transition-colors hover:bg-surface-subtle focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-focus sm:grid-cols-[7rem_minmax(0,1fr)_12rem_7rem_2rem]"><p className="order-2 text-xs text-muted sm:order-none sm:text-sm">{formatAustralianTransactionDate(transaction.date)}</p><p className="min-w-0 truncate text-sm font-semibold text-foreground">{transaction.description}</p><p className="order-3 min-w-0 truncate text-xs text-muted sm:order-none sm:text-sm">{category?.name ?? "Needs review"}</p><p className={transaction.amountCents < 0 ? "money-value shrink-0 text-right text-sm font-bold text-foreground" : "money-value shrink-0 text-right text-sm font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</p><ChevronRight aria-hidden="true" className="hidden h-4 w-4 text-muted sm:block" />{transaction.csvMatchHint && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> Possible CSV match</span>}{transactionNeedsDirectionCorrection(transaction) && <span className="order-4 col-span-2 inline-flex items-center gap-1 text-xs font-semibold text-warning-amber sm:col-span-5"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span>}</button></article>;
+                    })}
+                  </div>
+                  <div className="hidden overflow-hidden rounded-2xl border border-border bg-surface-base lg:block">
+                    <table className="w-full table-fixed border-collapse text-left text-sm">
+                      <caption className="sr-only">{selectedMonthLabel} transactions</caption>
+                      <colgroup><col className="w-28" /><col /><col className="w-36" /><col className="w-28" /><col className="w-32" /><col className="w-32" /><col className="w-20" /></colgroup>
+                      <thead className="border-b border-border bg-surface-subtle text-xs font-semibold uppercase tracking-wide text-muted"><tr><th scope="col" className="px-4 py-3">Date</th><th scope="col" className="px-4 py-3">Transaction</th><th scope="col" className="px-4 py-3">Category</th><th scope="col" className="px-4 py-3">Direction</th><th scope="col" className="px-4 py-3 text-right">Amount</th><th scope="col" className="px-4 py-3">Status</th><th scope="col" className="px-4 py-3"><span className="sr-only">Actions</span></th></tr></thead>
+                      <tbody className="divide-y divide-border">
+                        {filteredTransactions.map((transaction) => {
+                          const category = getManualCategory(transaction.categoryId);
+                          const needsCorrection = transactionNeedsDirectionCorrection(transaction);
+                          return <tr key={transaction.id} className="transition-colors hover:bg-surface-subtle"><td className="px-4 py-3 text-muted">{formatAustralianTransactionDate(transaction.date)}</td><td className="px-4 py-3"><span className="block truncate font-semibold text-foreground" title={transaction.description}>{transaction.description}</span></td><td className="px-4 py-3"><span className="block truncate text-muted" title={category?.name ?? "Needs review"}>{category?.name ?? "Needs review"}</span></td><td className="px-4 py-3 text-muted">{needsCorrection ? "Needs correction" : typeLabels[transaction.type]}</td><td className={transaction.amountCents < 0 ? "money-value px-4 py-3 text-right font-bold text-foreground" : "money-value px-4 py-3 text-right font-bold text-brand-leaf"}>{formatAudFromCents(transaction.amountCents)}</td><td className="px-4 py-3">{needsCorrection ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><AlertTriangle aria-hidden="true" className="h-3.5 w-3.5" /> Needs correction</span> : transaction.csvMatchHint ? <span className="inline-flex items-center gap-1 text-xs font-semibold text-warning-amber"><FileSearch aria-hidden="true" className="h-3.5 w-3.5" /> CSV match</span> : <span className="text-xs text-muted">—</span>}</td><td className="px-4 py-3 text-right"><button type="button" onClick={() => setDetailId(transaction.id)} aria-label={"Details for " + transaction.description} className="min-h-10 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">View</button></td></tr>;
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </section>
       </>
     )}
 
-    <details className="border-t border-border pt-3 text-sm leading-6 text-muted">
-      <summary className="min-h-11 cursor-pointer rounded-lg py-3 font-semibold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">How your transaction data is kept safe</summary>
-      <p className="pb-2">Only the cleaned details you reviewed are saved to your account. Removed transactions stay out of the active list.</p>
-    </details>
+    <details className="border-t border-border pt-3 text-sm leading-6 text-muted"><summary className="min-h-11 cursor-pointer rounded-lg py-3 font-semibold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">How your transaction data is kept safe</summary><p className="pb-2">Only the cleaned details you reviewed are saved to your account. Removed transactions stay out of the active list.</p></details>
 
     {editor && <TransactionEditor editor={editor} duplicateCount={duplicateCount} error={editorError} isSaving={isSaving} propertyOptions={propertyOptions} onChange={(draft) => { setEditor({ ...editor, draft }); setEditorError(""); }} onPropertyEnabledChange={(enabled) => setEditor({ ...editor, propertyLinkEnabled: enabled, propertyLinkPropertyId: enabled ? editor.propertyLinkPropertyId : null })} onPropertyLinkChange={(propertyId) => setEditor({ ...editor, propertyLinkPropertyId: propertyId })} onCancel={() => setEditor(null)} onSubmit={saveEditor} />}
+
     {detailTransaction && <ModalFrame title="Transaction details" description={detailTransaction.source === "IMPORTED" ? "A cleaned transaction created from a reviewed import." : "A manual account entry."} onClose={() => setDetailId(null)}>{detailNeedsCorrection && <div role="status" className="mt-6 rounded-2xl border border-warning-amber/30 bg-warning-amber/10 p-4"><p className="font-bold text-foreground">This transaction needs correction</p><p className="mt-1 text-sm text-muted">The amount and transaction direction do not agree.</p></div>}<dl className="mt-6 space-y-4 rounded-2xl bg-surface-subtle p-4"><div><dt className="text-xs font-bold text-muted">Description</dt><dd className="mt-1 text-lg font-bold text-foreground">{detailTransaction.description}</dd></div><div className="grid gap-4 sm:grid-cols-2"><div><dt className="text-xs font-bold text-muted">Amount</dt><dd className="mt-1 font-bold text-foreground">{formatAudFromCents(detailTransaction.amountCents)}</dd></div><div><dt className="text-xs font-bold text-muted">Date</dt><dd className="mt-1 font-bold text-foreground">{formatAustralianTransactionDate(detailTransaction.date)}</dd></div><div><dt className="text-xs font-bold text-muted">Category</dt><dd className="mt-1 font-bold text-foreground">{getManualCategory(detailTransaction.categoryId)?.name}</dd></div><div><dt className="text-xs font-bold text-muted">Source</dt><dd className="mt-1 font-bold text-foreground">{detailTransaction.source === "IMPORTED" ? "Imported" : "Manual"}</dd></div></div>{detailTransaction.notes && <div><dt className="text-xs font-bold text-muted">Notes</dt><dd className="mt-1 text-foreground">{detailTransaction.notes}</dd></div>}{detailTransaction.csvMatchHint && <div className="flex gap-2 text-sm text-foreground"><FileSearch aria-hidden="true" className="h-5 w-5 shrink-0 text-brand-teal" /><p>Marked as a possible match for a future CSV row. No CSV has been accessed.</p></div>}</dl><TransactionPropertyLinkPanel transactionId={detailTransaction.id} /><div className="mt-5 flex flex-wrap justify-end gap-2"><button type="button" onClick={() => openDuplicate(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Copy aria-hidden="true" className="h-4 w-4" /> Duplicate</button><button type="button" onClick={() => { setDetailId(null); setDeleteId(detailTransaction.id); }} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-danger-red/40 px-4 text-sm font-bold text-danger-red focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-red"><Trash2 aria-hidden="true" className="h-4 w-4" /> Delete</button><button type="button" onClick={() => openEdit(detailTransaction)} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Pencil aria-hidden="true" className="h-4 w-4" /> {detailNeedsCorrection ? "Review transaction" : "Edit"}</button></div></ModalFrame>}
+
     {deleteTransaction && <ModalFrame title="Delete transaction?" description="This entry will be removed from your active transaction list and kept recoverable." onClose={() => setDeleteId(null)}><div className="mt-6 rounded-2xl bg-danger-red/5 p-4"><p className="font-bold text-foreground">{deleteTransaction.description}</p><p className="mt-1 text-sm text-muted">{formatAustralianTransactionDate(deleteTransaction.date)} · {formatAudFromCents(deleteTransaction.amountCents)}</p></div>{accountWarning && <p role="alert" className="mt-4 rounded-xl bg-danger-red/10 p-4 text-sm font-semibold text-danger-red">{accountWarning}</p>}<div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button disabled={isSaving} type="button" onClick={() => setDeleteId(null)} className="min-h-11 rounded-xl border border-border px-4 text-sm font-bold text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Keep transaction</button><button disabled={isSaving} type="button" onClick={confirmDelete} className="min-h-11 rounded-xl bg-danger-red px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-danger-red">{isSaving ? "Deleting…" : "Delete transaction"}</button></div></ModalFrame>}
   </div>;
-
 }
 
 export function DurableManualTransactions() {
