@@ -76,7 +76,7 @@ Executable source head `295986a0c077eaccbd3ee01400a9ca14db04724f` passed Vercel 
 
 Only the existing Import Review memoisation warnings remain.
 
-The current final head adds the matching regression assertion and this evidence update. One exact final-head execution remains required before route work or merge.
+The current final head adds the matching regression assertion and evidence documentation. One exact final-head execution remains required before route work or merge.
 
 ## Boundary and next action
 
