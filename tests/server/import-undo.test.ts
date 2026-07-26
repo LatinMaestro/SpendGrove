@@ -8,14 +8,18 @@ const servicePath = new URL("../../src/server/import-undo.ts", import.meta.url);
 const commitPath = new URL("../../src/server/import-commit.ts", import.meta.url);
 
 const originalVercelEnv = process.env.VERCEL_ENV;
+const originalVitestEnv = process.env.VITEST;
 
 afterEach(() => {
   vi.restoreAllMocks();
   if (originalVercelEnv === undefined) delete process.env.VERCEL_ENV;
   else process.env.VERCEL_ENV = originalVercelEnv;
+  if (originalVitestEnv === undefined) delete process.env.VITEST;
+  else process.env.VITEST = originalVitestEnv;
 });
 
 function preview() {
+  process.env.VITEST = "false";
   process.env.VERCEL_ENV = "preview";
 }
 
