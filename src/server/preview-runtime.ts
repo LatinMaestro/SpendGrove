@@ -6,6 +6,6 @@ import type { EnvSource } from "@/src/server/env";
  * an activated service must opt in through that service's runtime override.
  */
 export function isVerifiedPreviewRuntime(env: EnvSource = process.env) {
-  if (env.NODE_ENV?.trim().toLowerCase() === "test") return false;
+  if (env.VITEST?.trim().toLowerCase() === "true") return false;
   return env.VERCEL_ENV?.trim().toLowerCase() === "preview";
 }
