@@ -1,7 +1,7 @@
 # Phase C4 Loan, Property and Reporting Preparation Summary
 
 Date: 26 July 2026  
-Status: current-state audit, completion contract and consolidated regression package prepared; exact-head verification pending  
+Status: current-state audit, completion contract and consolidated regression package technically verified; dependency review pending  
 Master-plan alignment: C4 — Loan, Property and report completion  
 Stacked dependency: PR #257 and all earlier Phase C, master-plan and activation dependencies
 
@@ -123,18 +123,37 @@ The new seven-test consolidated guard verifies:
 
 Existing behavioural suites remain authoritative for formula outcomes. The new test is a cross-layer drift detector.
 
-## Expected verification
+## Exact-head verification
 
-The exact branch should pass:
+Source and documentation head before this evidence commit: `cece820286051191279f14ed844da66cf2d60183`  
+Vercel deployment: `dpl_5RERFMKJ1kpyfdWwC1uaXPJJ4hFC`  
+State: READY
 
-- 152 test files / 948 tests;
+The exact package passed:
+
 - framework dependency verification;
-- TypeScript;
-- lint, with only the previously recorded Import Review memoization warnings;
-- optimized Next.js build;
-- route generation and Vercel Preview deployment.
+- **152 test files / 948 tests**;
+- all seven new C4 consolidated guards;
+- existing Loan reporting, Property financial reporting, accountant-pack, ownership, export/deletion, transaction, split, transfer and Loan reconciliation regressions;
+- optimized Next.js compilation;
+- TypeScript and lint validation;
+- static-page generation, route tracing and serverless deployment.
 
-## Next action after green verification
+The only lint output remains the pre-existing behaviour-neutral `reviewRows ?? []` memoization warnings in `components/import-review-foundation.tsx`. This C4 package introduced no warning or application failure.
+
+No schema, migration, application runtime, API, package, provider, secret, environment, Production or Apple change occurred.
+
+## Remaining repository gates
+
+- final evidence-commit Preview verification;
+- no unresolved review threads;
+- authenticated synthetic Preview/browser review for the wider stacked product;
+- executable GitHub Application Verification after eventual dependency merge and retargeting to `main`;
+- ordered merge of PR #257 and all earlier dependencies;
+- professional terminology review before final tax-sensitive wording;
+- explicit approval before schema, Production, provider, document or Apple actions.
+
+## Next action after final evidence verification
 
 Prepare the focused C4.1 financial-year everyday cashflow and Category formula contract with a wholly synthetic reconciliation dataset.
 
