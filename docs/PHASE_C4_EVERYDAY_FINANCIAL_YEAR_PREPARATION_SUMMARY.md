@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Reporting Preparation Summary
 
 Date: 26 July 2026  
-Status: formula contract, synthetic reconciliation fixture and automated contract tests prepared; exact-head verification pending  
+Status: formula contract, synthetic reconciliation fixture and automated contract tests technically verified; dependency review pending  
 Master-plan alignment: C4 — Loan, Property and report completion  
 Feature-register alignment: REP-01 and REP-02  
 Stacked dependency: PR #260, PR #259 and all earlier activation/master-plan dependencies
@@ -198,9 +198,37 @@ No change to:
 - Preview or Production database state;
 - Expo, Apple, TestFlight, pricing or real users.
 
+## Exact-head verification
+
+Source and evidence head before this final evidence commit: `0f205638336eb042d0884752c1f36b91ee8ecae1`  
+Vercel deployment: `dpl_BsUPf46vHDZfJ1mgsgHEpAsj8Ajf`  
+State: READY
+
+The dependency-correct formula package passed:
+
+- framework dependency verification;
+- **154 test files / 963 tests**;
+- all eight new C4.1 formula, fixture and reconciliation checks;
+- PR #260's distinct `LINKED`, `NEEDS_REVIEW` and `UNMATCHED` server/UI regressions;
+- the complete inherited C4 audit and regression package;
+- existing transaction, split, transfer, Loan no-double-count, ownership, privacy, export/deletion and reporting suites;
+- optimized Next.js compilation;
+- TypeScript and lint validation;
+- static-page generation, route tracing and serverless deployment.
+
+The only lint output remains the separately documented behaviour-neutral `reviewRows ?? []` memoization warning in `components/import-review-foundation.tsx`.
+
+No application calculation, API, schema, migration, package, provider, secret, environment, Production or Apple change occurred.
+
+## Branch reconciliation
+
+A parallel formula branch was created directly from PR #259 while PR #260 was completing. This dependency-correct branch is retained because it includes PR #260's user-facing reconciliation transparency before freezing the everyday financial-year formula.
+
+The direct PR #259 fork is superseded and must not merge. Its arithmetic and privacy review informed the comparison, but this branch is the sole authoritative C4.1 continuation.
+
 ## Remaining gates
 
-- exact-head tests, TypeScript, lint, optimized build and Vercel Preview for this branch;
+- final evidence-commit Preview verification;
 - no unresolved review threads;
 - authenticated synthetic browser review for the broader stacked UI work;
 - executable GitHub Actions after eventual retargeting to `main`;
@@ -210,19 +238,8 @@ No change to:
 - document-provider and collaboration gates;
 - Production and Apple gates.
 
-## Expected technical baseline
-
-The branch should pass the PR #260 baseline plus one new test file and eight new tests:
-
-- **154 test files / 963 tests**;
-- framework dependency verification;
-- TypeScript;
-- lint, with only the separately documented Import Review memoization warning if unchanged;
-- optimized Next.js build;
-- route generation and Vercel deployment.
-
 ## Next action
 
-Once exact-head verification is green, implement the pure no-schema financial-year aggregation helper against the committed fixture. Do not add routes, UI or accountant-pack fields until the helper independently passes the frozen reconciliation contract.
+Once the final evidence head is green, implement the pure no-schema financial-year aggregation helper against the committed fixture. Do not add routes, UI or accountant-pack fields until the helper independently passes the frozen reconciliation contract.
 
 This preparation does not close REP-01, REP-02 or Phase C4 and triggers no Production or release authority.
