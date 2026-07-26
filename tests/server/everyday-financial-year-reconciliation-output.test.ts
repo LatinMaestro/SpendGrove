@@ -217,6 +217,12 @@ describe("everyday financial-year reconciliation JSON serializer", () => {
     }), "REPORT_RECONCILIATION_INVALID");
     expectReason(() => createEverydayFinancialYearReconciliationJson({
       ...report,
+      categories: report.categories.map((row) => (
+        row.categoryId === null ? { ...row, categoryName: "Fabricated Category" } : row
+      )),
+    }), "REPORT_VALUE_INVALID");
+    expectReason(() => createEverydayFinancialYearReconciliationJson({
+      ...report,
       categories: [...report.categories, { ...report.categories[0] }],
     }), "REPORT_RECONCILIATION_INVALID");
   });
