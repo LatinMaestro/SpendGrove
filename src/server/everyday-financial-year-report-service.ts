@@ -192,15 +192,16 @@ function parseFinancialYearBeforeStoreAccess(endingYear: unknown) {
 export async function getEverydayFinancialYearReport(
   context: AuthenticatedUserContext | null | undefined,
   endingYear: unknown,
-  store: EverydayFinancialYearReportStore = createPrismaEverydayFinancialYearReportStore(),
+  store?: EverydayFinancialYearReportStore,
   generatedAt = new Date(),
 ): Promise<EverydayFinancialYearReport> {
   const user = requireAuthenticatedUserContext(context);
   const financialYear = parseFinancialYearBeforeStoreAccess(endingYear);
+  const reportStore = store ?? createPrismaEverydayFinancialYearReportStore();
 
   const [transactions, analyticalLoanRepaymentCount] = await Promise.all([
-    store.listEligibleTransactions(user.userId, financialYear.start, financialYear.end),
-    store.countLinkedAnalyticalLoanRepayments(user.userId, financialYear.start, financialYear.end),
+    reportStore.listEligibleTransactions(user.userId, financialYear.start, financialYear.end),
+    reportStore.countLinkedAnalyticalLoanRepayments(user.userId, financialYear.start, financialYear.end),
   ]);
 
   return buildEverydayFinancialYearReport(
