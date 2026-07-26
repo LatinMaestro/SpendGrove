@@ -83,7 +83,7 @@ describe("authenticated everyday financial-year report service", () => {
     expect(calls).toBe(0);
   });
 
-  it("constructs the default store only after authentication and FY validation", async () => {
+  it("constructs the default store only after authentication and preflight validation", async () => {
     const source = await readFile(servicePath, "utf8");
     const serviceStart = source.indexOf("export async function getEverydayFinancialYearReport");
     const serviceSource = source.slice(serviceStart);
@@ -96,9 +96,12 @@ describe("authenticated everyday financial-year report service", () => {
     expect(serviceSource.indexOf("parseFinancialYearBeforeStoreAccess(endingYear)")).toBeLessThan(
       serviceSource.indexOf("store ?? createPrismaEverydayFinancialYearReportStore()"),
     );
+    expect(serviceSource.indexOf("Number.isNaN(generatedAt.getTime())")).toBeLessThan(
+      serviceSource.indexOf("store ?? createPrismaEverydayFinancialYearReportStore()"),
+    );
   });
 
-  it("validates the bounded Australian financial year before store access", async () => {
+  it("validates financial year and generation time before store access", async () => {
     let calls = 0;
     const guardedStore = store({
       async listEligibleTransactions() {
@@ -116,6 +119,12 @@ describe("authenticated everyday financial-year report service", () => {
       throw new Error("Expected financial-year validation to fail.");
     } catch (error) {
       expectReportReason(error, "FINANCIAL_YEAR_INVALID");
+    }
+    try {
+      await getEverydayFinancialYearReport(context, 2026, guardedStore, new Date("invalid"));
+      throw new Error("Expected generation-time validation to fail.");
+    } catch (error) {
+      expectReportReason(error, "GENERATED_AT_INVALID");
     }
     expect(calls).toBe(0);
   });
@@ -212,7 +221,7 @@ describe("authenticated everyday financial-year report service", () => {
     expect(JSON.stringify(report)).not.toMatch(/Unavailable Category|Deleted Category/);
   });
 
-  it("builds private-field-minimised owner, lifecycle, linked-status and date queries", async () => {
+  it("builds private-field-minimised owner, lifecycle, link and date queries", async () => {
     let transactionArgs: Record<string, unknown> | undefined;
     let repaymentArgs: Record<string, unknown> | undefined;
     const linkedTransaction = {
@@ -221,6 +230,16 @@ describe("authenticated everyday financial-year report service", () => {
       status: "ACTIVE",
       deletedAt: null,
       splitRole: "NONE",
+    };
+    const acceptedRepayment = {
+      userId: context.userId,
+      reconciliationStatus: "LINKED",
+      loanAccount: { userId: context.userId },
+      reconciliationLink: {
+        userId: context.userId,
+        unlinkedAt: null,
+        transaction: linkedTransaction,
+      },
     };
     const prisma = {
       transaction: {
@@ -233,13 +252,22 @@ describe("authenticated everyday financial-year report service", () => {
         async findMany(args: Record<string, unknown>) {
           repaymentArgs = args;
           return [
-            { userId: context.userId, reconciliationLink: { unlinkedAt: null, transaction: linkedTransaction } },
-            { userId: context.userId, reconciliationLink: { unlinkedAt: new Date(), transaction: linkedTransaction } },
-            { userId: context.userId, reconciliationLink: null },
+            acceptedRepayment,
+            { ...acceptedRepayment, reconciliationStatus: "UNMATCHED" },
+            { ...acceptedRepayment, loanAccount: { userId: "synthetic-user-2" } },
             {
-              userId: context.userId,
+              ...acceptedRepayment,
+              reconciliationLink: { ...acceptedRepayment.reconciliationLink, userId: "synthetic-user-2" },
+            },
+            {
+              ...acceptedRepayment,
+              reconciliationLink: { ...acceptedRepayment.reconciliationLink, unlinkedAt: new Date() },
+            },
+            { ...acceptedRepayment, reconciliationLink: null },
+            {
+              ...acceptedRepayment,
               reconciliationLink: {
-                unlinkedAt: null,
+                ...acceptedRepayment.reconciliationLink,
                 transaction: { ...linkedTransaction, status: "DELETED", deletedAt: new Date() },
               },
             },
@@ -271,6 +299,22 @@ describe("authenticated everyday financial-year report service", () => {
         isArchived: false,
         deletedAt: null,
         repaymentDate: { gte: start, lt: end },
+        loanAccount: { is: { userId: context.userId } },
+        reconciliationLink: {
+          is: {
+            userId: context.userId,
+            unlinkedAt: null,
+            transaction: {
+              is: {
+                userId: context.userId,
+                status: "ACTIVE",
+                deletedAt: null,
+                splitRole: { not: "PARENT" },
+                date: { gte: start, lt: end },
+              },
+            },
+          },
+        },
       },
     });
     expect(JSON.stringify(transactionArgs)).not.toMatch(/description|merchantName|notes|csvMatchHint|importBatch|accountNumber|\bbsb\b/i);
