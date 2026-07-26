@@ -12,9 +12,9 @@ Dependency: PR #262 → PR #260 → PR #259 and earlier stacked gates
 
 ## Helper boundary
 
-`buildEverydayFinancialYearReport()` is pure from supplied inputs. It performs no authentication lookup, Prisma query, write, route, logging, export, UI or provider call.
+`buildEverydayFinancialYearReport()` is deterministic from supplied inputs. It performs no authentication lookup, Prisma query, write, route, logging, export, UI or provider call.
 
-A later owner-scoped service must authenticate first and supply the bounded records.
+A later owner-scoped service must authenticate first and supply a bounded eligible record set.
 
 ## Response
 
@@ -31,7 +31,7 @@ The versioned response contains:
 - analytical Loan record count with zero analytical cashflow added;
 - neutral preparation disclaimer.
 
-It contains no transaction descriptions, merchant text, filenames, bank identifiers, Loan references, Property addresses or provider data.
+It contains no transaction IDs, descriptions, merchant text, filenames, bank identifiers, Loan references, Property addresses or provider data.
 
 ## Financial rules
 
@@ -46,29 +46,32 @@ It contains no transaction descriptions, merchant text, filenames, bank identifi
 - Category key includes direction and Category identity;
 - positive refunds remain Money in;
 - Loan analytical records add zero cashflow;
+- counts and Category totals reconcile internally;
 - unsafe totals, invalid dates/amounts/types/signs/split states fail closed.
 
-## Diagnostics
+## Candidate sources
 
-- `FULL_CANDIDATE_SET` returns exact bounded fixture/service exclusion counts;
-- default `OWNER_FILTERED` returns exclusion diagnostics as unavailable (`null`), preventing invented zero counts or cross-user queries.
+- `FULL_DIAGNOSTIC` returns exact exclusion counts from a bounded synthetic or service candidate set;
+- default `ELIGIBLE_ONLY` returns exclusion diagnostics as unavailable (`null`);
+- `ELIGIBLE_ONLY` fails closed if a future owner-scoped store leaks a cross-user, outside-period, inactive/deleted or split-parent record.
 
 ## Tests
 
-Eight tests cover:
+Nine tests cover:
 
 1. exact controlling fixture reconciliation;
-2. owner-filtered diagnostics;
-3. no mutation plus refund/split/transfer treatment;
-4. date boundaries with `Date` inputs;
-5. invalid date/amount/sign failures;
-6. unsupported type/split failures;
-7. safe-integer overflow failure;
-8. Loan analytical and authenticated-user fail-closed boundaries.
+2. eligible-only diagnostics;
+3. eligible-only source-contract violations;
+4. no mutation plus refund/split/transfer treatment;
+5. date boundaries with `Date` inputs;
+6. invalid date/amount/sign failures;
+7. unsupported type/split failures;
+8. safe-integer overflow failure;
+9. Loan analytical, authenticated-user and private-field boundaries.
 
 Expected exact-head baseline:
 
-- 155 test files / 971 tests;
+- 155 test files / 972 tests;
 - TypeScript and lint;
 - optimized Next.js build;
 - Vercel Preview READY.
