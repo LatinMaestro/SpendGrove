@@ -42,7 +42,7 @@ describe("Phase C3 Category management reliability and accessibility", () => {
   it("separates loading, polite status and actionable error states", async () => {
     const { controls, manager } = await sources();
 
-    expect(controls).toContain('setNotice("Loading account categories…")');
+    expect(controls).toContain('useState("Loading account categories…")');
     expect(manager).toContain('aria-busy={effectiveStorageMode === "loading" || operationPending}');
     expect(manager).toContain('role="status" aria-live="polite"');
     expect(manager).toContain('role="alert"');
