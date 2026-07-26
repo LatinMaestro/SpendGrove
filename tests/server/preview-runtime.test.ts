@@ -13,7 +13,7 @@ describe("verified Preview runtime gate", () => {
 
   it("keeps automated tests fail-closed when Vercel injects Preview metadata", () => {
     expect(isVerifiedPreviewRuntime({
-      NODE_ENV: "test",
+      VITEST: "true",
       VERCEL_ENV: "preview",
     })).toBe(false);
   });
