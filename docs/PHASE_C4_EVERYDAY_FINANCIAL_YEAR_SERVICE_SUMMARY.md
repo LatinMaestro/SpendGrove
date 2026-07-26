@@ -3,13 +3,9 @@
 Date: 26 July 2026  
 Status: authenticated owner-scoped read service and synthetic tests implemented; exact-head execution pending hosting capacity  
 Master-plan alignment: C4.3 — owner-scoped report store/service  
-Stacked dependency: PR #265 → PR #262 → PR #260 → PR #259 and all earlier activation/master-plan dependencies
+Stacked dependency: PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
-## Objective
-
-Connect the exact-green pure C4.2 aggregation helper to an authenticated, owner-scoped and existing-schema read service without adding routes, serializers, UI or accountant-pack changes.
-
-## Files delivered
+## Delivered
 
 - `src/server/everyday-financial-year-report-service.ts`;
 - `tests/server/everyday-financial-year-report-service.test.ts`;
@@ -19,19 +15,19 @@ Connect the exact-green pure C4.2 aggregation helper to an authenticated, owner-
 
 `getEverydayFinancialYearReport()`:
 
-1. requires a valid `AuthenticatedUserContext` before constructing or accessing the default store;
-2. validates the requested Australian financial-year ending year before constructing or accessing the store;
-3. derives the exact half-open UTC range from 1 July to the following 1 July;
-4. queries Transactions and linked analytical Loan repayments concurrently through a typed store;
-5. maps only safe owner-scoped fields into the pure helper;
-6. calls the helper in `ELIGIBLE_ONLY` mode;
-7. returns the existing versioned C4.2 report without changing its formulas.
+1. requires `AuthenticatedUserContext`;
+2. validates the Australian financial year;
+3. validates generation time;
+4. completes all three checks before constructing/accessing the default store;
+5. uses the half-open UTC range from 1 July to the following 1 July;
+6. runs two owner-scoped reads concurrently;
+7. calls the C4.2 helper in `ELIGIBLE_ONLY` mode.
 
-No client-supplied total, Category row, Transaction ID list or Loan amount is financial authority.
+No client total, Category row, Transaction list or Loan amount is financial authority.
 
-## Prisma store
+## Transaction query
 
-The default store queries Transactions with:
+Required filters:
 
 - authenticated `userId`;
 - `status: ACTIVE`;
@@ -39,134 +35,91 @@ The default store queries Transactions with:
 - `splitRole != PARENT`;
 - `date >= FY start`;
 - `date < following 1 July`;
-- deterministic date and ID ordering.
+- deterministic date/ID ordering.
 
-It selects only:
+Selected fields are limited to internal ID, owner, date, type, integer cents, lifecycle/split state and Category relationship fields.
 
-- internal Transaction ID for server processing;
-- owner ID;
-- date;
-- type;
-- integer-cent amount;
-- lifecycle/split state;
-- Category relationship fields needed for safe display.
+Descriptions, narration, merchant text, notes, import details, filenames, banking identifiers, Property details and Loan references are not selected.
 
-It does not select descriptions, narration, merchant text, notes, import source data, filenames, account details, Property addresses, Loan references or provider fields.
+## Category defence
 
-## Category handling
+A Category label is retained only when:
 
-A Category label is passed to the pure helper only when:
+- relation ID matches `categoryId`;
+- Category belongs to the authenticated user;
+- Category is not deleted.
 
-- the related Category ID matches the Transaction Category ID;
-- the Category belongs to the authenticated user;
-- the Category is not deleted.
-
-Otherwise the report uses the existing `Uncategorised` treatment. Archived Categories may retain their historical relationship because archive does not erase accepted Transaction categorisation.
+Otherwise it becomes `Uncategorised`. Archived Categories may retain historical labels because archive does not erase accepted categorisation.
 
 ## Analytical Loan count
 
-The store queries only owner Loan repayments that are:
+The query requires:
 
-- persisted with `reconciliationStatus: LINKED`;
-- non-archived;
-- non-deleted;
-- dated within the selected financial year.
+- repayment owner matches authenticated user;
+- `reconciliationStatus: LINKED`;
+- repayment is non-archived/non-deleted;
+- repayment date is within the FY;
+- Loan Account belongs to the authenticated user;
+- reconciliation link belongs to the authenticated user and is active;
+- linked Transaction belongs to the authenticated user;
+- linked Transaction is active, non-deleted, non-parent and within the same FY.
 
-It counts a repayment only when its reconciliation link:
+The selected repayment shape excludes payment, principal, interest, fee, balance and Loan-reference values. Only the accepted count enters the report and adds zero cashflow cents.
 
-- is active (`unlinkedAt` is null);
-- points to a Transaction owned by the same user;
-- points to an active, non-deleted, non-parent Transaction;
-- points to a Transaction within the selected financial year.
+The store defensively rechecks repayment, Loan Account, link and linked-Transaction ownership/lifecycle before counting returned rows.
 
-Only the count is passed into the everyday report. Principal, interest, fees, balances and total-payment amounts are neither selected nor passed to the everyday aggregation helper and add exactly zero cents to cashflow.
+## Owner isolation
 
-## Owner-isolation defence
+Enforced by:
 
-Ownership is enforced in layers:
-
-- authentication before default-store construction or persistence access;
-- financial-year validation before store construction/access;
-- owner ID in every Prisma query;
-- defensive owner checks when mapping Category relations;
-- defensive owner checks when counting linked analytical repayments;
-- final pure-helper rejection if any supplied Transaction is cross-user.
+- authentication before persistence access;
+- FY/timestamp validation before persistence access;
+- owner filters in every query/relation;
+- Category relation checks;
+- Loan Account/link/Transaction checks;
+- final helper rejection of any cross-user Transaction.
 
 No cross-user diagnostic count is returned.
 
-## Automated tests
+## Tests
 
-Seven focused tests prove:
+Seven tests prove:
 
-1. authentication fails before either store method;
-2. the default store cannot be constructed through a default parameter before authentication/FY validation;
-3. invalid FY input fails before either store method;
-4. exact owner and half-open date ranges are supplied to both reads;
-5. a malicious cross-user store record fails closed;
-6. cross-owner, deleted or unavailable Category relations become `Uncategorised` without leaking their labels;
-7. Prisma query shapes preserve owner, lifecycle, split, period and `LINKED` filters, select no narration or Loan component amounts, and count only an active eligible reconciliation link.
+1. authentication blocks both reads;
+2. default-store construction follows authentication/FY/timestamp preflight;
+3. invalid FY or timestamp blocks both reads;
+4. exact owner and half-open period reach both reads;
+5. malicious cross-user Transaction results fail closed;
+6. cross-owner/deleted/unavailable Categories become `Uncategorised` without label leakage;
+7. Prisma queries preserve owner, lifecycle, `LINKED`, Loan Account, link, linked-Transaction, split and date filters; private Transaction and Loan-component fields remain unselected; only one valid analytical link is counted.
 
-The inherited pure helper and formula-contract tests remain unchanged.
+Inherited C4.1/C4.2 tests remain unchanged.
 
-## Financial boundary
+## Boundaries
 
-No change to:
+No change to financial formulas, Transactions, Categories, Loan reconciliation, links, writes, schema, migrations, routes, serializers, CSVs, UI, accountant-pack version, packages, providers, environments, Production, Expo or Apple.
 
-- integer-cent storage or totals;
-- Money in/Money out formulas;
-- positive-refund treatment;
-- transfer context treatment;
-- split parent/child treatment;
-- Category grouping;
-- Loan cashflow no-double-count;
-- Australian financial-year boundaries;
-- tax or advice posture.
+No raw CSV, filename, narration, merchant history, banking identifier, Loan reference, Property address, provider payload, secret or private audit metadata is selected, returned or logged.
 
-The service performs no write, correction, categorisation, reconciliation, link or report snapshot operation.
+## Verification
 
-## Privacy and security boundary
-
-No raw CSV, filename, narration, merchant history, account/BSB/card/customer/Loan reference, exact Property address, provider payload, secret or private audit metadata is selected, returned, logged, documented or added to fixtures.
-
-The service has no route and therefore creates no new public response surface in this PR.
-
-## Repository impact
-
-No change to:
-
-- Prisma schema or migrations;
-- database state;
-- existing routes or pages;
-- serializers or exports;
-- accountant-pack version;
-- packages or lockfiles;
-- workflows;
-- Vercel, Neon or Clerk configuration;
-- providers or secrets;
-- Production, Expo, Apple, TestFlight, pricing or real users.
-
-## Expected verification
-
-The branch should pass the exact-green PR #265 executable baseline plus one new test file and seven tests:
+Expected baseline:
 
 - **156 test files / 980 tests**;
-- framework dependency verification;
-- TypeScript and lint;
+- framework verification;
+- TypeScript/lint;
 - optimized Next.js build;
-- route generation and serverless deployment.
+- route/serverless generation.
 
-The current Vercel free-account daily deployment limit is exhausted. Do not create no-op commits or blind retries. Exact-head execution remains required before this PR can merge or serializer work can begin.
+Vercel's free daily deployment limit remains exhausted. Do not create no-op commits or blind retries. Exact-head execution is required before merge or serializer work.
 
-The only expected lint output is the already documented behaviour-neutral Import Review memoisation warning.
+## Next
 
-## Remaining C4 sequence
+After one exact-head green run:
 
-1. exact-head verification of this service when deployment capacity returns;
-2. formula-safe everyday and Category serializers;
-3. reconciliation serializer;
-4. authenticated routes;
-5. existing-navigation report page and accessibility;
-6. accountant-pack version 2;
-7. consolidated C4 QA and professional wording package.
-
-This slice does not authorise routes, exports, UI, accountant-pack changes, tax grouping, schema, migrations, providers, secrets, Production, document/OCR, Apple or real-user actions.
+1. everyday/Category formula-safe serializers;
+2. reconciliation serializer;
+3. authenticated routes;
+4. Reports UI/accessibility;
+5. accountant-pack v2;
+6. consolidated QA/professional wording.
