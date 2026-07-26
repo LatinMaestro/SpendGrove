@@ -1,15 +1,15 @@
 # Phase C4 Everyday Financial-Year Aggregation Summary
 
 Date: 26 July 2026  
-Status: pure server aggregation helper and fixture-driven tests implemented; exact-head verification pending  
+Status: core pure aggregation helper exact-head verified; additional source-mode and Category-identity hardening pending exact-head deployment capacity  
 Master-plan alignment: C4.2 — pure no-schema financial-year aggregation  
 Stacked dependency: PR #262 → PR #260 → PR #259 and all earlier activation/master-plan dependencies
 
 ## Objective
 
-Implement only the pure, server-side Australian financial-year everyday aggregation helper defined by PR #262.
+Implement the pure server-side Australian financial-year everyday aggregation boundary defined by PR #262, then keep optional hardening separate from the already-green core implementation.
 
-This slice deliberately excludes:
+This work deliberately excludes:
 
 - database/store construction;
 - authentication integration;
@@ -19,20 +19,22 @@ This slice deliberately excludes:
 - accountant-pack changes;
 - schema, migration, package or provider work.
 
-The caller must already have an authenticated user identity and must supply a bounded owner-scoped candidate set.
+The caller must already hold an authenticated user ID and supply a bounded owner-scoped record set.
 
-## Files delivered
+## Core helper — PR #265
+
+The exact green core head is:
+
+`2f8fd10e34bcaffcfd73cd68b3d8e3684dc8743a`
+
+Files:
 
 - `src/server/everyday-financial-year-report.ts`;
-- `tests/server/everyday-financial-year-report.test.ts`;
-- this summary.
+- `tests/server/everyday-financial-year-report.test.ts`.
 
-## Report contract
+The helper returns:
 
-The helper returns a versioned response:
-
-- contract: `spendgrove.everyday-financial-year-report`;
-- version: `1`;
+- versioned contract metadata;
 - generated timestamp;
 - selected Australian financial year;
 - AUD and integer-cent declarations;
@@ -42,62 +44,73 @@ The helper returns a versioned response:
 - counted Transaction and split-child counts;
 - direction-specific Category rows;
 - truthful reconciliation diagnostics;
-- analytical Loan record count with zero component cents added to cashflow;
-- neutral organisational-preparation disclaimer.
+- analytical Loan record count with zero analytical component cents added to cashflow;
+- neutral organisational-preparation wording.
 
 It does not return profit, surplus, taxable income, deductible total, net return or any tax/advice metric.
 
-## Owner-isolation hardening
+### Core financial rules
 
-The abandoned parallel aggregation branch allowed a synthetic full-diagnostic mode to count cross-user candidates.
+- accepted Australian financial-year validation;
+- 1 July and 30 June inclusion;
+- outside-period, inactive/deleted and split-parent exclusion in bounded owner diagnostic mode;
+- active split-child inclusion;
+- positive INCOME as Money in;
+- negative EXPENSE as Money out;
+- TRANSFER as context only;
+- positive refunds remain Money in;
+- Category rows keyed by direction plus Category identity;
+- unavailable Category identity becomes `Uncategorised`;
+- checked safe-integer arithmetic;
+- Loan analytical records contribute a count only and zero cashflow cents;
+- invalid date, amount, type, sign and split state fail closed.
 
-This dependency-correct implementation deliberately tightens the production boundary:
+### Owner isolation
 
 - every supplied record must match the authenticated user ID;
-- any cross-user candidate throws `OWNER_SCOPE_VIOLATION` immediately;
-- the response has no `crossUserCount` field;
-- a production caller must not query another user's records merely to populate reconciliation diagnostics.
+- any cross-user candidate fails immediately with `OWNER_SCOPE_VIOLATION`;
+- the response has no cross-user diagnostic field;
+- Production must not query another user's records merely to construct report diagnostics.
 
-The controlling fixture's fictional cross-user row remains useful in tests: it proves rejection before the safe owner subset is aggregated.
+### Core verification
 
-## Source modes
+Vercel deployment `dpl_F6hWvUS6UBqqn8ujBktJ4TtDEtjL` is READY for the exact core head and passed:
 
-### `OWNER_SCOPED_DIAGNOSTIC`
+- framework dependency verification;
+- **155 test files / 973 tests**;
+- all ten core aggregation tests;
+- the eight independent PR #262 formula-contract tests;
+- the complete inherited application suite;
+- optimized Next.js compilation;
+- TypeScript and lint validation;
+- route generation and serverless deployment.
 
-The helper receives a bounded owner-only candidate set and may derive:
+The only lint output remains the separately documented behaviour-neutral Import Review memoization warnings.
 
-- input candidate count;
-- outside-period count;
-- deleted/inactive count;
-- split-parent count.
+## Additional hardening child
 
-Those counts reconcile exactly to counted records.
+The hardening branch adds only:
 
-### `ELIGIBLE_ONLY`
+- explicit source-mode allowlisting and `SOURCE_MODE_INVALID`;
+- fail-closed detection when one direction/Category identity is supplied with conflicting labels;
+- two focused tests for those boundaries;
+- this permanent evidence summary.
 
-The helper receives only active, in-period, non-parent owner records.
+It changes no report formula, source eligibility, monetary result, query, route or persistence behaviour.
 
-- exclusion diagnostics are `null` rather than invented as zero;
-- any excluded record causes `ELIGIBLE_SOURCE_VIOLATION`;
-- the response explains that exclusion counts are unavailable.
+The hardening source/test head before this evidence update was:
 
-## Financial rules implemented
+`b771c75ab158493d4f84a3022b12588bb6efc648`
 
-- Australian FY ending-year validation uses the accepted shared financial-year helper;
-- 1 July and 30 June are included;
-- outside-period records are excluded in diagnostic mode;
-- inactive/deleted records are excluded in diagnostic mode;
-- split parents are excluded;
-- split children count independently;
-- positive INCOME is Money in;
-- negative EXPENSE is Money out;
-- TRANSFER is context only;
-- positive refunds remain Money in;
-- Category rows are keyed by direction plus Category identity;
-- missing Category identity becomes `Uncategorised` with `categoryId: null`;
-- Loan analytical records contribute a count only and add exactly zero cents to everyday cashflow;
-- all amounts and counts use checked safe-integer arithmetic;
-- type/sign mismatches, zero amounts and unsupported split roles fail closed.
+Expected final baseline:
+
+- **156 test files / 975 tests**;
+- framework dependency verification;
+- TypeScript and lint;
+- optimized Next.js build;
+- route generation and serverless deployment.
+
+Vercel could not run that later exact head because the free-account daily deployment limit had been reached. This is an external capacity gate, not an application failure. Do not merge the hardening child until a later exact-head run is green.
 
 ## Reconciliation identities
 
@@ -119,7 +132,7 @@ sum Money in Category cents = Money in cents
 sum Money out Category cents = Money out cents
 ```
 
-For owner-scoped diagnostic input:
+For bounded owner diagnostic input:
 
 ```text
 input owner candidates
@@ -129,47 +142,9 @@ input owner candidates
 + split-parent exclusions
 ```
 
-## Error model
-
-The helper returns privacy-safe reason codes for:
-
-- missing authenticated user;
-- invalid financial year;
-- invalid generation time;
-- owner-scope violation;
-- invalid date;
-- zero/unsafe amount;
-- unsupported type;
-- type/sign mismatch;
-- unsupported split role;
-- eligible-only source violation;
-- invalid analytical Loan count;
-- total overflow;
-- Category reconciliation mismatch;
-- count reconciliation mismatch.
-
-Error messages contain no record content, amounts, Category names, source IDs or private fields.
-
-## Automated coverage
-
-Ten new tests prove:
-
-1. exact fixture totals and Category rows from the safe owner subset;
-2. cross-user rejection and absence of `crossUserCount`;
-3. truthful unavailable diagnostics for eligible-only input;
-4. fail-closed eligible-only source validation;
-5. positive-refund and transfer treatment;
-6. split and Loan no-double-count treatment;
-7. direction-specific and uncategorised Category handling;
-8. financial-year/date/amount/type/sign/split/analytical-count validation;
-9. overflow failure;
-10. neutral bounded response with no private-source or tax-metric expansion.
-
-The original eight PR #262 formula-contract tests remain independent and continue to validate the complete 16-row fictional fixture and formula contract.
-
 ## Privacy boundary
 
-Neither the input shape nor output contains:
+Neither the input nor output contains:
 
 - raw CSV rows or filenames;
 - narration or descriptions;
@@ -182,14 +157,14 @@ Neither the input shape nor output contains:
 
 The output contains no source Transaction IDs. Authenticated source drilldown remains a later service/UI review boundary.
 
-## Repository impact
+## Repository and environment impact
 
 No change to:
 
 - Prisma schema or migrations;
 - database state;
 - API routes;
-- existing report pages or formulas;
+- existing report pages or exports;
 - package or lockfile;
 - workflow configuration;
 - Vercel, Neon or Clerk configuration;
@@ -197,23 +172,11 @@ No change to:
 - Production;
 - Expo, Apple, TestFlight, pricing or real users.
 
-## Expected verification
-
-The branch should pass the PR #262 baseline plus one new test file and ten new tests:
-
-- **155 test files / 973 tests**;
-- framework dependency verification;
-- TypeScript and lint;
-- optimized Next.js build;
-- route generation and serverless deployment.
-
-Only the previously documented Import Review memoization warnings are expected.
-
 ## Remaining C4 sequence
 
-After exact-head verification:
+After the hardening child receives exact-head verification:
 
-1. authenticated owner-scoped store/service using this helper;
+1. authenticated owner-scoped store/service using the core helper;
 2. formula-safe everyday and Category serializers;
 3. reconciliation serializer;
 4. existing-navigation report page and accessibility;
@@ -221,16 +184,3 @@ After exact-head verification:
 6. consolidated C4 QA and professional wording package.
 
 Each remains a separate focused review boundary.
-
-## Hard stops
-
-This PR does not authorise:
-
-- query/store implementation;
-- authentication or routes;
-- exports or UI;
-- accountant-pack contract changes;
-- tax grouping or advice;
-- schema or migration;
-- provider, secret or environment changes;
-- Production, document/OCR, Apple or real-user action.
