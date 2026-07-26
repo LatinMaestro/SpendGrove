@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Serializer Summary
 
 Date: 26 July 2026  
-Status: pure everyday and Category CSV serializers implemented and exact executable head verified  
+Status: pure everyday and Category CSV serializers implemented and exact final head verified  
 Master-plan alignment: C4.4 — formula-safe everyday/Category exports  
 Stacked dependency: PR #266 → PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -22,66 +22,35 @@ No service query, API route, download response, reconciliation serializer, UI or
 
 ## Outputs
 
-Summary columns:
-
-- `financial_year`;
-- `direction`;
-- `record_count`;
-- `total_aud`;
-- `spendgrove_notice`.
+Summary columns: `financial_year`, `direction`, `record_count`, `total_aud`, `spendgrove_notice`.
 
 Summary rows are Money in, Money out, incoming transfer context and outgoing transfer context. Transfer amount cells remain blank because no transfer amount total is authorised.
 
-Category columns:
-
-- `financial_year`;
-- `direction`;
-- `category`;
-- `record_count`;
-- `total_aud`;
-- `spendgrove_notice`.
+Category columns: `financial_year`, `direction`, `category`, `record_count`, `total_aud`, `spendgrove_notice`.
 
 Category IDs and Transaction IDs are not exported.
 
-## Financial safety
+## Safety
 
 - validates contract/version, AUD and integer cents;
 - validates non-negative safe-integer counts and totals;
 - requires zero counts to have zero totals and non-zero counts to have non-zero totals;
 - rejects empty zero-count/zero-value Category rows;
-- reconciles transfer counts;
-- reconciles counted Transactions to Money in, Money out and transfer context;
+- reconciles transfer counts and total counted Transactions;
 - reconciles Category counts and cents separately by direction;
 - converts integer cents to exactly two-decimal AUD only at serialization;
-- introduces no floating-point financial authority.
-
-Invalid or unreconciled input fails closed with privacy-safe reason codes.
-
-## CSV and privacy safety
-
-- deterministic columns and row order;
-- all cells quoted;
-- embedded quotes doubled;
-- CRLF rows with no trailing row;
-- Category labels beginning `=`, `+`, `-` or `@` receive a leading apostrophe;
-- no Transaction/Category IDs, raw rows, filenames, narration, merchant history, notes, banking identifiers, Loan references, Property addresses, provider payloads, secrets or audit metadata.
+- deterministic quoted CRLF output with no trailing row;
+- formula-protects Category labels beginning `=`, `+`, `-` or `@`;
+- exports no internal IDs or private source fields.
 
 ## Tests
 
-Seven tests cover:
-
-1. exact summary rows and blank transfer amounts;
-2. deterministic direction-separated Category rows without IDs;
-3. formula protection and quoting;
-4. deterministic CRLF output;
-5. unsupported contract rejection;
-6. invalid/unreconciled value rejection;
-7. impossible count/total pairs and empty Category-row rejection.
+Seven tests cover exact summary/Category outputs, ID exclusion, formula protection, quoting, CRLF/determinism, contract rejection, numeric reconciliation and impossible count/total states.
 
 ## Exact verification
 
-Executable/test head: `aa9e76cb6de8297b68412259d842fab2f4cd61ca`  
-Vercel deployment: `dpl_C6iCH1yHzVBWEKnG9LxZzqDPFDxZ`  
+Final head: `900b854fea19ede9a447fcb04c150af77ccecc26`  
+Vercel: `dpl_CwEwrtLWmTRenDJ7SkjL7a9czWHN`  
 State: READY
 
 Passed:
