@@ -21,6 +21,7 @@ describe("Phase 8 Property report UI", () => {
     expect(page).toContain("Download linked records CSV");
     expect(page).toContain("/report-export?financialYear=");
     expect(page).toContain("Open Transactions");
+    expect(page.match(/focus-visible:ring-2/g)?.length ?? 0).toBeGreaterThanOrEqual(6);
   });
 
   it("separates linked cashflow from Loan components and keeps professional wording neutral", () => {
@@ -32,6 +33,17 @@ describe("Phase 8 Property report UI", () => {
     expect(page).toContain("Ask your registered tax agent or accountant");
     expect(page).toContain("does not determine deductibility");
     expect(page).not.toMatch(/ATO-ready|claimable|tax saving|tax refund/i);
+  });
+
+  it("shows matched, needs-review and unmatched reconciliation states separately", () => {
+    expect(helper).toContain("unmatchedCount: number");
+    expect(helper).toContain('repayment.reconciliationStatus === "NEEDS_REVIEW"');
+    expect(helper).toContain("loanComponents.unmatchedCount += 1");
+    expect(page).toContain("report.loanComponents.matchedCount");
+    expect(page).toContain("report.loanComponents.needsReviewCount");
+    expect(page).toContain("report.loanComponents.unmatchedCount");
+    expect(page).toContain("Unmatched means no accepted everyday cashflow link is recorded.");
+    expect(page).toContain("does not change the component totals or create another cashflow record");
   });
 
   it("does not reactivate dormant classification or guarded features", () => {
