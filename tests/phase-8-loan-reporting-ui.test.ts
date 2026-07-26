@@ -23,8 +23,19 @@ describe("Phase 8 Loan report UI", () => {
     expect(page).toContain("Fees recorded");
     expect(page).toContain("Matched");
     expect(page).toContain("Needs review");
+    expect(page).toContain("Unmatched");
     expect(page).toContain("Download CSV");
     expect(page).toContain("Open source records");
+  });
+
+  it("presents reconciliation states independently without changing totals", () => {
+    expect(page).toContain('String(loan.matchedCount)');
+    expect(page).toContain('String(loan.needsReviewCount)');
+    expect(page).toContain('String(loan.unmatchedCount)');
+    expect(page).not.toContain("loan.needsReviewCount + loan.unmatchedCount");
+    expect(page).toContain("Unmatched means no accepted everyday cashflow link is recorded.");
+    expect(page).toContain("does not change recorded component totals or create another cashflow record");
+    expect(page.match(/focus-visible:ring-2/g)?.length ?? 0).toBeGreaterThanOrEqual(6);
   });
 
   it("states the no-double-count and professional-review boundaries", () => {
