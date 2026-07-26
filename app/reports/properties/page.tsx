@@ -88,17 +88,17 @@ export default async function PropertyReportsPage({ searchParams }: Readonly<Pro
       <form method="get" className="mb-5 grid gap-3 rounded-2xl border border-border bg-surface-base p-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
         <label className="text-sm font-semibold text-foreground">
           Property
-          <select name="propertyId" defaultValue={selectedPropertyId} disabled={properties.length === 0} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal">
+          <select name="propertyId" defaultValue={selectedPropertyId} disabled={properties.length === 0} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
             {properties.map((property) => <option key={property.id} value={property.id}>{property.nickname}</option>)}
           </select>
         </label>
         <label className="text-sm font-semibold text-foreground">
           Financial year
-          <select name="financialYear" defaultValue={endingYear} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal">
+          <select name="financialYear" defaultValue={endingYear} className="mt-2 min-h-11 w-full rounded-xl border border-border bg-surface-base px-3 font-normal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
             {financialYearOptions(endingYear).map((year) => <option key={year} value={year}>{year - 1}-{String(year).slice(-2)}</option>)}
           </select>
         </label>
-        <button type="submit" disabled={properties.length === 0} className="min-h-11 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white disabled:opacity-45">Update report</button>
+        <button type="submit" disabled={properties.length === 0} className="min-h-11 rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:opacity-45">Update report</button>
       </form>
 
       {error ? (
@@ -113,7 +113,7 @@ export default async function PropertyReportsPage({ searchParams }: Readonly<Pro
           icon={<Building2 aria-hidden="true" className="h-6 w-6" />}
           title="No active Properties"
           description="Add or restore a Property from Loans before preparing this report."
-          action={<Link href="/loans" className="inline-flex min-h-11 items-center rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white">Open Loans</Link>}
+          action={<Link href="/loans" className="inline-flex min-h-11 items-center rounded-xl bg-brand-evergreen px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Open Loans</Link>}
         />
       ) : null}
 
@@ -127,7 +127,7 @@ export default async function PropertyReportsPage({ searchParams }: Readonly<Pro
               </div>
               <a
                 href={`/api/account/properties/${report.property.id}/report-export?financialYear=${report.financialYear.endingYear}`}
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold text-brand-evergreen"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border px-4 text-sm font-semibold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"
               >
                 <Download aria-hidden="true" className="h-4 w-4" />
                 Download linked records CSV
@@ -152,10 +152,13 @@ export default async function PropertyReportsPage({ searchParams }: Readonly<Pro
               <div className="rounded-2xl bg-surface-subtle p-4">
                 <h3 className="text-sm font-semibold text-foreground">Loan repayment components</h3>
                 <p className="mt-2 text-sm leading-5 text-muted">
-                  {report.loanComponents.repaymentCount} repayment{report.loanComponents.repaymentCount === 1 ? "" : "s"} · {report.loanComponents.matchedCount} matched · {report.loanComponents.needsReviewCount} needs review.
+                  {report.loanComponents.repaymentCount} repayment{report.loanComponents.repaymentCount === 1 ? "" : "s"} · {report.loanComponents.matchedCount} matched · {report.loanComponents.needsReviewCount} needs review · {report.loanComponents.unmatchedCount} unmatched.
                 </p>
                 <p className="mt-2 text-sm leading-5 text-muted">
                   Principal recorded: {aud(report.loanComponents.principalCents)}. Principal is shown for reconciliation and is excluded from Property income and expense totals.
+                </p>
+                <p className="mt-2 text-xs leading-5 text-muted">
+                  Unmatched means no accepted everyday cashflow link is recorded. It does not change the component totals or create another cashflow record.
                 </p>
               </div>
               <div className="rounded-2xl bg-surface-subtle p-4">
@@ -174,7 +177,7 @@ export default async function PropertyReportsPage({ searchParams }: Readonly<Pro
                 <h2 id="linked-records-heading" className="text-lg font-semibold text-foreground">Linked records</h2>
                 <p className="mt-1 text-sm text-muted">{report.records.length} source record{report.records.length === 1 ? "" : "s"} in this financial year.</p>
               </div>
-              <Link href="/transactions" className="inline-flex min-h-10 items-center text-sm font-semibold text-brand-teal">Open Transactions</Link>
+              <Link href="/transactions" className="inline-flex min-h-10 items-center text-sm font-semibold text-brand-teal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Open Transactions</Link>
             </div>
 
             {report.records.length === 0 ? (
