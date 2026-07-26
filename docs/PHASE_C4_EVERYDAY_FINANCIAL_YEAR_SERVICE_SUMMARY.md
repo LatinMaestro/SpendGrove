@@ -19,8 +19,8 @@ Connect the exact-green pure C4.2 aggregation helper to an authenticated, owner-
 
 `getEverydayFinancialYearReport()`:
 
-1. requires a valid `AuthenticatedUserContext` before store access;
-2. validates the requested Australian financial-year ending year before store access;
+1. requires a valid `AuthenticatedUserContext` before constructing or accessing the default store;
+2. validates the requested Australian financial-year ending year before constructing or accessing the store;
 3. derives the exact half-open UTC range from 1 July to the following 1 July;
 4. queries Transactions and linked analytical Loan repayments concurrently through a typed store;
 5. maps only safe owner-scoped fields into the pure helper;
@@ -67,6 +67,7 @@ Otherwise the report uses the existing `Uncategorised` treatment. Archived Categ
 
 The store queries only owner Loan repayments that are:
 
+- persisted with `reconciliationStatus: LINKED`;
 - non-archived;
 - non-deleted;
 - dated within the selected financial year.
@@ -78,13 +79,14 @@ It counts a repayment only when its reconciliation link:
 - points to an active, non-deleted, non-parent Transaction;
 - points to a Transaction within the selected financial year.
 
-Only the count is passed into the everyday report. Principal, interest, fees, balances and total-payment amounts are never passed to the everyday aggregation helper and add exactly zero cents to cashflow.
+Only the count is passed into the everyday report. Principal, interest, fees, balances and total-payment amounts are neither selected nor passed to the everyday aggregation helper and add exactly zero cents to cashflow.
 
 ## Owner-isolation defence
 
 Ownership is enforced in layers:
 
-- authentication before persistence access;
+- authentication before default-store construction or persistence access;
+- financial-year validation before store construction/access;
 - owner ID in every Prisma query;
 - defensive owner checks when mapping Category relations;
 - defensive owner checks when counting linked analytical repayments;
@@ -94,14 +96,15 @@ No cross-user diagnostic count is returned.
 
 ## Automated tests
 
-Six focused tests prove:
+Seven focused tests prove:
 
 1. authentication fails before either store method;
-2. invalid FY input fails before either store method;
-3. exact owner and half-open date ranges are supplied to both reads;
-4. a malicious cross-user store record fails closed;
-5. cross-owner or unavailable Category relations become `Uncategorised`;
-6. Prisma query shapes preserve owner, lifecycle, split and period filters, while only an active eligible reconciliation link contributes to the analytical count.
+2. the default store cannot be constructed through a default parameter before authentication/FY validation;
+3. invalid FY input fails before either store method;
+4. exact owner and half-open date ranges are supplied to both reads;
+5. a malicious cross-user store record fails closed;
+6. cross-owner, deleted or unavailable Category relations become `Uncategorised` without leaking their labels;
+7. Prisma query shapes preserve owner, lifecycle, split, period and `LINKED` filters, select no narration or Loan component amounts, and count only an active eligible reconciliation link.
 
 The inherited pure helper and formula-contract tests remain unchanged.
 
@@ -144,15 +147,17 @@ No change to:
 
 ## Expected verification
 
-The branch should pass the PR #265 baseline plus one new test file and six tests:
+The branch should pass the exact-green PR #265 executable baseline plus one new test file and seven tests:
 
-- **156 test files / 979 tests**;
+- **156 test files / 980 tests**;
 - framework dependency verification;
 - TypeScript and lint;
 - optimized Next.js build;
 - route generation and serverless deployment.
 
-The current Vercel free-account daily deployment limit is already exhausted. Do not create no-op commits or blind retries. Exact-head execution remains required before this PR can merge or the serializer work can begin.
+The current Vercel free-account daily deployment limit is exhausted. Do not create no-op commits or blind retries. Exact-head execution remains required before this PR can merge or serializer work can begin.
+
+The only expected lint output is the already documented behaviour-neutral Import Review memoisation warning.
 
 ## Remaining C4 sequence
 
