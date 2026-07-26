@@ -1,7 +1,7 @@
 # Phase C3 Merchant and Category Regression Summary
 
 Date: 26 July 2026  
-Status: consolidated repository-safe regression package prepared; exact-head verification pending  
+Status: consolidated repository-safe regression package technically verified; dependency and authenticated-review gates remain  
 Master-plan alignment: Phase C3 — merchant and Category completion  
 Stacked dependency: PR #256 and all earlier Phase C, master-plan and activation dependencies
 
@@ -133,20 +133,41 @@ The new consolidated test contains seven guards covering:
 
 The existing in-memory service tests remain the authoritative behavioural evidence. The new package is a cross-layer drift detector, not a replacement for those tests.
 
+## Exact-head verification
+
+Verified implementation head: `18a4d508d9788e8b432ed2731be24e86c8cc5fba`  
+Vercel deployment: `dpl_DCup65UTMzeReioj2eGawrTupxGh` — Ready
+
+The exact source head passed:
+
+- framework dependency verification;
+- **151 test files / 941 tests**;
+- all seven new consolidated merchant and Category guards;
+- existing durable Category and merchant behavioural suites;
+- existing merchant provenance and Category accessibility suites;
+- Import Review, transaction, ownership, account export/deletion, Loan and reporting regressions;
+- optimized Next.js compilation;
+- TypeScript and lint validation;
+- static-page generation, route tracing and serverless deployment.
+
+The only lint output remains the already documented `reviewRows ?? []` memoization warnings in `components/import-review-foundation.tsx`.
+
+An initial run failed one source-text assertion because it prohibited the generic identifier word `accountNumber` anywhere in the merchant server module. The application behaviour was not defective: the durable behavioural suite already proves private banking identifiers are rejected before writes and absent from stored snapshots. The source guard was narrowed to raw-payload field names without reducing the behavioural privacy evidence. The corrected exact source head then passed completely.
+
 ## Known limitation
 
 `components/import-review-foundation.tsx` still contains the behaviour-neutral `reviewRows ?? []` derivation that produces `react-hooks/exhaustive-deps` warnings during lint. The safe correction is to memoise the derived empty array against `reviewRows`. That isolated source patch remains separate from this test-and-documentation package and must not be combined with unrelated import changes.
 
 ## Remaining gates
 
-- exact-head Vercel tests, TypeScript, lint and optimized build for this package;
+- final documentation-head Vercel confirmation;
 - no unresolved review threads;
 - authenticated synthetic Preview/browser review for the broader stacked UI work;
 - GitHub Application Verification after eventual dependency merge and retargeting to `main`;
-- ordered merge of PRs #231–#256 and their dependencies;
+- ordered merge of PRs #231–#257 and their dependencies;
 - explicit material-schema approval before merchant identity merge;
 - explicit approval before Production migration, provider, Apple or real-user action.
 
 ## Next action
 
-Run the full exact-head application pipeline and record factual evidence. After this package is green, continue with another independently safe Phase C3/C4 contract or implementation whose financial, privacy, schema and professional-review dependencies are satisfied.
+Confirm the final documentation head against the unchanged application pipeline. After this package is green, continue with another independently safe Phase C3/C4 contract or implementation whose financial, privacy, schema and professional-review dependencies are satisfied.
