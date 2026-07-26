@@ -57,7 +57,7 @@ function assertCountTotalCoherence(count: number, totalCents: number) {
 
 function assertFinancialYear(report: EverydayFinancialYearReport) {
   const { endingYear, label, startDate, endDate } = report.financialYear;
-  if (!Number.isSafeInteger(endingYear)) {
+  if (!Number.isSafeInteger(endingYear) || endingYear < 2001 || endingYear > 2100) {
     fail("The report financial year is invalid.", "REPORT_CONTRACT_INVALID");
   }
   const expectedLabel = `${endingYear - 1}-${String(endingYear).slice(-2).padStart(2, "0")}`;
@@ -82,11 +82,14 @@ function assertCategories(report: EverydayFinancialYearReport) {
   let moneyInCents = 0;
   let moneyOutCount = 0;
   let moneyOutCents = 0;
+  let uncategorisedCount = 0;
+  const identities = new Set<string>();
 
   for (const row of report.categories) {
     if (
       (row.direction !== "MONEY_IN" && row.direction !== "MONEY_OUT")
       || !row.categoryName.trim()
+      || (row.categoryId !== null && !row.categoryId.trim())
     ) {
       fail("The report contains an invalid Category row.", "REPORT_VALUE_INVALID");
     }
@@ -94,6 +97,16 @@ function assertCategories(report: EverydayFinancialYearReport) {
     assertSafeNonNegativeInteger(row.totalCents);
     if (row.count === 0 || row.totalCents === 0) {
       fail("The report contains an empty Category row.", "REPORT_RECONCILIATION_INVALID");
+    }
+
+    const identity = JSON.stringify([row.direction, row.categoryId]);
+    if (identities.has(identity)) {
+      fail("The report contains duplicate Category evidence.", "REPORT_RECONCILIATION_INVALID");
+    }
+    identities.add(identity);
+
+    if (row.categoryId === null) {
+      uncategorisedCount = addChecked(uncategorisedCount, row.count);
     }
 
     if (row.direction === "MONEY_IN") {
@@ -110,6 +123,7 @@ function assertCategories(report: EverydayFinancialYearReport) {
     || moneyInCents !== report.moneyIn.totalCents
     || moneyOutCount !== report.moneyOut.count
     || moneyOutCents !== report.moneyOut.totalCents
+    || uncategorisedCount !== report.reconciliation.uncategorisedCount
   ) {
     fail("The report Categories do not reconcile.", "REPORT_RECONCILIATION_INVALID");
   }
