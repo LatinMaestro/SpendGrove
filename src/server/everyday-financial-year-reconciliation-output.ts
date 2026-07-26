@@ -160,13 +160,14 @@ function assertDiagnostics(report: EverydayFinancialYearReport) {
     fail("Owner-scoped diagnostics are incomplete.", "REPORT_RECONCILIATION_INVALID");
   }
 
+  const numericDiagnostics = diagnosticValues as [number, number, number, number];
+  numericDiagnostics.forEach(assertSafeNonNegativeInteger);
   const [
     inputTransactionCount,
     outsidePeriodCount,
     deletedOrInactiveCount,
     splitParentCount,
-  ] = diagnosticValues as number[];
-  diagnosticValues.forEach((value) => assertSafeNonNegativeInteger(value as number));
+  ] = numericDiagnostics;
 
   const excludedCount = addChecked(
     addChecked(outsidePeriodCount, deletedOrInactiveCount),
