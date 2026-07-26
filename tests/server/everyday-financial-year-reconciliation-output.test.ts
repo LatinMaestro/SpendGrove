@@ -159,6 +159,15 @@ describe("everyday financial-year reconciliation JSON serializer", () => {
       ...report,
       financialYear: { ...report.financialYear, endDate: "2026-07-01" },
     }), "REPORT_CONTRACT_INVALID");
+    expectReason(() => createEverydayFinancialYearReconciliationJson({
+      ...report,
+      financialYear: {
+        endingYear: 2200,
+        label: "2199-00",
+        startDate: "2199-07-01",
+        endDate: "2200-06-30",
+      },
+    }), "REPORT_CONTRACT_INVALID");
   });
 
   it("rejects count, Category and diagnostic reconciliation mismatches", async () => {
@@ -194,6 +203,21 @@ describe("everyday financial-year reconciliation JSON serializer", () => {
         ...report.reconciliation,
         analyticalLoanAmountAddedToCashflowCents: 1 as unknown as 0,
       },
+    }), "REPORT_RECONCILIATION_INVALID");
+  });
+
+  it("rejects fabricated uncategorised and duplicate Category evidence", async () => {
+    const report = await fixtureReport();
+    expectReason(() => createEverydayFinancialYearReconciliationJson({
+      ...report,
+      reconciliation: {
+        ...report.reconciliation,
+        uncategorisedCount: report.reconciliation.uncategorisedCount + 1,
+      },
+    }), "REPORT_RECONCILIATION_INVALID");
+    expectReason(() => createEverydayFinancialYearReconciliationJson({
+      ...report,
+      categories: [...report.categories, { ...report.categories[0] }],
     }), "REPORT_RECONCILIATION_INVALID");
   });
 });
