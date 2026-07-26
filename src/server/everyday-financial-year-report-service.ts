@@ -33,7 +33,12 @@ export type EverydayFinancialYearStoredTransaction = {
 
 export type EverydayFinancialYearLinkedRepayment = {
   userId: string;
+  reconciliationStatus: string;
+  loanAccount: {
+    userId: string;
+  };
   reconciliationLink: {
+    userId: string;
     unlinkedAt: Date | null;
     transaction: {
       userId: string;
@@ -80,8 +85,15 @@ const transactionSelect = {
 
 const linkedRepaymentSelect = {
   userId: true,
+  reconciliationStatus: true,
+  loanAccount: {
+    select: {
+      userId: true,
+    },
+  },
   reconciliationLink: {
     select: {
+      userId: true,
       unlinkedAt: true,
       transaction: {
         select: {
@@ -97,6 +109,12 @@ const linkedRepaymentSelect = {
 } satisfies Prisma.LoanRepaymentSelect;
 
 function toDateOnly(value: Date) {
+  if (Number.isNaN(value.getTime())) {
+    throw new EverydayFinancialYearReportError(
+      "A source record has an invalid date.",
+      "RECORD_DATE_INVALID",
+    );
+  }
   return value.toISOString().slice(0, 10);
 }
 
@@ -132,7 +150,16 @@ function isEligibleLinkedRepayment(
   end: Date,
 ) {
   const link = repayment.reconciliationLink;
-  if (!link || link.unlinkedAt !== null || repayment.userId !== userId) return false;
+  if (
+    repayment.userId !== userId
+    || repayment.reconciliationStatus !== "LINKED"
+    || repayment.loanAccount.userId !== userId
+    || !link
+    || link.userId !== userId
+    || link.unlinkedAt !== null
+  ) {
+    return false;
+  }
   const transaction = link.transaction;
   return transaction.userId === userId
     && transaction.status === "ACTIVE"
@@ -168,6 +195,22 @@ export function createPrismaEverydayFinancialYearReportStore(
           isArchived: false,
           deletedAt: null,
           repaymentDate: { gte: start, lt: end },
+          loanAccount: { is: { userId } },
+          reconciliationLink: {
+            is: {
+              userId,
+              unlinkedAt: null,
+              transaction: {
+                is: {
+                  userId,
+                  status: "ACTIVE",
+                  deletedAt: null,
+                  splitRole: { not: "PARENT" },
+                  date: { gte: start, lt: end },
+                },
+              },
+            },
+          },
         },
         select: linkedRepaymentSelect,
       }) as unknown as EverydayFinancialYearLinkedRepayment[];
@@ -198,6 +241,12 @@ export async function getEverydayFinancialYearReport(
 ): Promise<EverydayFinancialYearReport> {
   const user = requireAuthenticatedUserContext(context);
   const financialYear = parseFinancialYearBeforeStoreAccess(endingYear);
+  if (Number.isNaN(generatedAt.getTime())) {
+    throw new EverydayFinancialYearReportError(
+      "The report generation time is invalid.",
+      "GENERATED_AT_INVALID",
+    );
+  }
   const reportStore = store ?? createPrismaEverydayFinancialYearReportStore();
 
   const [transactions, analyticalLoanRepaymentCount] = await Promise.all([
