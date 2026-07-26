@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Service Summary
 
 Date: 26 July 2026  
-Status: authenticated owner-scoped read service and synthetic tests implemented; exact-head execution pending hosting capacity  
+Status: authenticated owner-scoped read service and synthetic tests implemented; corrected exact head awaiting execution  
 Master-plan alignment: C4.3 — owner-scoped report store/service  
 Stacked dependency: PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -101,9 +101,19 @@ No change to financial formulas, Transactions, Categories, Loan reconciliation, 
 
 No raw CSV, filename, narration, merchant history, banking identifier, Loan reference, Property address, provider payload, secret or private audit metadata is selected, returned or logged.
 
-## Verification
+## Verification history
 
-Expected baseline:
+Vercel deployment `dpl_3mPREQzRBC8tWxpYY33QTGHYEdAx` executed commit `f4b926a851459c3c2f462025fe55229ec38b5b06` and failed one synthetic test because its accepted linked-repayment fixture omitted newly required owner/link fields. The failure was test-fixture drift, not a report formula or service-query defect.
+
+The current branch fixes that fixture and adds:
+
+- generation-time preflight before store construction;
+- Loan Account ownership checks;
+- reconciliation-link ownership checks;
+- linked-Transaction ownership/lifecycle checks;
+- explicit private-field-minimisation assertions.
+
+Expected corrected baseline:
 
 - **156 test files / 980 tests**;
 - framework verification;
@@ -111,7 +121,7 @@ Expected baseline:
 - optimized Next.js build;
 - route/serverless generation.
 
-Vercel's free daily deployment limit remains exhausted. Do not create no-op commits or blind retries. Exact-head execution is required before merge or serializer work.
+One exact execution of the corrected head is required before merge or serializer work. Inspect build logs; do not classify a failed deployment as capacity-only without evidence.
 
 ## Next
 
