@@ -1,9 +1,9 @@
 # Phase C1 Consolidated Transaction Regression Summary
 
 Date: 26 July 2026  
-Status: consolidated automated guard and review matrix prepared; exact-head verification pending  
+Status: consolidated automated guard and review matrix technically verified; authenticated browser review and ordered dependency merge remain outstanding  
 Master-plan alignment: C1.5  
-Stacked dependency: PR #250 → PR #249 → PR #247 → PR #246 → PR #244 → PR #243 → PR #242 → unresolved activation stack #231–#241
+Stacked dependency: PR #251 → PR #250 → PR #249 → PR #247 → PR #246 → PR #244 → PR #243 → PR #242 → unresolved activation stack #231–#241
 
 ## Objective
 
@@ -51,16 +51,24 @@ The package makes the following cross-feature rules explicit:
 - ledger filters remain transient, responsive and presentation-only;
 - Loan reconciliation retains the everyday Transaction as the sole cashflow record.
 
-## Verification plan
+## Automated verification
 
-The exact head must pass:
+Verified source head: `ad1c5feea633fb7a565833ac74e8cb197ee40b9a`  
+Vercel deployment: `dpl_8VEo4Ljd6d7hWR8Dg4Zuqnk1LoFM` — READY
 
-- framework dependency verification;
-- full Vitest suite including the new consolidated guard;
-- TypeScript and lint validation;
-- optimized Next.js build;
-- Vercel Preview deployment;
-- GitHub Application Verification after retargeting to `main`.
+Evidence:
+
+- framework dependency verification passed;
+- **148 test files / 917 tests** passed;
+- all seven new consolidated C1.5 guards passed;
+- existing manual/imported transaction, split, transfer, bulk, Activity-history, Loan-reconciliation, chart, ledger, ownership, export/deletion and privacy suites passed;
+- optimized Next.js compilation passed;
+- TypeScript and lint validity completed with only the pre-existing hook warnings in unrelated files;
+- route generation, serverless output and deployment completed.
+
+The initial guard used a whitespace-sensitive assertion for an already owner-scoped bulk Category lookup. It was corrected to verify the semantic `id` and `userId` fields independently. No application or financial behaviour changed.
+
+GitHub Application Verification did not run because this pull request targets a stacked non-`main` base. It remains required after dependency merge and retargeting.
 
 Authenticated synthetic browser review remains required against the committed matrix before Phase C1 can be recommended for closure.
 
@@ -70,9 +78,10 @@ Authenticated synthetic browser review remains required against the committed ma
 - Bulk and durable transfer user-interface review remains dependent on the activation stack.
 - Durable saved views remain behind the separate explicit material schema gate.
 - Connected tools still cannot establish an authenticated synthetic Clerk session for visual interaction QA.
+- Phase C1 cannot close until the activation stack and stacked dependencies are merged in order and merged-main checks pass.
 
 ## Next safe action
 
-After exact-head verification, continue independent Phase C2/C3 implementation where verified synthetic format evidence exists, or begin the no-schema merchant merge/history contract if no parser structure is sufficiently proven.
+Continue independent Phase C2/C3 implementation where verified synthetic format evidence exists, or begin the no-schema merchant merge/history contract if no parser structure is sufficiently proven.
 
 Do not merge this package ahead of PR #250 or claim Phase C1 closure before the authenticated and ordered-merge gates pass.
