@@ -1,7 +1,7 @@
 # Phase C4 Report Reconciliation Transparency Summary
 
 Date: 26 July 2026  
-Status: focused existing-schema implementation prepared; exact-head verification pending  
+Status: focused existing-schema implementation complete and exact-head verified  
 Master-plan alignment: Phase C4 — Loan, Property and report completion  
 Governing dependency: PR #259 Phase C4 audit and completion contract
 
@@ -71,7 +71,7 @@ Added:
 
 - `tests/phase-c4-report-reconciliation-transparency.test.ts`.
 
-Combined with PR #259's seven-test C4 regression contract, the stacked exact head is expected to contain 153 test files and 955 tests.
+Combined with PR #259's seven-test C4 regression contract, the verified source head passed 153 test files and 955 tests.
 
 The tests prove:
 
@@ -84,6 +84,28 @@ The tests prove:
 7. no guarded schema, provider, Production, document, AI or Apple capability is introduced;
 8. neutral preparation and no-tax-advice wording remains present;
 9. report controls retain visible focus treatment.
+
+## Exact-head verification
+
+Verified source head: `32b3034d00ece4077a94816c84802159bf806aa6`  
+Vercel deployment: `dpl_BSGFz2bvxnDcFLff9eXLhoDNFmyU`  
+State: READY
+
+The exact combined source head passed:
+
+- framework dependency verification;
+- **153 test files / 955 tests**;
+- PR #259's seven consolidated Loan, Property and reporting guards;
+- this slice's five reconciliation-transparency guards;
+- Property financial-reporting behavioural tests;
+- Loan and Property report UI tests;
+- optimized Next.js compilation;
+- TypeScript and lint validity;
+- static-page generation, route tracing and serverless deployment.
+
+The only lint output remains the separately documented behaviour-neutral `reviewRows ?? []` memoisation warnings in `components/import-review-foundation.tsx`.
+
+The first correctly stacked run failed one stale source-title assertion from the newly added PR #259 guard. The application, calculations and new tests were not defective. The behavioural test and cross-layer guard were aligned to the same phrase, `without adding them to cashflow`, without weakening the no-double-count assertion. The corrected exact source head passed completely.
 
 ## Financial integrity
 
@@ -145,4 +167,4 @@ No change to:
 
 ## Next action
 
-After exact-head verification, follow PR #259's sequence by preparing the wholly synthetic financial-year everyday cashflow and Category formula/reconciliation contract. Do not add new aggregation or accountant-pack fields before that contract is committed.
+Continue with PR #261's wholly synthetic financial-year everyday cashflow and Category formula/reconciliation contract. Do not add new aggregation or accountant-pack fields until that contract is exact-head green and its financial boundaries are reviewed.
