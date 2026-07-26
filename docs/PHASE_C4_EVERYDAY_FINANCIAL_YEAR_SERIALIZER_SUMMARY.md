@@ -49,11 +49,7 @@ Seven tests cover exact summary/Category outputs, ID exclusion, formula protecti
 
 ## Exact verification
 
-Executable/test head: `aa9e76cb6de8297b68412259d842fab2f4cd61ca`  
-Vercel: `dpl_C6iCH1yHzVBWEKnG9LxZzqDPFDxZ`  
-State: READY
-
-Passed:
+The exact executable/test package passed:
 
 - framework dependency verification;
 - **157 test files / 987 tests**;
@@ -61,7 +57,10 @@ Passed:
 - optimized Next.js build;
 - route generation and serverless deployment.
 
-Final documentation-only head `a8e3c3772095b6548587b6ba64a822aca6b2bfe8` also passed the same **157 files / 987 tests** baseline in READY deployment `dpl_BJ7hMfphVRmR2apDiG2oYa6GQYvj`.
+READY evidence:
+
+- substantive serializer/test deployment `dpl_C6iCH1yHzVBWEKnG9LxZzqDPFDxZ`;
+- evidence-only deployment `dpl_BJ7hMfphVRmR2apDiG2oYa6GQYvj`.
 
 Only the existing Import Review memoisation warnings remain.
 
