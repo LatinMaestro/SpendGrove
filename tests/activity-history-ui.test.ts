@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 
 const componentPath = new URL("../components/activity-history.tsx", import.meta.url);
+const propertyPanelPath = new URL("../components/transaction-property-link-panel.tsx", import.meta.url);
 const settingsPath = new URL("../app/settings/page.tsx", import.meta.url);
 const accountRoutePath = new URL("../app/api/account/activity-history/route.ts", import.meta.url);
 const transactionRoutePath = new URL("../app/api/account/manual-transactions/[transactionId]/activity/route.ts", import.meta.url);
@@ -25,10 +26,15 @@ describe("activity history UI and route boundaries", () => {
     expect(component).toContain('role="alert"');
   });
 
-  it("prepares a transaction-specific read-only surface without mutation controls", async () => {
-    const component = await readFile(componentPath, "utf8");
+  it("adds a transaction-specific read-only surface to transaction details", async () => {
+    const [component, propertyPanel] = await Promise.all([
+      readFile(componentPath, "utf8"),
+      readFile(propertyPanelPath, "utf8"),
+    ]);
     expect(component).toContain("export function TransactionActivityHistory");
     expect(component).toContain("Read-only change history for this transaction.");
+    expect(propertyPanel).toContain('import { TransactionActivityHistory } from "@/components/activity-history"');
+    expect(propertyPanel).toContain("<TransactionActivityHistory transactionId={transactionId} />");
     expect(component).not.toMatch(/undo transaction|restore transaction|edit transaction|delete transaction/i);
   });
 
