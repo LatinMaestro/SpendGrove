@@ -200,10 +200,12 @@ export function AccountDataManagement() {
         <div className="space-y-5 border-t border-border p-4">
           <CustomCategoryManager
             categories={categories.categories}
+            storageMode={categories.storageMode}
             storageAvailable={categories.storageAvailable}
-            recoveredFromCorruption={categories.recoveredFromCorruption}
-            unsupportedVersion={categories.unsupportedVersion}
             notice={categories.notice}
+            error={categories.error}
+            pendingOperation={categories.pendingOperation}
+            onClearMessages={categories.clearMessages}
             onRename={categories.rename}
             onArchiveChange={categories.setArchived}
           />

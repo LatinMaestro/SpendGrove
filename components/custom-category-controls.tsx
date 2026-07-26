@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Archive, Cloud, Pencil, Plus, RotateCcw } from "lucide-react";
 import {
   createAccountCustomCategory,
@@ -28,6 +28,14 @@ import type { ImportReviewEditType, ImportReviewRow } from "@/lib/import-review"
 
 const CREATE_CATEGORY_VALUE = "__create_new_category__";
 
+export type CategoryStorageMode = "loading" | "account" | "unavailable";
+export type PendingCategoryOperation =
+  | null
+  | { kind: "CREATE" }
+  | { kind: "RENAME"; categoryId: string }
+  | { kind: "ARCHIVE"; categoryId: string }
+  | { kind: "RESTORE"; categoryId: string };
+
 const financialTypeOptions: Array<{ value: ManualCategoryType; label: string }> = [
   { value: "TRANSFER", label: "Transfer / account movement" },
   { value: "EXPENSE", label: "Fee, repayment or other money out" },
@@ -40,13 +48,24 @@ function fallbackGroupForType(type: ManualCategoryType): CustomCategoryGroup {
   return "Everyday spending";
 }
 
+function operationMessage(operation: Exclude<PendingCategoryOperation, null>) {
+  if (operation.kind === "CREATE") return "Saving category to your account…";
+  if (operation.kind === "RENAME") return "Saving name…";
+  if (operation.kind === "ARCHIVE") return "Archiving…";
+  return "Restoring…";
+}
+
+function looksLikeErrorMessage(value: string) {
+  return /could not|unavailable|not accepted|failed|try again/i.test(value);
+}
+
 export function useCustomCategoryCatalogue() {
   const [categories, setCategories] = useState<CustomCategory[]>([]);
-  const [storageMode, setStorageMode] = useState<"loading" | "account" | "unavailable">("loading");
-  const [storageAvailable, setStorageAvailable] = useState(true);
-  const [recoveredFromCorruption, setRecoveredFromCorruption] = useState(false);
-  const [unsupportedVersion, setUnsupportedVersion] = useState(false);
-  const [notice, setNotice] = useState("");
+  const [storageMode, setStorageMode] = useState<CategoryStorageMode>("loading");
+  const [pendingOperation, setPendingOperation] = useState<PendingCategoryOperation>(null);
+  const [notice, setNotice] = useState("Loading account categories…");
+  const [error, setError] = useState("");
+  const pendingRef = useRef<PendingCategoryOperation>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,20 +74,22 @@ export function useCustomCategoryCatalogue() {
       if (cancelled) return;
       if (!result.ok) {
         setStorageMode("unavailable");
-        setStorageAvailable(false);
         setNotice(result.error);
+        setError(result.error);
         return;
       }
 
       setCategories(result.categories);
       setRuntimeCustomCategories(result.categories);
       setStorageMode("account");
-      setStorageAvailable(true);
+      setNotice("");
+      setError("");
     }).catch(() => {
       if (cancelled) return;
+      const message = "Account categories are unavailable right now. Existing browser-only data was not changed.";
       setStorageMode("unavailable");
-      setStorageAvailable(false);
-      setNotice("Account categories are unavailable right now. Your browser-only categories were not changed.");
+      setNotice(message);
+      setError(message);
     });
 
     return () => { cancelled = true; };
@@ -77,6 +98,31 @@ export function useCustomCategoryCatalogue() {
   function setCatalogue(nextCategories: CustomCategory[]) {
     setCategories(nextCategories);
     setRuntimeCustomCategories(nextCategories);
+  }
+
+  function clearMessages() {
+    setNotice("");
+    setError("");
+  }
+
+  function beginOperation(operation: Exclude<PendingCategoryOperation, null>) {
+    if (storageMode !== "account") {
+      throw new Error(storageMode === "loading"
+        ? "Account categories are still loading. Please try again."
+        : "Account categories cannot be changed right now.");
+    }
+    if (pendingRef.current) {
+      throw new Error("Another Category change is still saving. Please wait for it to finish.");
+    }
+    pendingRef.current = operation;
+    setPendingOperation(operation);
+    setNotice(operationMessage(operation));
+    setError("");
+  }
+
+  function endOperation() {
+    pendingRef.current = null;
+    setPendingOperation(null);
   }
 
   function create(input: {
@@ -93,82 +139,99 @@ export function useCustomCategoryCatalogue() {
     );
     if (!newCategory) throw new Error("The category could not be created.");
 
-    if (storageMode !== "account") {
-      throw new Error("Account categories are still loading. Please try again.");
-    }
-
+    beginOperation({ kind: "CREATE" });
     const previous = categories;
     setCatalogue(nextCategories);
-    setNotice("Saving category to your account…");
+
     void createAccountCustomCategory(newCategory).then((result) => {
       if (result.ok) {
         setCatalogue(result.categories);
         setNotice("Category created and saved to your account.");
+        setError("");
       } else {
         setCatalogue(previous);
         setNotice(result.error);
+        setError(result.error);
       }
     }).catch(() => {
+      const message = "The category could not be saved to your account. Please try again.";
       setCatalogue(previous);
-      setNotice("The category could not be saved to your account. Please try again.");
-    });
+      setNotice(message);
+      setError(message);
+    }).finally(endOperation);
+
     return newCategory;
   }
 
-  function rename(categoryId: string, name: string) {
+  async function rename(categoryId: string, name: string) {
     const nextCategories = renameCustomCategory(categories, categoryId, name);
-    if (storageMode !== "account") {
-      setNotice("Account categories are unavailable. Your browser-only categories were not changed.");
-      return;
-    }
-
+    beginOperation({ kind: "RENAME", categoryId });
     const previous = categories;
     setCatalogue(nextCategories);
-    void updateAccountCustomCategory(categoryId, { name }).then((result) => {
-      if (result.ok) {
-        setCatalogue(result.categories);
-        setNotice("Category renamed in your account.");
-      } else {
+
+    try {
+      const result = await updateAccountCustomCategory(categoryId, { name });
+      if (!result.ok) {
         setCatalogue(previous);
         setNotice(result.error);
+        setError(result.error);
+        return false;
       }
-    }).catch(() => {
+      setCatalogue(result.categories);
+      setNotice("Category renamed in your account.");
+      setError("");
+      return true;
+    } catch {
+      const message = "The category name could not be saved to your account.";
       setCatalogue(previous);
-      setNotice("The category name could not be saved to your account.");
-    });
+      setNotice(message);
+      setError(message);
+      return false;
+    } finally {
+      endOperation();
+    }
   }
 
-  function setArchived(categoryId: string, isArchived: boolean) {
+  async function setArchived(categoryId: string, isArchived: boolean) {
     const nextCategories = setCustomCategoryArchived(categories, categoryId, isArchived);
-    if (storageMode !== "account") {
-      setNotice("Account categories are unavailable. Your browser-only categories were not changed.");
-      return;
-    }
-
+    beginOperation({ kind: isArchived ? "ARCHIVE" : "RESTORE", categoryId });
     const previous = categories;
     setCatalogue(nextCategories);
-    void updateAccountCustomCategory(categoryId, { isArchived }).then((result) => {
-      if (result.ok) {
-        setCatalogue(result.categories);
-        setNotice(isArchived ? "Category archived in your account." : "Category restored in your account.");
-      } else {
+
+    try {
+      const result = await updateAccountCustomCategory(categoryId, { isArchived });
+      if (!result.ok) {
         setCatalogue(previous);
         setNotice(result.error);
+        setError(result.error);
+        return false;
       }
-    }).catch(() => {
+      setCatalogue(result.categories);
+      setNotice(isArchived ? "Category archived in your account." : "Category restored in your account.");
+      setError("");
+      return true;
+    } catch {
+      const message = "The category change could not be saved to your account.";
       setCatalogue(previous);
-      setNotice("The category change could not be saved to your account.");
-    });
+      setNotice(message);
+      setError(message);
+      return false;
+    } finally {
+      endOperation();
+    }
   }
 
   return {
     categories,
     storageMode,
-    storageAvailable,
-    recoveredFromCorruption,
-    unsupportedVersion,
+    storageAvailable: storageMode !== "unavailable",
+    recoveredFromCorruption: false,
+    unsupportedVersion: false,
+    pendingOperation,
     notice,
+    error,
     setNotice,
+    clearMessages,
     create,
     rename,
     setArchived,
@@ -252,7 +315,7 @@ export function ReviewCategorySelector({
         id={`category-${row.id}`}
         value={row.categoryId}
         onChange={(event) => handleSelect(event.target.value)}
-        className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+        className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus-visible:ring-2 focus-visible:ring-focus"
       >
         {groups.map((section) => (
           <optgroup key={section.value} label={section.label}>
@@ -278,7 +341,7 @@ export function ReviewCategorySelector({
                 onChange={(event) => setName(event.target.value)}
                 maxLength={60}
                 autoFocus
-                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus-visible:ring-2 focus-visible:ring-focus"
               />
             </label>
             <label className="text-sm font-bold text-brand-deepTeal">
@@ -286,7 +349,7 @@ export function ReviewCategorySelector({
               <select
                 value={group}
                 onChange={(event) => handleGroupChange(event.target.value as CustomCategoryGroup)}
-                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus-visible:ring-2 focus-visible:ring-focus"
               >
                 {CUSTOM_CATEGORY_GROUPS.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -300,7 +363,7 @@ export function ReviewCategorySelector({
               <select
                 value={financialType}
                 onChange={(event) => setFinancialType(event.target.value as ManualCategoryType)}
-                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
+                className="mt-2 min-h-12 w-full rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus-visible:ring-2 focus-visible:ring-focus"
               >
                 {financialTypeOptions.map((option) => (
                   <option key={option.value} value={option.value}>{option.label}</option>
@@ -309,9 +372,9 @@ export function ReviewCategorySelector({
             </label>
           )}
           {error && <p role="alert" className="mt-3 text-sm font-semibold text-danger-red">{error}</p>}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={saveCategory} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white"><Plus aria-hidden="true" className="h-4 w-4" /> Create category</button>
-            <button type="button" onClick={() => setShowCreate(false)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal">Cancel</button>
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+            <button type="button" onClick={saveCategory} className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus"><Plus aria-hidden="true" className="h-4 w-4" /> Create category</button>
+            <button type="button" onClick={() => setShowCreate(false)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Cancel</button>
           </div>
         </div>
       )}
@@ -319,99 +382,226 @@ export function ReviewCategorySelector({
   );
 }
 
+type CategoryManagerProps = {
+  categories: CustomCategory[];
+  storageMode?: CategoryStorageMode;
+  storageAvailable?: boolean;
+  recoveredFromCorruption?: boolean;
+  unsupportedVersion?: boolean;
+  notice: string;
+  error?: string;
+  pendingOperation?: PendingCategoryOperation;
+  onClearMessages?(): void;
+  onRename(categoryId: string, name: string): void | boolean | Promise<void | boolean>;
+  onArchiveChange(categoryId: string, isArchived: boolean): void | boolean | Promise<void | boolean>;
+};
+
 export function CustomCategoryManager({
   categories,
-  storageAvailable,
-  recoveredFromCorruption,
-  unsupportedVersion,
+  storageMode,
+  storageAvailable = true,
   notice,
+  error: catalogueError,
+  pendingOperation,
+  onClearMessages,
   onRename,
   onArchiveChange,
-}: {
-  categories: CustomCategory[];
-  storageAvailable: boolean;
-  recoveredFromCorruption: boolean;
-  unsupportedVersion: boolean;
-  notice: string;
-  onRename(categoryId: string, name: string): void;
-  onArchiveChange(categoryId: string, isArchived: boolean): void;
-}) {
+}: CategoryManagerProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState("");
-  const [error, setError] = useState("");
-  const [accountBacked, setAccountBacked] = useState(false);
+  const [editorError, setEditorError] = useState("");
+  const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null);
+  const renameInputRef = useRef<HTMLInputElement>(null);
+  const renameButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+  const archiveButtonRefs = useRef(new Map<string, HTMLButtonElement>());
+
+  const effectiveStorageMode: CategoryStorageMode = storageMode
+    ?? (notice === "Loading account categories…" ? "loading" : storageAvailable ? "account" : "unavailable");
+  const inferredPending: PendingCategoryOperation = pendingOperation
+    ?? (notice.startsWith("Saving category") ? { kind: "CREATE" }
+      : notice.startsWith("Saving name") && editingId ? { kind: "RENAME", categoryId: editingId }
+      : notice.startsWith("Archiving") && confirmArchiveId ? { kind: "ARCHIVE", categoryId: confirmArchiveId }
+      : notice.startsWith("Restoring") ? { kind: "RESTORE", categoryId: "pending" }
+      : null);
+  const inferredError = catalogueError ?? (looksLikeErrorMessage(notice) ? notice : "");
+  const visibleNotice = notice && notice !== inferredError && effectiveStorageMode !== "loading" ? notice : "";
+  const operationPending = Boolean(inferredPending);
+  const availableCategories = categories.filter((category) => !category.isArchived);
+  const archivedCategories = categories.filter((category) => category.isArchived);
 
   useEffect(() => {
-    let cancelled = false;
-    void listAccountCustomCategories().then((result) => {
-      if (!cancelled) setAccountBacked(result.ok);
-    }).catch(() => undefined);
-    return () => { cancelled = true; };
-  }, []);
+    if (editingId) renameInputRef.current?.focus();
+  }, [editingId]);
 
-  function finishRename(categoryId: string) {
+  function returnFocus(map: Map<string, HTMLButtonElement>, categoryId: string) {
+    window.requestAnimationFrame(() => map.get(categoryId)?.focus());
+  }
+
+  function startRename(category: CustomCategory) {
+    if (operationPending) return;
+    onClearMessages?.();
+    setConfirmArchiveId(null);
+    setEditingId(category.id);
+    setEditingName(category.name);
+    setEditorError("");
+  }
+
+  function cancelRename() {
+    if (!editingId || inferredPending?.kind === "RENAME") return;
+    const categoryId = editingId;
+    setEditingId(null);
+    setEditingName("");
+    setEditorError("");
+    returnFocus(renameButtonRefs.current, categoryId);
+  }
+
+  async function finishRename(categoryId: string) {
+    if (operationPending) return;
     try {
-      onRename(categoryId, editingName);
+      const accepted = await onRename(categoryId, editingName);
+      if (accepted === false) return;
       setEditingId(null);
       setEditingName("");
-      setError("");
+      setEditorError("");
+      returnFocus(renameButtonRefs.current, categoryId);
     } catch (renameError) {
-      setError(renameError instanceof Error ? renameError.message : "The category could not be renamed.");
+      setEditorError(renameError instanceof Error ? renameError.message : "The category could not be renamed.");
+      window.requestAnimationFrame(() => renameInputRef.current?.focus());
     }
   }
 
+  function startArchive(categoryId: string) {
+    if (operationPending) return;
+    onClearMessages?.();
+    setEditingId(null);
+    setEditorError("");
+    setConfirmArchiveId(categoryId);
+  }
+
+  function cancelArchive(categoryId: string) {
+    if (inferredPending?.kind === "ARCHIVE") return;
+    setConfirmArchiveId(null);
+    returnFocus(archiveButtonRefs.current, categoryId);
+  }
+
+  async function confirmArchive(categoryId: string) {
+    if (operationPending) return;
+    const accepted = await onArchiveChange(categoryId, true);
+    if (accepted === false) return;
+    setConfirmArchiveId(null);
+    returnFocus(archiveButtonRefs.current, categoryId);
+  }
+
+  async function restoreCategory(categoryId: string) {
+    if (operationPending) return;
+    onClearMessages?.();
+    await onArchiveChange(categoryId, false);
+    returnFocus(archiveButtonRefs.current, categoryId);
+  }
+
   return (
-    <section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6" aria-labelledby="saved-categories-heading">
+    <section
+      className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6"
+      aria-labelledby="saved-categories-heading"
+      aria-busy={effectiveStorageMode === "loading" || operationPending}
+    >
       <div>
-        <p className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">{accountBacked && <Cloud aria-hidden="true" className="h-4 w-4" />}{accountBacked ? "Saved to your account" : "Account unavailable"}</p>
+        <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-brand-teal">
+          {effectiveStorageMode === "account" && <Cloud aria-hidden="true" className="h-4 w-4" />}
+          {effectiveStorageMode === "loading" ? "Loading account categories…" : effectiveStorageMode === "account" ? "Saved to your account" : "Account unavailable"}
+        </p>
         <h2 id="saved-categories-heading" className="mt-1 text-xl font-bold text-brand-deepTeal">Your categories</h2>
-        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Categories you create appear in the normal category groups. SpendGrove’s included categories stay unchanged.</p>
+        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Categories you create appear in the normal Category groups. SpendGrove’s included Categories stay unchanged.</p>
+        <p className="mt-2 text-sm leading-6 text-brand-deepTeal/70">Archiving removes a Category from new choices. Existing Transactions keep the Category and their totals do not change. You can restore it later.</p>
       </div>
 
-      {categories.length > 0 ? (
+      {effectiveStorageMode === "loading" ? (
+        <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-muted">Loading account categories…</p>
+      ) : effectiveStorageMode === "unavailable" ? (
+        <p role="alert" className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-foreground">Account Categories cannot be changed right now. Existing browser-only data was not changed.</p>
+      ) : categories.length > 0 ? (
         <details className="mt-4 rounded-2xl border border-border p-4">
-          <summary className="cursor-pointer font-bold text-brand-deepTeal">Manage saved categories ({categories.length})</summary>
+          <summary className="min-h-11 cursor-pointer rounded-lg py-2 font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            Manage saved Categories · {availableCategories.length} available · {archivedCategories.length} archived
+          </summary>
           <div className="mt-4 space-y-3">
-            {categories.map((category) => (
-              <article key={category.id} className="rounded-2xl bg-surface-mint p-4">
-                {editingId === category.id ? (
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <input
-                      value={editingName}
-                      onChange={(event) => setEditingName(event.target.value)}
-                      aria-label="Saved category name"
-                      className="min-h-11 flex-1 rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus:ring-2 focus:ring-brand-green/20"
-                    />
-                    <button type="button" onClick={() => finishRename(category.id)} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white">Save name</button>
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="font-bold text-brand-deepTeal">{category.name}</p>
-                      <p className="mt-1 text-xs text-brand-deepTeal/60">{getCategoryGroupLabel(category.group)} · {category.isArchived ? "Archived" : "Available"}</p>
+            {categories.map((category) => {
+              const renamePending = inferredPending?.kind === "RENAME" && inferredPending.categoryId === category.id;
+              const archivePending = inferredPending?.kind === "ARCHIVE" && inferredPending.categoryId === category.id;
+              const restorePending = inferredPending?.kind === "RESTORE" && (inferredPending.categoryId === category.id || inferredPending.categoryId === "pending");
+              const renameErrorId = `category-rename-error-${category.id}`;
+              return (
+                <article key={category.id} className="min-w-0 rounded-2xl bg-surface-mint p-4">
+                  {editingId === category.id ? (
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-start">
+                      <div className="min-w-0 flex-1">
+                        <label htmlFor={`category-rename-${category.id}`} className="sr-only">New name for {category.name}</label>
+                        <input
+                          ref={renameInputRef}
+                          id={`category-rename-${category.id}`}
+                          value={editingName}
+                          onChange={(event) => setEditingName(event.target.value)}
+                          aria-label={`New name for ${category.name}`}
+                          aria-describedby={editorError ? renameErrorId : undefined}
+                          disabled={renamePending}
+                          className="min-h-11 w-full min-w-0 rounded-2xl border border-border bg-white px-4 text-sm outline-none focus:border-brand-green focus-visible:ring-2 focus-visible:ring-focus"
+                        />
+                        {editorError && <p id={renameErrorId} role="alert" className="mt-2 text-sm font-semibold text-danger-red">{editorError}</p>}
+                      </div>
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <button type="button" disabled={operationPending} onClick={() => void finishRename(category.id)} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50">{renamePending ? "Saving name…" : "Save name"}</button>
+                        <button type="button" disabled={renamePending} onClick={cancelRename} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50">Cancel</button>
+                      </div>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" onClick={() => { setEditingId(category.id); setEditingName(category.name); setError(""); }} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal"><Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Rename</button>
-                      <button type="button" onClick={() => onArchiveChange(category.id, !category.isArchived)} className="inline-flex min-h-10 items-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal">
-                        {category.isArchived ? <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" /> : <Archive aria-hidden="true" className="h-3.5 w-3.5" />}
-                        {category.isArchived ? "Restore" : "Archive"}
-                      </button>
+                  ) : confirmArchiveId === category.id ? (
+                    <div role="group" aria-labelledby={`archive-category-${category.id}`} className="rounded-xl border border-warning-amber/30 bg-warning-amber/5 p-3">
+                      <p id={`archive-category-${category.id}`} className="break-words font-bold text-foreground">Archive {category.name}?</p>
+                      <p className="mt-1 text-sm leading-6 text-muted">It will no longer appear in new Category choices. Existing Transactions and totals will not change, and you can restore it later.</p>
+                      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                        <button type="button" disabled={archivePending} onClick={() => cancelArchive(category.id)} className="min-h-11 rounded-full border border-brand-teal px-4 text-sm font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50">Keep available</button>
+                        <button type="button" disabled={operationPending} onClick={() => void confirmArchive(category.id)} className="min-h-11 rounded-full bg-brand-deepTeal px-4 text-sm font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50">{archivePending ? "Archiving…" : "Archive Category"}</button>
+                      </div>
                     </div>
-                  </div>
-                )}
-              </article>
-            ))}
+                  ) : (
+                    <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="min-w-0">
+                        <p className="break-words font-bold text-brand-deepTeal">{category.name}</p>
+                        <p className="mt-1 break-words text-xs text-brand-deepTeal/60">{getCategoryGroupLabel(category.group)} · {category.isArchived ? "Archived" : "Available"}</p>
+                      </div>
+                      <div className="flex flex-col gap-2 min-[390px]:flex-row min-[390px]:flex-wrap">
+                        <button
+                          ref={(element) => { if (element) renameButtonRefs.current.set(category.id, element); else renameButtonRefs.current.delete(category.id); }}
+                          type="button"
+                          disabled={operationPending}
+                          onClick={() => startRename(category)}
+                          aria-label={`Rename ${category.name}`}
+                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+                        ><Pencil aria-hidden="true" className="h-3.5 w-3.5" /> Rename</button>
+                        <button
+                          ref={(element) => { if (element) archiveButtonRefs.current.set(category.id, element); else archiveButtonRefs.current.delete(category.id); }}
+                          type="button"
+                          disabled={operationPending}
+                          onClick={() => category.isArchived ? void restoreCategory(category.id) : startArchive(category.id)}
+                          aria-label={`${category.isArchived ? "Restore" : "Archive"} ${category.name}`}
+                          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-brand-teal px-3 text-xs font-bold text-brand-deepTeal focus:outline-none focus-visible:ring-2 focus-visible:ring-focus disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {category.isArchived ? <RotateCcw aria-hidden="true" className="h-3.5 w-3.5" /> : <Archive aria-hidden="true" className="h-3.5 w-3.5" />}
+                          {restorePending ? "Restoring…" : category.isArchived ? "Restore" : "Archive"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
-          {error && <p role="alert" className="mt-3 text-sm font-semibold text-danger-red">{error}</p>}
         </details>
       ) : (
-        <p className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">No saved categories yet.</p>
+        <p className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">No saved Categories yet.</p>
       )}
 
-      {!accountBacked && !storageAvailable && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Browser storage is unavailable. New categories last only while this page is open.</p>}
-      {recoveredFromCorruption && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Unreadable saved categories were ignored and safely reset.</p>}
-      {unsupportedVersion && <p className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-brand-deepTeal">Saved categories from a newer app version were ignored for safety.</p>}
-      {notice && <p role="status" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{notice}</p>}
+      {visibleNotice && <p role="status" aria-live="polite" className="mt-4 rounded-2xl bg-surface-mint p-4 text-sm font-semibold text-brand-deepTeal">{visibleNotice}</p>}
+      {inferredError && <p role="alert" className="mt-4 rounded-2xl bg-warning-amber/10 p-4 text-sm font-semibold text-foreground">{inferredError}</p>}
     </section>
   );
 }
