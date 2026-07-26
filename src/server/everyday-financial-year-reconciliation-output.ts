@@ -90,6 +90,7 @@ function assertCategories(report: EverydayFinancialYearReport) {
       (row.direction !== "MONEY_IN" && row.direction !== "MONEY_OUT")
       || !row.categoryName.trim()
       || (row.categoryId !== null && !row.categoryId.trim())
+      || (row.categoryId === null && row.categoryName !== "Uncategorised")
     ) {
       fail("The report contains an invalid Category row.", "REPORT_VALUE_INVALID");
     }
