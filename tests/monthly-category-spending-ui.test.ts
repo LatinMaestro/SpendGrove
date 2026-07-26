@@ -20,8 +20,14 @@ describe("monthly category spending presentation", () => {
     expect(transactions).not.toContain("!validSpendingCategoryIds.has(transaction.categoryId)");
     expect(transactions).toContain("category filter");
     expect(transactions).toContain("Clear filter");
-    expect(transactions).toContain("Search is limited to {selectedMonthLabel}");
-    expect(transactions).toContain("setShowBreakdown(false); setCategoryFilter(null); setSelectedMonth");
+    expect(transactions).toContain("Search and filters apply only to {selectedMonthLabel}");
+    const monthHandler = transactions.slice(
+      transactions.indexOf("function changeMonth"),
+      transactions.indexOf("function openCreate"),
+    );
+    expect(monthHandler).toContain("setShowBreakdown(false)");
+    expect(monthHandler).toContain("setCategoryFilter(null)");
+    expect(monthHandler).toContain("setSelectedMonth");
   });
 
   it("provides visible and accessible chart and breakdown actions", () => {
