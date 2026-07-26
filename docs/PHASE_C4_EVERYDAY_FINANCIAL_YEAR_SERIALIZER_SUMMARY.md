@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Serializer Summary
 
 Date: 26 July 2026  
-Status: pure everyday and Category CSV serializers implemented; exact-head verification pending  
+Status: pure everyday and Category CSV serializers implemented and exact executable head verified  
 Master-plan alignment: C4.4 — formula-safe everyday/Category exports  
 Stacked dependency: PR #266 → PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -20,9 +20,9 @@ Two pure serializers:
 
 No service query, API route, download response, reconciliation serializer, UI or accountant-pack change is included.
 
-## Everyday summary CSV
+## Outputs
 
-Columns:
+Summary columns:
 
 - `financial_year`;
 - `direction`;
@@ -30,18 +30,9 @@ Columns:
 - `total_aud`;
 - `spendgrove_notice`.
 
-Rows:
+Summary rows are Money in, Money out, incoming transfer context and outgoing transfer context. Transfer amount cells remain blank because no transfer amount total is authorised.
 
-- Money in;
-- Money out;
-- Incoming transfer context;
-- Outgoing transfer context.
-
-Transfer amount cells remain blank because C4.1 does not authorise a transfer amount total. Blank is truthful; `0.00` would imply a calculated zero amount.
-
-## Category CSV
-
-Columns:
+Category columns:
 
 - `financial_year`;
 - `direction`;
@@ -50,71 +41,61 @@ Columns:
 - `total_aud`;
 - `spendgrove_notice`.
 
-Rows preserve the deterministic Category order produced by the verified C4.2 helper. Category IDs and Transaction IDs are not exported.
+Category IDs and Transaction IDs are not exported.
 
 ## Financial safety
 
-- report contract/version, AUD and integer-cent declarations are validated;
-- counts and totals must be non-negative safe integers;
-- transfer counts must reconcile;
-- counted Transactions must reconcile to Money in, Money out and transfer context;
-- Category counts and cents must reconcile separately by direction;
-- money converts from integer cents only at serialization;
-- AUD values use exactly two decimals and no locale separators;
-- no floating-point financial authority is introduced.
+- validates contract/version, AUD and integer cents;
+- validates non-negative safe-integer counts and totals;
+- requires zero counts to have zero totals and non-zero counts to have non-zero totals;
+- rejects empty zero-count/zero-value Category rows;
+- reconciles transfer counts;
+- reconciles counted Transactions to Money in, Money out and transfer context;
+- reconciles Category counts and cents separately by direction;
+- converts integer cents to exactly two-decimal AUD only at serialization;
+- introduces no floating-point financial authority.
 
-Invalid or unreconciled input fails closed with a privacy-safe serializer reason code.
+Invalid or unreconciled input fails closed with privacy-safe reason codes.
 
-## CSV safety
+## CSV and privacy safety
 
 - deterministic columns and row order;
 - all cells quoted;
 - embedded quotes doubled;
-- CRLF row boundaries;
-- no trailing row;
+- CRLF rows with no trailing row;
 - Category labels beginning `=`, `+`, `-` or `@` receive a leading apostrophe;
-- neutral record-keeping notice on every row.
-
-## Privacy boundary
-
-Outputs contain no:
-
-- Transaction or Category IDs;
-- raw CSV rows or filenames;
-- narration, merchant history or notes;
-- account, BSB, card, customer or Loan references;
-- Property addresses;
-- provider payloads, secrets or audit metadata.
+- no Transaction/Category IDs, raw rows, filenames, narration, merchant history, notes, banking identifiers, Loan references, Property addresses, provider payloads, secrets or audit metadata.
 
 ## Tests
 
-Six tests cover:
+Seven tests cover:
 
-1. exact everyday summary rows and blank transfer amounts;
-2. deterministic direction-separated Category rows without internal IDs;
-3. formula protection and CSV quoting;
+1. exact summary rows and blank transfer amounts;
+2. deterministic direction-separated Category rows without IDs;
+3. formula protection and quoting;
 4. deterministic CRLF output;
 5. unsupported contract rejection;
-6. invalid/unreconciled value rejection.
+6. invalid/unreconciled value rejection;
+7. impossible count/total pairs and empty Category-row rejection.
 
-Expected baseline:
+## Exact verification
 
-- **157 test files / 986 tests**;
-- framework verification;
-- TypeScript/lint;
+Executable/test head: `aa9e76cb6de8297b68412259d842fab2f4cd61ca`  
+Vercel deployment: `dpl_C6iCH1yHzVBWEKnG9LxZzqDPFDxZ`  
+State: READY
+
+Passed:
+
+- framework dependency verification;
+- **157 test files / 987 tests**;
+- TypeScript and lint;
 - optimized Next.js build;
-- route/serverless generation.
+- route generation and serverless deployment.
 
-## Boundaries
+Only the existing Import Review memoisation warnings remain.
 
-No change to formulas, stored data, Transaction/Category/Loan records, schema, migrations, routes, UI, accountant pack, packages, providers, environments, Production, Expo or Apple.
+## Boundaries and next action
 
-## Next
+No formula, stored data, schema, migration, route, UI, accountant pack, package, provider, environment, Production, Expo or Apple change.
 
-After exact-head green:
-
-1. reconciliation serializer only;
-2. authenticated routes;
-3. Reports UI/accessibility;
-4. accountant-pack v2;
-5. consolidated QA/professional wording.
+Next focused boundary: reconciliation serializer only. Keep authenticated routes, Reports UI/accessibility and accountant-pack v2 separate.
