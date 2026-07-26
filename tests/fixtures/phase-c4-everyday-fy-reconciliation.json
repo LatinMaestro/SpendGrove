@@ -1,0 +1,312 @@
+{
+  "contract": "spendgrove.synthetic-everyday-financial-year-reconciliation",
+  "version": 1,
+  "ownerUserId": "synthetic-user-1",
+  "financialYear": {
+    "endingYear": 2026,
+    "label": "2025-26",
+    "startDate": "2025-07-01",
+    "endDate": "2026-06-30"
+  },
+  "transactions": [
+    {
+      "id": "synthetic-before-period",
+      "userId": "synthetic-user-1",
+      "date": "2025-06-30",
+      "type": "EXPENSE",
+      "amountCents": -900,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-groceries",
+      "categoryName": "Groceries"
+    },
+    {
+      "id": "synthetic-fy-start-income",
+      "userId": "synthetic-user-1",
+      "date": "2025-07-01",
+      "type": "INCOME",
+      "amountCents": 10000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-other-income",
+      "categoryName": "Other income"
+    },
+    {
+      "id": "synthetic-salary",
+      "userId": "synthetic-user-1",
+      "date": "2025-08-01",
+      "type": "INCOME",
+      "amountCents": 500000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-salary-category",
+      "categoryName": "Salary"
+    },
+    {
+      "id": "synthetic-positive-refund",
+      "userId": "synthetic-user-1",
+      "date": "2025-08-02",
+      "type": "INCOME",
+      "amountCents": 3000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-refunds",
+      "categoryName": "Refunds and rebates"
+    },
+    {
+      "id": "synthetic-grocery-expense",
+      "userId": "synthetic-user-1",
+      "date": "2025-08-03",
+      "type": "EXPENSE",
+      "amountCents": -12000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-groceries",
+      "categoryName": "Groceries"
+    },
+    {
+      "id": "synthetic-split-parent",
+      "userId": "synthetic-user-1",
+      "date": "2025-09-01",
+      "type": "EXPENSE",
+      "amountCents": -6000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "PARENT",
+      "categoryId": "synthetic-needs-review",
+      "categoryName": "Needs review"
+    },
+    {
+      "id": "synthetic-split-child-dining",
+      "userId": "synthetic-user-1",
+      "date": "2025-09-01",
+      "type": "EXPENSE",
+      "amountCents": -4000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "CHILD",
+      "categoryId": "synthetic-dining",
+      "categoryName": "Dining out"
+    },
+    {
+      "id": "synthetic-split-child-transport",
+      "userId": "synthetic-user-1",
+      "date": "2025-09-01",
+      "type": "EXPENSE",
+      "amountCents": -2000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "CHILD",
+      "categoryId": "synthetic-transport",
+      "categoryName": "Transport"
+    },
+    {
+      "id": "synthetic-fy-end-expense",
+      "userId": "synthetic-user-1",
+      "date": "2026-06-30",
+      "type": "EXPENSE",
+      "amountCents": -1500,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-utilities",
+      "categoryName": "Utilities"
+    },
+    {
+      "id": "synthetic-loan-cashflow",
+      "userId": "synthetic-user-1",
+      "date": "2026-03-01",
+      "type": "EXPENSE",
+      "amountCents": -120000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-loan-repayments",
+      "categoryName": "Loan repayments"
+    },
+    {
+      "id": "synthetic-uncategorised-expense",
+      "userId": "synthetic-user-1",
+      "date": "2026-04-01",
+      "type": "EXPENSE",
+      "amountCents": -2500,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": null,
+      "categoryName": null
+    },
+    {
+      "id": "synthetic-transfer-out",
+      "userId": "synthetic-user-1",
+      "date": "2026-02-10",
+      "type": "TRANSFER",
+      "amountCents": -100000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-transfer-category",
+      "categoryName": "Transfers"
+    },
+    {
+      "id": "synthetic-transfer-in",
+      "userId": "synthetic-user-1",
+      "date": "2026-02-10",
+      "type": "TRANSFER",
+      "amountCents": 100000,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-transfer-category",
+      "categoryName": "Transfers"
+    },
+    {
+      "id": "synthetic-deleted-expense",
+      "userId": "synthetic-user-1",
+      "date": "2026-05-01",
+      "type": "EXPENSE",
+      "amountCents": -9999,
+      "status": "DELETED",
+      "deletedAt": "2026-05-02T00:00:00.000Z",
+      "splitRole": "NONE",
+      "categoryId": "synthetic-groceries",
+      "categoryName": "Groceries"
+    },
+    {
+      "id": "synthetic-after-period",
+      "userId": "synthetic-user-1",
+      "date": "2026-07-01",
+      "type": "INCOME",
+      "amountCents": 8800,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-other-income",
+      "categoryName": "Other income"
+    },
+    {
+      "id": "synthetic-cross-user-expense",
+      "userId": "synthetic-user-2",
+      "date": "2026-01-15",
+      "type": "EXPENSE",
+      "amountCents": -7777,
+      "status": "ACTIVE",
+      "deletedAt": null,
+      "splitRole": "NONE",
+      "categoryId": "synthetic-groceries",
+      "categoryName": "Groceries"
+    }
+  ],
+  "loanAnalyticalRepayments": [
+    {
+      "id": "synthetic-loan-component-record",
+      "linkedTransactionId": "synthetic-loan-cashflow",
+      "totalPaymentCents": 120000,
+      "principalCents": 60000,
+      "interestCents": 55000,
+      "feeCents": 5000,
+      "isCashflowRecord": false
+    }
+  ],
+  "expected": {
+    "inputTransactionCount": 16,
+    "countedTransactionCount": 11,
+    "moneyIn": {
+      "count": 3,
+      "totalCents": 513000
+    },
+    "moneyOut": {
+      "count": 6,
+      "totalCents": 142000
+    },
+    "transfers": {
+      "count": 2,
+      "incomingCount": 1,
+      "outgoingCount": 1
+    },
+    "countedSplitChildCount": 2,
+    "exclusions": {
+      "outsidePeriodCount": 2,
+      "deletedOrInactiveCount": 1,
+      "splitParentCount": 1,
+      "crossUserCount": 1
+    },
+    "categoryRows": [
+      {
+        "direction": "MONEY_IN",
+        "categoryId": "synthetic-salary-category",
+        "categoryName": "Salary",
+        "count": 1,
+        "totalCents": 500000
+      },
+      {
+        "direction": "MONEY_IN",
+        "categoryId": "synthetic-other-income",
+        "categoryName": "Other income",
+        "count": 1,
+        "totalCents": 10000
+      },
+      {
+        "direction": "MONEY_IN",
+        "categoryId": "synthetic-refunds",
+        "categoryName": "Refunds and rebates",
+        "count": 1,
+        "totalCents": 3000
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": "synthetic-loan-repayments",
+        "categoryName": "Loan repayments",
+        "count": 1,
+        "totalCents": 120000
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": "synthetic-groceries",
+        "categoryName": "Groceries",
+        "count": 1,
+        "totalCents": 12000
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": "synthetic-dining",
+        "categoryName": "Dining out",
+        "count": 1,
+        "totalCents": 4000
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": null,
+        "categoryName": "Uncategorised",
+        "count": 1,
+        "totalCents": 2500
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": "synthetic-transport",
+        "categoryName": "Transport",
+        "count": 1,
+        "totalCents": 2000
+      },
+      {
+        "direction": "MONEY_OUT",
+        "categoryId": "synthetic-utilities",
+        "categoryName": "Utilities",
+        "count": 1,
+        "totalCents": 1500
+      }
+    ],
+    "loanCashflow": {
+      "everydayTransactionCount": 1,
+      "everydayMoneyOutCents": 120000,
+      "analyticalRepaymentCount": 1,
+      "analyticalComponentsCents": 120000,
+      "analyticalAmountAddedToCashflow": false
+    }
+  }
+}
