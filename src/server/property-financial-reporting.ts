@@ -24,6 +24,7 @@ export type PropertyLoanComponentSummary = {
   incompleteComponentCount: number;
   matchedCount: number;
   needsReviewCount: number;
+  unmatchedCount: number;
 };
 
 export type PropertyFinancialYearReport = {
@@ -49,6 +50,7 @@ function emptyLoanComponents(): PropertyLoanComponentSummary {
     incompleteComponentCount: 0,
     matchedCount: 0,
     needsReviewCount: 0,
+    unmatchedCount: 0,
   };
 }
 
@@ -81,7 +83,8 @@ export function buildPropertyFinancialYearReport(
       loanComponents.incompleteComponentCount += 1;
     }
     if (repayment.reconciliationStatus === "LINKED") loanComponents.matchedCount += 1;
-    else loanComponents.needsReviewCount += 1;
+    else if (repayment.reconciliationStatus === "NEEDS_REVIEW") loanComponents.needsReviewCount += 1;
+    else loanComponents.unmatchedCount += 1;
   }
 
   return {
