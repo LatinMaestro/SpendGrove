@@ -245,21 +245,23 @@ export function createPrismaActivityHistoryStore(prisma: PrismaClient = getPrism
 
 export async function listRecentActivityHistory(
   context: AuthenticatedUserContext | null | undefined,
-  store: ActivityHistoryStore = createPrismaActivityHistoryStore(),
+  store?: ActivityHistoryStore,
 ) {
   const user = requireAuthenticatedUserContext(context);
-  const records = await store.listRecent(user.userId, 100);
+  const resolvedStore = store ?? createPrismaActivityHistoryStore();
+  const records = await resolvedStore.listRecent(user.userId, 100);
   return records.map((record) => mapActivityHistoryItem(record));
 }
 
 export async function listTransactionActivityHistory(
   context: AuthenticatedUserContext | null | undefined,
   transactionId: string,
-  store: ActivityHistoryStore = createPrismaActivityHistoryStore(),
+  store?: ActivityHistoryStore,
 ) {
   const user = requireAuthenticatedUserContext(context);
-  const transaction = await store.findOwnedTransaction(user.userId, transactionId);
+  const resolvedStore = store ?? createPrismaActivityHistoryStore();
+  const transaction = await resolvedStore.findOwnedTransaction(user.userId, transactionId);
   assertUserOwnsRecord(user, transaction, "transaction");
-  const records = await store.listForTransaction(user.userId, transactionId, 50);
+  const records = await resolvedStore.listForTransaction(user.userId, transactionId, 50);
   return records.map((record) => mapActivityHistoryItem(record, true));
 }
