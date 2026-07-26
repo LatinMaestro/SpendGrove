@@ -135,4 +135,27 @@ describe("everyday financial-year CSV serializers", () => {
       categories: report.categories.map((row, index) => index === 0 ? { ...row, totalCents: -1 } : row),
     }), "REPORT_VALUE_INVALID");
   });
+
+  it("rejects impossible summary pairs and empty Category rows", async () => {
+    const report = await fixtureReport();
+    expectReason(() => createEverydayFinancialYearSummaryCsv({
+      ...report,
+      moneyIn: { count: 0, totalCents: report.moneyIn.totalCents },
+      countedTransactionCount: report.countedTransactionCount - report.moneyIn.count,
+      categories: report.categories.filter((row) => row.direction !== "MONEY_IN"),
+    }), "REPORT_RECONCILIATION_INVALID");
+    expectReason(() => createEverydayFinancialYearCategoryCsv({
+      ...report,
+      categories: [
+        ...report.categories,
+        {
+          direction: "MONEY_OUT",
+          categoryId: "empty-category",
+          categoryName: "Empty Category",
+          count: 0,
+          totalCents: 0,
+        },
+      ],
+    }), "REPORT_RECONCILIATION_INVALID");
+  });
 });
