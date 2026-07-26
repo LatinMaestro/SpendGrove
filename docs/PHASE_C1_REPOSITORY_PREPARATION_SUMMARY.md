@@ -1,48 +1,22 @@
-# Phase C1 Transaction Saved Views and Audit Preparation Summary
+# Phase C1 Transaction Saved Views and Activity History Summary
 
 Date: 26 July 2026  
-Status: contract and schema assessment complete; no implementation, schema or migration authorised  
-Master-plan alignment: Phase C1.1  
-Stacked dependency: PR #244 → PR #243 → PR #242 → unresolved activation stack #231–#241
+Status: saved-view contract complete; privacy-safe activity history implemented and technically verified; saved-view schema remains unapproved  
+Master-plan alignment: Phase C1.1 and no-schema portion of C1.5  
+Stacked dependency: PR #246 → PR #244 → PR #243 → PR #242 → unresolved activation stack #231–#241
 
 ## Objective
 
-Prepare the exact product, privacy, ownership, lifecycle, schema and QA boundaries for:
+Advance the Transactions completion programme without bypassing the saved-view schema gate by:
 
-- cross-device saved transaction views; and
-- privacy-safe user-facing activity history.
+- freezing the cross-device saved-view contract and schema assessment; and
+- delivering the independently safe, no-schema activity-history mapper, APIs and responsive web surfaces.
 
-This slice advances independent repository work while authenticated Preview QA and GitHub Actions execution remain unavailable.
+## Saved-view contract status
 
-## Documents delivered
+The current ledger filters remain transient. True web/native cross-device saved views require a future owner-scoped additive `TransactionSavedView` model.
 
-- `PHASE_C1_TRANSACTION_SAVED_VIEWS_AND_AUDIT_CONTRACT.md`;
-- `PHASE_C1_SAVED_VIEW_SCHEMA_ASSESSMENT.md`;
-- this summary.
-
-## Current-state findings
-
-The current signed-in Transactions ledger already includes:
-
-- month navigation;
-- search;
-- desktop direction and category filters;
-- desktop table and mobile list;
-- owner-scoped server queries;
-- transaction details and lifecycle controls;
-- Preview-only bulk operations in the activation stack.
-
-Those filters are transient. They do not persist across browser recreation and are not available to a future native client.
-
-The current browser-local settings layer and `UserSettings.featureFlags` JSON are not suitable for cross-device saved views.
-
-The current `AuditEvent` model and indexes are sufficient for a bounded activity-history presentation when raw metadata is never returned to a client.
-
-## Contract decisions
-
-### Saved views
-
-The initial saved-view definition is restricted to safe enum/reference choices:
+The approved proposed definition is restricted to:
 
 - dynamic current month or one fixed `YYYY-MM` month;
 - direction;
@@ -51,127 +25,177 @@ The initial saved-view definition is restricted to safe enum/reference choices:
 - manual/imported source;
 - current/active/needs-review/deleted state;
 - safe review status;
-- bounded sort and page size.
+- bounded sorting and page size.
 
-It explicitly excludes:
+It excludes search text, merchant/payee text, narration, notes, amount ranges, balances, account/Loan/bank/import identifiers, selected transaction IDs, arbitrary query JSON and cached results.
 
-- search text;
-- merchant/payee text;
-- narration and notes;
-- amount ranges and balances;
-- account/Loan/bank/import identifiers;
-- selected transaction IDs;
-- arbitrary JSON predicates;
-- cached results and totals.
-
-Additional safeguards:
+Additional safeguards remain:
 
 - maximum 12 views per user;
 - normalized unique names;
-- zero or one explicit default view;
-- no silent persistence of temporary changes;
+- zero or one explicit default;
 - invalid Category/Property references fail closed and require repair;
-- personal views remain private from household members and accountants;
-- safe export and dependency-ordered account deletion.
+- personal views are not automatically shared with household members or accountants;
+- safe account export and dependency-ordered deletion;
+- no backfill of browser-local filters.
 
-### Activity history
+No saved-view schema, migration or runtime implementation is authorised by this summary.
 
-The future UI will use **Activity history** and will show only allowlisted plain-English events.
+## Activity-history implementation
 
-It will not expose:
+### Server-only mapper
+
+`src/server/activity-history.ts` now provides a purpose-limited view model containing only:
+
+- event ID;
+- Australian-compatible ISO timestamp;
+- safe event family;
+- safe action label;
+- entity type;
+- entity ID only for an already ownership-proven transaction route;
+- allowlisted plain-English summary.
+
+Raw `AuditEvent.metadata` is never returned. The mapper recognizes only a small set of safe states and bounded aggregate counts, including:
+
+- Property link linked/relinked/unlinked state;
+- transfer-link confirmation/removal;
+- reviewed import row import/skip/merge;
+- import undo/restore aggregate counts;
+- bulk-operation apply, skip, failure, undo and blocked-undo aggregate counts;
+- Loan reconciliation link/removal.
+
+Unknown metadata falls back to a generic entity/action summary. It is never stringified or copied into the response.
+
+### Ownership and query boundaries
+
+Account recent activity:
+
+- requires authenticated user context before Prisma store construction or persistence access;
+- queries by `userId` only;
+- returns at most 100 events;
+- orders newest first by timestamp and ID;
+- does not return entity IDs.
+
+Transaction activity:
+
+- requires authenticated user context before Prisma store construction;
+- proves the Transaction belongs to the user before reading audit rows;
+- permits recoverable owned records without treating audit rows as ownership proof;
+- queries only `TRANSACTION` audit rows for the owned ID;
+- returns at most 50 events;
+- returns the transaction entity ID only for that already-owned detail route.
+
+No household or accountant access was added.
+
+### API surfaces
+
+Two GET-only authenticated routes were added:
+
+- `/api/account/activity-history`;
+- `/api/account/manual-transactions/[transactionId]/activity`.
+
+They expose neutral authentication/ownership errors and define no POST, PATCH or DELETE activity endpoint.
+
+### Responsive UI
+
+The account-level activity list is available under the existing Settings **Advanced account tools** section. It does not add a primary navigation destination.
+
+Transaction-specific history is shown in the existing transaction-detail workflow through the Property-record panel integration.
+
+Both surfaces include:
+
+- loading, empty, retry and error states;
+- screen-reader-friendly event summaries and `<time>` values;
+- Australian Brisbane date/time presentation;
+- keyboard-operable refresh controls and visible focus treatment;
+- read-only wording that directs corrections, links, undo and recovery to their approved feature-specific controls;
+- no colour-only meaning or financial values.
+
+## Prohibited response content
+
+Automated tests prove that the activity response does not include:
 
 - raw metadata;
-- descriptions or merchant narration;
+- transaction descriptions or merchant narration;
 - notes;
-- amounts or balances;
-- filenames or bank identifiers;
-- before/after financial snapshots;
+- amounts, balances, budget values or Loan values;
+- CSV rows or filenames;
+- BSBs, account/card/customer/member identifiers;
+- before/after snapshots;
 - exact Property addresses;
-- provider internals, tokens, hashes or errors.
+- invitation/access tokens or hashes;
+- storage keys, provider responses or internal errors;
+- arbitrary unknown metadata values.
 
-Unknown event metadata is omitted or mapped to a generic safe event. It is never stringified into a client response.
+## Financial and lifecycle boundaries
 
-## Schema conclusion
+This implementation changes no Transaction, import, budget, recurring, Property, Loan or reporting calculation.
 
-A new owner-scoped `TransactionSavedView` model is recommended for true web/native cross-device behaviour.
-
-The proposed model uses:
-
-- direct `userId` ownership;
-- normalized-name uniqueness;
-- bounded enum fields;
-- optional owned Category and Property relations;
-- restrictive reference deletion to prevent silent filter broadening;
-- default flag and optimistic `updatedAt`;
-- no transaction-result relation or cache.
-
-No backfill is required. Existing users continue with the immutable built-in current-month view until they explicitly create a saved view.
-
-Activity history requires no new model or migration. It reuses `AuditEvent` through a server-only mapper and bounded owner-scoped reads.
-
-## Rejected approaches
-
-- browser-local saved views as the final implementation;
-- arbitrary saved query JSON;
-- storing views inside `UserSettings.featureFlags`;
-- storing search or narration;
-- using AuditEvent as preference storage or undo history;
-- storing transaction snapshots or cached results;
-- automatically sharing views;
-- silently removing an invalid Category/Property filter.
-
-## Privacy and financial integrity
-
-No financial rule changes.
-
-The preparation preserves:
+It preserves:
 
 - integer cents;
-- Australian dates and financial years;
-- transfer/split and Loan no-double-count rules;
+- Australian dates and financial-year boundaries;
+- signed direction and transfer precedence;
+- split-parent exclusion and child inclusion;
 - review-before-commit;
+- Loan repayment no-double-count treatment;
 - owner isolation;
-- no raw CSV retention;
-- privacy-safe logs and audit;
-- export/deletion coverage.
+- existing audit export, deletion and retention behaviour.
 
-## Repository impact
+The UI creates no second durable audit copy and provides no inferred undo or restoration action.
 
-Documentation only.
+## Schema and provider impact
 
 No change to:
 
-- application source;
 - Prisma schema or migration files;
 - database state;
 - packages or lockfile;
 - providers, secrets or environment variables;
-- Vercel/Neon/Clerk configuration;
+- Vercel, Neon or Clerk configuration;
 - Production;
 - Apple, TestFlight or real users.
 
-## Proposed delivery sequence
+The existing `AuditEvent` model and indexes are reused.
 
-1. contract and schema assessment — complete in this slice;
-2. exact additive schema/migration and verifier profile — explicit material schema gate required;
-3. owner-scoped service, export and deletion behind fail-closed runtime;
-4. saved-view web workflow;
-5. safe audit mapper/API/UI;
-6. integrated automated, Preview and accessibility QA;
-7. native parity through the same API.
+## Automated and deployment evidence
+
+Exact implementation head: `bd1c5db5e4f2f2455bac37e3ef6012d83adb672d`  
+Vercel deployment: `dpl_5NqvHFbKNbDqgen2Y2yBP6UYSp6U` — Ready
+
+Verified evidence:
+
+- 146 test files / 903 tests passed;
+- new server ownership, authentication-before-store, bounded-query, allowlist, bulk-undo, unknown-metadata and privacy tests passed;
+- new UI/route boundary tests passed;
+- framework dependency verification passed;
+- optimized Next.js compilation passed;
+- TypeScript and lint validity passed with only pre-existing hook warnings in unrelated files;
+- both new dynamic API routes were generated;
+- serverless output deployment completed;
+- signed-out account activity access returned HTTP 401 with no financial or audit content and retained the existing security/no-index headers.
+
+## Known limitations
+
+- The activity list can display only audit events already written by existing workflows; it does not invent history for actions that were never audited.
+- Some generic events intentionally omit detail rather than risk exposing private metadata.
+- Transaction-specific history currently covers audit rows directly recorded against the Transaction; related-object events remain visible in account history unless a future approved ownership-safe relationship resolver is added.
+- Cursor pagination is not yet needed because account and transaction reads are bounded to 100 and 50 events respectively.
+- Saved views remain contract/schema-assessment only.
+- Authenticated browser QA remains part of the consolidated client/Preview review gate.
 
 ## Remaining blockers
 
-- the material saved-view schema/migration is not yet authorised;
-- PRs #242–#244 and this stacked work cannot merge ahead of their dependencies;
+- the material saved-view schema/migration is not authorised;
+- this stacked work cannot merge ahead of PRs #242–#246 and their dependencies;
 - PRs #231–#241 still require authenticated synthetic QA and executable GitHub Actions;
 - no Production migration or activation is authorised.
 
 ## Next safe action
 
-Continue repository-only preparation with either:
+Continue Phase C with one of the following independently safe tasks:
 
-- the Phase C1 privacy-safe activity-history mapper/API design and synthetic response fixtures, which can remain no-schema and hard-disabled; or
-- another independent Phase C2 exact-format evidence slice where current wholly synthetic structures are available.
+1. complete no-schema ledger interaction polish and accessibility regression that does not depend on saved-view persistence; or
+2. advance another exact bank/Loan format using only verified public structure and synthetic fixtures.
 
-Do not begin the saved-view schema PR until its explicit schema/migration gate is satisfied.
+Do not begin the saved-view schema PR until explicit material schema and migration approval is recorded.

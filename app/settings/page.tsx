@@ -1,3 +1,4 @@
+import { AccountActivityHistory } from "@/components/activity-history";
 import { AccountDeletion } from "@/components/account-deletion";
 import { AccountDataManagement } from "@/components/account-data-management";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
@@ -30,7 +31,7 @@ export default function SettingsPage() {
           <section className="mt-6" aria-labelledby="advanced-tools-heading">
             <div className="mb-2 px-1">
               <h2 id="advanced-tools-heading" className="text-base font-semibold text-foreground">Account management</h2>
-              <p className="mt-0.5 text-sm text-muted">Import history and recovery tools stay out of the everyday workflow.</p>
+              <p className="mt-0.5 text-sm text-muted">Recent activity, import history and recovery tools stay out of the everyday workflow.</p>
             </div>
             <details className="rounded-2xl border border-border bg-surface-base">
               <summary className="flex min-h-14 cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-semibold text-foreground focus:outline-none focus:ring-2 focus:ring-inset focus:ring-brand-green">
@@ -38,6 +39,7 @@ export default function SettingsPage() {
                 <span aria-hidden="true" className="text-muted">›</span>
               </summary>
               <div className="space-y-5 border-t border-border p-4">
+                {accountHistoryAvailable && <AccountActivityHistory />}
                 {accountHistoryAvailable && <AccountImportHistoryPanel />}
                 {developmentTestingAvailable && <DevelopmentTransactionResetPanel />}
               </div>
