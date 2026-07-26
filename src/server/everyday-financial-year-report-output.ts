@@ -48,6 +48,17 @@ function assertSafeNonNegativeInteger(value: number) {
   }
 }
 
+function assertCountTotalCoherence(count: number, totalCents: number) {
+  assertSafeNonNegativeInteger(count);
+  assertSafeNonNegativeInteger(totalCents);
+  if ((count === 0) !== (totalCents === 0)) {
+    throw new EverydayFinancialYearCsvError(
+      "The report count and total do not agree.",
+      "REPORT_RECONCILIATION_INVALID",
+    );
+  }
+}
+
 function addChecked(current: number, value: number) {
   assertSafeNonNegativeInteger(value);
   const next = current + value;
@@ -74,11 +85,10 @@ function assertReport(report: EverydayFinancialYearReport) {
     );
   }
 
+  assertCountTotalCoherence(report.moneyIn.count, report.moneyIn.totalCents);
+  assertCountTotalCoherence(report.moneyOut.count, report.moneyOut.totalCents);
+
   const values = [
-    report.moneyIn.count,
-    report.moneyIn.totalCents,
-    report.moneyOut.count,
-    report.moneyOut.totalCents,
     report.transfers.count,
     report.transfers.incomingCount,
     report.transfers.outgoingCount,
@@ -117,6 +127,12 @@ function assertReport(report: EverydayFinancialYearReport) {
     }
     assertSafeNonNegativeInteger(row.count);
     assertSafeNonNegativeInteger(row.totalCents);
+    if (row.count === 0 || row.totalCents === 0) {
+      throw new EverydayFinancialYearCsvError(
+        "The report contains an empty Category row.",
+        "REPORT_RECONCILIATION_INVALID",
+      );
+    }
     if (row.direction === "MONEY_IN") {
       moneyInCount = addChecked(moneyInCount, row.count);
       moneyInCents = addChecked(moneyInCents, row.totalCents);
