@@ -1,7 +1,7 @@
 # Phase C4 Everyday Financial-Year Reconciliation Output
 
 Date: 26 July 2026  
-Status: pure reconciliation JSON serializer implemented; exact-head verification pending  
+Status: serializer source head verified; exact final evidence head pending  
 Master-plan alignment: C4.5 — reconciliation response/export  
 Stacked dependency: PR #268 → PR #266 → PR #265 → PR #262 → PR #260 → PR #259 and earlier gates
 
@@ -65,10 +65,21 @@ Seven tests cover:
 6. fabricated eligible diagnostics and analytical Loan cashflow rejection;
 7. fabricated uncategorised count/label and duplicate Category evidence rejection.
 
-Expected baseline: **158 test files / 994 tests**.
+## Verification
+
+Executable source head `295986a0c077eaccbd3ee01400a9ca14db04724f` passed Vercel deployment `dpl_87CLnSkwbW55nsFmGhVkmkQci1mc`:
+
+- **158 test files / 994 tests**;
+- TypeScript and lint validation;
+- optimized Next.js build;
+- route generation and serverless deployment.
+
+Only the existing Import Review memoisation warnings remain.
+
+The current final head adds the matching regression assertion and this evidence update. One exact final-head execution remains required before route work or merge.
 
 ## Boundary and next action
 
 No financial formula, source membership, persistence, schema, migration, route, UI, accountant pack, package, provider, environment, Production, Expo or Apple change.
 
-After exact green: authenticated report route and download-response boundary only. Keep Reports UI/accessibility and accountant-pack v2 separate.
+After exact final-head green: authenticated report route and download-response boundary only. Keep Reports UI/accessibility and accountant-pack v2 separate.
