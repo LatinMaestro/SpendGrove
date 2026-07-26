@@ -96,21 +96,27 @@ describe("Phase 8 Property financial-year reporting", () => {
     expect(report.records.find((record) => record.transactionId === "expense")?.classification).toBe("EXCLUDED");
   });
 
-  it("adds only matching Property Loan components and never adds them to cashflow", () => {
+  it("separates matched, needs-review and unmatched Loan components without adding them to cashflow", () => {
     const report = buildPropertyFinancialYearReport(review, loans, [
-      repayment({ id: "r1", loanAccountId: "loan-1", repaymentDate: "2026-01-01", totalPaymentCents: 100000, principalCents: 60000, interestCents: 35000, feeCents: 5000, reconciliationStatus: "LINKED" }),
-      repayment({ id: "r2", loanAccountId: "loan-other", repaymentDate: "2026-01-01", totalPaymentCents: 90000, principalCents: 50000, interestCents: 40000, feeCents: 0 }),
+      repayment({ id: "linked", loanAccountId: "loan-1", repaymentDate: "2026-01-01", totalPaymentCents: 100000, principalCents: 60000, interestCents: 35000, feeCents: 5000, reconciliationStatus: "LINKED" }),
+      repayment({ id: "review", loanAccountId: "loan-1", repaymentDate: "2026-02-01", totalPaymentCents: 110000, principalCents: 65000, interestCents: 40000, feeCents: 5000, reconciliationStatus: "NEEDS_REVIEW" }),
+      repayment({ id: "unmatched", loanAccountId: "loan-1", repaymentDate: "2026-03-01", totalPaymentCents: 120000, principalCents: 70000, interestCents: 45000, feeCents: 5000, reconciliationStatus: "UNMATCHED" }),
+      repayment({ id: "other-property", loanAccountId: "loan-other", repaymentDate: "2026-01-01", totalPaymentCents: 90000, principalCents: 50000, interestCents: 40000, feeCents: 0 }),
       repayment({ id: "outside", loanAccountId: "loan-1", repaymentDate: "2026-07-01", totalPaymentCents: 999999, principalCents: 1, interestCents: 1, feeCents: 1 }),
     ]);
+
     expect(report.loanComponents).toMatchObject({
-      repaymentCount: 1,
-      principalCents: 60000,
-      interestCents: 35000,
-      feeCents: 5000,
+      repaymentCount: 3,
+      principalCents: 195000,
+      interestCents: 120000,
+      feeCents: 15000,
+      incompleteComponentCount: 0,
       matchedCount: 1,
-      needsReviewCount: 0,
+      needsReviewCount: 1,
+      unmatchedCount: 1,
     });
     expect(report.cashflow.moneyOut.totalCents).toBe(130000);
+    expect(report.cashflow.loanPaymentCashflow.totalCents).toBe(100000);
   });
 
   it("marks unresolved source records for review without deciding tax treatment", () => {
