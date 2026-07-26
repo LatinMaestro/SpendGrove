@@ -61,7 +61,7 @@ Raw `AuditEvent.metadata` is never returned. The mapper recognizes only a small 
 - transfer-link confirmation/removal;
 - reviewed import row import/skip/merge;
 - import undo/restore aggregate counts;
-- bulk-operation aggregate counts;
+- bulk-operation apply, skip, failure, undo and blocked-undo aggregate counts;
 - Loan reconciliation link/removal.
 
 Unknown metadata falls back to a generic entity/action summary. It is never stringified or copied into the response.
@@ -70,7 +70,7 @@ Unknown metadata falls back to a generic entity/action summary. It is never stri
 
 Account recent activity:
 
-- requires authenticated user context before persistence access;
+- requires authenticated user context before Prisma store construction or persistence access;
 - queries by `userId` only;
 - returns at most 100 events;
 - orders newest first by timestamp and ID;
@@ -78,7 +78,7 @@ Account recent activity:
 
 Transaction activity:
 
-- requires authenticated user context;
+- requires authenticated user context before Prisma store construction;
 - proves the Transaction belongs to the user before reading audit rows;
 - permits recoverable owned records without treating audit rows as ownership proof;
 - queries only `TRANSACTION` audit rows for the owned ID;
@@ -160,24 +160,26 @@ The existing `AuditEvent` model and indexes are reused.
 
 ## Automated and deployment evidence
 
-Implementation source head: `50c579361d8aa825dadeb7c6a0d25982e793028d`  
-Vercel deployment: `dpl_H7toK9s8VXEJ13ArCerCiUgDqrg5` — Ready
+Exact implementation head: `bd1c5db5e4f2f2455bac37e3ef6012d83adb672d`  
+Vercel deployment: `dpl_5NqvHFbKNbDqgen2Y2yBP6UYSp6U` — Ready
 
 Verified evidence:
 
 - 146 test files / 903 tests passed;
-- new server ownership, bounded-query, allowlist, unknown-metadata and privacy tests passed;
+- new server ownership, authentication-before-store, bounded-query, allowlist, bulk-undo, unknown-metadata and privacy tests passed;
 - new UI/route boundary tests passed;
 - framework dependency verification passed;
 - optimized Next.js compilation passed;
 - TypeScript and lint validity passed with only pre-existing hook warnings in unrelated files;
 - both new dynamic API routes were generated;
-- serverless output deployment completed.
+- serverless output deployment completed;
+- signed-out account activity access returned HTTP 401 with no financial or audit content and retained the existing security/no-index headers.
 
 ## Known limitations
 
 - The activity list can display only audit events already written by existing workflows; it does not invent history for actions that were never audited.
 - Some generic events intentionally omit detail rather than risk exposing private metadata.
+- Transaction-specific history currently covers audit rows directly recorded against the Transaction; related-object events remain visible in account history unless a future approved ownership-safe relationship resolver is added.
 - Cursor pagination is not yet needed because account and transaction reads are bounded to 100 and 50 events respectively.
 - Saved views remain contract/schema-assessment only.
 - Authenticated browser QA remains part of the consolidated client/Preview review gate.
