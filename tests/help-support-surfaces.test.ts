@@ -6,6 +6,9 @@ const shellPath = new URL("../components/public-information-shell.tsx", import.m
 const settingsPath = new URL("../components/settings-panel.tsx", import.meta.url);
 const guidePath = new URL("../docs/PHASE_5_SAFE_SUPPORT_GUIDE.md", import.meta.url);
 const csvPath = new URL("../lib/csv-import.ts", import.meta.url);
+const everydayTemplatePath = new URL("../public/synthetic-everyday-bank-format-template.csv", import.meta.url);
+const loanComponentTemplatePath = new URL("../public/synthetic-loan-component-format-template.csv", import.meta.url);
+const loanEventTemplatePath = new URL("../public/synthetic-loan-event-format-template.csv", import.meta.url);
 
 describe("Phase 5 help and safe support", () => {
   it("documents the implemented CSV limits and review flow", async () => {
@@ -30,6 +33,37 @@ describe("Phase 5 help and safe support", () => {
     expect(help).toContain("Never attach a real CSV");
     expect(guide).toContain("Never request a real bank CSV");
     expect(guide).toContain("synthetic file");
+  });
+
+  it("provides downloadable invented templates without creating a submission channel", async () => {
+    const [help, everydayTemplate, loanComponentTemplate, loanEventTemplate] = await Promise.all([
+      readFile(helpPath, "utf8"),
+      readFile(everydayTemplatePath, "utf8"),
+      readFile(loanComponentTemplatePath, "utf8"),
+      readFile(loanEventTemplatePath, "utf8"),
+    ]);
+
+    expect(help).toContain("Describe an unsupported CSV safely");
+    expect(help).toContain("Never use a real CSV or statement for a format example.");
+    expect(help).toContain("Rename the remaining placeholder headers");
+    expect(help).toContain("Use invented dates, descriptions, amounts and balances only.");
+    expect(help).toContain("Keep the synthetic example local");
+    expect(help).toContain('href="/synthetic-everyday-bank-format-template.csv" download');
+    expect(help).toContain('href="/synthetic-loan-component-format-template.csv" download');
+    expect(help).toContain('href="/synthetic-loan-event-format-template.csv" download');
+    expect(help).toContain("no format-submission upload or support attachment workflow");
+
+    expect(everydayTemplate).toContain("DATE_COLUMN,DESCRIPTION_COLUMN");
+    expect(everydayTemplate).toContain("Synthetic grocery");
+    expect(everydayTemplate).toContain('"Synthetic description, with comma"');
+    expect(loanComponentTemplate).toContain("TOTAL_REPAYMENT_COLUMN,PRINCIPAL_COLUMN,INTEREST_COLUMN,FEE_COLUMN");
+    expect(loanComponentTemplate).toContain("1000.00,350.00,640.00,10.00");
+    expect(loanEventTemplate).toContain("DESCRIPTION_OR_EVENT_COLUMN,AMOUNT_COLUMN");
+    expect(loanEventTemplate).toContain("Synthetic repayment");
+    expect(loanEventTemplate).toContain("Synthetic interest");
+
+    const templates = everydayTemplate + loanComponentTemplate + loanEventTemplate;
+    expect(templates).not.toMatch(/BSB|account number|card number|customer ID|@|CommBank|ANZ|NAB|Westpac/i);
   });
 
   it("covers account/local-data, export, deletion and private-beta limitations", async () => {
