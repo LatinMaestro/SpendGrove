@@ -1,3 +1,4 @@
+import { isTransactionTypeCompatible } from "@/lib/transaction-direction";
 import {
   australianFinancialYear,
   propertyFinancialYearSchema,
@@ -73,6 +74,7 @@ export type EverydayFinancialYearReportReasonCode =
   | "AUTHENTICATED_USER_REQUIRED"
   | "FINANCIAL_YEAR_INVALID"
   | "GENERATED_AT_INVALID"
+  | "SOURCE_MODE_INVALID"
   | "OWNER_SCOPE_VIOLATION"
   | "RECORD_DATE_INVALID"
   | "RECORD_AMOUNT_INVALID"
@@ -82,6 +84,7 @@ export type EverydayFinancialYearReportReasonCode =
   | "ELIGIBLE_SOURCE_VIOLATION"
   | "ANALYTICAL_COUNT_INVALID"
   | "TOTAL_OVERFLOW"
+  | "CATEGORY_IDENTITY_MISMATCH"
   | "CATEGORY_RECONCILIATION_MISMATCH"
   | "COUNT_RECONCILIATION_MISMATCH";
 
@@ -117,6 +120,10 @@ const supportedSplitRoles = new Set<EverydayFinancialYearSplitRole>([
   "PARENT",
   "CHILD",
 ]);
+const supportedSourceModes = new Set<EverydayFinancialYearSourceMode>([
+  "OWNER_SCOPED_DIAGNOSTIC",
+  "ELIGIBLE_ONLY",
+]);
 const directionOrder: Record<EverydayFinancialYearDirection, number> = {
   MONEY_IN: 0,
   MONEY_OUT: 1,
@@ -138,14 +145,24 @@ function incrementChecked(current: number) {
 }
 
 function parseFinancialYear(endingYear: unknown) {
-  try {
-    return australianFinancialYear(propertyFinancialYearSchema.parse(endingYear));
-  } catch {
+  const parsed = propertyFinancialYearSchema.safeParse(endingYear);
+  if (!parsed.success) {
     throw new EverydayFinancialYearReportError(
       "Choose a supported Australian financial year.",
       "FINANCIAL_YEAR_INVALID",
     );
   }
+  return australianFinancialYear(parsed.data);
+}
+
+function parseSourceMode(value: unknown): EverydayFinancialYearSourceMode {
+  if (!supportedSourceModes.has(value as EverydayFinancialYearSourceMode)) {
+    throw new EverydayFinancialYearReportError(
+      "Choose a supported report source mode.",
+      "SOURCE_MODE_INVALID",
+    );
+  }
+  return value as EverydayFinancialYearSourceMode;
 }
 
 function parseDateOnly(value: string) {
@@ -187,10 +204,7 @@ function assertAmountAndType(record: EverydayFinancialYearRecord) {
       "RECORD_TYPE_UNSUPPORTED",
     );
   }
-  if (
-    (record.type === "INCOME" && record.amountCents <= 0)
-    || (record.type === "EXPENSE" && record.amountCents >= 0)
-  ) {
+  if (!isTransactionTypeCompatible(record.type, record.amountCents)) {
     throw new EverydayFinancialYearReportError(
       "A source record amount and direction do not agree.",
       "RECORD_TYPE_SIGN_MISMATCH",
@@ -268,7 +282,7 @@ export function buildEverydayFinancialYearReport(
     );
   }
 
-  const sourceMode = options.sourceMode ?? "OWNER_SCOPED_DIAGNOSTIC";
+  const sourceMode = parseSourceMode(options.sourceMode ?? "OWNER_SCOPED_DIAGNOSTIC");
   const generatedAt = options.generatedAt ?? new Date();
   if (Number.isNaN(generatedAt.getTime())) {
     throw new EverydayFinancialYearReportError(
@@ -369,7 +383,14 @@ export function buildEverydayFinancialYearReport(
       uncategorisedCount = incrementChecked(uncategorisedCount);
     }
     const key = `${direction}:${category.categoryId ?? "uncategorised"}`;
-    const row = categoryMap.get(key) ?? {
+    const existing = categoryMap.get(key);
+    if (existing && existing.categoryName !== category.categoryName) {
+      throw new EverydayFinancialYearReportError(
+        "A Category identity has inconsistent report labels.",
+        "CATEGORY_IDENTITY_MISMATCH",
+      );
+    }
+    const row = existing ?? {
       direction,
       categoryId: category.categoryId,
       categoryName: category.categoryName,
