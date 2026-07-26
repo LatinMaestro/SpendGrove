@@ -15,9 +15,7 @@ type Fixture = {
   ownerUserId: string;
   financialYear: { endingYear: number; label: string; startDate: string; endDate: string };
   transactions: EverydayFinancialYearTransactionInput[];
-  loanAnalyticalRepayments: Array<{
-    isCashflowRecord: boolean;
-  }>;
+  loanAnalyticalRepayments: Array<{ isCashflowRecord: boolean }>;
   expected: {
     inputTransactionCount: number;
     countedTransactionCount: number;
@@ -47,6 +45,17 @@ type Fixture = {
 
 async function loadFixture() {
   return JSON.parse(await readFile(fixturePath, "utf8")) as Fixture;
+}
+
+function eligibleFixtureTransactions(fixture: Fixture) {
+  return fixture.transactions.filter((transaction) => (
+    transaction.userId === fixture.ownerUserId
+    && transaction.date >= fixture.financialYear.startDate
+    && transaction.date <= fixture.financialYear.endDate
+    && transaction.status === "ACTIVE"
+    && transaction.deletedAt === null
+    && transaction.splitRole !== "PARENT"
+  ));
 }
 
 function expectReportError(
@@ -88,7 +97,7 @@ describe("everyday financial-year report helper", () => {
       endingYear: fixture.financialYear.endingYear,
       transactions: fixture.transactions,
       analyticalLoanRepayments: fixture.loanAnalyticalRepayments,
-      diagnosticsMode: "FULL_CANDIDATE_SET",
+      candidateSource: "FULL_DIAGNOSTIC",
     });
 
     expect(report.contract).toBe(EVERYDAY_FINANCIAL_YEAR_REPORT_CONTRACT);
@@ -101,6 +110,7 @@ describe("everyday financial-year report helper", () => {
     expect(report.transfers).toEqual(fixture.expected.transfers);
     expect(report.categories).toEqual(fixture.expected.categoryRows);
     expect(report.reconciliation).toMatchObject({
+      candidateSource: "FULL_DIAGNOSTIC",
       diagnosticsComplete: true,
       inputCandidateCount: fixture.expected.inputTransactionCount,
       countedTransactionCount: fixture.expected.countedTransactionCount,
@@ -112,18 +122,19 @@ describe("everyday financial-year report helper", () => {
     });
   });
 
-  it("keeps owner-filtered diagnostics explicitly unavailable", async () => {
+  it("keeps eligible-only diagnostics explicitly unavailable", async () => {
     const fixture = await loadFixture();
     const report = buildEverydayFinancialYearReport({
       userId: fixture.ownerUserId,
       endingYear: 2026,
-      transactions: fixture.transactions,
+      transactions: eligibleFixtureTransactions(fixture),
       analyticalLoanRepayments: fixture.loanAnalyticalRepayments,
     });
 
     expect(report.moneyIn).toEqual(fixture.expected.moneyIn);
     expect(report.moneyOut).toEqual(fixture.expected.moneyOut);
     expect(report.reconciliation).toMatchObject({
+      candidateSource: "ELIGIBLE_ONLY",
       diagnosticsComplete: false,
       inputCandidateCount: null,
       exclusions: {
@@ -135,7 +146,24 @@ describe("everyday financial-year report helper", () => {
     });
   });
 
-  it("does not mutate source rows and keeps refund, split and transfer treatment separate", async () => {
+  it("fails if an eligible-only source leaks a filtered record", () => {
+    const invalidSources = [
+      baseTransaction({ userId: "other-user" }),
+      baseTransaction({ date: "2026-07-01" }),
+      baseTransaction({ status: "DELETED", deletedAt: "2026-01-01T00:00:00.000Z" }),
+      baseTransaction({ splitRole: "PARENT" }),
+    ];
+
+    for (const transaction of invalidSources) {
+      expectReportError(() => buildEverydayFinancialYearReport({
+        userId: "synthetic-owner",
+        endingYear: 2026,
+        transactions: [transaction],
+      }), "ELIGIBLE_SOURCE_VIOLATION");
+    }
+  });
+
+  it("does not mutate rows and keeps refund, split and transfer treatment separate", async () => {
     const fixture = await loadFixture();
     const before = JSON.stringify(fixture.transactions);
     const report = buildEverydayFinancialYearReport({
@@ -143,7 +171,7 @@ describe("everyday financial-year report helper", () => {
       endingYear: 2026,
       transactions: fixture.transactions,
       analyticalLoanRepayments: fixture.loanAnalyticalRepayments,
-      diagnosticsMode: "FULL_CANDIDATE_SET",
+      candidateSource: "FULL_DIAGNOSTIC",
     });
 
     expect(JSON.stringify(fixture.transactions)).toBe(before);
@@ -155,11 +183,11 @@ describe("everyday financial-year report helper", () => {
     expect(report.moneyOut.totalCents).toBe(142000);
   });
 
-  it("accepts Date inputs without shifting Australian date-only boundaries", () => {
+  it("accepts Date inputs without shifting financial-year boundaries", () => {
     const report = buildEverydayFinancialYearReport({
       userId: "synthetic-owner",
       endingYear: 2026,
-      diagnosticsMode: "FULL_CANDIDATE_SET",
+      candidateSource: "FULL_DIAGNOSTIC",
       transactions: [
         baseTransaction({ id: "start", date: new Date("2025-07-01T00:00:00.000Z") }),
         baseTransaction({ id: "end", date: new Date("2026-06-30T00:00:00.000Z"), amountCents: 200 }),
@@ -216,7 +244,7 @@ describe("everyday financial-year report helper", () => {
     }), "REPORT_TOTAL_OVERFLOW");
   });
 
-  it("never accepts an analytical Loan record as another cashflow source", () => {
+  it("keeps Loan analysis non-cashflow and returns no private source fields", () => {
     expectReportError(() => buildEverydayFinancialYearReport({
       userId: "synthetic-owner",
       endingYear: 2026,
@@ -229,5 +257,20 @@ describe("everyday financial-year report helper", () => {
       endingYear: 2026,
       transactions: [],
     }), "AUTHENTICATED_USER_REQUIRED");
+
+    const privateInput = {
+      ...baseTransaction(),
+      description: "private narration",
+      filename: "private.csv",
+      accountNumber: "00000000",
+    } as EverydayFinancialYearTransactionInput;
+    const output = JSON.stringify(buildEverydayFinancialYearReport({
+      userId: "synthetic-owner",
+      endingYear: 2026,
+      transactions: [privateInput],
+    }));
+
+    expect(output).not.toMatch(/private narration|private\.csv|00000000|synthetic-report-row/i);
+    expect(output).not.toMatch(/profit|taxable income|deductible total|loan reference/i);
   });
 });
