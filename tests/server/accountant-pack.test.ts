@@ -59,6 +59,7 @@ const propertyReport = {
     incompleteComponentCount: 1,
     matchedCount: 1,
     needsReviewCount: 1,
+    unmatchedCount: 0,
   },
   records: [
     {
