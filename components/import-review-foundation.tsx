@@ -82,7 +82,7 @@ export function ImportReviewFoundation({ document, scan, autoStart = false }: { 
     setLocalReviewDataReady(true);
   }, []);
 
-  const rows = reviewRows ?? [];
+  const rows = useMemo(() => reviewRows ?? [], [reviewRows]);
   const summary = useMemo(() => summarizeImportReview(rows), [rows]);
   const needsReviewCount = useMemo(() => countImportReviewRowsNeedingAttention(rows, mergeSelections), [mergeSelections, rows]);
   const readyImportCount = useMemo(() => countReadyImportRows(rows, mergeSelections), [mergeSelections, rows]);
