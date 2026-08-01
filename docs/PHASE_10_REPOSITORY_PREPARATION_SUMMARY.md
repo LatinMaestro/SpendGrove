@@ -69,3 +69,10 @@ After exact post-migration evidence and full synthetic Preview regression, activ
 - no real-user invitation;
 - no public launch, TestFlight or App Store action;
 - consolidated client review remains deferred.
+
+
+## Preview activation implementation — 19 July 2026
+
+PR #238 prepares explicit private-by-default household sharing; PR #239 prepares separate read-only selected-scope accountant access. Invitation tokens are one-time and hash-persisted, no email provider is enabled, and shared reads revalidate owner, membership/grant and scope.
+
+GitHub verification is green through PR #239 (155 files / 955 tests). Vercel Preview, synthetic multi-user QA and merge remain pending. Real invitations and Production activation are prohibited.

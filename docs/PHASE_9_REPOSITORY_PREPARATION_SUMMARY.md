@@ -70,3 +70,10 @@ Stop on any failure. Do not retry automatically, reset, resolve history, run man
 - no Production data use;
 - no public launch or App Store action;
 - consolidated client review remains deferred.
+
+
+## Preview activation implementation — 19 July 2026
+
+PRs #234–#237 prepare Preview-only savings goals, manual net worth, recurring lifecycle/instance links and in-app reminders. All use the verified Preview gate; Production remains disabled. GitHub verification is green through PR #237 (153 files / 944 tests). Vercel Preview and synthetic acceptance remain pending because of the account build-rate limit.
+
+No financial rule, migration, provider or remote-notification activation changed.

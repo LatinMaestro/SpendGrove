@@ -833,3 +833,10 @@ Current next action: stop. Do not begin Phase 5 until the client separately appr
 - In-app reminder preparation is allowed; remote push remains disabled.
 - Any Phase 9 schema must be additive, unexecuted, ordered after the three pending Phase 6/7 migrations and protected by false runtime gates.
 - No Preview/Production migration, data rewrite/backfill, provider, package, secret or environment change occurred in the contract PR.
+
+
+## 19 July 2026 — Preview foundation activation implementation
+
+PRs #231–#240 implement the verified Phase 6–11 foundations in an ordered Preview-only stack. All exact heads passed GitHub application verification, culminating in 156 test files / 961 tests plus TypeScript, lint and optimized production build success.
+
+The PRs remain open and unmerged because every Vercel attempt was stopped by the account build-rate limit before an application build. This is a mandatory deployment-evidence gate, not an application or migration failure. Do not rerun migrations, create no-op deployment commits or enable Production. Continue from [PREVIEW_FOUNDATION_ACTIVATION_QA.md](./PREVIEW_FOUNDATION_ACTIVATION_QA.md).

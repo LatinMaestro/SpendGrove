@@ -1,11 +1,15 @@
 import { AccountDeletion } from "@/components/account-deletion";
+import { AccountantAccess } from "@/components/accountant-access";
 import { AccountDataManagement } from "@/components/account-data-management";
 import { AccountImportHistoryPanel } from "@/components/account-import-history-panel";
 import { AppShell } from "@/components/app-shell";
 import { DevelopmentTransactionResetPanel } from "@/components/development-transaction-reset-panel";
+import { DocumentMetadata } from "@/components/document-metadata";
+import { HouseholdAccess } from "@/components/household-access";
 import { SettingsPanel } from "@/components/settings-panel";
 import { PageHeader } from "@/components/ui/app-primitives";
 import { isDevelopmentTestingEnvironment } from "@/src/server/development-testing";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
 
 export default function SettingsPage() {
@@ -44,6 +48,10 @@ export default function SettingsPage() {
             </details>
           </section>
         )}
+
+        <HouseholdAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
+        <AccountantAccess available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
+        <DocumentMetadata available={accountHistoryAvailable && isVerifiedPreviewRuntime()} />
 
         {accountHistoryAvailable && <AccountDeletion />}
       </div>

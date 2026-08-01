@@ -44,6 +44,10 @@ function memoryStore(overrides: Partial<DocumentStore> = {}) {
       calls.push({ action: "list", userId });
       return [document(userId)];
     },
+    async createMetadata(userId, input) {
+      calls.push({ action: "create-metadata", userId, input });
+      return { ...document(userId), ...input, sizeBytes: 0, storageProvider: null, objectKey: null };
+    },
     async createPending(userId, input) {
       calls.push({ action: "create", userId, input });
       return { ...document(userId), ...input };
@@ -58,7 +62,7 @@ function memoryStore(overrides: Partial<DocumentStore> = {}) {
     },
     async softDelete(userId, documentId) {
       calls.push({ action: "delete", userId, documentId });
-      return true;
+      return "PROVIDER_CLEANUP" as const;
     },
     ...overrides,
   };
@@ -80,6 +84,35 @@ describe("Phase 11 guarded document metadata service", () => {
     await expect(listDocuments(createTestUserContext("user_1"), store))
       .rejects.toBeInstanceOf(DocumentsUnavailableError);
     expect(list).not.toHaveBeenCalled();
+  });
+
+  it("creates metadata without an object key, storage provider or file bytes", async () => {
+    const { store, calls } = memoryStore();
+    const result = await mutateDocumentMetadata(
+      createTestUserContext("user_4"),
+      {
+        action: "CREATE_METADATA",
+        displayName: "  Synthetic receipt ",
+        category: "RECEIPT",
+        contentType: "application/pdf",
+        documentDate: "2026-07-19",
+        financialYear: "2026-27",
+      },
+      store,
+      now,
+      { runtimeEnabled: true },
+    );
+    expect(calls[0]).toMatchObject({
+      action: "create-metadata",
+      userId: "user_4",
+      input: {
+        displayName: "Synthetic receipt",
+      },
+    });
+    expect(JSON.stringify(calls[0])).not.toMatch(/storageProvider|objectKey|fileBytes/);
+    expect(result.type).toBe("DOCUMENT");
+    if (result.type !== "DOCUMENT") throw new Error("Expected document metadata.");
+    expect(result.document.sizeBytes).toBe(0);
   });
 
   it("keeps upload unavailable even when the schema runtime is test-enabled", async () => {
@@ -257,7 +290,8 @@ describe("Phase 11 guarded document metadata service", () => {
 
   it("contains no file bytes, OCR, public URL, provider SDK or private-source logging", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_11_DOCUMENTS_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
+    expect(service).not.toContain("PHASE_11_DOCUMENTS_RUNTIME_ENABLED");
     expect(service).not.toMatch(/console\.(?:log|info|warn|error)/);
     expect(service).not.toContain("localStorage");
     expect(service).not.toContain("rawCsv");

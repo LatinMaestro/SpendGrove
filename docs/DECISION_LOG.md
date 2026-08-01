@@ -408,3 +408,17 @@ SpendGrove needs a coherent future commercial model without creating accidental 
 Implementation impact:
 
 `docs/PHASE_14_COMMERCIAL_READINESS_CONTRACT.md` governs Phase 14. No price, provider, package, schema, migration, checkout, App Store product, secret, environment change or money collection is authorised.
+
+
+## 19 July 2026 — Preview-only foundation activation remains deployment-gated
+
+Decision:
+
+- activate the already verified Phase 6–11 schema foundations only through `isVerifiedPreviewRuntime()`;
+- keep Production fail-closed and free of missing-table queries;
+- use separate ordered PRs #231–#240 for bulk operations, transfer links, import undo, savings goals, net worth, recurring lifecycle, in-app reminders, household sharing, read-only accountant access and document metadata;
+- do not rerun the successful migration workflow;
+- do not merge without exact-head Vercel Preview and synthetic-data QA evidence;
+- treat the current Vercel build-rate response as an external capacity limit, not a product failure.
+
+No provider, package, secret, environment, financial-rule or Production decision is changed.

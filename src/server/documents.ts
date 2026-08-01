@@ -5,7 +5,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_11_DOCUMENTS_RUNTIME_ENABLED } from "@/src/server/phase-11-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 const ALLOWED_CONTENT_TYPES = [
   "application/pdf",
@@ -42,6 +42,17 @@ export type DocumentRecord = {
 
 export type DocumentStore = {
   list(userId: string): Promise<DocumentRecord[]>;
+  createMetadata(
+    userId: string,
+    input: {
+      displayName: string;
+      category: DocumentRecord["category"];
+      contentType: string;
+      documentDate: Date | null;
+      financialYear: string | null;
+    },
+    now: Date,
+  ): Promise<DocumentRecord>;
   createPending(
     userId: string,
     input: {
@@ -74,7 +85,7 @@ export type DocumentStore = {
     userId: string,
     documentId: string,
     now: Date,
-  ): Promise<boolean>;
+  ): Promise<"METADATA_ONLY" | "PROVIDER_CLEANUP" | null>;
 };
 
 export type DocumentStorageAdapter = {
@@ -115,6 +126,18 @@ const displayNameSchema = z.string().trim().min(1).max(120)
 const contentTypeSchema = z.enum(ALLOWED_CONTENT_TYPES);
 const sizeSchema = z.number().int().positive().max(MAX_DOCUMENT_SIZE_BYTES);
 
+export const documentMetadataSchema = z.object({
+  action: z.literal("CREATE_METADATA"),
+  displayName: displayNameSchema,
+  category: z.enum([
+    "RECEIPT", "INVOICE", "LOAN_STATEMENT", "PROPERTY_RECORD",
+    "REPORT_EVIDENCE", "OTHER",
+  ]),
+  contentType: contentTypeSchema,
+  documentDate: z.string().date().nullable().default(null),
+  financialYear: financialYearSchema.default(null),
+}).strict();
+
 export const documentPreparationSchema = z.object({
   displayName: displayNameSchema,
   category: z.enum([
@@ -144,6 +167,7 @@ const keyedLinkSchema = z.object({
 }).strict();
 
 export const documentMutationSchema = z.union([
+  documentMetadataSchema,
   recordLinkSchema,
   keyedLinkSchema,
   z.object({
@@ -232,6 +256,33 @@ export function createPrismaDocumentStore(
         include: documentInclude,
         orderBy: { createdAt: "desc" },
       })) as unknown as DocumentRecord[];
+    },
+
+    async createMetadata(userId, input, now) {
+      return prisma.$transaction(async (tx) => {
+        const document = await tx.document.create({
+          data: {
+            userId,
+            ...input,
+            sizeBytes: 0,
+            storageProvider: null,
+            objectKey: null,
+            status: "PENDING_UPLOAD",
+            createdAt: now,
+          },
+          include: documentInclude,
+        });
+        await tx.auditEvent.create({
+          data: safeAudit(
+            userId,
+            "DOCUMENT",
+            document.id,
+            "CREATED",
+            "DOCUMENT_METADATA_CREATED",
+          ),
+        });
+        return document as unknown as DocumentRecord;
+      });
     },
 
     async createPending(userId, input, now) {
@@ -329,11 +380,16 @@ export function createPrismaDocumentStore(
 
     async softDelete(userId, documentId, now) {
       return prisma.$transaction(async (tx) => {
+        const existing = await tx.document.findFirst({
+          where: { id: documentId, userId, deletedAt: null },
+          select: { storageProvider: true, objectKey: true },
+        });
+        if (!existing) return null;
         const changed = await tx.document.updateMany({
           where: { id: documentId, userId, deletedAt: null },
           data: { status: "DELETED", deletedAt: now },
         });
-        if (changed.count !== 1) return false;
+        if (changed.count !== 1) return null;
         await tx.documentLink.updateMany({
           where: { documentId, userId, revokedAt: null },
           data: { revokedAt: now },
@@ -347,7 +403,9 @@ export function createPrismaDocumentStore(
             "DOCUMENT_ACCESS_REVOKED",
           ),
         });
-        return true;
+        return existing.storageProvider && existing.objectKey
+          ? "PROVIDER_CLEANUP" as const
+          : "METADATA_ONLY" as const;
       });
     },
   };
@@ -359,7 +417,7 @@ type RuntimeOptions = {
 };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_11_DOCUMENTS_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new DocumentsUnavailableError();
   }
 }
@@ -447,6 +505,23 @@ export async function mutateDocumentMetadata(
   const request = documentMutationSchema.parse(input);
   const resolvedStore = store ?? createPrismaDocumentStore();
 
+  if (request.action === "CREATE_METADATA") {
+    const document = await resolvedStore.createMetadata(
+      user.userId,
+      {
+        displayName: request.displayName,
+        category: request.category,
+        contentType: request.contentType,
+        documentDate: request.documentDate
+          ? new Date(`${request.documentDate}T00:00:00.000Z`)
+          : null,
+        financialYear: request.financialYear,
+      },
+      now,
+    );
+    return { type: "DOCUMENT" as const, document: toView(document) };
+  }
+
   if (request.action === "LINK") {
     let targetEntityId: string | null;
     let targetKey: string;
@@ -484,6 +559,6 @@ export async function mutateDocumentMetadata(
   if (!deleted) throw new DocumentConflictError();
   return {
     type: "DELETED" as const,
-    providerCleanupRequired: true,
+    providerCleanupRequired: deleted === "PROVIDER_CLEANUP",
   };
 }

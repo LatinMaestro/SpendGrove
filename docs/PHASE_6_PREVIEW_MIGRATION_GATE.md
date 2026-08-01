@@ -179,3 +179,12 @@ PR #207 added the exact fifth migration and integrity profile. PRs #208–#209 p
 ## Phase 11 addition — 17 July 2026
 
 PR #212 added the exact sixth migration and integrity profile. PR #213 prepared owner-scoped document metadata/link services behind `PHASE_11_DOCUMENTS_RUNTIME_ENABLED = false` and a separate provider-enabled check. The operator must run the Phase 11 migration only after the preceding five migrations each pass exact post-verification. Schema activation does not authorise a provider, storage object, upload/download, OCR/AI or user-facing activation.
+
+
+## Post-verification activation register — 19 July 2026
+
+The isolated Preview migration is complete and must not be rerun. Verify-only run `29669320110` proved the expected 12-migration history and all six controlled profiles.
+
+Activation PRs #231–#240 contain no schema or migration changes. Their services remain guarded by `isVerifiedPreviewRuntime()`. GitHub verification is green, but merge and runtime QA remain blocked by Vercel account build-rate capacity. See `docs/PREVIEW_FOUNDATION_ACTIVATION_QA.md`.
+
+Production migration remains unapproved and unexecuted.

@@ -245,3 +245,21 @@ Each implementation PR must update affected rows with:
 - deferred client test reference.
 
 A feature is not “complete” merely because a schema or component exists; the user workflow, authorization, privacy, financial integrity, tests and release evidence must all be present.
+
+
+## Preview activation status — 19 July 2026
+
+| Capability | Repository status | Runtime status |
+|---|---|---|
+| bulk operations and undo | implemented in PR #231; GitHub green | Preview deployment/QA pending |
+| transfer linking | implemented in PR #232; GitHub green | Preview deployment/QA pending |
+| import undo | implemented in PR #233; GitHub green | Preview deployment/QA pending |
+| savings goals | implemented in PR #234; GitHub green | Preview deployment/QA pending |
+| manual net worth | implemented in PR #235; GitHub green | Preview deployment/QA pending |
+| recurring lifecycle and instance links | implemented in PR #236; GitHub green | Preview deployment/QA pending |
+| in-app reminders | implemented in PR #237; GitHub green | Preview deployment/QA pending; remote push disabled |
+| household sharing | implemented in PR #238; GitHub green | Preview deployment/QA pending; no email delivery |
+| read-only accountant access | implemented in PR #239; GitHub green | Preview deployment/QA pending; no email delivery |
+| document metadata and links | implemented in PR #240; GitHub green | Preview deployment/QA pending; uploads/OCR disabled |
+
+These entries are not Production-ready or client-accepted until the remaining gates pass.
