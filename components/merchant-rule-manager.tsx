@@ -81,6 +81,11 @@ export function MerchantRuleManager({
   const accountReadyRef = useRef(false);
   const lastSyncedRef = useRef("");
   const syncInFlightRef = useRef(false);
+  const onDataChangeRef = useRef(onDataChange);
+
+  useEffect(() => {
+    onDataChangeRef.current = onDataChange;
+  }, [onDataChange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -94,7 +99,7 @@ export function MerchantRuleManager({
       }
 
       const serialized = JSON.stringify(result.data);
-      onDataChange(result.data);
+      onDataChangeRef.current(result.data);
       accountReadyRef.current = true;
       lastSyncedRef.current = serialized;
       setAccountBacked(true);
@@ -126,7 +131,7 @@ export function MerchantRuleManager({
       }
       const accountSerialized = JSON.stringify(result.data);
       lastSyncedRef.current = accountSerialized;
-      if (accountSerialized !== serialized) onDataChange(result.data);
+      if (accountSerialized !== serialized) onDataChangeRef.current(result.data);
       setAccountBacked(true);
       setMessage("Merchant suggestions saved to your account. Your active import review was kept open.");
     }).catch(() => {
