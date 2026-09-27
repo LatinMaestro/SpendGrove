@@ -8,6 +8,7 @@ import { assertNoPrivateBankIdentifiers, sanitizeBankDescription, sanitizeTransa
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { OwnershipError, requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 import { createPropertyLinkAuditEvent } from "@/src/server/property-transaction-links";
 import { autoReconcileHighConfidenceRepaymentsForTransactions } from "@/src/server/loan-auto-reconciliation";
 import {
@@ -97,6 +98,7 @@ function summaryFromBatch(batch: {
 export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaClient()): ImportCommitStore {
   return {
     async commit(userId, request, now) {
+      const importUndoAvailable = isVerifiedPreviewRuntime();
       const existing = await prisma.importBatch.findUnique({ where: { id: request.requestId } });
       if (existing) {
         if (existing.userId !== userId) throw new OwnershipError("import batch");
@@ -259,6 +261,7 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               importedDescriptionSanitized: description,
               merchantName,
               reviewedAt: now,
+              ...(importUndoAvailable ? { createdAt: now, updatedAt: now } : {}),
             });
             if (row.propertyLinkPropertyId) {
               propertyLinkCreates.push({
@@ -285,6 +288,7 @@ export function createPrismaImportCommitStore(prisma: PrismaClient = getPrismaCl
               merchantName,
               categoryId: category.id,
               committedTransactionId: transactionId,
+              ...(importUndoAvailable ? { committedTransactionUpdatedAt: now } : {}),
               warningCodes: row.warningCodes,
             });
           }

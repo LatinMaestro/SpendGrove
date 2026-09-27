@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export const accountDeletionInputSchema = z.object({
   confirmation: z.literal("DELETE", {
@@ -40,6 +41,13 @@ const defaultDataStore: AccountDataDeletionStore = {
     const db = getPrismaClient();
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
+      if (isVerifiedPreviewRuntime()) {
+        await transaction.importUndoItem.deleteMany({ where: { userId } });
+        await transaction.importUndoOperation.deleteMany({ where: { userId } });
+        await transaction.transferLink.deleteMany({ where: { userId } });
+        await transaction.bulkOperationItem.deleteMany({ where: { userId } });
+        await transaction.bulkOperation.deleteMany({ where: { userId } });
+      }
       await transaction.propertyReportReview.deleteMany({ where: { userId } });
       await transaction.propertyTransactionLink.deleteMany({ where: { userId } });
       await transaction.loanReconciliationLink.deleteMany({ where: { userId } });
