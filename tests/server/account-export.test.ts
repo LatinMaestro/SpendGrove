@@ -47,6 +47,11 @@ function emptyData(): AccountExportData {
     recurringItems: [],
     recurringSuggestionDismissals: [],
     categoryBudgets: [],
+    bulkOperations: [],
+    transferLinks: [],
+    importUndoOperations: [],
+    savingsGoals: [],
+    savingsGoalContributions: [],
     auditEvents: [],
   };
 }
@@ -131,6 +136,11 @@ describe("Phase 5 account export", () => {
       "recurringItems",
       "recurringSuggestionDismissals",
       "categoryBudgets",
+      "bulkOperations",
+      "transferLinks",
+      "importUndoOperations",
+      "savingsGoals",
+      "savingsGoalContributions",
       "auditEvents",
     ]);
 
@@ -140,6 +150,97 @@ describe("Phase 5 account export", () => {
     const result = await createAccountExport(createTestUserContext("user_1"), store);
     expect(result.data.categories[0]).toMatchObject({ isArchived: true });
     expect(result.data.transactions[0]).toMatchObject({ status: "DELETED" });
+  });
+
+  it("includes only safe operation-level bulk summaries in verified Preview", async () => {
+    const data = emptyData();
+    data.bulkOperations.push({
+      id: "bulk_1",
+      userId: "user_1",
+      type: "SET_CATEGORY",
+      status: "COMPLETED",
+      requestedCount: 2,
+      appliedCount: 2,
+      skippedCount: 0,
+      failedCount: 0,
+      undoBlockedCount: 0,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+
+    expect(result.data.bulkOperations).toEqual(data.bulkOperations);
+    const service = await readFile(servicePath, "utf8");
+    const bulkSelect = service.match(/db\.bulkOperation\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(service).toContain("isVerifiedPreviewRuntime()");
+    expect(bulkSelect).toContain("requestedCount: true");
+    expect(bulkSelect).not.toMatch(/items|transactionId|beforeCategoryId|afterCategoryId|beforePropertyId|afterPropertyId/);
+  });
+
+  it("includes owned transfer-link lifecycle without private matching evidence", async () => {
+    const data = emptyData();
+    data.transferLinks.push({
+      id: "link_1",
+      userId: "user_1",
+      outgoingTransactionId: "transaction_out",
+      incomingTransactionId: "transaction_in",
+      confirmedAt: "2026-07-17T00:00:00.000Z",
+      unlinkedAt: null,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+
+    expect(result.data.transferLinks).toEqual(data.transferLinks);
+    const service = await readFile(servicePath, "utf8");
+    const transferSelect = service.match(/db\.transferLink\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(transferSelect).toContain("outgoingTransactionId: true");
+    expect(transferSelect).toContain("incomingTransactionId: true");
+    expect(transferSelect).not.toMatch(/description|merchant|amount|account|bsb|filename/i);
+  });
+
+  it("includes safe operation-level import undo lifecycle without row details", async () => {
+    const data = emptyData();
+    data.importUndoOperations.push({
+      id: "undo_1",
+      userId: "user_1",
+      importBatchId: "batch_1",
+      status: "PARTIAL",
+      requestedCount: 3,
+      undoneCount: 1,
+      noChangeCount: 1,
+      blockedCount: 1,
+      failedCount: 0,
+      restoredCount: 0,
+      restoreBlockedCount: 0,
+    });
+    const { store } = memoryStore(data);
+    const result = await createAccountExport(createTestUserContext("user_1"), store);
+    expect(result.data.importUndoOperations).toEqual(data.importUndoOperations);
+
+    const service = await readFile(servicePath, "utf8");
+    const undoSelect = service.match(/db\.importUndoOperation\.findMany\([\s\S]*?\n      \}\)/)?.[0] ?? "";
+    expect(undoSelect).toContain("importBatchId: true");
+    expect(undoSelect).toContain("undoneCount: true");
+    expect(undoSelect).not.toMatch(/items|transactionId|importRowId|description|merchant|amount/i);
+  });
+
+  it("includes savings goals and manual contribution history without transaction linkage", async () => {
+    const data = emptyData();
+    data.savingsGoals.push({
+      id: "goal_1", userId: "user_1", name: "Synthetic goal",
+      targetAmountCents: 500000, openingProgressCents: 10000, status: "ACTIVE",
+    });
+    data.savingsGoalContributions.push({
+      id: "contribution_1", userId: "user_1", savingsGoalId: "goal_1",
+      amountCents: 2500, contributionDate: "2026-07-19", note: null,
+    });
+    const result = await createAccountExport(createTestUserContext("user_1"), memoryStore(data).store);
+    expect(result.data.savingsGoals).toEqual(data.savingsGoals);
+    expect(result.data.savingsGoalContributions).toEqual(data.savingsGoalContributions);
+
+    const service = await readFile(servicePath, "utf8");
+    const goalSelect = service.match(/db\.savingsGoal\.findMany\([\s\S]*?\n        \}\)/)?.[0] ?? "";
+    expect(goalSelect).toContain("targetAmountCents: true");
+    expect(goalSelect).not.toMatch(/transactionId|bank|account|merchant|rawCsv/i);
   });
 
   it("fails closed without authenticated ownership or a durable account", async () => {

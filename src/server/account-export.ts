@@ -1,6 +1,7 @@
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export const ACCOUNT_EXPORT_CONTRACT = "spendgrove.account-export";
 export const ACCOUNT_EXPORT_VERSION = 1 as const;
@@ -29,6 +30,11 @@ export type AccountExportData = {
   recurringItems: ExportRecord[];
   recurringSuggestionDismissals: ExportRecord[];
   categoryBudgets: ExportRecord[];
+  bulkOperations: ExportRecord[];
+  transferLinks: ExportRecord[];
+  importUndoOperations: ExportRecord[];
+  savingsGoals: ExportRecord[];
+  savingsGoalContributions: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -285,6 +291,92 @@ const defaultAccountExportStore: AccountExportStore = {
 
     if (!profile) return null;
 
+    const bulkOperations = isVerifiedPreviewRuntime()
+      ? await db.bulkOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          type: true,
+          status: true,
+          requestedCount: true,
+          appliedCount: true,
+          skippedCount: true,
+          failedCount: true,
+          undoBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          undoExpiresAt: true,
+          revertedAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const transferLinks = isVerifiedPreviewRuntime()
+      ? await db.transferLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          outgoingTransactionId: true,
+          incomingTransactionId: true,
+          confirmedAt: true,
+          unlinkedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const importUndoOperations = isVerifiedPreviewRuntime()
+      ? await db.importUndoOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          importBatchId: true,
+          status: true,
+          requestedCount: true,
+          undoneCount: true,
+          noChangeCount: true,
+          blockedCount: true,
+          failedCount: true,
+          restoredCount: true,
+          restoreBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          restoredAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const [savingsGoals, savingsGoalContributions] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.savingsGoal.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, name: true, targetAmountCents: true, targetDate: true,
+            openingProgressCents: true, status: true, completedAt: true, archivedAt: true,
+            createdAt: true, updatedAt: true,
+          },
+        }),
+        db.savingsGoalContribution.findMany({
+          where: { userId },
+          orderBy: [{ contributionDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, savingsGoalId: true, amountCents: true,
+            contributionDate: true, note: true, deletedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -305,6 +397,11 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringItems: serializeRows(recurringItems, ["nextExpectedDate"]),
       recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
       categoryBudgets: serializeRows(categoryBudgets),
+      bulkOperations: serializeRows(bulkOperations),
+      transferLinks: serializeRows(transferLinks),
+      importUndoOperations: serializeRows(importUndoOperations),
+      savingsGoals: serializeRows(savingsGoals, ["targetDate"]),
+      savingsGoalContributions: serializeRows(savingsGoalContributions, ["contributionDate"]),
       auditEvents: serializeRows(auditEvents),
     };
   },
