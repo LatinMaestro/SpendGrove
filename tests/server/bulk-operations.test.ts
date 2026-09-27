@@ -209,8 +209,9 @@ describe("Phase 6 prepared bulk operation boundary", () => {
       readFile(undoRoutePath, "utf8"),
     ]);
 
-    expect(service).toContain("BULK_OPERATIONS_RUNTIME_ENABLED = false");
+    expect(service).toContain("BULK_OPERATIONS_RUNTIME_ENABLED = isVerifiedPreviewRuntime()");
     expect(service).toContain("NOT_FOUND_OR_NOT_OWNED");
+    expect(service).toContain('from "@/src/server/preview-runtime"');
     expect(service).toContain("Do not persist a missing or another user's opaque transaction ID");
     expect(createRoute).toContain("getCurrentUserContext()");
     expect(createRoute).toContain("readBoundedJson");

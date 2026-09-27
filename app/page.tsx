@@ -2,9 +2,11 @@ import Link from "next/link";
 import { BarChart3, FileUp, Plus } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
 import { EverydayInsights } from "@/components/everyday-insights";
+import { InAppReminders } from "@/components/in-app-reminders";
 import { OnboardingPrompt } from "@/components/onboarding-prompt";
 import { PageHeader } from "@/components/ui/app-primitives";
 import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export default function HomePage() {
   const clerkStatus = getBuildSafeClerkEnvStatus();
@@ -29,6 +31,7 @@ export default function HomePage() {
 
       <OnboardingPrompt />
       <EverydayInsights accountPersistenceAvailable={accountPersistenceAvailable} />
+      <InAppReminders available={accountPersistenceAvailable && isVerifiedPreviewRuntime()} />
 
       <section className="mt-7 border-t border-border pt-5" aria-labelledby="quick-actions-heading">
         <h2 id="quick-actions-heading" className="text-sm font-semibold text-muted">Quick actions</h2>
