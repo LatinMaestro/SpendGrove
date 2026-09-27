@@ -15,6 +15,7 @@ import { getPrismaClient } from "@/src/server/db";
 export type AccountTransaction = Omit<ManualTransaction, "source"> & {
   source: "MANUAL" | "IMPORTED";
   merchantName: string;
+  merchantProfileId: string | null;
 };
 
 export type DbManualTransactionCategoryRecord = {
@@ -40,6 +41,7 @@ export type DbManualTransactionRecord = {
   date: Date | string;
   description: string;
   merchantName?: string | null;
+  merchantProfileId?: string | null;
   categoryId?: string | null;
   category?: DbManualTransactionCategoryRecord | null;
   notes?: string | null;
@@ -135,6 +137,7 @@ function toAccountTransaction(record: DbManualTransactionRecord): AccountTransac
     date: toDateOnly(record.date),
     description: record.description,
     merchantName: record.merchantName ?? record.description,
+    merchantProfileId: record.merchantProfileId ?? null,
     categoryId: toManualCategoryId(record.category),
     notes: record.notes ?? "",
     csvMatchHint: record.csvMatchHint,

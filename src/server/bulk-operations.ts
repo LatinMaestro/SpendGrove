@@ -10,8 +10,9 @@ import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
 import { createPrismaManualTransactionStore } from "@/src/server/manual-transactions";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
-export const BULK_OPERATIONS_RUNTIME_ENABLED = false;
+export const BULK_OPERATIONS_RUNTIME_ENABLED = isVerifiedPreviewRuntime();
 export const BULK_OPERATION_UNDO_WINDOW_MS = 30 * 60 * 1000;
 export const MAX_BULK_OPERATION_ITEMS = 250;
 

@@ -33,6 +33,7 @@ import {
 import { ManualTransactions } from "@/components/manual-transactions";
 import { TransactionPropertyLinkPanel } from "@/components/transaction-property-link-panel";
 import { CategoryBreakdownView, MonthlyCategoryChart } from "@/components/monthly-category-spending";
+import { TransactionBulkActions } from "@/components/transaction-bulk-actions";
 import type { MonthlyCategorySpending, MonthlyCategorySpendingCategory } from "@/lib/monthly-category-spending";
 import {
   deriveTransactionType,
@@ -40,7 +41,7 @@ import {
   transactionNeedsDirectionCorrection,
 } from "@/lib/transaction-direction";
 
-type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED" };
+type AccountTransaction = Omit<ManualTransaction, "source"> & { source: "MANUAL" | "IMPORTED"; merchantProfileId: string | null };
 type LedgerDirectionFilter = "ALL" | ManualTransactionType;
 type PropertyOption = { id: string; nickname: string; usage: "OWNER_OCCUPIED" | "INVESTMENT" | "OTHER"; isArchived?: boolean };
 type PropertyOptionsStatus = "LOADING" | "READY" | "UNAVAILABLE";
@@ -279,7 +280,7 @@ function SignedOutFallback() {
   return <div className="space-y-5"><section className="rounded-[2rem] border border-border bg-surface-base p-5 shadow-soft sm:p-6"><div className="flex items-start gap-4"><div className="rounded-2xl bg-surface-mint p-3 text-brand-green"><Cloud aria-hidden="true" className="h-6 w-6" /></div><div><p className="text-sm font-semibold text-brand-teal">Saved to your account</p><h2 className="mt-1 text-2xl font-bold text-brand-deepTeal">Sign in to view account transactions</h2><p className="mt-2 max-w-xl text-sm leading-6 text-brand-deepTeal/70">You can still use the browser-local manual prototype below. Signed-in manual and imported transactions are saved server-side and scoped to your SpendGrove user.</p><SignInButton mode="modal"><button className="mt-4 min-h-12 rounded-full bg-brand-green px-5 text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-brand-deepTeal" type="button">Sign in for account storage</button></SignInButton></div></div></section><ManualTransactions /></div>;
 }
 
-function DurableManualTransactionsExperience() {
+function DurableManualTransactionsExperience({ bulkOperationsAvailable }: Readonly<{ bulkOperationsAvailable: boolean }>) {
   const [transactions, setTransactions] = useState<AccountTransaction[]>([]);
   const [categorySpending, setCategorySpending] = useState<MonthlyCategorySpending | null>(null);
   const [showBreakdown, setShowBreakdown] = useState(false);
@@ -301,6 +302,7 @@ function DurableManualTransactionsExperience() {
   const [ledgerCategoryFilter, setLedgerCategoryFilter] = useState("ALL");
   const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
   const [propertyOptionsStatus, setPropertyOptionsStatus] = useState<PropertyOptionsStatus>("LOADING");
+  const [selectedTransactionIds, setSelectedTransactionIds] = useState<string[]>([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -362,6 +364,39 @@ function DurableManualTransactionsExperience() {
         || category.toLocaleLowerCase("en-AU").includes(query);
     });
   }, [ledgerFilteredTransactions, categorySpending, searchQuery]);
+  const selectedBulkTransactions = useMemo(
+    () => activeTransactions
+      .filter((transaction) => selectedTransactionIds.includes(transaction.id))
+      .map((transaction) => ({
+        id: transaction.id,
+        type: transaction.type,
+        merchantProfileId: transaction.merchantProfileId,
+      })),
+    [activeTransactions, selectedTransactionIds],
+  );
+  const bulkCategoryOptions = useMemo(() => {
+    const options = new Map<string, { id: string; name: string; type: ManualTransactionType }>();
+    for (const type of ["EXPENSE", "INCOME"] as const) {
+      for (const group of getManualCategoryGroups(type)) {
+        for (const category of group.categories) {
+          options.set(category.id, { id: category.id, name: category.name, type });
+        }
+      }
+    }
+    for (const transaction of activeTransactions) {
+      if (transaction.type === "TRANSFER") continue;
+      const aggregateName = categorySpending?.categories
+        .find((category) => category.categoryId === transaction.categoryId)?.name;
+      options.set(transaction.categoryId, {
+        id: transaction.categoryId,
+        name: getManualCategory(transaction.categoryId)?.name ?? aggregateName ?? "Needs review",
+        type: transaction.type,
+      });
+    }
+    return [...options.values()].sort((left, right) => left.name.localeCompare(right.name, "en-AU"));
+  }, [activeTransactions, categorySpending]);
+  const allVisibleSelected = filteredTransactions.length > 0
+    && filteredTransactions.slice(0, 250).every((transaction) => selectedTransactionIds.includes(transaction.id));
   const detailTransaction = activeTransactions.find((transaction) => transaction.id === detailId);
   const detailNeedsCorrection = detailTransaction ? transactionNeedsDirectionCorrection(detailTransaction) : false;
   const deleteTransaction = activeTransactions.find((transaction) => transaction.id === deleteId);
@@ -409,6 +444,27 @@ function DurableManualTransactionsExperience() {
     if (!deleteId || isSaving) return;
     setIsSaving(true); const result = await deleteAccountTransaction(deleteId); setIsSaving(false);
     if (result.ok) { setRefreshKey((current) => current + 1); setDeleteId(null); setDetailId(null); setAccountWarning(""); } else { setAccountWarning(result.error); setDeleteId(null); }
+  }
+
+  function toggleTransactionSelection(transactionId: string) {
+    setSelectedTransactionIds((current) => {
+      if (current.includes(transactionId)) return current.filter((id) => id !== transactionId);
+      if (current.length >= 250) {
+        setAccountWarning("Choose no more than 250 transactions for one bulk change.");
+        return current;
+      }
+      return [...current, transactionId];
+    });
+  }
+
+  function toggleVisibleSelection() {
+    const visibleIds = filteredTransactions.slice(0, 250).map((transaction) => transaction.id);
+    setSelectedTransactionIds((current) => {
+      if (visibleIds.every((id) => current.includes(id))) {
+        return current.filter((id) => !visibleIds.includes(id));
+      }
+      return [...new Set([...current, ...visibleIds])].slice(0, 250);
+    });
   }
 
   return <div className="space-y-6">
@@ -493,6 +549,15 @@ function DurableManualTransactionsExperience() {
             <button type="button" onClick={() => setCategoryFilter(null)} aria-label={`Remove ${categoryFilter.name} category filter`} className="min-h-9 rounded-lg px-2 font-bold text-brand-evergreen focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">Clear filter</button>
           </div>
         )}
+        {bulkOperationsAvailable && (
+          <TransactionBulkActions
+            selectedTransactions={selectedBulkTransactions}
+            categoryOptions={bulkCategoryOptions}
+            propertyOptions={propertyOptions}
+            onClearSelection={() => setSelectedTransactionIds([])}
+            onOperationChange={() => setRefreshKey((current) => current + 1)}
+          />
+        )}
         <div className="mb-2 flex items-center justify-between gap-3 px-1">
           <h2 id="transaction-list-heading" className="text-sm font-semibold text-muted">{filteredTransactions.length} transaction{filteredTransactions.length === 1 ? "" : "s"}</h2>
           {searchQuery && <p className="text-xs text-muted">Search is limited to {selectedMonthLabel}</p>}
@@ -523,6 +588,7 @@ function DurableManualTransactionsExperience() {
               <table className="w-full table-fixed border-collapse text-left text-sm">
                 <caption className="sr-only">{selectedMonthLabel} transactions</caption>
                 <colgroup>
+                  {bulkOperationsAvailable && <col className="w-14" />}
                   <col className="w-28" />
                   <col />
                   <col className="w-36" />
@@ -533,6 +599,17 @@ function DurableManualTransactionsExperience() {
                 </colgroup>
                 <thead className="border-b border-border bg-surface-subtle text-xs font-semibold uppercase tracking-wide text-muted">
                   <tr>
+                    {bulkOperationsAvailable && (
+                      <th scope="col" className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={allVisibleSelected}
+                          onChange={toggleVisibleSelection}
+                          aria-label="Select all visible transactions"
+                          className="h-5 w-5 accent-brand-evergreen"
+                        />
+                      </th>
+                    )}
                     <th scope="col" className="px-4 py-3">Date</th>
                     <th scope="col" className="px-4 py-3">Transaction</th>
                     <th scope="col" className="px-4 py-3">Category</th>
@@ -548,6 +625,17 @@ function DurableManualTransactionsExperience() {
                     const needsCorrection = transactionNeedsDirectionCorrection(transaction);
                     return (
                       <tr key={transaction.id} className="transition-colors hover:bg-surface-subtle">
+                        {bulkOperationsAvailable && (
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedTransactionIds.includes(transaction.id)}
+                              onChange={() => toggleTransactionSelection(transaction.id)}
+                              aria-label={`Select ${transaction.description}`}
+                              className="h-5 w-5 accent-brand-evergreen"
+                            />
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-muted">{formatAustralianTransactionDate(transaction.date)}</td>
                         <td className="px-4 py-3"><span className="block truncate font-semibold text-foreground" title={transaction.description}>{transaction.description}</span></td>
                         <td className="px-4 py-3"><span className="block truncate text-muted" title={category?.name ?? "Needs review"}>{category?.name ?? "Needs review"}</span></td>
@@ -584,9 +672,9 @@ function DurableManualTransactionsExperience() {
 
 }
 
-export function DurableManualTransactions() {
+export function DurableManualTransactions({ bulkOperationsAvailable = false }: Readonly<{ bulkOperationsAvailable?: boolean }>) {
   const { isLoaded, isSignedIn } = useUser();
   if (!isLoaded) return <section className="rounded-[2rem] border border-border bg-surface-base p-8 text-center shadow-soft" aria-busy="true"><p className="font-semibold text-brand-deepTeal/70">Checking your account session…</p></section>;
   if (!isSignedIn) return <SignedOutFallback />;
-  return <DurableManualTransactionsExperience />;
+  return <DurableManualTransactionsExperience bulkOperationsAvailable={bulkOperationsAvailable} />;
 }

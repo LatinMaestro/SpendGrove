@@ -118,6 +118,8 @@ describe("Phase 5 immediate account deletion", () => {
     const service = await readFile(servicePath, "utf8");
     const expectedOrder = [
       "auditEvent.deleteMany",
+      "bulkOperationItem.deleteMany",
+      "bulkOperation.deleteMany",
       "propertyReportReview.deleteMany",
       "propertyTransactionLink.deleteMany",
       "loanReconciliationLink.deleteMany",
@@ -146,7 +148,10 @@ describe("Phase 5 immediate account deletion", () => {
       previousIndex = index;
     }
     expect(service).toContain("await db.$transaction(async (transaction) =>");
-    expect(service.match(/where: \{ userId \}/g)?.length).toBeGreaterThanOrEqual(19);
+    expect(service).toContain("if (isVerifiedPreviewRuntime())");
+    expect(service).toContain("bulkOperationItem.deleteMany");
+    expect(service).toContain("bulkOperation.deleteMany");
+    expect(service.match(/where: \{ userId \}/g)?.length).toBeGreaterThanOrEqual(21);
     expect(service).toContain('authProvider: "CLERK"');
     expect(service).toContain("authProviderUserId: providerUserId");
     expect(service).toContain("if (deletedUser.count !== 1)");
