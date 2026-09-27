@@ -1,6 +1,7 @@
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export const ACCOUNT_EXPORT_CONTRACT = "spendgrove.account-export";
 export const ACCOUNT_EXPORT_VERSION = 1 as const;
@@ -29,6 +30,8 @@ export type AccountExportData = {
   recurringItems: ExportRecord[];
   recurringSuggestionDismissals: ExportRecord[];
   categoryBudgets: ExportRecord[];
+  bulkOperations: ExportRecord[];
+  transferLinks: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -285,6 +288,46 @@ const defaultAccountExportStore: AccountExportStore = {
 
     if (!profile) return null;
 
+    const bulkOperations = isVerifiedPreviewRuntime()
+      ? await db.bulkOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          type: true,
+          status: true,
+          requestedCount: true,
+          appliedCount: true,
+          skippedCount: true,
+          failedCount: true,
+          undoBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          undoExpiresAt: true,
+          revertedAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const transferLinks = isVerifiedPreviewRuntime()
+      ? await db.transferLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          outgoingTransactionId: true,
+          incomingTransactionId: true,
+          confirmedAt: true,
+          unlinkedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -305,6 +348,8 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringItems: serializeRows(recurringItems, ["nextExpectedDate"]),
       recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
       categoryBudgets: serializeRows(categoryBudgets),
+      bulkOperations: serializeRows(bulkOperations),
+      transferLinks: serializeRows(transferLinks),
       auditEvents: serializeRows(auditEvents),
     };
   },

@@ -248,6 +248,8 @@ const APPROVED_PRODUCT_WRITES = new Map<string, Set<string>>([
       "importBatch.write",
       "importRow.write",
       "auditEvent.write",
+      "bulkOperation.write",
+      "bulkOperationItem.write",
       "loanRepayment.write",
       "loanReconciliationLink.write",
       "propertyTransactionLink.write",
