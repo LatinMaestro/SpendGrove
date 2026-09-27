@@ -55,6 +55,10 @@ function snapshot(overrides: Partial<NetWorthSnapshotRecord> = {}): NetWorthSnap
 function memoryStore(overrides: Partial<NetWorthStore> = {}) {
   const calls: Array<{ action: string; userId: string }> = [];
   const store: NetWorthStore = {
+    async listLinkOptions(userId) {
+      calls.push({ action: "links", userId });
+      return { properties: [], loanAccounts: [] };
+    },
     async listItems(userId) {
       calls.push({ action: "items", userId });
       return [item({ userId })];
@@ -188,7 +192,33 @@ describe("Phase 9 guarded manual net worth service", () => {
     expect(calls).toEqual([
       { action: "items", userId: "user_8" },
       { action: "snapshots", userId: "user_8" },
+      { action: "links", userId: "user_8" },
       { action: "valuation", userId: "user_8" },
+    ]);
+  });
+
+  it("supports item creation, valuation, archive, restore and immutable snapshot creation", async () => {
+    const { store, calls } = memoryStore();
+    const context = createTestUserContext("user_1");
+    await mutateNetWorth(context, {
+      action: "CREATE_ITEM", name: "Manual asset", kind: "ASSET", category: "OTHER_ASSET",
+      propertyId: null, loanAccountId: null,
+    }, store, new Date(), { runtimeEnabled: true });
+    await mutateNetWorth(context, {
+      action: "ADD_VALUATION", itemId: "item_1", valueCents: 250000,
+      valuationDate: "2026-07-19", note: "Manual value",
+    }, store, new Date(), { runtimeEnabled: true });
+    for (const status of ["ARCHIVED", "ACTIVE"] as const) {
+      await mutateNetWorth(context, {
+        action: "SET_ITEM_STATUS", itemId: "item_1",
+        updatedAt: "2026-07-17T00:00:00.000Z", status,
+      }, store, new Date(), { runtimeEnabled: true });
+    }
+    await mutateNetWorth(context, {
+      action: "CREATE_SNAPSHOT", snapshotDate: "2026-07-19",
+    }, store, new Date(), { runtimeEnabled: true });
+    expect(calls.map((call) => call.action)).toEqual([
+      "create-item", "valuation", "status", "status", "snapshot",
     ]);
   });
 
@@ -216,7 +246,7 @@ describe("Phase 9 guarded manual net worth service", () => {
 
   it("does not infer balances from transactions, loans, Properties or providers", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
     expect(service).not.toMatch(/transaction\.(find|create|update|delete)/);
     expect(service).not.toContain("rawCsv");
     expect(service).not.toContain("accountNumber");

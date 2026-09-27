@@ -1,6 +1,7 @@
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export const ACCOUNT_EXPORT_CONTRACT = "spendgrove.account-export";
 export const ACCOUNT_EXPORT_VERSION = 1 as const;
@@ -29,6 +30,17 @@ export type AccountExportData = {
   recurringItems: ExportRecord[];
   recurringSuggestionDismissals: ExportRecord[];
   categoryBudgets: ExportRecord[];
+  bulkOperations: ExportRecord[];
+  transferLinks: ExportRecord[];
+  importUndoOperations: ExportRecord[];
+  savingsGoals: ExportRecord[];
+  savingsGoalContributions: ExportRecord[];
+  netWorthItems: ExportRecord[];
+  netWorthValuations: ExportRecord[];
+  netWorthSnapshots: ExportRecord[];
+  netWorthSnapshotEntries: ExportRecord[];
+  recurringLifecycle: ExportRecord[];
+  recurringInstances: ExportRecord[];
   auditEvents: ExportRecord[];
 };
 
@@ -285,6 +297,146 @@ const defaultAccountExportStore: AccountExportStore = {
 
     if (!profile) return null;
 
+    const bulkOperations = isVerifiedPreviewRuntime()
+      ? await db.bulkOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          type: true,
+          status: true,
+          requestedCount: true,
+          appliedCount: true,
+          skippedCount: true,
+          failedCount: true,
+          undoBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          undoExpiresAt: true,
+          revertedAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const transferLinks = isVerifiedPreviewRuntime()
+      ? await db.transferLink.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          outgoingTransactionId: true,
+          incomingTransactionId: true,
+          confirmedAt: true,
+          unlinkedAt: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const importUndoOperations = isVerifiedPreviewRuntime()
+      ? await db.importUndoOperation.findMany({
+        where: { userId },
+        orderBy: { createdAt: "asc" },
+        select: {
+          id: true,
+          userId: true,
+          importBatchId: true,
+          status: true,
+          requestedCount: true,
+          undoneCount: true,
+          noChangeCount: true,
+          blockedCount: true,
+          failedCount: true,
+          restoredCount: true,
+          restoreBlockedCount: true,
+          createdAt: true,
+          completedAt: true,
+          restoredAt: true,
+          updatedAt: true,
+        },
+      })
+      : [];
+
+    const [savingsGoals, savingsGoalContributions] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.savingsGoal.findMany({
+          where: { userId },
+          orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, name: true, targetAmountCents: true, targetDate: true,
+            openingProgressCents: true, status: true, completedAt: true, archivedAt: true,
+            createdAt: true, updatedAt: true,
+          },
+        }),
+        db.savingsGoalContribution.findMany({
+          where: { userId },
+          orderBy: [{ contributionDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, savingsGoalId: true, amountCents: true,
+            contributionDate: true, note: true, deletedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
+    const [netWorthItems, netWorthValuations, netWorthSnapshots, netWorthSnapshotEntries] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.netWorthItem.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, propertyId: true, loanAccountId: true, name: true,
+            kind: true, category: true, status: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthValuation.findMany({
+          where: { userId }, orderBy: [{ valuationDate: "asc" }, { createdAt: "asc" }],
+          select: {
+            id: true, userId: true, netWorthItemId: true, valueCents: true, valuationDate: true,
+            note: true, deletedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthSnapshot.findMany({
+          where: { userId }, orderBy: { snapshotDate: "asc" },
+          select: {
+            id: true, userId: true, snapshotDate: true, totalAssetCents: true,
+            totalLiabilityCents: true, netWorthCents: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.netWorthSnapshotEntry.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, snapshotId: true, netWorthItemId: true, itemName: true,
+            kind: true, category: true, valueCents: true, valuationDate: true, createdAt: true,
+          },
+        }),
+      ])
+      : [[], [], [], []];
+
+    const [recurringLifecycle, recurringInstances] = isVerifiedPreviewRuntime()
+      ? await db.$transaction([
+        db.recurringItem.findMany({
+          where: { userId }, orderBy: { createdAt: "asc" },
+          select: {
+            id: true, userId: true, categoryId: true, label: true, transactionType: true,
+            expectedAmountCents: true, expectedAmountMinCents: true, expectedAmountMaxCents: true,
+            cadence: true, nextExpectedDate: true, source: true, detectionConfidence: true,
+            status: true, archivedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+        db.recurringInstance.findMany({
+          where: { userId }, orderBy: { linkedAt: "asc" },
+          select: {
+            id: true, userId: true, recurringItemId: true, transactionId: true,
+            linkedAt: true, unlinkedAt: true, createdAt: true, updatedAt: true,
+          },
+        }),
+      ])
+      : [[], []];
+
     return {
       profile: serializeRecord(profile),
       settings: settings ? serializeRecord(settings) : null,
@@ -305,6 +457,17 @@ const defaultAccountExportStore: AccountExportStore = {
       recurringItems: serializeRows(recurringItems, ["nextExpectedDate"]),
       recurringSuggestionDismissals: serializeRows(recurringSuggestionDismissals),
       categoryBudgets: serializeRows(categoryBudgets),
+      bulkOperations: serializeRows(bulkOperations),
+      transferLinks: serializeRows(transferLinks),
+      importUndoOperations: serializeRows(importUndoOperations),
+      savingsGoals: serializeRows(savingsGoals, ["targetDate"]),
+      savingsGoalContributions: serializeRows(savingsGoalContributions, ["contributionDate"]),
+      netWorthItems: serializeRows(netWorthItems),
+      netWorthValuations: serializeRows(netWorthValuations, ["valuationDate"]),
+      netWorthSnapshots: serializeRows(netWorthSnapshots, ["snapshotDate"]),
+      netWorthSnapshotEntries: serializeRows(netWorthSnapshotEntries, ["valuationDate"]),
+      recurringLifecycle: serializeRows(recurringLifecycle, ["nextExpectedDate"]),
+      recurringInstances: serializeRows(recurringInstances),
       auditEvents: serializeRows(auditEvents),
     };
   },
