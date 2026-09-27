@@ -4,8 +4,9 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
-export const TRANSFER_LINK_RUNTIME_ENABLED = false;
+export const TRANSFER_LINK_RUNTIME_ENABLED = isVerifiedPreviewRuntime();
 export const TRANSFER_LINK_MAX_CALENDAR_DAY_DIFFERENCE = 2;
 
 export const confirmTransferLinkSchema = z.object({
@@ -38,6 +39,13 @@ export type SafeTransferLink = {
   incomingTransactionId: string;
   confirmedAt: string;
   unlinkedAt: string | null;
+};
+
+export type SafeTransferReview = {
+  state: "NONE" | "SUGGESTION" | "LINKED";
+  linkId: string | null;
+  outgoing: { id: string; date: string; amountCents: number } | null;
+  incoming: { id: string; date: string; amountCents: number } | null;
 };
 
 export type TransferLinkStore = {
@@ -275,6 +283,120 @@ export function createPrismaTransferLinkStore(
         timeout: 30_000,
       });
     },
+  };
+}
+
+type TransferReviewTransaction = TransferRecord & {
+  outgoingTransferLinks: Array<{
+    id: string;
+    incomingTransaction: { id: string; date: Date; amountCents: number };
+  }>;
+  incomingTransferLinks: Array<{
+    id: string;
+    outgoingTransaction: { id: string; date: Date; amountCents: number };
+  }>;
+};
+
+function safeTransferSummary(record: { id: string; date: Date; amountCents: number }) {
+  return {
+    id: record.id,
+    date: record.date.toISOString().slice(0, 10),
+    amountCents: record.amountCents,
+  };
+}
+
+export async function getTransferLinkReview(
+  context: AuthenticatedUserContext | null | undefined,
+  transactionId: string,
+  prisma: PrismaClient = getPrismaClient(),
+  options: TransferLinkRuntimeOptions = {},
+): Promise<SafeTransferReview> {
+  if (!runtimeEnabled(options)) throw new TransferLinksUnavailableError();
+  const user = requireAuthenticatedUserContext(context);
+  const id = z.string().trim().min(1).parse(transactionId);
+  const record = await prisma.transaction.findFirst({
+    where: { id, userId: user.userId },
+    include: {
+      outgoingTransferLinks: {
+        where: { unlinkedAt: null },
+        take: 1,
+        include: {
+          incomingTransaction: {
+            select: { id: true, date: true, amountCents: true },
+          },
+        },
+      },
+      incomingTransferLinks: {
+        where: { unlinkedAt: null },
+        take: 1,
+        include: {
+          outgoingTransaction: {
+            select: { id: true, date: true, amountCents: true },
+          },
+        },
+      },
+    },
+  }) as TransferReviewTransaction | null;
+  if (!record) throw new TransferLinkNotFoundError();
+
+  const outgoingLink = record.outgoingTransferLinks[0];
+  if (outgoingLink) {
+    return {
+      state: "LINKED",
+      linkId: outgoingLink.id,
+      outgoing: safeTransferSummary(record),
+      incoming: safeTransferSummary(outgoingLink.incomingTransaction),
+    };
+  }
+  const incomingLink = record.incomingTransferLinks[0];
+  if (incomingLink) {
+    return {
+      state: "LINKED",
+      linkId: incomingLink.id,
+      outgoing: safeTransferSummary(incomingLink.outgoingTransaction),
+      incoming: safeTransferSummary(record),
+    };
+  }
+  if (!isUnlinkedTransfer(record)) {
+    return { state: "NONE", linkId: null, outgoing: null, incoming: null };
+  }
+
+  const broadStart = new Date(record.date.getTime() - 3 * 86_400_000);
+  const broadEnd = new Date(record.date.getTime() + 3 * 86_400_000);
+  const candidates = await prisma.transaction.findMany({
+    where: {
+      userId: user.userId,
+      id: { not: record.id },
+      type: "TRANSFER",
+      status: "ACTIVE",
+      deletedAt: null,
+      splitRole: "NONE",
+      amountCents: -record.amountCents,
+      date: { gte: broadStart, lte: broadEnd },
+      outgoingTransferLinks: { none: { unlinkedAt: null } },
+      incomingTransferLinks: { none: { unlinkedAt: null } },
+    },
+    include: activeTransferLinkSelection,
+    take: 3,
+  }) as TransferRecord[];
+  const exactCandidates = candidates.filter((candidate) =>
+    isEligibleTransferPair(
+      record.amountCents < 0 ? record : candidate,
+      record.amountCents < 0 ? candidate : record,
+    ),
+  );
+  if (exactCandidates.length !== 1) {
+    return { state: "NONE", linkId: null, outgoing: null, incoming: null };
+  }
+
+  const candidate = exactCandidates[0];
+  const outgoing = record.amountCents < 0 ? record : candidate;
+  const incoming = record.amountCents > 0 ? record : candidate;
+  return {
+    state: "SUGGESTION",
+    linkId: null,
+    outgoing: safeTransferSummary(outgoing),
+    incoming: safeTransferSummary(incoming),
   };
 }
 

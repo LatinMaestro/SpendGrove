@@ -27,7 +27,7 @@ const views: Array<{
   },
 ];
 
-export function ImportCentre() {
+export function ImportCentre({ importUndoAvailable = false }: { importUndoAvailable?: boolean }) {
   const [view, setView] = useState<ImportCentreView>("NEW");
 
   return (
@@ -99,7 +99,7 @@ export function ImportCentre() {
               </p>
             </div>
           </div>
-          <AccountImportHistoryPanel />
+          <AccountImportHistoryPanel importUndoAvailable={importUndoAvailable} />
         </section>
       )}
     </div>

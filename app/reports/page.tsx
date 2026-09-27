@@ -14,7 +14,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import { AppShell } from "@/components/app-shell";
+import { NetWorthPanel } from "@/components/net-worth-panel";
 import { PageHeader, SectionHeader } from "@/components/ui/app-primitives";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 type ReportDestination = {
   title: string;
@@ -154,6 +156,8 @@ export default function ReportsPage() {
           </div>
         </div>
       </section>
+
+      <NetWorthPanel available={isVerifiedPreviewRuntime()} />
     </AppShell>
   );
 }

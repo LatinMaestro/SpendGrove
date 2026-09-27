@@ -153,6 +153,28 @@ describe("Phase 9 guarded savings goal service", () => {
     expect(result.remainingCents).toBe(365_000);
   });
 
+  it("supports edit, pause, resume, complete, archive, restore and contribution removal", async () => {
+    const { store, calls } = memoryStore();
+    const context = createTestUserContext("user_1");
+    const updatedAt = "2026-07-17T00:00:00.000Z";
+    await mutateSavingsGoal(context, {
+      action: "UPDATE", goalId: "goal_1", updatedAt, name: "Updated buffer",
+      targetAmountCents: 600_000, targetDate: null, openingProgressCents: 100_000,
+    }, store, new Date(), { runtimeEnabled: true });
+    for (const status of ["PAUSED", "ACTIVE", "COMPLETED", "ARCHIVED", "ACTIVE"] as const) {
+      await mutateSavingsGoal(context, {
+        action: "SET_STATUS", goalId: "goal_1", updatedAt, status,
+      }, store, new Date(), { runtimeEnabled: true });
+    }
+    await mutateSavingsGoal(context, {
+      action: "DELETE_CONTRIBUTION", goalId: "goal_1", contributionId: "contribution_1",
+    }, store, new Date(), { runtimeEnabled: true });
+
+    expect(calls.map((call) => call.action)).toEqual([
+      "update", "status", "status", "status", "status", "status", "delete-contribution",
+    ]);
+  });
+
   it("rejects zero, negative and malformed goal values", () => {
     expect(savingsGoalMutationSchema.safeParse({
       action: "CREATE",
@@ -195,7 +217,7 @@ describe("Phase 9 guarded savings goal service", () => {
 
   it("contains no transaction linking, provider calls or private-source fields", async () => {
     const service = await readFile(servicePath, "utf8");
-    expect(service).toContain("PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED");
+    expect(service).toContain("isVerifiedPreviewRuntime()");
     expect(service).not.toMatch(/\.transaction\.(create|update|delete)/);
     expect(service).not.toContain("rawCsv");
     expect(service).not.toContain("accountNumber");
