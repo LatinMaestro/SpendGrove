@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/app-primitives";
 import { DurableManualTransactions } from "@/components/durable-manual-transactions";
 import { getBuildSafeClerkEnvStatus, getBuildSafeDatabaseEnvStatus } from "@/src/server/env";
 import { CheckCircle2 } from "lucide-react";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 function safeImportedCount(value: string | string[] | undefined) {
   const candidate = Array.isArray(value) ? value[0] : value;
@@ -18,6 +19,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams?
   const accountPersistenceAvailable = clerkStatus.clerkConfigured && databaseStatus.runtimeDatabaseConfigured;
   const importComplete = resolvedSearchParams?.import === "complete";
   const importedCount = safeImportedCount(resolvedSearchParams?.count);
+  const bulkOperationsAvailable = isVerifiedPreviewRuntime();
 
   return (
     <AppShell>
@@ -33,7 +35,7 @@ export default async function TransactionsPage({ searchParams }: { searchParams?
       )}
       <LocalPrototypeDataNotice context="account" />
       {accountPersistenceAvailable ? (
-        <DurableManualTransactions />
+        <DurableManualTransactions bulkOperationsAvailable={bulkOperationsAvailable} transferLinksAvailable={bulkOperationsAvailable} />
       ) : (
         <section role="alert" className="rounded-2xl border border-warning-amber bg-warning-amber/10 p-5">
           <h2 className="font-bold text-brand-deepTeal">Account records are unavailable</h2>

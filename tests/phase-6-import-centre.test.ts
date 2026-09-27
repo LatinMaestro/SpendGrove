@@ -24,7 +24,7 @@ describe("Phase 6 Import Centre", () => {
     expect(centre).toContain('label: "Past imports"');
     expect(centre).toContain('view === "NEW"');
     expect(centre).toContain("<CsvImportFoundation />");
-    expect(centre).toContain("<AccountImportHistoryPanel />");
+    expect(centre).toContain("<AccountImportHistoryPanel importUndoAvailable={importUndoAvailable} />");
   });
 
   it("uses accessible tabs and focused subordinate panels", async () => {

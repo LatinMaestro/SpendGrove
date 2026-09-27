@@ -4,7 +4,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED } from "@/src/server/phase-9-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export type SavingsGoalStatusCode = "ACTIVE" | "PAUSED" | "COMPLETED" | "ARCHIVED";
 
@@ -43,6 +43,12 @@ export type SavingsGoalView = {
   status: SavingsGoalStatusCode;
   completedAt: string | null;
   updatedAt: string;
+  contributions: Array<{
+    id: string;
+    amountCents: number;
+    contributionDate: string;
+    note: string | null;
+  }>;
 };
 
 type GoalFields = {
@@ -90,7 +96,7 @@ export type SavingsGoalStore = {
 
 export class SavingsGoalsUnavailableError extends Error {
   constructor() {
-    super("Savings goals are not available until the Preview migration is verified.");
+    super("Savings goals are available only in the verified Preview environment.");
     this.name = "SavingsGoalsUnavailableError";
   }
 }
@@ -195,6 +201,14 @@ function toView(record: SavingsGoalRecord): SavingsGoalView {
     status: record.status,
     completedAt: iso(record.completedAt),
     updatedAt: iso(record.updatedAt) as string,
+    contributions: record.contributions
+      .filter((contribution) => !contribution.deletedAt)
+      .map((contribution) => ({
+        id: contribution.id,
+        amountCents: contribution.amountCents,
+        contributionDate: (iso(contribution.contributionDate) as string).slice(0, 10),
+        note: contribution.note,
+      })),
   };
 }
 
@@ -335,7 +349,7 @@ export function createPrismaSavingsGoalStore(
 type RuntimeOptions = { runtimeEnabled?: boolean };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new SavingsGoalsUnavailableError();
   }
 }

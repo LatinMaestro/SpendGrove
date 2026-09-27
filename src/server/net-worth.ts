@@ -4,7 +4,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED } from "@/src/server/phase-9-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export type NetWorthKindCode = "ASSET" | "LIABILITY";
 export type NetWorthCategoryCode =
@@ -73,7 +73,13 @@ type ValuationFields = {
   note: string | null;
 };
 
+export type NetWorthLinkOptions = {
+  properties: Array<{ id: string; nickname: string }>;
+  loanAccounts: Array<{ id: string; nickname: string }>;
+};
+
 export type NetWorthStore = {
+  listLinkOptions(userId: string): Promise<NetWorthLinkOptions>;
   listItems(userId: string): Promise<NetWorthItemRecord[]>;
   listSnapshots(userId: string): Promise<NetWorthSnapshotRecord[]>;
   createItem(userId: string, input: ItemFields, now: Date): Promise<NetWorthItemRecord | null>;
@@ -95,7 +101,7 @@ export type NetWorthStore = {
 
 export class NetWorthUnavailableError extends Error {
   constructor() {
-    super("Net worth is not available until the Preview migration is verified.");
+    super("Net worth is available only in the verified Preview environment.");
     this.name = "NetWorthUnavailableError";
   }
 }
@@ -242,6 +248,15 @@ function itemView(record: NetWorthItemRecord) {
     currentValueCents: current?.valueCents ?? null,
     valuationDate: current ? iso(current.valuationDate).slice(0, 10) : null,
     updatedAt: iso(record.updatedAt),
+    valuations: record.valuations
+      .filter((valuation) => !valuation.deletedAt)
+      .sort((a, b) => iso(b.valuationDate).localeCompare(iso(a.valuationDate)))
+      .map((valuation) => ({
+        id: valuation.id,
+        valueCents: valuation.valueCents,
+        valuationDate: iso(valuation.valuationDate).slice(0, 10),
+        note: valuation.note,
+      })),
   };
 }
 
@@ -302,6 +317,22 @@ export function createPrismaNetWorthStore(
   prisma: PrismaClient = getPrismaClient(),
 ): NetWorthStore {
   return {
+    async listLinkOptions(userId) {
+      const [properties, loanAccounts] = await prisma.$transaction([
+        prisma.property.findMany({
+          where: { userId, isArchived: false, deletedAt: null },
+          orderBy: { nickname: "asc" },
+          select: { id: true, nickname: true },
+        }),
+        prisma.loanAccount.findMany({
+          where: { userId, isArchived: false, deletedAt: null },
+          orderBy: { nickname: "asc" },
+          select: { id: true, nickname: true },
+        }),
+      ]);
+      return { properties, loanAccounts };
+    },
+
     async listItems(userId) {
       return prisma.netWorthItem.findMany({
         where: { userId },
@@ -444,7 +475,7 @@ export function createPrismaNetWorthStore(
 type RuntimeOptions = { runtimeEnabled?: boolean };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new NetWorthUnavailableError();
   }
 }
@@ -457,13 +488,15 @@ export async function getNetWorthOverview(
   requireRuntime(options);
   const user = requireAuthenticatedUserContext(context);
   const resolvedStore = store ?? createPrismaNetWorthStore();
-  const [items, snapshots] = await Promise.all([
+  const [items, snapshots, linkOptions] = await Promise.all([
     resolvedStore.listItems(user.userId),
     resolvedStore.listSnapshots(user.userId),
+    resolvedStore.listLinkOptions(user.userId),
   ]);
   return {
     items: items.map(itemView),
     snapshots: snapshots.map(snapshotView),
+    linkOptions,
   };
 }
 
