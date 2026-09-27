@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export const accountDeletionInputSchema = z.object({
   confirmation: z.literal("DELETE", {
@@ -28,6 +29,13 @@ export type AccountDeletionResult = {
   message: string;
 };
 
+export class HouseholdAccountDeletionBlockedError extends Error {
+  constructor() {
+    super("Choose another household administrator before deleting your account.");
+    this.name = "HouseholdAccountDeletionBlockedError";
+  }
+}
+
 export class AccountDeletionOwnershipError extends Error {
   constructor() {
     super("The signed-in account could not be matched safely.");
@@ -40,6 +48,71 @@ const defaultDataStore: AccountDataDeletionStore = {
     const db = getPrismaClient();
     await db.$transaction(async (transaction) => {
       await transaction.auditEvent.deleteMany({ where: { userId } });
+      if (isVerifiedPreviewRuntime()) {
+        const acceptedAccountantGrants = await transaction.accountantAccessGrant.findMany({
+          where: { accountantUserId: userId },
+          select: { id: true },
+        });
+        const acceptedGrantIds = acceptedAccountantGrants.map((entry) => entry.id);
+        if (acceptedGrantIds.length) {
+          await transaction.accountantAccessScope.updateMany({
+            where: { grantId: { in: acceptedGrantIds }, revokedAt: null },
+            data: { revokedAt: new Date() },
+          });
+          await transaction.accountantAccessGrant.updateMany({
+            where: { id: { in: acceptedGrantIds }, accountantUserId: userId },
+            data: {
+              accountantUserId: null,
+              status: "REVOKED",
+              revokedAt: new Date(),
+            },
+          });
+        }
+        await transaction.accountantAccessScope.deleteMany({ where: { ownerUserId: userId } });
+        await transaction.accountantAccessGrant.deleteMany({ where: { ownerUserId: userId } });
+        const createdHouseholds = await transaction.household.findMany({
+          where: { creatorUserId: userId },
+          select: { id: true },
+        });
+        for (const household of createdHouseholds) {
+          const replacement = await transaction.householdMembership.findFirst({
+            where: {
+              householdId: household.id,
+              userId: { not: userId },
+              status: "ACTIVE",
+              role: "ADMIN",
+            },
+            orderBy: { joinedAt: "asc" },
+            select: { userId: true },
+          });
+          if (!replacement) throw new HouseholdAccountDeletionBlockedError();
+          await transaction.household.update({
+            where: { id: household.id },
+            data: { creatorUserId: replacement.userId },
+          });
+        }
+        await transaction.householdRecordShare.deleteMany({ where: { ownerUserId: userId } });
+        await transaction.householdInvitation.deleteMany({ where: { inviterUserId: userId } });
+        await transaction.householdInvitation.updateMany({
+          where: { acceptedUserId: userId },
+          data: { acceptedUserId: null },
+        });
+        await transaction.householdMembership.deleteMany({ where: { userId } });
+        await transaction.reminder.deleteMany({ where: { userId } });
+        await transaction.reminderPreference.deleteMany({ where: { userId } });
+        await transaction.recurringInstance.deleteMany({ where: { userId } });
+        await transaction.netWorthSnapshotEntry.deleteMany({ where: { userId } });
+        await transaction.netWorthSnapshot.deleteMany({ where: { userId } });
+        await transaction.netWorthValuation.deleteMany({ where: { userId } });
+        await transaction.netWorthItem.deleteMany({ where: { userId } });
+        await transaction.savingsGoalContribution.deleteMany({ where: { userId } });
+        await transaction.savingsGoal.deleteMany({ where: { userId } });
+        await transaction.importUndoItem.deleteMany({ where: { userId } });
+        await transaction.importUndoOperation.deleteMany({ where: { userId } });
+        await transaction.transferLink.deleteMany({ where: { userId } });
+        await transaction.bulkOperationItem.deleteMany({ where: { userId } });
+        await transaction.bulkOperation.deleteMany({ where: { userId } });
+      }
       await transaction.propertyReportReview.deleteMany({ where: { userId } });
       await transaction.propertyTransactionLink.deleteMany({ where: { userId } });
       await transaction.loanReconciliationLink.deleteMany({ where: { userId } });

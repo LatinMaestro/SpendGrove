@@ -4,7 +4,7 @@ import { auditEventSchema } from "@/lib/validation/audit";
 import type { AuthenticatedUserContext } from "@/src/server/auth/current-user";
 import { requireAuthenticatedUserContext } from "@/src/server/auth/ownership";
 import { getPrismaClient } from "@/src/server/db";
-import { PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED } from "@/src/server/phase-9-runtime";
+import { isVerifiedPreviewRuntime } from "@/src/server/preview-runtime";
 
 export type AdvancedRecurringStatus =
   | "ACTIVE"
@@ -51,7 +51,10 @@ export type AdvancedRecurringItemRecord = {
   instances: RecurringInstanceRecord[];
 };
 
+export type RecurringCandidateRecord = RecurringInstanceRecord["transaction"];
+
 export type AdvancedRecurringStore = {
+  listCandidates(userId: string): Promise<RecurringCandidateRecord[]>;
   list(userId: string): Promise<AdvancedRecurringItemRecord[]>;
   setStatus(
     userId: string,
@@ -76,7 +79,7 @@ export type AdvancedRecurringStore = {
 
 export class AdvancedRecurringUnavailableError extends Error {
   constructor() {
-    super("Advanced regular payments are not available until the Preview migration is verified.");
+    super("Advanced regular payments are available only in the verified Preview environment.");
     this.name = "AdvancedRecurringUnavailableError";
   }
 }
@@ -141,6 +144,7 @@ function toView(record: AdvancedRecurringItemRecord) {
     cadence: record.cadence,
     nextExpectedDate: iso(record.nextExpectedDate)?.slice(0, 10) ?? null,
     source: record.source,
+    detectionConfidence: record.detectionConfidence,
     status: record.status,
     updatedAt: iso(record.updatedAt) as string,
     instances: record.instances
@@ -225,6 +229,25 @@ export function createPrismaAdvancedRecurringStore(
   prisma: PrismaClient = getPrismaClient(),
 ): AdvancedRecurringStore {
   return {
+    async listCandidates(userId) {
+      return prisma.transaction.findMany({
+        where: {
+          userId,
+          status: "ACTIVE",
+          deletedAt: null,
+          splitRole: { not: "PARENT" },
+          type: { in: ["EXPENSE", "INCOME"] },
+          recurringInstance: { is: null },
+        },
+        select: {
+          id: true, userId: true, date: true, amountCents: true, type: true,
+          status: true, splitRole: true, deletedAt: true,
+        },
+        orderBy: [{ date: "desc" }, { updatedAt: "desc" }],
+        take: 100,
+      });
+    },
+
     async list(userId) {
       return prisma.recurringItem.findMany({
         where: { userId },
@@ -376,7 +399,7 @@ export function createPrismaAdvancedRecurringStore(
 type RuntimeOptions = { runtimeEnabled?: boolean };
 
 function requireRuntime(options: RuntimeOptions) {
-  if (!(options.runtimeEnabled ?? PHASE_9_ADVANCED_FINANCE_RUNTIME_ENABLED)) {
+  if (!(options.runtimeEnabled ?? isVerifiedPreviewRuntime())) {
     throw new AdvancedRecurringUnavailableError();
   }
 }
@@ -389,6 +412,24 @@ export async function listAdvancedRecurringItems(
   requireRuntime(options);
   const user = requireAuthenticatedUserContext(context);
   return (await (store ?? createPrismaAdvancedRecurringStore()).list(user.userId)).map(toView);
+}
+
+
+export async function listRecurringInstanceCandidates(
+  context: AuthenticatedUserContext | null | undefined,
+  store?: AdvancedRecurringStore,
+  options: RuntimeOptions = {},
+) {
+  requireRuntime(options);
+  const user = requireAuthenticatedUserContext(context);
+  return (await (store ?? createPrismaAdvancedRecurringStore()).listCandidates(user.userId))
+    .filter((transaction) => transaction.userId === user.userId)
+    .map((transaction) => ({
+      id: transaction.id,
+      date: (iso(transaction.date) as string).slice(0, 10),
+      amountCents: transaction.amountCents,
+      type: transaction.type,
+    }));
 }
 
 export async function mutateAdvancedRecurringItem(

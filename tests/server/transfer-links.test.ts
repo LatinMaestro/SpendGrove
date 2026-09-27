@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
+import type { PrismaClient } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
 import {
   TransferLinkNotFoundError,
   TransferLinksUnavailableError,
   confirmTransferLink,
   confirmTransferLinkSchema,
+  getTransferLinkReview,
   isEligibleTransferPair,
   unlinkTransferLink,
   type TransferLinkStore,
@@ -157,6 +159,85 @@ describe("prepared durable transfer-link boundary", () => {
     )).rejects.toBeInstanceOf(TransferLinkNotFoundError);
   });
 
+  it("shows one owner-scoped exact suggestion and hides zero or multiple candidates", async () => {
+    const findFirst = vi.fn().mockResolvedValue(record());
+    const findMany = vi.fn()
+      .mockResolvedValueOnce([record({
+        id: "transaction_in",
+        amountCents: 12500,
+        date: new Date("2026-07-16T00:00:00.000Z"),
+      })])
+      .mockResolvedValueOnce([
+        record({ id: "transaction_in_1", amountCents: 12500 }),
+        record({ id: "transaction_in_2", amountCents: 12500 }),
+      ]);
+    const prisma = { transaction: { findFirst, findMany } } as unknown as PrismaClient;
+
+    const suggestion = await getTransferLinkReview(
+      createTestUserContext("user_1"),
+      "transaction_out",
+      prisma,
+      { runtimeEnabled: true },
+    );
+    expect(suggestion).toMatchObject({
+      state: "SUGGESTION",
+      outgoing: { id: "transaction_out", amountCents: -12500 },
+      incoming: { id: "transaction_in", amountCents: 12500 },
+    });
+    expect(findFirst.mock.calls[0][0].where).toEqual({
+      id: "transaction_out",
+      userId: "user_1",
+    });
+
+    const ambiguous = await getTransferLinkReview(
+      createTestUserContext("user_1"),
+      "transaction_out",
+      prisma,
+      { runtimeEnabled: true },
+    );
+    expect(ambiguous).toEqual({
+      state: "NONE",
+      linkId: null,
+      outgoing: null,
+      incoming: null,
+    });
+  });
+
+  it("returns one linked presentation and never queries another candidate", async () => {
+    const findMany = vi.fn();
+    const prisma = {
+      transaction: {
+        findFirst: vi.fn().mockResolvedValue({
+          ...record(),
+          outgoingTransferLinks: [{
+            id: "link_1",
+            incomingTransaction: {
+              id: "transaction_in",
+              date: new Date("2026-07-16T00:00:00.000Z"),
+              amountCents: 12500,
+            },
+          }],
+          incomingTransferLinks: [],
+        }),
+        findMany,
+      },
+    } as unknown as PrismaClient;
+
+    const linked = await getTransferLinkReview(
+      createTestUserContext("user_1"),
+      "transaction_out",
+      prisma,
+      { runtimeEnabled: true },
+    );
+    expect(linked).toMatchObject({
+      state: "LINKED",
+      linkId: "link_1",
+      outgoing: { id: "transaction_out" },
+      incoming: { id: "transaction_in" },
+    });
+    expect(findMany).not.toHaveBeenCalled();
+  });
+
   it("keeps the routes authenticated, bounded and migration-gated", async () => {
     const [service, createRoute, deleteRoute] = await Promise.all([
       readFile(servicePath, "utf8"),
@@ -164,12 +245,13 @@ describe("prepared durable transfer-link boundary", () => {
       readFile(deleteRoutePath, "utf8"),
     ]);
 
-    expect(service).toContain("TRANSFER_LINK_RUNTIME_ENABLED = false");
+    expect(service).toContain("TRANSFER_LINK_RUNTIME_ENABLED = isVerifiedPreviewRuntime()");
     expect(service).toContain("exactCandidates.length !== 1");
     expect(service).toContain("Prisma.TransactionIsolationLevel.Serializable");
     expect(service).not.toMatch(/description|merchantName|filename|accountNumber|bsb/i);
     expect(createRoute).toContain("getCurrentUserContext()");
     expect(createRoute).toContain("readBoundedJson");
+    expect(createRoute).toContain("getTransferLinkReview");
     expect(createRoute).toContain("TransferLinksUnavailableError");
     expect(deleteRoute).toContain("getCurrentUserContext()");
     expect(deleteRoute).toContain("TransferLinksUnavailableError");
